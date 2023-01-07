@@ -5,6 +5,15 @@ import com.badlogic.gdx.math.Vector2;
 
 public class Utils {
 
+    public static String numberToString(float d, int dp) {
+        float ten = (float) Math.pow(10, dp);
+        float v = ((int) (d * ten)) / ten;
+        if ((int) v == v)
+            return Integer.toString((int) v);
+        else
+            return Float.toString(v);
+    }
+
     public static double getTimeSeconds() {
         return System.currentTimeMillis() / 1000.0;
     }

@@ -17,7 +17,7 @@ public class ParticleTracker extends InputAdapter {
     private final OrthographicCamera camera;
     private final PanZoomCameraInput panZoomCameraInput;
     private Particle trackedParticle;
-    private boolean canTrack;
+    private boolean canTrack = true;
 
     public ParticleTracker(Collection<? extends Particle> entities,
                            OrthographicCamera camera,

@@ -32,7 +32,7 @@ public final class Settings {
 
     // Tank settings
     public static final int numInitialProtozoa = 0;
-    public static final int numInitialPlantPellets = 6000;
+    public static final int numInitialPlantPellets = 0;
     public static final boolean initialPopulationClustering = true;
     public static final int numRingClusters = 6;
     public static final int numPopulationClusters = 3;
@@ -41,7 +41,7 @@ public final class Settings {
     public static final float tankRadius = 1000.0f;
     public static final boolean sphericalTank = false;
     public static final int numChunkBreaks = 100;
-    public static final float maxParticleRadius = 0.15f;
+    public static final float maxParticleRadius = 15f;
     public static final float minParticleRadius = 3f;
     public static final float tankFluidResistance = 8e-4f;
     public static final float brownianFactor = 1000f;
@@ -107,9 +107,9 @@ public final class Settings {
 
     // Stats
 
-    public static final float statsDistanceScalar = 100.0f;
+    public static final float statsDistanceScalar = 1.0f;
     public static final float statsTimeScalar = 100.0f;
-    public static final float statsMassScalar = 1000f;
+    public static final float statsMassScalar = 1f;
 
     // Rendering
 

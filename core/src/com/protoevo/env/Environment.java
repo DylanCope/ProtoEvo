@@ -2,10 +2,10 @@ package com.protoevo.env;
 
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.*;
+import com.protoevo.biology.BurstRequest;
 import com.protoevo.biology.Cell;
 import com.protoevo.biology.MeatCell;
 import com.protoevo.biology.PlantCell;
-import com.protoevo.biology.evolution.Evolvable;
 import com.protoevo.biology.protozoa.Protozoan;
 import com.protoevo.core.Particle;
 import com.protoevo.core.settings.Constants;
@@ -17,6 +17,7 @@ import com.protoevo.utils.Geometry;
 import java.io.Serializable;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -41,6 +42,7 @@ public class Environment implements Serializable
 	private boolean hasInitialised;
 
 	private final JointsManager jointsManager;
+	private final ConcurrentLinkedQueue<BurstRequest<? extends Cell>> burstRequests = new ConcurrentLinkedQueue<>();
 
 	public Environment()
 	{
@@ -65,7 +67,8 @@ public class Environment implements Serializable
 	}
 
 	public Vector2[] createRocks() {
-		RockGeneration.generateClustersOfRocks(this, new Vector2(0, 0), 1, Settings.populationClusterRadius);
+		RockGeneration.generateClustersOfRocks(
+				this, new Vector2(0, 0), 1, Settings.populationClusterRadius);
 
 		int numClusterCentres = 8;
 		Vector2[] clusterCentres = new Vector2[numClusterCentres];
@@ -220,7 +223,10 @@ public class Environment implements Serializable
 //		Collection<Cell> cells = chunkManager.getAllCells();
 //
 //		cells.parallelStream().forEach(Cell::resetPhysics);
+		burstRequests.clear();
 		cells.parallelStream().forEach(cell -> cell.update(delta));
+		burstRequests.forEach(BurstRequest::burst);
+
 //		cells.parallelStream().forEach(cell -> cell.physicsUpdate(delta));
 		cells.forEach(this::handleDeadEntity);
 		cells.removeIf(Cell::isDead);
@@ -388,5 +394,10 @@ public class Environment implements Serializable
 
 	public JointsManager getJointManager() {
 		return jointsManager;
+	}
+
+	public void requestBurst(BurstRequest<? extends Cell> burstRequest) {
+		if (!burstRequests.contains(burstRequest))
+			burstRequests.add(burstRequest);
 	}
 }

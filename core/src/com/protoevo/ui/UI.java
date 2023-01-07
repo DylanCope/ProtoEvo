@@ -2,27 +2,31 @@ package com.protoevo.ui;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Color;
-import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator;
-import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
+import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.scenes.scene2d.EventListener;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.Touchable;
 import com.badlogic.gdx.scenes.scene2d.ui.ImageButton;
 import com.badlogic.gdx.scenes.scene2d.utils.Drawable;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
+import com.protoevo.core.Particle;
 import com.protoevo.core.Simulation;
 import com.protoevo.core.settings.Settings;
 import com.protoevo.env.Environment;
-import com.protoevo.input.MoveParticleButton;
+import com.protoevo.input.ParticleTracker;
 import com.protoevo.ui.rendering.Renderer;
 import com.protoevo.utils.CursorUtils;
 import com.protoevo.utils.DebugMode;
+import com.protoevo.utils.Utils;
+
+import java.awt.*;
+import java.util.Map;
 
 public class UI {
 
@@ -33,8 +37,9 @@ public class UI {
     private final SpriteBatch uiBatch;
     private Stage stage;
     private final OrthographicCamera camera;
-    private final BitmapFont font;
+    private final BitmapFont font, debugFont, titleFont;
     private final TopBar topBar;
+    private final int infoTextSize, textAwayFromEdge;
 
     public static BitmapFont createFiraCode(int size) {
         String fontPath = "fonts/FiraCode-Retina.ttf";
@@ -47,19 +52,27 @@ public class UI {
     public UI(Simulation simulation) {
         CursorUtils.setDefaultCursor();
 
+        float graphicsHeight = Gdx.graphics.getHeight();
+        float graphicsWidth = Gdx.graphics.getWidth();
+        camera = new OrthographicCamera();
+        camera.setToOrtho(false, graphicsWidth, graphicsHeight);
+        camera.position.set(0, 0, 0);
+        camera.zoom = Math.max(graphicsWidth, graphicsHeight) / Settings.tankRadius;
+
         this.simulation = simulation;
         this.environment = simulation.getEnv();
         stage = new Stage();
         uiBatch = new SpriteBatch();
 
-        font = createFiraCode(24);
+        infoTextSize = (int) (graphicsHeight / 50f);
+        textAwayFromEdge = (int) (graphicsWidth / 60);
 
-        float height = Gdx.graphics.getHeight();
-        float width = Gdx.graphics.getWidth();
-        camera = new OrthographicCamera();
-        camera.setToOrtho(false, width, height);
-        camera.position.set(0, 0, 0);
-        camera.zoom = Math.max(width, height) / Settings.tankRadius;
+        font = createFiraCode(infoTextSize);
+        font.setColor(Color.WHITE.mul(.9f));
+        debugFont = createFiraCode(infoTextSize);
+        debugFont.setColor(Color.GOLD);
+
+        titleFont = createFiraCode((int) (graphicsHeight / 40f));
 
         topBar = new TopBar(this, font.getLineHeight());
 
@@ -135,10 +148,25 @@ public class UI {
             debugString += separator + "Fixtures: " + environment.getWorld().getFixtureCount();
             debugString += separator + "Proxies: " + environment.getWorld().getProxyCount();
         }
-        font.setColor(Color.GOLD);
-        font.draw(uiBatch, debugString, 2 * topBar.getPadding(), font.getLineHeight() + topBar.getPadding());
+        debugFont.draw(uiBatch, debugString, 2 * topBar.getPadding(), font.getLineHeight() + topBar.getPadding());
     }
 
+    public float getYPosLHS(int i) {
+        return camera.viewportHeight - (1.3f*infoTextSize*i + 3 * camera.viewportHeight / 20f);
+    }
+
+    public float getYPosRHS(int i) {
+        return 1.3f*infoTextSize*i + camera.viewportHeight / 20f;
+    }
+
+    private void renderStats(Map<String, Float> stats) {
+        int lineNumber = 0;
+        for (Map.Entry<String, Float> entityStat : stats.entrySet()) {
+            String text = entityStat.getKey() + ": " + Utils.numberToString(entityStat.getValue(), 2);
+            font.draw(uiBatch, text, textAwayFromEdge, getYPosLHS(lineNumber));
+            lineNumber++;
+        }
+    }
 
     public void draw(float delta) {
 
@@ -149,8 +177,17 @@ public class UI {
         uiBatch.begin();
         stage.draw();
 
+        ParticleTracker particleTracker = inputManager.getParticleTracker();
+        if (particleTracker.isTracking()) {
+            Particle particle = particleTracker.getTrackedParticle();
+            float titleY = (float) (getYPosLHS(0) + 1.5 * titleFont.getLineHeight());
+            titleFont.draw(uiBatch, particle.getPrettyName() + " Stats", textAwayFromEdge, titleY);
+            renderStats(particle.getStats());
+        }
+
         if (DebugMode.isDebugMode())
             drawDebugInfo();
+
         uiBatch.end();
     }
 

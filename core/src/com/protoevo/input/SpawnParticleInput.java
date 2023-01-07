@@ -16,7 +16,7 @@ public class SpawnParticleInput extends InputAdapter {
     private final OrthographicCamera camera;
     private final Environment environment;
 
-    private final float rate = 0.02f;
+    private final float rate = 0.05f;
     private float timeSinceSpawn = 0;
 
     public SpawnParticleInput(OrthographicCamera camera, Environment environment) {

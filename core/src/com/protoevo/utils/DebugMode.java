@@ -36,4 +36,9 @@ public enum DebugMode {
             DEBUG_MODE = OFF;
         }
     }
+
+    public static void setMode(DebugMode mode) {
+        DEBUG_MODE = mode;
+    }
+
 }
