@@ -18,15 +18,16 @@ import java.io.Serializable;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 public class Environment implements Serializable
 {
 	private static final long serialVersionUID = 2804817237950199223L;
 	private final World world;
 	private float elapsedTime;
-	public final ConcurrentHashMap<Class<? extends Particle>, Integer> cellCounts =
+	public final ConcurrentHashMap<Class<? extends Cell>, Integer> cellCounts =
 			new ConcurrentHashMap<>(3, 1);
-	public final ConcurrentHashMap<Class<? extends Particle>, Integer> particleCapacities =
+	public final ConcurrentHashMap<Class<? extends Cell>, Integer> cellCapacities =
 			new ConcurrentHashMap<>(3, 1);
 	private final ChemicalSolution chemicalSolution = null;
 	private final List<Rock> rocks;
@@ -35,8 +36,8 @@ public class Environment implements Serializable
 	private String genomeFile = null;
 	private final List<String> genomesToWrite = new ArrayList<>();
 
-	private final List<Particle> particlesToAdd = new ArrayList<>();
-	private final List<Particle> particles = new ArrayList<>();
+	private final List<Cell> cellsToAdd = new ArrayList<>();
+	private final List<Cell> cells = new ArrayList<>();
 	private boolean hasInitialised;
 
 	private final JointsManager jointsManager;
@@ -47,8 +48,7 @@ public class Environment implements Serializable
 		world.setContinuousPhysics(false);
 
 		this.jointsManager = new JointsManager(this);
-		world.setContactListener(jointsManager);
-
+		world.setContactListener(new EnvContactListener(this));
 
 //		TODO: revisit chemical field implementation
 //		if (Settings.enableChemicalField) {
@@ -96,9 +96,6 @@ public class Environment implements Serializable
 	}
 
 	public void initialise() {
-//		if (chemicalSolution != null)
-//			chemicalSolution.initialise();
-
 		if (!hasInitialised) {
 			Vector2[] clusterCentres = createRocks();
 
@@ -144,15 +141,20 @@ public class Environment implements Serializable
 			findProtozoaPosition = r -> randomPosition(r, clusterCentres);
 		}
 
-		for (int i = 0; i < Settings.numInitialPlantPellets; i++)
-			addRandom(new PlantCell(this), findPlantPosition);
-
-		System.out.println(particlesToAdd.size());
-		for (int i = 0; i < Settings.numInitialProtozoa; i++) {
-			Protozoan p = Evolvable.createNew(Protozoan.class);
-			p.setEnv(this);
-			addRandom(p, findProtozoaPosition);
+		for (int i = 0; i < Settings.numInitialPlantPellets; i++) {
+			PlantCell cell = new PlantCell(this);
+			cell.setPos(findPlantPosition.apply(cell.getRadius()));
 		}
+
+//		System.out.println(cellsToAdd.size());
+//		for (int i = 0; i < Settings.numInitialProtozoa; i++) {
+//			Protozoan p = Evolvable.createNew(Protozoan.class);
+//			p.setEnv(this);
+//			addRandom(p, findProtozoaPosition);
+//		}
+
+		for (Particle p : cellsToAdd)
+			p.applyImpulse(Geometry.randomVector(1000f));
 	}
 
 	public void initialisePopulation() {
@@ -169,13 +171,18 @@ public class Environment implements Serializable
 	}
 
 	public Vector2 randomPosition(float entityRadius, Vector2 centre, float clusterRadius) {
-		float rad = clusterRadius - 4*entityRadius;
-		float t = (float) (2 * Math.PI * Simulation.RANDOM.nextDouble());
-		float r = 2*entityRadius + rad * Simulation.RANDOM.nextFloat();
-		return new Vector2(
-				(float) (r * Math.cos(t)),
-				(float) (r * Math.sin(t))
-		).add(centre);
+		Vector2 pos = Geometry.randomVector(clusterRadius * Simulation.RANDOM.nextFloat()).add(centre);
+		if (!isCollidingWithAnything(pos, entityRadius))
+			return pos;
+
+		// 5 attempts to find a position
+		for (int i = 0; i < 4; i++) {
+			pos = Geometry.randomVector(clusterRadius * Simulation.RANDOM.nextFloat()).add(centre);
+			if (!isCollidingWithAnything(pos, entityRadius))
+				return pos;
+		}
+
+		return pos;
 	}
 
 	public Vector2 randomPosition(float entityRadius) {
@@ -188,8 +195,8 @@ public class Environment implements Serializable
 	}
 
 	private void flushEntitiesToAdd() {
-		particles.addAll(particlesToAdd);
-		particlesToAdd.clear();
+		cells.addAll(cellsToAdd);
+		cellsToAdd.clear();
 	}
 
 	private void flushWrites() {
@@ -204,7 +211,6 @@ public class Environment implements Serializable
 	private float accumulator = 0;
 	public void update(float delta) 
 	{
-		jointsManager.flushJoints();
 		flushEntitiesToAdd();
 
 		elapsedTime += delta;
@@ -214,26 +220,29 @@ public class Environment implements Serializable
 //		Collection<Cell> cells = chunkManager.getAllCells();
 //
 //		cells.parallelStream().forEach(Cell::resetPhysics);
-//		cells.parallelStream().forEach(cell -> updateCell(cell, delta));
+		cells.parallelStream().forEach(cell -> cell.update(delta));
 //		cells.parallelStream().forEach(cell -> cell.physicsUpdate(delta));
-		particles.parallelStream().forEach(this::handleDeadEntities);
+		cells.forEach(this::handleDeadEntity);
+		cells.removeIf(Cell::isDead);
+		updateCounts(cells);
 
-//		updateCounts(cells);
+		jointsManager.flushJoints();
+
 //		if (chemicalSolution != null)
 //			chemicalSolution.update(delta, cells);
 
 	}
 
-	private void updateCounts(Collection<Particle> entities) {
+	private void updateCounts(Collection<Cell> entities) {
 		cellCounts.clear();
-		for (Particle e : entities)
+		for (Cell e : entities)
 			cellCounts.put(e.getClass(), 1 + cellCounts.getOrDefault(e.getClass(), 0));
 	}
 
-	private void handleDeadEntities(Particle e) {
+	private void handleDeadEntity(Particle e) {
 		if (!e.isDead())
 			return;
-		e.kill();
+		e.dispose();
 	}
 
 	private void handleNewProtozoa(Protozoan p) {
@@ -248,15 +257,17 @@ public class Environment implements Serializable
 
 	public void add(Cell e) {
 		if (cellCounts.getOrDefault(e.getClass(), 0)
-				>= particleCapacities.getOrDefault(e.getClass(), 0)) {
+				>= cellCapacities.getOrDefault(e.getClass(), 0)) {
 			e.kill();
 		}
 
-		totalCellsAdded++;
-		particlesToAdd.add(e);
+		if (!cellsToAdd.contains(e)) {
+			totalCellsAdded++;
+			cellsToAdd.add(e);
 
-		if (e instanceof Protozoan)
-			handleNewProtozoa((Protozoan) e);
+			if (e instanceof Protozoan)
+				handleNewProtozoa((Protozoan) e);
+		}
 	}
 
 	public Map<String, Float> getStats(boolean includeProtozoaStats) {
@@ -279,31 +290,30 @@ public class Environment implements Serializable
 
 	public Map<String, Float> getProtozoaStats() {
 		Map<String, Float> stats = new TreeMap<>();
-//		Collection<Protozoan> protozoa = chunkManager.getAllCells()
-//				.stream()
-//				.filter(cell -> cell instanceof Protozoan)
-//				.map(cell -> (Protozoan) cell)
-//				.collect(Collectors.toSet());
-//
-//		for (Cell e : protozoa) {
-//			for (Map.Entry<String, Float> stat : e.getStats().entrySet()) {
-//				String key = "Sum " + stat.getKey();
-//				float currentValue = stats.getOrDefault(key, 0f);
-//				stats.put(key, stat.getValue() + currentValue);
-//			}
-//		}
-//
-//		int numProtozoa = protozoa.size();
-//		for (Cell e : protozoa) {
-//			for (Map.Entry<String, Float> stat : e.getStats().entrySet()) {
-//				float sumValue = stats.getOrDefault("Sum " + stat.getKey(), 0f);
-//				float mean = sumValue / numProtozoa;
-//				stats.put("Mean " + stat.getKey(), mean);
-//				float currVar = stats.getOrDefault("Var " + stat.getKey(), 0f);
-//				float deltaVar = (float) Math.pow(stat.getValue() - mean, 2) / numProtozoa;
-//				stats.put("Var " + stat.getKey(), currVar + deltaVar);
-//			}
-//		}
+		Collection<Protozoan> protozoa = cells.stream()
+				.filter(cell -> cell instanceof Protozoan)
+				.map(cell -> (Protozoan) cell)
+				.collect(Collectors.toSet());
+
+		for (Cell e : protozoa) {
+			for (Map.Entry<String, Float> stat : e.getStats().entrySet()) {
+				String key = "Sum " + stat.getKey();
+				float currentValue = stats.getOrDefault(key, 0f);
+				stats.put(key, stat.getValue() + currentValue);
+			}
+		}
+
+		int numProtozoa = protozoa.size();
+		for (Cell e : protozoa) {
+			for (Map.Entry<String, Float> stat : e.getStats().entrySet()) {
+				float sumValue = stats.getOrDefault("Sum " + stat.getKey(), 0f);
+				float mean = sumValue / numProtozoa;
+				stats.put("Mean " + stat.getKey(), mean);
+				float currVar = stats.getOrDefault("Var " + stat.getKey(), 0f);
+				float deltaVar = (float) Math.pow(stat.getValue() - mean, 2) / numProtozoa;
+				stats.put("Var " + stat.getKey(), currVar + deltaVar);
+			}
+		}
 		return stats;
 	}
 	
@@ -322,20 +332,9 @@ public class Environment implements Serializable
 		return generation;
 	}
 
-
-    public void addRandom(Cell e, Function<Float, Vector2> findPosition) {
-		for (int i = 0; i < 5; i++) {
-			e.setPos(findPosition.apply(e.getRadius()));
-			if (!isCollidingWithAnything(e)) {
-				add(e);
-				return;
-			}
-		}
-    }
-
-	public boolean isCollidingWithAnything(Cell e) {
-		Vector2 p1 = e.getPos().cpy().sub(e.getRadius(), e.getRadius());
-		Vector2 p2 = e.getPos().cpy().add(e.getRadius(), e.getRadius());
+	public boolean isCollidingWithAnything(Vector2 pos, float r) {
+		Vector2 p1 = pos.cpy().sub(r, r);
+		Vector2 p2 = pos.cpy().add(r, r);
 
 		final Vector2 collisionPoint = new Vector2();
 
@@ -371,7 +370,23 @@ public class Environment implements Serializable
 		return world;
 	}
 
-	public Collection<Particle> getParticles() {
-		return particles;
+	public Collection<Cell> getCells() {
+		return cells;
+	}
+
+	public Collection<? extends Particle> getParticles() {
+		return cells;
+	}
+
+	public void ensureAddedToEnvironment(Particle particle) {
+		if (particle instanceof Cell) {
+			Cell cell = (Cell) particle;
+			if (!cells.contains(cell))
+				add(cell);
+		}
+	}
+
+	public JointsManager getJointManager() {
+		return jointsManager;
 	}
 }

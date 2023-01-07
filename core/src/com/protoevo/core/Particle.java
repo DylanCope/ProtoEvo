@@ -4,6 +4,7 @@ import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.*;
 import com.protoevo.env.Environment;
+import com.protoevo.env.Rock;
 import com.protoevo.utils.Geometry;
 
 
@@ -12,7 +13,8 @@ public class Particle {
     private Environment environment;
     private Body body;
     private Fixture fixture;
-    private boolean dead, hasHandledDeath;
+    private boolean dead;
+    private float radius;
 
     public Particle() {}
 
@@ -20,15 +22,30 @@ public class Particle {
         return body;
     }
 
+    public void applyForce(Vector2 force) {
+        body.applyForceToCenter(force, true);
+    }
+
+    public void applyImpulse(Vector2 impulse) {
+        body.applyLinearImpulse(impulse, body.getWorldCenter(), true);
+    }
+
+    public void onCollision(Particle other) {}
+    public void onCollision(Rock rock) {}
+
     public float getRadius() {
-        if (fixture == null)
-            return 0;
-        return fixture.getShape().getRadius();
+        return radius;
     }
 
     public void setRadius(float radius) {
+        this.radius = radius;
         if (fixture != null)
             fixture.getShape().setRadius(radius);
+    }
+
+    public boolean isPointInside(Vector2 point) {
+        float r = getRadius();
+        return point.dst2(getPos()) < r*r;
     }
 
     public void setPos(Vector2 pos) {
@@ -73,10 +90,13 @@ public class Particle {
 
     public void setEnv(Environment environment) {
         this.environment = environment;
+        environment.ensureAddedToEnvironment(this);
+        createBody();
+    }
 
-        BodyDef bodyDef = new BodyDef();
-        bodyDef.type = BodyDef.BodyType.DynamicBody;
-        body = environment.getWorld().createBody(bodyDef);
+    public void createBody() {
+        if (body != null)
+            return;
 
         CircleShape circle = new CircleShape();
         // Create a fixture definition to apply our shape to
@@ -86,6 +106,10 @@ public class Particle {
         fixtureDef.friction = 0.8f;
         fixtureDef.restitution = 0.6f;
 
+        BodyDef bodyDef = new BodyDef();
+        bodyDef.type = BodyDef.BodyType.DynamicBody;
+
+        body = environment.getWorld().createBody(bodyDef);
         // Create our fixture and attach it to the body
         fixture = body.createFixture(fixtureDef);
         fixture.setUserData(this);
@@ -103,11 +127,11 @@ public class Particle {
     }
 
     public void kill() {
-        if (hasHandledDeath)
-            return;
-
-        hasHandledDeath = true;
         dead = true;
+    }
+
+    public void dispose() {
+        kill();
         environment.getWorld().destroyBody(body);
     }
 }

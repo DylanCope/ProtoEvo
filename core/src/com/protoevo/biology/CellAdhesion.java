@@ -61,13 +61,13 @@ public class CellAdhesion implements Serializable  {
         }
     }
 
-    public static class CellBinding implements Serializable {
+    public static class Binding implements Serializable {
 
         private static final long serialVersionUID = 1L;
         private final Cell srcCell, destCell;
         private final CAM cam;
 
-        public CellBinding(Cell srcCell, Cell destCell, CAM cam) {
+        public Binding(Cell srcCell, Cell destCell, CAM cam) {
             this.srcCell = srcCell;
             this.destCell = destCell;
             this.cam = cam;

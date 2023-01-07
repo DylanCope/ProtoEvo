@@ -1,6 +1,7 @@
 package com.protoevo.ui.rendering;
 
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.files.FileHandle;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.Texture;
@@ -17,6 +18,7 @@ import com.protoevo.core.Simulation;
 import com.protoevo.env.Environment;
 import com.protoevo.env.Rock;
 import com.protoevo.ui.InputManager;
+import com.protoevo.utils.DebugMode;
 
 public class Renderer {
 
@@ -42,7 +44,9 @@ public class Renderer {
         particlesBatch = new SpriteBatch();
         environment = simulation.getEnv();
 
-        circleTexture = new Texture("entity/plant_128x128.png");
+        FileHandle file = Gdx.files.internal("entity/particle_base_128x128.png");
+        circleTexture = new Texture(file, true);
+        circleTexture.setFilter(Texture.TextureFilter.MipMapLinearNearest, Texture.TextureFilter.Linear);
 
         shapeRenderer = new ShapeRenderer();
         shapeRenderer.setAutoShapeType(true);
@@ -104,7 +108,7 @@ public class Renderer {
 
         fbo.dispose();
 
-        if (inputManager.isDebugActivated()) {
+        if (DebugMode.isDebugModePhysicsDebug()) {
             debugRenderer.render(simulation.getEnv().getWorld(), camera.combined);
         }
     }
@@ -123,6 +127,7 @@ public class Renderer {
         float y = p.getPos().y - p.getRadius();
         float r = p.getRadius() * 2;
 
+        particlesBatch.setColor(p.getColor());
         particlesBatch.draw(circleTexture, x, y, r, r);
     }
 

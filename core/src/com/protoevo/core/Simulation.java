@@ -20,7 +20,7 @@ import java.util.stream.Stream;
 
 public class Simulation
 {
-	private Environment environment;
+	private final Environment environment;
 	private boolean simulate, pause = false;
 	private float timeDilation = 1, timeSinceSave = 0, timeSinceSnapshot = 0;
 	private double updateDelay = Application.refreshDelay / 1000.0, lastUpdateTime = 0;
@@ -45,7 +45,7 @@ public class Simulation
 		genomeFile = "saves/" + name + "/genomes.csv";
 		historyFile = "saves/" + name + "/history.csv";
 		newSaveDir();
-		newDefaultEnv();
+		environment = newDefaultEnv();
 		loadSettings();
 	}
 
@@ -58,7 +58,7 @@ public class Simulation
 		historyFile = "saves/" + name + "/history.csv";
 
 		newSaveDir();
-		loadMostRecentEnv();
+		environment = loadMostRecentEnv();
 		loadSettings();
 	}
 
@@ -71,14 +71,14 @@ public class Simulation
 		historyFile = "saves/" + name + "/history.csv";
 
 		newSaveDir();
-		loadEnv("saves/" + name + "/env/" + save);
+		environment = loadEnv("saves/" + name + "/env/" + save);
 		loadSettings();
 	}
 
 	private void loadSettings() {
-		environment.particleCapacities.put(Protozoan.class, Settings.maxProtozoa);
-		environment.particleCapacities.put(PlantCell.class, Settings.maxPlants);
-		environment.particleCapacities.put(MeatCell.class, Settings.maxMeat);
+		environment.cellCapacities.put(Protozoan.class, Settings.maxProtozoa);
+		environment.cellCapacities.put(PlantCell.class, Settings.maxPlants);
+		environment.cellCapacities.put(MeatCell.class, Settings.maxMeat);
 	}
 
 	private void newSaveDir() {
@@ -107,48 +107,47 @@ public class Simulation
 				faker.lorem().word().toLowerCase().replaceAll(" ", "-"));
 	}
 	
-	public void newDefaultEnv()
+	public Environment newDefaultEnv()
 	{
-		environment = new Environment();
-		loadSettings();
+		Environment environment = new Environment();
 		environment.setGenomeFile(genomeFile);
+		return environment;
 	}
 
-	public void setupTank() {
+	public void setupEnvironment() {
 		environment.initialise();
 	}
 
-	public void loadEnv(String filename)
+	public Environment loadEnv(String filename)
 	{
 		try {
-			environment = (Environment) FileIO.load(filename);
+			Environment env = (Environment) FileIO.load(filename);
 			System.out.println("Loaded tank at: " + filename);
+			return env;
 		} catch (IOException | ClassNotFoundException e) {
 			System.out.println("Unable to load environment at " + filename + " because: " + e.getMessage());
-			newDefaultEnv();
+			return newDefaultEnv();
 		}
 	}
 
-	public void loadMostRecentEnv() {
+	public Environment loadMostRecentEnv() {
 		Path dir = Paths.get("saves/" + name + "/env");
 		if (Files.exists(dir))
 			try (Stream<Path> pathStream = Files.list(dir)) {
-				Optional<Path> lastFilePath = pathStream
+				Optional<String> lastFilePath = pathStream
 						.filter(f -> !Files.isDirectory(f))
-						.max(Comparator.comparingLong(f -> f.toFile().lastModified()));
+						.max(Comparator.comparingLong(f -> f.toFile().lastModified()))
+						.map(path -> path.toString().replace(".dat", ""));
 
-				lastFilePath.ifPresentOrElse(
-						path -> loadEnv(path.toString().replace(".dat", "")),
-						this::newDefaultEnv
-				);
+				return lastFilePath.map(this::loadEnv).orElse(newDefaultEnv());
 			} catch (IOException e) {
-				newDefaultEnv();
+				return newDefaultEnv();
 			}
-		else newDefaultEnv();
+		return newDefaultEnv();
 	}
 
 	public void simulate() {
-		setupTank();
+		setupEnvironment();
 		makeHistorySnapshot();
 		while (simulate) {
 			if (pause)

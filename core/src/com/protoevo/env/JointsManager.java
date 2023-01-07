@@ -10,11 +10,12 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
-public class JointsManager implements ContactListener, Serializable {
+public class JointsManager implements Serializable {
     public static long serialVersionUID = 1L;
 
     private final Environment environment;
     private final List<JointDef> jointsToAdd = new ArrayList<>();
+    private final List<JointDef> jointsToRemove = new ArrayList<>();
 
 
     public JointsManager(Environment environment) {
@@ -25,9 +26,37 @@ public class JointsManager implements ContactListener, Serializable {
         handleStaleJoints();
 
         for (JointDef jointDef : jointsToAdd) {
+            if (jointDef.bodyA == null || jointDef.bodyB == null)
+                continue;
+            if (jointDef.bodyA.getUserData() == null || jointDef.bodyB.getUserData() == null)
+                continue;
+            if (jointDef.bodyA.getUserData() instanceof Particle) {
+                Particle particleA = (Particle) jointDef.bodyA.getUserData();
+                if (particleA.isDead())
+                    continue;
+            }
+            if (jointDef.bodyB.getUserData() instanceof Particle) {
+                Particle particleB = (Particle) jointDef.bodyB.getUserData();
+                if (particleB.isDead())
+                    continue;
+            }
             environment.getWorld().createJoint(jointDef);
         }
         jointsToAdd.clear();
+    }
+
+    private boolean removalRequested(Joint joint) {
+        Body bodyA = joint.getBodyA();
+        Body bodyB = joint.getBodyB();
+
+        for (JointDef jointDef : jointsToRemove) {
+            if (jointDef.bodyA == bodyA && jointDef.bodyB == bodyB && jointDef.type == joint.getType()) {
+                environment.getWorld().destroyJoint(joint);
+                return true;
+            }
+        }
+
+        return false;
     }
 
     public void handleStaleJoints() {
@@ -35,8 +64,21 @@ public class JointsManager implements ContactListener, Serializable {
         environment.getWorld().getJoints(joints);
 
         for (Joint joint : joints) {
-            if (joint.getBodyA().getUserData() instanceof Particle
-                    && joint.getBodyB().getUserData() instanceof Particle) {
+            Body bodyA = joint.getBodyA();
+            Body bodyB = joint.getBodyB();
+
+            if (bodyA == null || bodyB == null) {
+                environment.getWorld().destroyJoint(joint);
+                continue;
+            }
+
+            if (removalRequested(joint)) {
+                environment.getWorld().destroyJoint(joint);
+                continue;
+            }
+
+            if (bodyA.getUserData() instanceof Particle
+                    && bodyB.getUserData() instanceof Particle) {
                 Particle p1 = (Particle) joint.getBodyA().getUserData();
                 Particle p2 = (Particle) joint.getBodyB().getUserData();
 
@@ -44,14 +86,18 @@ public class JointsManager implements ContactListener, Serializable {
                     environment.getWorld().destroyJoint(joint);
                 }
 
-                if (joint instanceof RopeJoint) {
-                    float idealJointLength = (p1.getRadius() + p2.getRadius()) * 1.1f;
-                    RopeJoint ropeJoint = (RopeJoint) joint;
-                    if (1.05f * ropeJoint.getMaxLength() < idealJointLength) {
-                        environment.getWorld().destroyJoint(joint);
-                        jointsToAdd.add(makeJointDef(p1, p2));
-                    }
-                }
+                handleGrowingParticle(joint, p1, p2);
+            }
+        }
+    }
+
+    private void handleGrowingParticle(Joint joint, Particle p1, Particle p2) {
+        if (joint instanceof RopeJoint) {
+            float idealJointLength = (p1.getRadius() + p2.getRadius()) * 1.1f;
+            RopeJoint ropeJoint = (RopeJoint) joint;
+            if (1.05f * ropeJoint.getMaxLength() < idealJointLength) {
+                environment.getWorld().destroyJoint(joint);
+                jointsToAdd.add(makeJointDef(p1, p2));
             }
         }
     }
@@ -60,7 +106,7 @@ public class JointsManager implements ContactListener, Serializable {
         return (p1.getRadius() + p2.getRadius()) * 1.2f;
     }
 
-    public JointDef makeJointDef(Particle particleA, Particle particleB) {
+    private JointDef makeJointDef(Particle particleA, Particle particleB) {
         RopeJointDef defJoint = new RopeJointDef();
         defJoint.maxLength = idealJointLength(particleA, particleB);
         defJoint.bodyA = particleA.getBody();
@@ -69,14 +115,7 @@ public class JointsManager implements ContactListener, Serializable {
         return defJoint;
     }
 
-    @Override
-    public void beginContact(Contact contact) {}
-
-    @Override
-    public void endContact(Contact contact) {
-        Body bodyA = contact.getFixtureA().getBody();
-        Body bodyB = contact.getFixtureB().getBody();
-
+    public void createJoint(Body bodyA, Body bodyB) {
         int maxJoints = 2;
         if (bodyA.getJointList().size >= maxJoints || bodyB.getJointList().size >= maxJoints)
             return;
@@ -89,9 +128,7 @@ public class JointsManager implements ContactListener, Serializable {
         }
     }
 
-    @Override
-    public void preSolve(Contact contact, Manifold oldManifold) {}
-
-    @Override
-    public void postSolve(Contact contact, ContactImpulse impulse) {}
+    public void requestJointRemoval(Particle particleA, Particle particleB) {
+        jointsToRemove.add(makeJointDef(particleA, particleB));
+    }
 }

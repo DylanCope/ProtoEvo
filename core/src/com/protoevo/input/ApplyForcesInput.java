@@ -6,28 +6,30 @@ import com.badlogic.gdx.InputAdapter;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector3;
-import com.badlogic.gdx.physics.box2d.Body;
 import com.protoevo.core.Particle;
 
 import java.util.Collection;
 
 public class ApplyForcesInput extends InputAdapter {
 
-    Collection<Particle> particles;
+    Collection<? extends Particle> entities;
     OrthographicCamera camera;
 
-    public ApplyForcesInput(Collection<Particle> particles, OrthographicCamera camera) {
-        this.particles = particles;
+    public ApplyForcesInput(Collection<? extends Particle> entities, OrthographicCamera camera) {
+        this.entities = entities;
         this.camera = camera;
     }
 
     public void applyForce(float explosionX, float explosionY, float power) {
         Vector2 tmp = new Vector2();
-        for (Particle particle : particles) {
+        for (Particle particle : entities) {
             Vector2 bodyPos = particle.getPos();
             tmp.set(bodyPos.x - explosionX, bodyPos.y - explosionY);
-            tmp.setLength(power / tmp.len2());
-            particle.getBody().applyLinearImpulse(tmp,  bodyPos, true);
+            float dist2 = tmp.len2();
+            if (power / dist2 > 1) {
+                tmp.setLength(power / dist2);
+                particle.getBody().applyLinearImpulse(tmp,  bodyPos, true);
+            }
         }
     }
 

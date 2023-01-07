@@ -10,40 +10,43 @@ import com.badlogic.gdx.scenes.scene2d.utils.Drawable;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 import com.protoevo.core.Particle;
 import com.protoevo.input.*;
-import com.protoevo.ui.rendering.Renderer;
 
 import java.util.Collection;
 
 public class InputManager {
 
-    private final ToggleDebug toggleDebug;
     private final ParticleTracker particleTracker;
+    private final MoveParticleButton moveParticleButton;
+    private final LightningButton lightningButton;
+
 
     public InputManager(UI ui)  {
         OrthographicCamera camera = ui.getCamera();
-        toggleDebug = new ToggleDebug();
+        ToggleDebug toggleDebug = new ToggleDebug();
 
         InputLayers inputLayers = new InputLayers(ui.getStage(), toggleDebug);
         Gdx.input.setInputProcessor(inputLayers);
 
-        Collection<Particle> particles = ui.getEnvironment().getParticles();
+        Collection<? extends Particle> particles = ui.getEnvironment().getParticles();
         inputLayers.addLayer(new ApplyForcesInput(particles, camera));
         PanZoomCameraInput panZoomCameraInput = new PanZoomCameraInput(camera);
 
         TopBar topBar = ui.getTopBar();
 
+        lightningButton = new LightningButton(this, topBar.getButtonSize());
+        inputLayers.addLayer(new LightningStrikeInput(ui, lightningButton));
+
         particleTracker = new ParticleTracker(particles, camera, panZoomCameraInput);
 
-        MoveParticleButton moveParticleButton = new MoveParticleButton(topBar.getButtonSize());
+        moveParticleButton = new MoveParticleButton(topBar.getButtonSize());
         Vector2 pos = topBar.nextLeftButtonPosition();
         moveParticleButton.setPosition(pos.x, pos.y);
-        topBar.addLeft(moveParticleButton);
 
-        SpawnParticleInput spawnParticleInput = new SpawnParticleInput(camera, particles, ui.getEnvironment());
+        SpawnParticleInput spawnParticleInput = new SpawnParticleInput(camera, ui.getEnvironment());
         MoveParticle moveParticle = new MoveParticle(camera, particles, moveParticleButton, particleTracker);
-        CursorUpdater cursorUpdater = new CursorUpdater(camera, particles, moveParticleButton, particleTracker);
+        CursorUpdater cursorUpdater = new CursorUpdater(ui, this);
 
-        ImageButton jediButton = ui.createBarImageButton("icons/jedi_off.png", event -> {
+        ImageButton jediButton = ui.createBarImageButton("icons/jedi_on.png", event -> {
             if (event.toString().equals("touchDown")) {
                 moveParticle.toggleJediMode();
                 ImageButton button = (ImageButton) event.getListenerActor();
@@ -54,19 +57,28 @@ public class InputManager {
             }
             return true;
         });
-        TextureRegion region = new TextureRegion(new Texture("icons/jedi_on.png"));
+        TextureRegion region = new TextureRegion(new Texture("icons/jedi_off.png"));
         jediButton.getStyle().imageDown = new TextureRegionDrawable(region);
-        topBar.addLeft(jediButton);
 
         inputLayers.addLayers(cursorUpdater, spawnParticleInput, moveParticle, particleTracker);
+
         inputLayers.addLayer(panZoomCameraInput);
+
+
+        topBar.addLeft(moveParticleButton);
+        topBar.addLeft(jediButton);
+        topBar.addLeft(lightningButton);
     }
 
     public ParticleTracker getParticleTracker() {
         return particleTracker;
     }
 
-    public boolean isDebugActivated() {
-        return toggleDebug.isDebug();
+    public MoveParticleButton getMoveParticleButton() {
+        return moveParticleButton;
+    }
+
+    public LightningButton getLightningButton() {
+        return lightningButton;
     }
 }

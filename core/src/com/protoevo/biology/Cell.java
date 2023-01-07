@@ -2,12 +2,16 @@ package com.protoevo.biology;
 
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.math.MathUtils;
+import com.google.common.collect.ConcurrentHashMultiset;
 import com.protoevo.core.Particle;
 import com.protoevo.core.settings.Settings;
+import com.protoevo.env.JointsManager;
+import com.protoevo.env.Rock;
 import com.protoevo.utils.Geometry;
 
 import java.io.Serializable;
 import java.util.*;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 import static com.protoevo.utils.Utils.lerp;
 
@@ -29,7 +33,10 @@ public abstract class Cell extends Particle implements Serializable
 	private float energyAvailable = Settings.startingAvailableCellEnergy;
 	private float constructionMassAvailable, wasteMass;
 	private final Map<Food.ComplexMolecule, Float> availableComplexMolecules;
-	private final Set<CellAdhesion.CellBinding> cellBindings, toAttach;
+	private int maxAttachedCells = 0;
+	private final ConcurrentLinkedQueue<Cell> attachedCells = new ConcurrentLinkedQueue<>();
+	private final ConcurrentLinkedQueue<Cell> cellsToDetach = new ConcurrentLinkedQueue<>();
+	private final Set<CellAdhesion.Binding> cellBindings;
 	private final Map<CellAdhesion.CAM, Float> surfaceCAMs;
 	private final Map<Food.Type, Float> foodDigestionRates;
 	private final Map<Food.Type, Food> foodToDigest;
@@ -40,11 +47,11 @@ public abstract class Cell extends Particle implements Serializable
 
 	public Cell()
 	{
+		super();
 		healthyColour = new Color(1f, 1f, 1f, 1f);
 		foodDigestionRates = new HashMap<>(0);
 		foodToDigest = new HashMap<>(0);
 		cellBindings = new HashSet<>(0);
-		toAttach = new HashSet<>(0);
 		surfaceCAMs = new HashMap<>(0);
 		constructionProjects = new HashSet<>(0);
 		complexMoleculeProductionRates = new HashMap<>(0);
@@ -60,12 +67,18 @@ public abstract class Cell extends Particle implements Serializable
 		resourceProduction(delta);
 		progressConstructionProjects(delta);
 
-		if (!toAttach.isEmpty()) {
-			cellBindings.addAll(toAttach);
-			toAttach.clear();
+		for (Cell other : attachedCells) {
+			if (detachCellCondition(other)) {
+				cellsToDetach.add(other);
+				other.attachedCells.remove(this);
+//				getEnv().getJointManager().requestJointRemoval(this, other);
+			}
 		}
-		cellBindings.removeIf(this::detachCondition);
-		for (CellAdhesion.CellBinding binding : cellBindings)
+
+		attachedCells.removeIf(cellsToDetach::contains);
+		cellsToDetach.clear();
+
+		for (CellAdhesion.Binding binding : cellBindings)
 			handleBindingInteraction(binding, delta);
 	}
 
@@ -118,7 +131,7 @@ public abstract class Cell extends Particle implements Serializable
 		foodDigestionRates.put(foodType, rate);
 	}
 
-	public void extractFood(EdibleCell cell, float extraction) {
+	public void eat(EdibleCell cell, float extraction) {
 		Food.Type foodType = cell.getFoodType();
 		float extractedMass = cell.getMass() * extraction;
 		cell.removeMass(Settings.foodExtractionWasteMultiplier * extractedMass);
@@ -167,14 +180,24 @@ public abstract class Cell extends Particle implements Serializable
 		}
 	}
 
-	public boolean detachCondition(CellAdhesion.CellBinding binding) {
-		Cell e = binding.getDestinationEntity();
-		if (e.isDead())
+	public boolean detachCellCondition(Cell other) {
+		if (other.isDead())
 			return true;
-		float dist = e.getPos().cpy().sub(getPos()).len();
-		float maxDist = 1.3f * (e.getRadius() + getRadius());
-		float minDist = 0.95f * (e.getRadius() + getRadius());
+		float dist = other.getPos().cpy().sub(getPos()).len();
+		float maxDist = 1.3f * (other.getRadius() + getRadius());
+		float minDist = 0.95f * (other.getRadius() + getRadius());
 		return dist > maxDist || dist < minDist;
+	}
+
+	public boolean attachCondition(Cell other) {
+		if (other.isDead() || attachedCells.size() >= maxAttachedCells)
+			return false;
+
+		for (CellAdhesion.CAM cam : surfaceCAMs.keySet()) {
+			if (getCAMAvailable(cam) > 0 && other.getCAMAvailable(cam) > 0)
+				return true;
+		}
+		return false;
 	}
 
 	public void addConstructionProject(ConstructionProject project) {
@@ -206,17 +229,23 @@ public abstract class Cell extends Particle implements Serializable
 	}
 
 	public float getGrowthRate() {
-//		if (getRecentRigidCollisions() > 2)
-//			return 0;
 		return growthRate;
 	}
 
-	public synchronized void attach(CellAdhesion.CellBinding binding) {
-		if (!cellBindings.contains(binding))
-			toAttach.add(binding);
+	public void createCellBinding(Cell other, CellAdhesion.CAM cam) {
+		CellAdhesion.Binding binding = new CellAdhesion.Binding(this, other, cam);
+		cellBindings.add(binding);
 	}
 
-	public Set<CellAdhesion.CellBinding> getCellBindings() {
+	public int getMaxAttachedCells() {
+		return maxAttachedCells;
+	}
+
+	public void setMaxAttachedCells(int maxAttachedCells) {
+		this.maxAttachedCells = maxAttachedCells;
+	}
+
+	public Set<CellAdhesion.Binding> getCellBindings() {
 		return cellBindings;
 	}
 
@@ -226,6 +255,42 @@ public abstract class Cell extends Particle implements Serializable
 
 	public boolean cannotMakeBinding() {
 		return false;
+	}
+
+	@Override
+	public void onCollision(Rock rock) {
+		if (rock.isPointInside(getPos())) {
+			kill();
+		}
+	}
+
+	@Override
+	public void onCollision(Particle other) {
+		if (other.isPointInside(getPos())) {
+			kill();
+		}
+
+		if (other instanceof Cell) {
+			Cell otherCell = (Cell) other;
+			if (!isBoundTo(otherCell)) {
+				JointsManager jointsManager = getEnv().getJointManager();
+				jointsManager.createJoint(getBody(), other.getBody());
+			}
+			if (attachCondition(otherCell)) {
+				for (CellAdhesion.CAM cam : surfaceCAMs.keySet()) {
+					if (getCAMAvailable(cam) > 0 && otherCell.getCAMAvailable(cam) > 0) {
+						createCellBinding(otherCell, cam);
+						otherCell.createCellBinding(this, cam);
+					}
+				}
+				attachedCells.add(otherCell);
+				otherCell.attachedCells.add(this);
+			}
+		}
+	}
+
+	private boolean isBoundTo(Cell otherCell) {
+		return attachedCells.contains(otherCell) || otherCell.attachedCells.contains(this);
 	}
 
 //	@Override
@@ -247,7 +312,7 @@ public abstract class Cell extends Particle implements Serializable
 //		}
 //	}
 
-	public void handleBindingInteraction(CellAdhesion.CellBinding binding, float delta) {
+	public void handleBindingInteraction(CellAdhesion.Binding binding, float delta) {
 		CellAdhesion.CAMJunctionType junctionType = binding.getCAM().getJunctionType();
 		if (junctionType.equals(CellAdhesion.CAMJunctionType.OCCLUDING))
 			handleOcclusionBindingInteraction(binding, delta);
@@ -257,9 +322,9 @@ public abstract class Cell extends Particle implements Serializable
 			handleSignallingBindingInteraction(binding, delta);
 	}
 
-	public void handleOcclusionBindingInteraction(CellAdhesion.CellBinding binding, float delta) {}
+	public void handleOcclusionBindingInteraction(CellAdhesion.Binding binding, float delta) {}
 
-	public void handleChannelBindingInteraction(CellAdhesion.CellBinding binding, float delta) {
+	public void handleChannelBindingInteraction(CellAdhesion.Binding binding, float delta) {
 		Cell other = binding.getDestinationEntity();
 		float transferRate = Settings.channelBindingEnergyTransport;
 
@@ -299,17 +364,13 @@ public abstract class Cell extends Particle implements Serializable
 		}
 	}
 
-	public void handleSignallingBindingInteraction(CellAdhesion.CellBinding binding, float delta) {}
+	public void handleSignallingBindingInteraction(CellAdhesion.Binding binding, float delta) {}
 
 	public boolean isAttached(Cell e) {
 		return cellBindings.stream().anyMatch(binding -> binding.getDestinationEntity().equals(e));
 	}
 	
 	public abstract boolean isEdible();
-
-	public void createNewBinding(CellAdhesion.CAM cam, Cell e) {
-		attach(new CellAdhesion.CellBinding(this, e, cam));
-	}
 
 	public void setHealth(float h)
 	{
@@ -394,7 +455,7 @@ public abstract class Cell extends Particle implements Serializable
 	}
 
 	public boolean isDead() {
-		if (health <= 0)
+		if (health <= 0.05f)
 			kill();
 		return super.isDead();
 	}

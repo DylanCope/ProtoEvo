@@ -95,6 +95,10 @@ public class TopBar {
         Gdx.gl.glDisable(GL20.GL_BLEND);
     }
 
+    public boolean pointOnBar(float x, float y) {
+        return y < topBarHeight;
+    }
+
     public void dispose() {
         shapeRenderer.dispose();
     }

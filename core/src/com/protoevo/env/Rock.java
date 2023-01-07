@@ -6,7 +6,6 @@ import com.protoevo.core.Simulation;
 import com.protoevo.utils.Geometry;
 
 import java.io.Serializable;
-import java.util.ArrayList;
 
 public class Rock implements Serializable {
     public static final long serialVersionUID = 1L;
@@ -96,7 +95,7 @@ public class Rock implements Serializable {
                 - (p2.x - p3.x) * (p1.y - p3.y);
     }
 
-    public boolean pointInside(Vector2 x) {
+    public boolean isPointInside(Vector2 x) {
         float d1 = sign(x, points[0], points[1]);
         float d2 = sign(x, points[1], points[2]);
         float d3 = sign(x, points[2], points[0]);

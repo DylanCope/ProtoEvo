@@ -6,10 +6,7 @@ import com.badlogic.gdx.graphics.Pixmap;
 public class CursorUtils {
 
     public enum CursorState {
-        DEFAULT,
-        OPEN_HAND,
-        CLOSED_HAND,
-        MAGNIFYING_GLASS
+        DEFAULT, OPEN_HAND, CLOSED_HAND, MAGNIFYING_GLASS, LIGHTNING
     }
 
     public static CursorState cursorState = null;
@@ -18,6 +15,7 @@ public class CursorUtils {
     private static Pixmap openHandCursorPixmap;
     private static Pixmap closedHandCursorPixmap;
     private static Pixmap magnifyingGlassCursorPixmap;
+    private static Pixmap lightningCursor;
 
 
     public static Pixmap createCursorPixmap(String path) {
@@ -39,7 +37,7 @@ public class CursorUtils {
         if (defaultCursorPixmap == null)
             defaultCursorPixmap = createCursorPixmap("cursors/cursor.png");
 
-        int xHotspot = 7, yHotspot = 6;
+        int xHotspot = 0, yHotspot = 0;
         Gdx.graphics.setCursor(Gdx.graphics.newCursor(defaultCursorPixmap, xHotspot, yHotspot));
         cursorState = CursorState.DEFAULT;
     }
@@ -78,5 +76,17 @@ public class CursorUtils {
         Gdx.graphics.setCursor(Gdx.graphics.newCursor(closedHandCursorPixmap, xHotspot, yHotspot));
 
         cursorState = CursorState.CLOSED_HAND;
+    }
+
+    public static void setLightningCursor() {
+        if (cursorState == CursorState.LIGHTNING) return;
+
+        if (lightningCursor == null)
+            lightningCursor = createCursorPixmap("cursors/can_strike.png");
+
+        int xHotspot = 0, yHotspot = 0;
+        Gdx.graphics.setCursor(Gdx.graphics.newCursor(lightningCursor, xHotspot, yHotspot));
+
+        cursorState = CursorState.LIGHTNING;
     }
 }

@@ -187,7 +187,8 @@ public class Protozoan extends Cell implements Evolvable
 //			}
 //		}
 //	}
-	
+
+	@Override
 	public void eat(EdibleCell e, float delta)
 	{
 		float extraction = 1f;
@@ -198,7 +199,7 @@ public class Protozoan extends Cell implements Evolvable
 		} else if (e instanceof MeatCell) {
 			extraction /= herbivoreFactor;
 		}
-		extractFood(e, extraction * delta);
+		super.eat(e, extraction * delta);
 	}
 
 	public void damage(float damage) {
@@ -345,11 +346,10 @@ public class Protozoan extends Cell implements Evolvable
 //		burst(MeatCell.class, r -> new MeatCell(r, getTank()));
 //	}
 
-	public void handleDeath() {
-		if (!hasHandledDeath) {
-			super.handleDeath();
+	@Override
+	public void kill() {
+		super.kill();
 //			breakIntoPellets();
-		}
 	}
 
 	@Override
@@ -411,16 +411,9 @@ public class Protozoan extends Cell implements Evolvable
 		}
 
 		age(delta);
-		if (isDead())
-			handleDeath();
-
 		think(delta);
 
 		spikes.update(delta);
-
-//		if (contactSensors != null)
-//			for (ContactSensor contactSensor : contactSensors)
-//				contactSensor.reset();
 
 		maintainRetina(delta);
 	}

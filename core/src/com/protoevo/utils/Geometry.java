@@ -50,4 +50,12 @@ public class Geometry {
     public static Vector2 perp(Vector2 v) {
         return new Vector2(-v.y, v.x);
     }
+
+    public static Vector2 randomUnit() {
+        return Geometry.fromAngle((float) (Math.random() * 2 * Math.PI));
+    }
+
+    public static Vector2 randomVector(float length) {
+        return Geometry.randomUnit().scl(length);
+    }
 }

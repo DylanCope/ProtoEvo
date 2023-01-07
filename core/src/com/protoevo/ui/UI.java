@@ -1,6 +1,7 @@
 package com.protoevo.ui;
 
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Texture;
@@ -18,8 +19,10 @@ import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 import com.protoevo.core.Simulation;
 import com.protoevo.core.settings.Settings;
 import com.protoevo.env.Environment;
+import com.protoevo.input.MoveParticleButton;
 import com.protoevo.ui.rendering.Renderer;
 import com.protoevo.utils.CursorUtils;
+import com.protoevo.utils.DebugMode;
 
 public class UI {
 
@@ -120,6 +123,23 @@ public class UI {
         return topBar;
     }
 
+    public void drawDebugInfo() {
+        String separator = " | ";
+        String debugString = "FPS: " + Gdx.graphics.getFramesPerSecond();
+        debugString += separator + "Zoom: " + ((int) (100 * camera.zoom)) / 100.f;
+        debugString += separator + "Pos: " + (int) camera.position.x + ", " + (int) camera.position.y;
+        if (DebugMode.isDebugModePhysicsDebug()) {
+            debugString += separator + "Bodies: " + environment.getWorld().getBodyCount();
+            debugString += separator + "Contacts: " + environment.getWorld().getContactCount();
+            debugString += separator + "Joints: " + environment.getWorld().getJointCount();
+            debugString += separator + "Fixtures: " + environment.getWorld().getFixtureCount();
+            debugString += separator + "Proxies: " + environment.getWorld().getProxyCount();
+        }
+        font.setColor(Color.GOLD);
+        font.draw(uiBatch, debugString, 2 * topBar.getPadding(), font.getLineHeight() + topBar.getPadding());
+    }
+
+
     public void draw(float delta) {
 
         renderer.render(delta);
@@ -127,16 +147,10 @@ public class UI {
         topBar.draw(delta);
 
         uiBatch.begin();
-        if (inputManager.isDebugActivated()) {
-            String debugString = "FPS: " + Gdx.graphics.getFramesPerSecond() + "      ";
-            debugString += "Zoom: " + ((int) (100 * camera.zoom)) / 100.f + "      ";
-            debugString += "Pos: " + (int) camera.position.x + ", " + (int) camera.position.y + "      ";
-            debugString += "Entities: " + environment.getWorld().getBodyCount() + "      ";
-            debugString += "Collisions: " + environment.getWorld().getContactCount() + "      ";
-            font.draw(uiBatch, debugString, 2 * topBar.getPadding(), font.getLineHeight() + topBar.getPadding());
-        }
         stage.draw();
 
+        if (DebugMode.isDebugMode())
+            drawDebugInfo();
         uiBatch.end();
     }
 
@@ -146,5 +160,13 @@ public class UI {
         font.dispose();
         topBar.dispose();
         renderer.dispose();
+    }
+
+    public boolean overOnScreenControls(int screenX, int screenY) {
+        return topBar.pointOnBar(screenX, screenY);
+    }
+
+    public InputManager getInputManager() {
+        return inputManager;
     }
 }

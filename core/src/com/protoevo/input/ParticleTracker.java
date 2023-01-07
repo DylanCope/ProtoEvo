@@ -13,15 +13,16 @@ import java.util.Collection;
 
 public class ParticleTracker extends InputAdapter {
 
-    Collection<Particle> particles;
-    OrthographicCamera camera;
-    PanZoomCameraInput panZoomCameraInput;
-    Particle trackedParticle;
+    private final Collection<? extends Particle> entities;
+    private final OrthographicCamera camera;
+    private final PanZoomCameraInput panZoomCameraInput;
+    private Particle trackedParticle;
+    private boolean canTrack;
 
-    public ParticleTracker(Collection<Particle> particles,
+    public ParticleTracker(Collection<? extends Particle> entities,
                            OrthographicCamera camera,
                            PanZoomCameraInput panZoomCameraInput) {
-        this.particles = particles;
+        this.entities = entities;
         this.camera = camera;
         this.panZoomCameraInput = panZoomCameraInput;
     }
@@ -35,7 +36,9 @@ public class ParticleTracker extends InputAdapter {
     }
 
     public boolean track(Vector2 touchPos) {
-        for (Particle particle : particles) {
+        if (!canTrack)
+            return false;
+        for (Particle particle : entities) {
             if (Geometry.isPointInsideCircle(particle.getPos(), particle.getRadius(), touchPos)) {
                 trackedParticle = particle;
                 panZoomCameraInput.setPanningDisabled(true);
@@ -45,7 +48,12 @@ public class ParticleTracker extends InputAdapter {
         return false;
     }
 
-    public boolean untrack(Vector2 touchPos) {
+    public void untrack() {
+        trackedParticle = null;
+        panZoomCameraInput.setPanningDisabled(false);
+    }
+
+    private boolean untrack(Vector2 touchPos) {
         if (!Geometry.isPointInsideCircle(trackedParticle.getPos(), trackedParticle.getRadius(), touchPos)) {
             trackedParticle = null;
             panZoomCameraInput.setPanningDisabled(false);
@@ -56,6 +64,9 @@ public class ParticleTracker extends InputAdapter {
 
     @Override
     public boolean touchDown(int screenX, int screenY, int pointer, int button) {
+        if (!canTrack)
+            return false;
+
         if (Gdx.input.isButtonPressed(Input.Buttons.LEFT)) {
             Vector3 worldSpace = camera.unproject(new Vector3(screenX, screenY, 0));
             if (trackedParticle == null)
@@ -71,6 +82,11 @@ public class ParticleTracker extends InputAdapter {
     }
 
     public boolean canTrack() {
-        return true;
+        return canTrack;
+    }
+
+    public void setCanTrack(boolean canTrack) {
+        // Note: does not untrack the particle if it is currently being tracked
+        this.canTrack = canTrack;
     }
 }

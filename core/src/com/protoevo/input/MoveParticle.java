@@ -13,21 +13,21 @@ import java.util.Collection;
 
 public class MoveParticle extends InputAdapter {
     private final OrthographicCamera camera;
-    private final Collection<Particle> particles;
+    private final Collection<? extends Particle> entities;
     private final MoveParticleButton moveParticleButton;
     private final ParticleTracker particleTracker;
     private Particle grabbedParticle;
     private final Vector2 lastMousePos = new Vector2(0, 0);
     private final Vector2 currentMousePos = new Vector2(0, 0);
     private final Vector2 mouseVel = new Vector2(0, 0);
-    private boolean jediMode = false;
+    private boolean jediMode = true;
 
     public MoveParticle(OrthographicCamera camera,
-                        Collection<Particle> particles,
+                        Collection<? extends Particle> entities,
                         MoveParticleButton moveParticleButton,
                         ParticleTracker particleTracker) {
         this.camera = camera;
-        this.particles = particles;
+        this.entities = entities;
         this.moveParticleButton = moveParticleButton;
         this.particleTracker = particleTracker;
     }
@@ -65,7 +65,7 @@ public class MoveParticle extends InputAdapter {
             Vector3 worldSpace = camera.unproject(new Vector3(screenX, screenY, 0));
             mouseVel.set(0, 0);
             lastMousePos.set(worldSpace.x, worldSpace.y);
-            for (Particle particle : particles) {
+            for (Particle particle : entities) {
                 if (particle.getPos().dst(worldSpace.x, worldSpace.y) < particle.getRadius()) {
                     grabbedParticle = particle;
                     moveParticleButton.setState(MoveParticleButton.State.HOLDING);

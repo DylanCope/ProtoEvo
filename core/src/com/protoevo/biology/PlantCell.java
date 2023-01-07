@@ -10,15 +10,20 @@ import java.util.Map;
 public class PlantCell extends EdibleCell {
     public static final long serialVersionUID = -3975433688803760076L;
 
+    public static final CellAdhesion.CAM plantCAM = CellAdhesion.newHeterophilicCAM();
+
     private final float maxRadius;
     private float crowdingFactor;
 
     public PlantCell(float radius, Environment environment) {
         super(radius, Food.Type.Plant, environment);
-        setGrowthRate((float) (Settings.minPlantGrowth + Settings.plantGrowthRange * Simulation.RANDOM.nextDouble()));
+        setGrowthRate(Settings.minPlantGrowth + Settings.plantGrowthRange * Simulation.RANDOM.nextFloat());
 
         float range = Settings.maxPlantBirthRadius - radius;
-        maxRadius = (float) (radius + range * Simulation.RANDOM.nextDouble());
+        maxRadius = radius + range * Simulation.RANDOM.nextFloat();
+
+        setMaxAttachedCells(2);
+        setCAMAvailable(plantCAM, 1f);
 
         setHealthyColour(new Color(
                 (30 + Simulation.RANDOM.nextInt(105)) / 255f,

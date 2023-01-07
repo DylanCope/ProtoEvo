@@ -10,6 +10,7 @@ public abstract class EdibleCell extends Cell
 
 	public EdibleCell(float radius, Food.Type foodType, Environment environment)
 	{
+		super();
 		setEnv(environment);
 		this.setRadius(radius);
 		this.foodType = foodType;
