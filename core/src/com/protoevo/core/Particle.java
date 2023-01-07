@@ -3,9 +3,13 @@ package com.protoevo.core;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.*;
+import com.protoevo.core.settings.Settings;
 import com.protoevo.env.Environment;
 import com.protoevo.env.Rock;
 import com.protoevo.utils.Geometry;
+
+import java.util.Map;
+import java.util.TreeMap;
 
 
 public class Particle {
@@ -15,6 +19,7 @@ public class Particle {
     private Fixture fixture;
     private boolean dead;
     private float radius;
+    private final TreeMap<String, Float> stats = new TreeMap<>();
 
     public Particle() {}
 
@@ -118,6 +123,13 @@ public class Particle {
         circle.dispose();
     }
 
+    public Map<String, Float> getStats() {
+        stats.clear();
+        stats.put("Size", Settings.statsDistanceScalar * getRadius());
+        stats.put("Speed", Settings.statsDistanceScalar * getSpeed());
+        return stats;
+    }
+
     public boolean isDead() {
         return dead;
     }
@@ -133,5 +145,9 @@ public class Particle {
     public void dispose() {
         kill();
         environment.getWorld().destroyBody(body);
+    }
+
+    public String getPrettyName() {
+        return "Particle";
     }
 }

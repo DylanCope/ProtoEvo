@@ -16,11 +16,14 @@ public class PlantCell extends EdibleCell {
     private float crowdingFactor;
 
     public PlantCell(float radius, Environment environment) {
-        super(radius, Food.Type.Plant, environment);
+        super(Math.max(radius, Settings.minPlantBirthRadius), Food.Type.Plant, environment);
         setGrowthRate(Settings.minPlantGrowth + Settings.plantGrowthRange * Simulation.RANDOM.nextFloat());
 
-        float range = Settings.maxPlantBirthRadius - radius;
-        maxRadius = radius + range * Simulation.RANDOM.nextFloat();
+//        float range = 2 * Settings.maxPlantBirthRadius - radius;
+//        maxRadius = Math.max(2 * radius, Settings.minPlantBirthRadius) + 2 * radius * Simulation.RANDOM.nextFloat();
+        float range = Settings.maxParticleRadius - getRadius();
+//        maxRadius = (float) (2*max + range * Simulation.RANDOM.nextDouble());
+        maxRadius = Simulation.RANDOM.nextFloat(2 * Settings.minParticleRadius, Settings.maxParticleRadius);
 
         setMaxAttachedCells(2);
         setCAMAvailable(plantCAM, 1f);
@@ -34,7 +37,7 @@ public class PlantCell extends EdibleCell {
     }
 
     private static float randomPlantRadius() {
-        float range = Settings.maxPlantBirthRadius - Settings.minPlantBirthRadius;
+        float range = Settings.maxPlantBirthRadius * .5f - Settings.minPlantBirthRadius;
         return Settings.minPlantBirthRadius + range * Simulation.RANDOM.nextFloat();
     }
 
@@ -49,6 +52,12 @@ public class PlantCell extends EdibleCell {
 
     public float getCrowdingFactor() {
         return crowdingFactor;
+    }
+
+    @Override
+    public void onCollision(Cell other) {
+        super.onCollision(other);
+        updateCrowding(other);
     }
 
     private void updateCrowding(Cell e) {
@@ -76,8 +85,12 @@ public class PlantCell extends EdibleCell {
         addConstructionMass(delta);
         addAvailableEnergy(delta / 3f);
 
-//        if (shouldSplit())
-//            burst(PlantCell.class, r -> new PlantCell(r, getTank()));
+        if (shouldSplit()) {
+            getEnv().requestBurst(
+                new BurstRequest<>(this, PlantCell.class, r -> new PlantCell(r, getEnv()))
+            );
+        }
+
     }
 
     /**
@@ -109,6 +122,6 @@ public class PlantCell extends EdibleCell {
     }
 
     public int burstMultiplier() {
-        return 200;
+        return 3;
     }
 }

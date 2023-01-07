@@ -2,7 +2,6 @@ package com.protoevo.biology;
 
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.math.MathUtils;
-import com.google.common.collect.ConcurrentHashMultiset;
 import com.protoevo.core.Particle;
 import com.protoevo.core.settings.Settings;
 import com.protoevo.env.JointsManager;
@@ -18,11 +17,6 @@ import static com.protoevo.utils.Utils.lerp;
 public abstract class Cell extends Particle implements Serializable
 {
 	private static final long serialVersionUID = -4333766895269415282L;
-
-	@FunctionalInterface
-	public interface EntityBuilder<T, R> {
-		R apply(T t) throws MiscarriageException;
-	}
 
 	private Color healthyColour, fullyDegradedColour;
 	private int generation = 1;
@@ -64,6 +58,7 @@ public abstract class Cell extends Particle implements Serializable
 		timeAlive += delta;
 		digest(delta);
 		repair(delta);
+		grow(delta);
 		resourceProduction(delta);
 		progressConstructionProjects(delta);
 
@@ -204,24 +199,23 @@ public abstract class Cell extends Particle implements Serializable
 		constructionProjects.add(project);
 	}
 
-	public void handleInteractions(float delta) {
-		grow(delta);
-	}
+	public void handleInteractions(float delta) {}
 
 	public void grow(float delta) {
 		float gr = getGrowthRate();
-		float newR = super.getRadius() * (1 + gr * delta);
-		float massChange = getMass(newR) - getMass(super.getRadius());
-		if (massChange < constructionMassAvailable &&
-				(newR > Settings.minPlantBirthRadius || gr > 0)) {
-			setRadius(newR);
-			if (massChange > 0)
-				useConstructionMass(massChange);
-			else
-				wasteMass -= massChange;
-		}
-		if (Float.isNaN(getRadius()))
-			kill();
+		float newR = super.getRadius() + gr * delta;
+		setRadius(newR);
+//		float massChange = getMass(newR) - getMass(super.getRadius());
+//		if (massChange < constructionMassAvailable &&
+//				(newR > Settings.minPlantBirthRadius || gr > 0)) {
+//			setRadius(newR);
+//			if (massChange > 0)
+//				useConstructionMass(massChange);
+//			else
+//				wasteMass -= massChange;
+//		}
+//		if (Float.isNaN(getRadius()))
+//			kill();
 	}
 
 	public void setGrowthRate(float gr) {
@@ -253,8 +247,8 @@ public abstract class Cell extends Particle implements Serializable
 		return surfaceCAMs.keySet();
 	}
 
-	public boolean cannotMakeBinding() {
-		return false;
+	public boolean canMakeBindings() {
+		return true;
 	}
 
 	@Override
@@ -270,47 +264,32 @@ public abstract class Cell extends Particle implements Serializable
 			kill();
 		}
 
-		if (other instanceof Cell) {
+		if (canMakeBindings() && other instanceof Cell) {
 			Cell otherCell = (Cell) other;
-			if (!isBoundTo(otherCell)) {
-				JointsManager jointsManager = getEnv().getJointManager();
-				jointsManager.createJoint(getBody(), other.getBody());
-			}
-			if (attachCondition(otherCell)) {
-				for (CellAdhesion.CAM cam : surfaceCAMs.keySet()) {
-					if (getCAMAvailable(cam) > 0 && otherCell.getCAMAvailable(cam) > 0) {
-						createCellBinding(otherCell, cam);
-						otherCell.createCellBinding(this, cam);
-					}
+			onCollision(otherCell);
+		}
+	}
+
+	public void onCollision(Cell other) {
+		if (!isBoundTo(other)) {
+			JointsManager jointsManager = getEnv().getJointManager();
+			jointsManager.createJoint(getBody(), other.getBody());
+		}
+		if (attachCondition(other)) {
+			for (CellAdhesion.CAM cam : surfaceCAMs.keySet()) {
+				if (getCAMAvailable(cam) > 0 && other.getCAMAvailable(cam) > 0) {
+					createCellBinding(other, cam);
+					other.createCellBinding(this, cam);
 				}
-				attachedCells.add(otherCell);
-				otherCell.attachedCells.add(this);
 			}
+			attachedCells.add(other);
+			other.attachedCells.add(this);
 		}
 	}
 
 	private boolean isBoundTo(Cell otherCell) {
 		return attachedCells.contains(otherCell) || otherCell.attachedCells.contains(this);
 	}
-
-//	@Override
-//	public void onParticleCollisionCallback(Particle p, float delta) {
-//		if (p instanceof Cell) {
-//			Cell otherCell = (Cell) p;
-//			if (otherCell.cannotMakeBinding() || cannotMakeBinding())
-//				return;
-//
-//			for (CellAdhesion.CAM myCAM : getSurfaceCAMs()) {
-//				for (CellAdhesion.CAM theirCAM : otherCell.getSurfaceCAMs()) {
-//					// TODO: implement probabilistic CAM binding based on amounts
-//					if (myCAM.bindsTo(theirCAM)) {
-//						createNewBinding(myCAM, otherCell);
-//						otherCell.createNewBinding(theirCAM, this);
-//					}
-//				}
-//			}
-//		}
-//	}
 
 	public void handleBindingInteraction(CellAdhesion.Binding binding, float delta) {
 		CellAdhesion.CAMJunctionType junctionType = binding.getCAM().getJunctionType();
@@ -382,14 +361,14 @@ public abstract class Cell extends Particle implements Serializable
 			kill();
 	}
 
-	public abstract String getPrettyName();
+	public String getPrettyName() {
+		return "Cell";
+	}
 
 	public Map<String, Float> getStats() {
-		TreeMap<String, Float> stats = new TreeMap<>();
+		Map<String, Float> stats = super.getStats();
 		stats.put("Age", 100 * timeAlive);
 		stats.put("Health", 100 * getHealth());
-		stats.put("Size", Settings.statsDistanceScalar * getRadius());
-		stats.put("Speed", Settings.statsDistanceScalar * getSpeed());
 		stats.put("Generation", (float) getGeneration());
 		float energyScalar = Settings.statsMassScalar * Settings.statsDistanceScalar * Settings.statsDistanceScalar;
 		stats.put("Available Energy", energyScalar * energyAvailable);
@@ -409,13 +388,6 @@ public abstract class Cell extends Particle implements Serializable
 			stats.put("Num Cell Bindings", (float) cellBindings.size());
 
 		for (CellAdhesion.CAMJunctionType junctionType : CellAdhesion.CAMJunctionType.values()) {
-//			int count = 0;
-//			for (CellAdhesion.CellBinding binding : cellBindings)
-//				if (binding.getJunctionType().equals(junctionType))
-//					count++;
-//			if (count > 0)
-//				stats.put(junctionType + " Bindings", (float) count);
-
 			float camMass = 0;
 			for (CellAdhesion.CAM molecule : surfaceCAMs.keySet())
 				if (molecule.getJunctionType().equals(junctionType))
@@ -506,64 +478,11 @@ public abstract class Cell extends Particle implements Serializable
 	}
 
 	public int burstMultiplier() {
-		return 20;
+		return 1;
 	}
 
-//	public <T extends Cell> void burst(Class<T> type, EntityBuilder<Float, T> createChild) {
-//		killCell();
-//		hasHandledDeath = true;
-//
-//		float angle = (float) (2 * Math.PI * Simulation.RANDOM.nextDouble());
-//		int maxChildren = (int) (burstMultiplier() * getRadius() / Settings.maxParticleRadius);
-//
-//		int nChildren = (maxChildren <= 1) ? 2 : 2 + Simulation.RANDOM.nextInt(maxChildren);
-//
-//		Tank tank = getTank();
-//		for (int i = 0; i < nChildren; i++) {
-//			Vector2 dir = new Vector2((float) Math.cos(angle), (float) Math.sin(angle));
-//			float p = (float) (0.3 + 0.7 * Simulation.RANDOM.nextDouble() / nChildren);
-//
-//			int nEntities = tank.cellCounts.getOrDefault(type, 0);
-//			int maxEntities = tank.cellCapacities.getOrDefault(type, 0);
-//			if (nEntities > maxEntities)
-//				return;
-//			try {
-//				T child = createChild.apply(getRadius() * p);
-//				child.setPos(getPos().add(dir.mul(2 * child.getRadius())));
-//				child.setGeneration(getGeneration() + 1);
-//				allocateChildResources(child, p);
-//				for (Cell otherChild : children)
-//					child.handlePotentialCollision(otherChild, 0);
-//				children.add(child);
-//			} catch (MiscarriageException ignored) {}
-//			angle += 2 * Math.PI / nChildren;
-//		}
-//
-//		for (int j = 0; j < 8; j++)
-//			for (Cell child1 : children)
-//				for (Cell child2 : children)
-//					child1.handlePotentialCollision(child2, 0);
-//		children.forEach(tank::add);
-//	}
-
-	private void allocateChildResources(Cell child, float p) {
-		child.setAvailableConstructionMass(constructionMassAvailable * p);
-		child.setEnergyAvailable(energyAvailable * p);
-		for (Food.ComplexMolecule molecule : availableComplexMolecules.keySet())
-			child.setComplexMoleculeAvailable(molecule, p * getComplexMoleculeAvailable(molecule));
-
-		for (CellAdhesion.CAM cam : getSurfaceCAMs())
-			child.setCAMAvailable(cam, p * getCAMAvailable(cam));
-
-		for (Food.Type foodType : foodToDigest.keySet()) {
-			Food oldFood = foodToDigest.get(foodType);
-			Food newFood = new Food(p * oldFood.getSimpleMass(), foodType);
-			for (Food.ComplexMolecule molecule : oldFood.getComplexMolecules()) {
-				float moleculeAmount = p * oldFood.getComplexMoleculeMass(molecule);
-				newFood.addComplexMoleculeMass(molecule, moleculeAmount);
-			}
-			child.setFoodToDigest(foodType, newFood);
-		}
+	public float getMinBurstRadius() {
+		return 2 * Settings.minParticleRadius;
 	}
 
 	public void setFoodToDigest(Food.Type foodType, Food food) {
@@ -682,4 +601,7 @@ public abstract class Cell extends Particle implements Serializable
 		setRadius(newR);
 	}
 
+	public Map<Food.Type, Food> getFoodToDigest() {
+		return foodToDigest;
+	}
 }
