@@ -5,9 +5,12 @@ import com.badlogic.gdx.math.Vector2;
 import com.protoevo.biology.*;
 import com.protoevo.biology.evolution.*;
 import com.protoevo.biology.neat.NetworkGenome;
+import com.protoevo.core.Collidable;
+import com.protoevo.core.Particle;
 import com.protoevo.core.settings.Settings;
 import com.protoevo.core.Simulation;
 
+import java.util.List;
 import java.util.Map;
 
 public class Protozoan extends Cell implements Evolvable
@@ -20,10 +23,11 @@ public class Protozoan extends Cell implements Evolvable
 	private Protozoan mate;
 	private float timeMating = 0;
 	public boolean wasJustDamaged = false;
+	private List<Object> toInteract;
 
 	private float shieldFactor = 1.3f;
 	private final float attackFactor = 10f;
-	private float deathRate = 0;
+	private float damageRate = 0;
 	private final Vector2 dir = new Vector2(0, 0);
 	private ContactSensor[] contactSensors;
 	private Spikes spikes;
@@ -54,7 +58,7 @@ public class Protozoan extends Cell implements Evolvable
 
 	@EvolvableObject(
 			name="Brain",
-			geneClassName="protoevo.biology.protozoa.ProtozoaControlNetworkGene",
+			geneClassName="com.protoevo.biology.protozoa.ProtozoaControlNetworkGene",
 			geneDependencies="Retina Size")
 	public void setBrain(NetworkGenome networkGenome) {
 		this.brain = new NNBrain(networkGenome.phenotype());
@@ -86,7 +90,7 @@ public class Protozoan extends Cell implements Evolvable
 
 	@EvolvableObject(
 			name="Cell Colour",
-			geneClassName="protoevo.biology.protozoa.ProtozoaColorGene")
+			geneClassName="com.protoevo.biology.protozoa.ProtozoaColorGene")
 	public void setColour(Color colour) {
 		setHealthyColour(colour);
 	}
@@ -112,7 +116,7 @@ public class Protozoan extends Cell implements Evolvable
 
 	@EvolvableObject(
 			name="CAM Production",
-			geneClassName="protoevo.biology.protozoa.CAMProductionGene")
+			geneClassName="com.protoevo.biology.protozoa.CAMProductionGene")
 	public void setCAMProduction(Map<CellAdhesion.CAM, Float> camProduction) {
 		for (CellAdhesion.CAM cam : camProduction.keySet())
 			setCAMProductionRate(cam, camProduction.get(cam));
@@ -140,9 +144,9 @@ public class Protozoan extends Cell implements Evolvable
 		return getConstructionMassAvailable();
 	}
 
-	public Protozoan() throws MiscarriageException
+	public Protozoan()
 	{
-		setPos(new Vector2(0, 0));
+		super();
 		float t = (float) (2 * Math.PI * Simulation.RANDOM.nextDouble());
 		dir.set(
 			(float) (0.1f * Math.cos(t)),
@@ -150,48 +154,42 @@ public class Protozoan extends Cell implements Evolvable
 		);
 	}
 
-//	public Vector2 getSensorPosition(ContactSensor sensor) {
-//		return getPos().add(dir.rotate(sensor.angle).setLength(1.01f * getRadius()));
-//	}
+	public boolean cullFromRayCasting(Collidable o) {
+		if (o instanceof Particle) {
+			Particle p = (Particle) o;
+			Vector2 dx = p.getPos().sub(getPos()).nor();
+			return dx.dot(getDir().nor()) < Math.cos(retina.getFov() / 2f);
+		}
+		return false;
+	}
 
-//	public boolean cullFromRayCasting(Collidable o) {
-//		if (o instanceof Particle) {
-//			Particle p = (Particle) o;
-//			Vector2 dx = p.getPos().sub(getPos()).unit();
-//			return dx.dot(getDir().unit()) < Math.cos(retina.getFov() / 2f);
-//		}
-//		return false;
-//	}
+	public void see(Collidable o)
+	{
 
-//	public void see(Collidable o)
-//	{
-//		if (cullFromRayCasting(o))
-//			return;
-//
-//		float interactRange = getInteractRange();
-//		float dirAngle = getDir().angle();
-//		for (Retina.Cell cell : retina.getCells()) {
-//			Vector2[] rays = cell.getRays();
-//			for (int i = 0; i < rays.length; i++) {
-//				Vector2 ray = rays[i].rotate(dirAngle).setLength(interactRange);
-//				Vector2[] collisions = o.rayCollisions(getPos(), getPos().add(ray));
-//				if (collisions == null || collisions.length == 0)
-//					continue;
-//
-//				float sqLen = Float.MAX_VALUE;
-//				for (Vector2 collisionPoint : collisions)
-//					sqLen = Math.min(sqLen, collisionPoint.sub(getPos()).len2());
-//
-//				if (sqLen < cell.collisionSqLen(i))
-//					cell.set(i, o.getColor(), sqLen);
-//			}
-//		}
-//	}
+		float interactRange = getInteractionRange();
+		float dirAngle = getDir().angleRad();
+		for (Retina.Cell cell : retina.getCells()) {
+			Vector2[] rays = cell.getRays();
+			for (int i = 0; i < rays.length; i++) {
+				Vector2 ray = rays[i].rotateRad(dirAngle).setLength(interactRange);
+				Vector2[] collisions = o.rayCollisions(getPos(), getPos().add(ray));
+				if (collisions == null || collisions.length == 0)
+					continue;
+
+				float sqLen = Float.MAX_VALUE;
+				for (Vector2 collisionPoint : collisions)
+					sqLen = Math.min(sqLen, collisionPoint.sub(getPos()).len2());
+
+				if (sqLen < cell.collisionSqLen(i))
+					cell.set(i, o.getColor(), sqLen);
+			}
+		}
+	}
 
 	@Override
 	public void eat(EdibleCell e, float delta)
 	{
-		float extraction = 1f;
+		float extraction = .7f * getMass() / e.getMass();
 		if (e instanceof PlantCell) {
 			if (spikes.getNumSpikes() > 0)
 				extraction *= Math.pow(Settings.spikePlantConsumptionPenalty, spikes.getNumSpikes());
@@ -199,12 +197,8 @@ public class Protozoan extends Cell implements Evolvable
 		} else if (e instanceof MeatCell) {
 			extraction /= herbivoreFactor;
 		}
-		super.eat(e, extraction * delta);
-	}
 
-	public void damage(float damage) {
-		wasJustDamaged = true;
-		setHealth(getHealth() - damage);
+		super.eat(e, extraction * delta);
 	}
 	
 	public void attack(Protozoan p, Spikes.Spike spike, float delta)
@@ -228,17 +222,19 @@ public class Protozoan extends Cell implements Evolvable
 	public void think(float delta)
 	{
 //		brain.tick(this);
-//		dir.turn(delta * 80 * maxTurning * brain.turn(this));
+		dir.rotateRad(delta * 80 * maxTurning * brain.turn(this) + 0.00001f * getTimeAlive());
 //		growthControlFactor = brain.growthControl();
-//		float spikeDecay = (float) Math.pow(Settings.spikeMovementPenalty, spikes.getNumSpikes());
-//		float sizePenalty = getRadius() / splitRadius; // smaller flagella generate less impulse
+		float spikeDecay = (float) Math.pow(Settings.spikeMovementPenalty, spikes.getNumSpikes());
+		float sizePenalty = getRadius() / Settings.maxParticleRadius; // smaller flagella generate less impulse
 //		float speed = Math.abs(brain.speed(this));
-//		Vector2 vel = dir.mul(sizePenalty * spikeDecay * speed);
-//		float work = .5f * getMass() * vel.len2();
-//		if (enoughEnergyAvailable(work)) {
-//			useEnergy(work);
-//			getPos().translate(vel.scale(delta));
-//		}
+		Vector2 impulse = dir.cpy().setLength(50000f * sizePenalty);
+		float v1 = getSpeed();
+		float m = getMass();
+		float work = .5f * m * (v1*v1 - impulse.len2() / (m * m));  // change in kinetic energy
+		if (enoughEnergyAvailable(work)) {
+			useEnergy(work);
+			applyImpulse(impulse);
+		}
 	}
 
 	private boolean shouldSplit() {
@@ -253,103 +249,89 @@ public class Protozoan extends Cell implements Evolvable
 		else
 			child = Evolvable.asexualClone(this);
 
-//		child.setTank(getTank());
-//		child.setRadius(stuntingFactor * child.getRadius());
+		child.setEnv(getEnv());
 		return child;
 	}
 
-//	public void interact(Collidable other, float delta) {
-//		if (other == this)
-//			return;
-//
-//		if (isDead()) {
-//			handleDeath();
-//			return;
-//		}
-//
-//		if (retina.numberOfCells() > 0 && retina.getHealth() > 0)
-//			see(other);
-//
-//		if (other instanceof Cell) {
-//			interact((Cell) other, delta);
-//		}
-//	}
+	public void handleInteractions(float delta) {
+		// no point in interacting if you're dead.
+		if (isDead()) {
+			return;
+		}
 
-	public void interact(Cell other, float delta) {
-
-//		float d = other.getPos().distanceTo(getPos());
-//		if (d - other.getRadius() > getInteractRange())
-//			return;
-//
-//		if (shouldSplit()) {
-//			super.burst(Protozoan.class, this::createSplitChild);
-//			return;
-//		}
-//
-//		float r = getRadius() + other.getRadius();
-//
-//		if (other instanceof Protozoan) {
-//			Protozoan p = (Protozoan) other;
-//			for (Spikes.Spike spike : spikes.getSpikes()) {
-//				float spikeLen = getSpikeLength(spike);
-//				if (d < r + spikeLen && spikeInContact(spike, spikeLen, p))
-//					attack(p, spike, delta);
-//			}
-//		}
-//
-//		if (0.95 * d < r) {
-//
-//			if (other instanceof Protozoan)
-//			{
-//				Protozoan p = (Protozoan) other;
-//
-//				if (brain.wantToMateWith(p) && p.brain.wantToMateWith(this)) {
-//					if (p != mate) {
-//						timeMating = 0;
-//						mate = p;
-//					} else {
-//						timeMating += delta;
-//						if (timeMating >= Settings.matingTime)
-//							crossOverGenome = p.getGeneExpressionFunction();
-//					}
-//				}
-//			}
-//			else if (other.isEdible())
-//				eat((EdibleCell) other, delta);
-//
-//		}
+		if (toInteract != null)
+			toInteract.forEach(o -> interact(o, delta));
 	}
 
-//	private boolean spikeInContact(Spikes.Spike spike, float spikeLen, Cell other) {
-//		Vector2 spikeStartPos = getDir().unit().rotate(spike.angle).setLength(getRadius()).translate(getPos());
-//		Vector2 spikeEndPos = spikeStartPos.add(spikeStartPos.sub(getPos()).setLength(spikeLen));
-//		return other.getPos().sub(spikeEndPos).len2() < other.getRadius() * other.getRadius();
-//	}
+	public void interact(Object other, float delta) {
+		if (other == this)
+			return;
+		if (other instanceof Collidable &&
+				canSeeCondition((Collidable) other))
+				see((Collidable) other);
+		if (other instanceof Cell)
+			handleSpikeAttacks((Cell) other, delta);
+	}
 
-	public float getInteractRange() {
-		return retina.numberOfCells() > 0 && retina.getHealth() > 0 ?
-				Settings.protozoaInteractRange : getRadius() + 0.005f;
+	public boolean canSeeCondition(Collidable other) {
+		return retina.numberOfCells() > 0 &&
+				retina.getHealth() > 0 &&
+				cullFromRayCasting(other);
+	}
+
+	public void handleSpikeAttacks(Cell other, float delta) {
+
+		float d = other.getPos().dst(getPos());
+
+		float r = getRadius() + other.getRadius();
+
+		if (other instanceof Protozoan) {
+			Protozoan p = (Protozoan) other;
+			for (Spikes.Spike spike : spikes.getSpikes()) {
+				float spikeLen = getSpikeLength(spike);
+				if (d < r + spikeLen && spikeInContact(spike, spikeLen, p))
+					attack(p, spike, delta);
+			}
+		}
+	}
+
+	private boolean spikeInContact(Spikes.Spike spike, float spikeLen, Cell other) {
+		Vector2 spikeStartPos = getDir().cpy().nor().rotateRad(spike.angle).setLength(getRadius()).add(getPos());
+		Vector2 spikeEndPos = spikeStartPos.add(spikeStartPos.sub(getPos()).setLength(spikeLen));
+		return other.getPos().sub(spikeEndPos).len2() < other.getRadius() * other.getRadius();
 	}
 
 	@Override
-	public void handleInteractions(float delta) {
-		super.handleInteractions(delta);
-		wasJustDamaged = false;
-		retina.reset();
-//		ChunkManager chunkManager = getTank().getChunkManager();
-//		Iterator<Collidable> entities = chunkManager
-//				.broadCollisionDetection(getPos(), getInteractRange());
-//		entities.forEachRemaining(e -> interact(e, delta));
+	public float getInteractionRange() {
+		if (spikes.getNumSpikes() > 0 && retina.numberOfCells() == 0) {
+			float maxSpikeLen = 0;
+			for (Spikes.Spike spike : spikes.getSpikes())
+				maxSpikeLen = Math.max(maxSpikeLen, getSpikeLength(spike));
+			return getRadius() + maxSpikeLen;
+		}
+		return Settings.protozoaInteractRange;
 	}
 
-//	private void breakIntoPellets() {
-//		burst(MeatCell.class, r -> new MeatCell(r, getTank()));
-//	}
+	@Override
+	public boolean doesInteract() {
+		return retina.numberOfCells() > 0 && retina.getHealth() > 0 || spikes.getNumSpikes() > 0;
+	}
+
+	@Override
+	public void reset() {
+		super.reset();
+		retina.reset();
+	}
+
+	@Override
+	public void interact(List<Object> toInteract) {
+		this.toInteract = toInteract;
+	}
 
 	@Override
 	public void kill() {
 		super.kill();
-//			breakIntoPellets();
+		getEnv().requestBurst(this, MeatCell.class, r -> new MeatCell(r, getEnv()));
 	}
 
 	@Override
@@ -360,7 +342,7 @@ public class Protozoan extends Cell implements Evolvable
 	@Override
 	public Map<String, Float> getStats() {
 		Map<String, Float> stats = super.getStats();
-		stats.put("Death Rate", 100 * deathRate);
+		stats.put("Death Rate", 100 * damageRate);
 		stats.put("Split Radius", Settings.statsDistanceScalar * splitRadius);
 		stats.put("Max Turning", maxTurning);
 		stats.put("Has Mated", crossOverGenome == null ? 0f : 1f);
@@ -393,10 +375,9 @@ public class Protozoan extends Cell implements Evolvable
 	}
 
 	public void age(float delta) {
-		deathRate = getRadius() * delta * Settings.protozoaStarvationFactor;
-		deathRate *= 0.75f + 0.25f * getSpeed();
-		deathRate *= (float) Math.pow(Settings.spikeDeathRatePenalty, spikes.getNumSpikes());
-		setHealth(getHealth() * (1 - deathRate));
+		damageRate = getRadius() * Settings.protozoaStarvationFactor;
+		damageRate += Settings.spikeDeathRatePenalty + spikes.getNumSpikes();
+		damage(damageRate * delta);
 	}
 
 	@Override
@@ -404,18 +385,31 @@ public class Protozoan extends Cell implements Evolvable
 	{
 		super.update(delta);
 
-		timeSinceLastGeneUpdate += delta;
-		if (timeSinceLastGeneUpdate >= geneUpdateTime) {
-			getGeneExpressionFunction().update();
-			timeSinceLastGeneUpdate = 0f;
-		}
-
+//		timeSinceLastGeneUpdate += delta;
+//		if (timeSinceLastGeneUpdate >= geneUpdateTime) {
+//			getGeneExpressionFunction().update();
+//			timeSinceLastGeneUpdate = 0f;
+//		}
+//
 		age(delta);
 		think(delta);
+		handleCollisions(delta);
+		handleInteractions(delta);
+//		spikes.update(delta);
+//
+//		maintainRetina(delta);
 
-		spikes.update(delta);
+//		if (shouldSplit()) {
+//			getEnv().requestBurst(this, Protozoan.class, this::createSplitChild);
+//		}
+	}
 
-		maintainRetina(delta);
+	public void handleCollisions(float delta) {
+		for (Object collided : getContactObjects()) {
+			if (collided instanceof EdibleCell) {
+				eat((EdibleCell) collided, delta);
+			}
+		}
 	}
 
 	private void maintainRetina(float delta) {
@@ -481,4 +475,5 @@ public class Protozoan extends Cell implements Evolvable
 	public GeneExpressionFunction getGeneExpressionFunction() {
 		return genome;
 	}
+
 }

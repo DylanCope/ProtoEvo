@@ -14,7 +14,7 @@ public class DesktopLauncher {
 		boolean isDebug = java.lang.management.ManagementFactory.getRuntimeMXBean().
 				getInputArguments().toString().contains("-agentlib:jdwp");
 
-		isDebug = true;
+//		isDebug = true;
 
 		if (isDebug) {
 			config.setWindowedMode(1920, 1080);

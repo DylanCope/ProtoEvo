@@ -2,12 +2,14 @@ package com.protoevo.env;
 
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.math.Vector2;
+import com.protoevo.core.Collidable;
 import com.protoevo.core.Simulation;
 import com.protoevo.utils.Geometry;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 
-public class Rock implements Serializable {
+public class Rock implements Serializable, Collidable {
     public static final long serialVersionUID = 1L;
 
     private final Vector2[] points;
@@ -95,7 +97,7 @@ public class Rock implements Serializable {
                 - (p2.x - p3.x) * (p1.y - p3.y);
     }
 
-    public boolean isPointInside(Vector2 x) {
+    public boolean pointInside(Vector2 x) {
         float d1 = sign(x, points[0], points[1]);
         float d2 = sign(x, points[1], points[2]);
         float d3 = sign(x, points[2], points[0]);
@@ -106,29 +108,29 @@ public class Rock implements Serializable {
         return !(hasNeg && hasPos);
     }
 
-//    @Override
-//    public boolean rayIntersects(Vector2 start, Vector2 end) {
-//        return false;
-//    }
+    @Override
+    public boolean rayIntersects(Vector2 start, Vector2 end) {
+        return false;
+    }
 
-//    @Override
-//    public Vector2[] rayCollisions(Vector2 start, Vector2 end) {
-//        Vector2[] ray = new Vector2[]{start, end};
-//        Vector2 dirRay = ray[1].sub(ray[0]);
-//        ArrayList<Vector2> collisions = new ArrayList<>(edges.length * 2);
-//        for (int i = 0; i < edges.length; i++) {
-//            if (isEdgeAttached(i))
-//                continue;
-//
-//            Vector2[] edge = edges[i];
-//            Vector2 dirEdge = edge[1].sub(edge[0]);
-//            float[] coefs = edgesIntersectCoef(ray[0], dirRay, edge[0], dirEdge);
-//            if ((coefs != null) && edgeIntersectCondition(coefs))
-//                collisions.add(ray[0].cpy().add(dirRay.cpy().scl(coefs[0])));
-//
-//        }
-//        return collisions.toArray(new Vector2[0]);
-//    }
+    @Override
+    public Vector2[] rayCollisions(Vector2 start, Vector2 end) {
+        Vector2[] ray = new Vector2[]{start, end};
+        Vector2 dirRay = ray[1].sub(ray[0]);
+        ArrayList<Vector2> collisions = new ArrayList<>(edges.length * 2);
+        for (int i = 0; i < edges.length; i++) {
+            if (isEdgeAttached(i))
+                continue;
+
+            Vector2[] edge = edges[i];
+            Vector2 dirEdge = edge[1].sub(edge[0]);
+            float[] coefs = edgesIntersectCoef(ray[0], dirRay, edge[0], dirEdge);
+            if ((coefs != null) && edgeIntersectCondition(coefs))
+                collisions.add(ray[0].cpy().add(dirRay.cpy().scl(coefs[0])));
+
+        }
+        return collisions.toArray(new Vector2[0]);
+    }
 
     public boolean intersectsWith(Rock otherRock) {
         for (Vector2[] e1 : otherRock.getEdges())

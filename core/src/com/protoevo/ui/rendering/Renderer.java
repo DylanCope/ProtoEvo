@@ -2,6 +2,7 @@ package com.protoevo.ui.rendering;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.files.FileHandle;
+import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.Texture;
@@ -16,7 +17,9 @@ import com.badlogic.gdx.utils.ScreenUtils;
 import com.protoevo.core.Particle;
 import com.protoevo.core.Simulation;
 import com.protoevo.env.Environment;
+import com.protoevo.env.InteractionsManager;
 import com.protoevo.env.Rock;
+import com.protoevo.input.ParticleTracker;
 import com.protoevo.ui.InputManager;
 import com.protoevo.utils.DebugMode;
 
@@ -110,6 +113,19 @@ public class Renderer {
 
         if (DebugMode.isDebugModePhysicsDebug()) {
             debugRenderer.render(simulation.getEnv().getWorld(), camera.combined);
+            ParticleTracker particleTracker = inputManager.getParticleTracker();
+            if (particleTracker.isTracking()) {
+                Particle particle = particleTracker.getTrackedParticle();
+                shapeRenderer.begin();
+                shapeRenderer.setColor(0, 1, 0, 1);
+                InteractionsManager interactionsManager = simulation.getEnv().getForceManager();
+                float maxDistance = particle.getInteractionRange();
+                shapeRenderer.box(
+                        particle.getPos().x - maxDistance,
+                        particle.getPos().y - maxDistance, 0,
+                        2 * maxDistance, 2*maxDistance, 0);
+                shapeRenderer.end();
+            }
         }
     }
 

@@ -1,10 +1,12 @@
 package com.protoevo.biology;
 
 import com.badlogic.gdx.graphics.Color;
+import com.badlogic.gdx.math.Vector2;
 import com.protoevo.core.settings.Settings;
 import com.protoevo.core.Simulation;
 import com.protoevo.env.Environment;
 
+import java.util.List;
 import java.util.Map;
 
 public class PlantCell extends EdibleCell {
@@ -19,10 +21,6 @@ public class PlantCell extends EdibleCell {
         super(Math.max(radius, Settings.minPlantBirthRadius), Food.Type.Plant, environment);
         setGrowthRate(Settings.minPlantGrowth + Settings.plantGrowthRange * Simulation.RANDOM.nextFloat());
 
-//        float range = 2 * Settings.maxPlantBirthRadius - radius;
-//        maxRadius = Math.max(2 * radius, Settings.minPlantBirthRadius) + 2 * radius * Simulation.RANDOM.nextFloat();
-        float range = Settings.maxParticleRadius - getRadius();
-//        maxRadius = (float) (2*max + range * Simulation.RANDOM.nextDouble());
         maxRadius = Simulation.RANDOM.nextFloat(2 * Settings.minParticleRadius, Settings.maxParticleRadius);
 
         setMaxAttachedCells(2);
@@ -54,16 +52,16 @@ public class PlantCell extends EdibleCell {
         return crowdingFactor;
     }
 
-    @Override
-    public void onCollision(Cell other) {
-        super.onCollision(other);
-        updateCrowding(other);
-    }
-
-    private void updateCrowding(Cell e) {
-        float sqDist = e.getPos().dst2(getPos());
-        if (sqDist < Math.pow(3 * getRadius(), 2)) {
-            crowdingFactor += e.getRadius() / (getRadius() + sqDist);
+    public void updateCrowdingFactor() {
+        crowdingFactor = 0;
+        for (Object other : getContactObjects()) {
+            if (other instanceof Cell) {
+                Cell otherCell = (Cell) other;
+                float sqDist = otherCell.getPos().dst2(getPos());
+                if (sqDist < Math.pow(3 * getRadius(), 2)) {
+                    crowdingFactor += otherCell.getRadius() / (getRadius() + sqDist);
+                }
+            }
         }
     }
 
@@ -74,23 +72,18 @@ public class PlantCell extends EdibleCell {
         if (isDead())
             return;
 
-//        crowdingFactor = 0;
-//        ChunkManager chunkManager = getTank().getChunkManager();
-//        Iterator<Cell> entities = chunkManager.broadEntityDetection(getPos(), getRadius());
-//        entities.forEachRemaining(this::updateCrowding);
+        updateCrowdingFactor();
+//        if (getGrowthRate() < 0f)
+//            damage(-Settings.plantRegen * delta * getGrowthRate());
 
-        if (getGrowthRate() < 0f)
-            setHealth(getHealth() + Settings.plantRegen * delta * getGrowthRate());
-
-        addConstructionMass(delta);
-        addAvailableEnergy(delta / 3f);
+        addConstructionMass(delta * Settings.plantConstructionRate);
+        addAvailableEnergy(delta * Settings.plantEnergyRate);
 
         if (shouldSplit()) {
             getEnv().requestBurst(
-                new BurstRequest<>(this, PlantCell.class, r -> new PlantCell(r, getEnv()))
+                this, PlantCell.class, r -> new PlantCell(r, getEnv())
             );
         }
-
     }
 
     /**
@@ -111,7 +104,7 @@ public class PlantCell extends EdibleCell {
 
     public Map<String, Float> getStats() {
         Map<String, Float> stats = super.getStats();
-        stats.put("Crowding Factor", crowdingFactor);
+        stats.put("Crowding Factor", getCrowdingFactor());
         stats.put("Split Radius", Settings.statsDistanceScalar * maxRadius);
         return stats;
     }
@@ -123,5 +116,26 @@ public class PlantCell extends EdibleCell {
 
     public int burstMultiplier() {
         return 3;
+    }
+
+    public float getInteractionRange() {
+        return  5 * getRadius();
+    }
+
+    @Override
+    public void interact(List<Object> interactions) {
+        float maxDist2 = getInteractionRange() * getInteractionRange();
+        float minDist2 = getRadius() * getRadius() * 1.1f * 1.1f;
+        for (Object interaction : interactions) {
+            if (interaction instanceof PlantCell) {
+                PlantCell other = (PlantCell) interaction;
+                Vector2 pos = other.getPos();
+                float dist2 = pos.dst2(getPos());
+                if (minDist2 < dist2 && dist2 < maxDist2) {
+                    Vector2 impulse = pos.cpy().sub(getPos()).setLength(10f / dist2);
+                    applyImpulse(impulse);
+                }
+            }
+        }
     }
 }

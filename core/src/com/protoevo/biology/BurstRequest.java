@@ -80,4 +80,8 @@ public class BurstRequest<T extends Cell> {
             child.setFoodToDigest(foodType, newFood);
         }
     }
+
+    public boolean parentEquals(Cell parent) {
+        return this.parent.equals(parent);
+    }
 }

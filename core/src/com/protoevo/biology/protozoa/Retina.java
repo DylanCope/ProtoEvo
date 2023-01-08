@@ -1,5 +1,6 @@
 package com.protoevo.biology.protozoa;
 
+import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.math.Vector2;
 import com.protoevo.biology.ConstructionProject;
 import com.protoevo.biology.Food;
@@ -10,7 +11,6 @@ import com.protoevo.biology.evolution.GeneRegulator;
 import com.protoevo.core.settings.Settings;
 import com.protoevo.utils.Geometry;
 
-import java.awt.*;
 import java.io.Serializable;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -75,15 +75,15 @@ public class Retina implements Evolvable.Component, Iterable<Retina.Cell>, Seria
 			for (int i = 0; i < colours.length; i++) {
 				if (colours[i] != null) {
 					float w = constructionProgress * weights[i];
-					r += w * colours[i].getRed();
-					g += w * colours[i].getGreen();
-					b += w * colours[i].getBlue();
+					r += w * colours[i].r;
+					g += w * colours[i].g;
+					b += w * colours[i].b;
 					nEntities++;
 				}
 			}
 
 			if (nEntities == 0)
-				return new Color(0, 0, 0);
+				return new Color(0, 0, 0, 0);
 
 			return new Color(
 					(int) (r / nEntities),

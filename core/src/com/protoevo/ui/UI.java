@@ -183,6 +183,10 @@ public class UI {
             float titleY = (float) (getYPosLHS(0) + 1.5 * titleFont.getLineHeight());
             titleFont.draw(uiBatch, particle.getPrettyName() + " Stats", textAwayFromEdge, titleY);
             renderStats(particle.getStats());
+        } else {
+            float titleY = (float) (getYPosLHS(0) + 1.5 * titleFont.getLineHeight());
+            titleFont.draw(uiBatch, "Simulation Stats", textAwayFromEdge, titleY);
+            renderStats(simulation.getEnv().getStats());
         }
 
         if (DebugMode.isDebugMode())

@@ -29,7 +29,7 @@ public class RockGeneration {
         if (Settings.initialPopulationClustering) {
             // generate a ring for each population cluster
             for (int i = 0; i < nRings; i++) {
-                Vector2 centre = randomPosition(Settings.populationClusterRadius).add(pos);
+                Vector2 centre = randomPosition(Settings.rockClusterRadius).add(pos);
                 float minR = Math.max(0.1f, radiusRange);
                 float radius = Simulation.RANDOM.nextFloat() * (radiusRange - minR) + minR;
                 generateRingOfRocks(environment, centre, radius);

@@ -8,20 +8,31 @@ import com.protoevo.env.Environment;
 import com.protoevo.env.Rock;
 import com.protoevo.utils.Geometry;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
 
-public class Particle {
+public class Particle implements Collidable {
 
+    private final Vector2[] boundingBox = new Vector2[2];
     private Environment environment;
     private Body body;
     private Fixture fixture;
     private boolean dead;
-    private float radius;
+    private float radius = 1f;
+    private Vector2 pos = new Vector2(0, 0);
     private final TreeMap<String, Float> stats = new TreeMap<>();
+    private final List<Object> contactObjects = new ArrayList<>();
 
     public Particle() {}
+
+    public void update(float delta) {
+        fixture.getShape().setRadius(radius);
+        fixture.setDensity(getMassDensity());
+        body.resetMassData();
+    }
 
     public Body getBody() {
         return body;
@@ -35,8 +46,28 @@ public class Particle {
         body.applyLinearImpulse(impulse, body.getWorldCenter(), true);
     }
 
-    public void onCollision(Particle other) {}
-    public void onCollision(Rock rock) {}
+    public float getInteractionRange() {
+        return radius * 2;
+    }
+
+    public boolean doesInteract() { return true; }
+    public void interact(List<Object> interactions) {}
+
+    public void onCollision(Particle other) {
+        contactObjects.add(other);
+    }
+
+    public void onCollision(Rock rock) {
+        contactObjects.add(rock);
+    }
+
+    public void reset() {
+        contactObjects.clear();
+    }
+
+    public List<Object> getContactObjects() {
+        return contactObjects;
+    }
 
     public float getRadius() {
         return radius;
@@ -44,8 +75,9 @@ public class Particle {
 
     public void setRadius(float radius) {
         this.radius = radius;
-        if (fixture != null)
-            fixture.getShape().setRadius(radius);
+        if (fixture != null) {
+            fixture.getShape().getRadius();
+        }
     }
 
     public boolean isPointInside(Vector2 point) {
@@ -54,7 +86,10 @@ public class Particle {
     }
 
     public void setPos(Vector2 pos) {
-        body.setTransform(pos, 0);
+        this.pos.set(pos);
+        if (body != null) {
+            body.setTransform(pos, 0);
+        }
     }
 
     public Vector2 getPos() {
@@ -78,16 +113,66 @@ public class Particle {
     }
 
     public float getMass(float r, float extraMass) {
-        return Geometry.getSphereVolume(r) * getMassDensity() + extraMass;
+        return Geometry.getCircleArea(r) * getMassDensity() + extraMass;
     }
 
     public float getMassDensity() {
-        return 1000f;
+        return 1f;
     }
 
-    public Color getColor() {
-        return Color.LIGHT_GRAY;
+    @Override
+    public boolean pointInside(Vector2 p) {
+        return Geometry.isPointInsideCircle(getPos(), getRadius(), p);
     }
+
+    @Override
+    public boolean rayIntersects(Vector2 start, Vector2 end) {
+        return false;
+    }
+
+    @Override
+    public Vector2[] rayCollisions(Vector2 start, Vector2 end) {
+        return new Vector2[0];
+    }
+
+    @Override
+    public Color getColor() {
+        return Color.WHITE;
+    }
+
+    @Override
+    public Vector2[] getBoundingBox() {
+        float x = getPos().x;
+        float y = getPos().y;
+        float r = getRadius();
+        boundingBox[0] = new Vector2(x - r, y - r);
+        boundingBox[1] = new Vector2(x + r, y + r);
+        return boundingBox;
+    }
+
+    public boolean isCollidingWith(Rock rock) {
+        Vector2[][] edges = rock.getEdges();
+        float r = getRadius();
+        Vector2 pos = getPos();
+
+        if (rock.pointInside(pos))
+            return true;
+
+        for (Vector2[] edge : edges) {
+            if (Geometry.doesLineIntersectCircle(edge, pos, r))
+                return true;
+        }
+        return false;
+    }
+
+    public boolean isCollidingWith(Particle other)
+    {
+        if (other == this)
+            return false;
+        float r = getRadius() + other.getRadius();
+        return other.getPos().dst2(getPos()) < r*r;
+    }
+
 
     public Environment getEnv() {
         return environment;
@@ -104,6 +189,8 @@ public class Particle {
             return;
 
         CircleShape circle = new CircleShape();
+        circle.setRadius(radius);
+        circle.setPosition(pos);
         // Create a fixture definition to apply our shape to
         FixtureDef fixtureDef = new FixtureDef();
         fixtureDef.shape = circle;
@@ -115,10 +202,12 @@ public class Particle {
         bodyDef.type = BodyDef.BodyType.DynamicBody;
 
         body = environment.getWorld().createBody(bodyDef);
+
         // Create our fixture and attach it to the body
         fixture = body.createFixture(fixtureDef);
         fixture.setUserData(this);
         body.setUserData(this);
+        body.setLinearDamping(.5f);
 
         circle.dispose();
     }
@@ -127,15 +216,14 @@ public class Particle {
         stats.clear();
         stats.put("Size", Settings.statsDistanceScalar * getRadius());
         stats.put("Speed", Settings.statsDistanceScalar * getSpeed());
+        stats.put("Total Mass", Settings.statsMassScalar * getMass());
+        stats.put("Mass Density", Settings.statsMassScalar * getMassDensity());
+        stats.put("Inertia", body.getInertia());
         return stats;
     }
 
     public boolean isDead() {
         return dead;
-    }
-
-
-    public void handleDeath() {
     }
 
     public void kill() {

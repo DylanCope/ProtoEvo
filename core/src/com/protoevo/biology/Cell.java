@@ -54,7 +54,7 @@ public abstract class Cell extends Particle implements Serializable
 	}
 	
 	public void update(float delta) {
-
+		super.update(delta);
 		timeAlive += delta;
 		digest(delta);
 		repair(delta);
@@ -62,13 +62,13 @@ public abstract class Cell extends Particle implements Serializable
 		resourceProduction(delta);
 		progressConstructionProjects(delta);
 
-		for (Cell other : attachedCells) {
-			if (detachCellCondition(other)) {
-				cellsToDetach.add(other);
-				other.attachedCells.remove(this);
+//		for (Cell other : attachedCells) {
+//			if (detachCellCondition(other)) {
+//				cellsToDetach.add(other);
+//				other.attachedCells.remove(this);
 //				getEnv().getJointManager().requestJointRemoval(this, other);
-			}
-		}
+//			}
+//		}
 
 		attachedCells.removeIf(cellsToDetach::contains);
 		cellsToDetach.clear();
@@ -130,9 +130,10 @@ public abstract class Cell extends Particle implements Serializable
 		Food.Type foodType = cell.getFoodType();
 		float extractedMass = cell.getMass() * extraction;
 		cell.removeMass(Settings.foodExtractionWasteMultiplier * extractedMass);
-		cell.setHealth(cell.getHealth() * (1 - 5f * extraction));
+
 		Food food = foodToDigest.getOrDefault(foodType, new Food(extractedMass, foodType));
 		food.addSimpleMass(extractedMass);
+
 		for (Food.ComplexMolecule molecule : cell.getComplexMolecules()) {
 			if (cell.getComplexMoleculeAvailable(molecule) > 0) {
 				float extractedAmount = extraction * cell.getComplexMoleculeAvailable(molecule);
@@ -170,14 +171,12 @@ public abstract class Cell extends Particle implements Serializable
 			if (massRequired < constructionMassAvailable && energyRequired < energyAvailable) {
 				useEnergy(energyRequired);
 				useConstructionMass(massRequired);
-				setHealth(getHealth() + delta * Settings.cellRepairRate);
+				damage(-delta * Settings.cellRepairRate * getGrowthRate());
 			}
 		}
 	}
 
 	public boolean detachCellCondition(Cell other) {
-		if (other.isDead())
-			return true;
 		float dist = other.getPos().cpy().sub(getPos()).len();
 		float maxDist = 1.3f * (other.getRadius() + getRadius());
 		float minDist = 0.95f * (other.getRadius() + getRadius());
@@ -185,7 +184,8 @@ public abstract class Cell extends Particle implements Serializable
 	}
 
 	public boolean attachCondition(Cell other) {
-		if (other.isDead() || attachedCells.size() >= maxAttachedCells)
+		if (other.isDead() || attachedCells.size() >= maxAttachedCells
+				|| other.attachedCells.size() >= maxAttachedCells)
 			return false;
 
 		for (CellAdhesion.CAM cam : surfaceCAMs.keySet()) {
@@ -203,19 +203,16 @@ public abstract class Cell extends Particle implements Serializable
 
 	public void grow(float delta) {
 		float gr = getGrowthRate();
-		float newR = super.getRadius() + gr * delta;
-		setRadius(newR);
-//		float massChange = getMass(newR) - getMass(super.getRadius());
-//		if (massChange < constructionMassAvailable &&
-//				(newR > Settings.minPlantBirthRadius || gr > 0)) {
-//			setRadius(newR);
-//			if (massChange > 0)
-//				useConstructionMass(massChange);
-//			else
-//				wasteMass -= massChange;
-//		}
-//		if (Float.isNaN(getRadius()))
-//			kill();
+		float newR = getRadius() * (1 + 5f * gr * delta);
+		float massChange = getMass(newR) - getMass(super.getRadius());
+		if (massChange < constructionMassAvailable &&
+				(newR > Settings.minPlantBirthRadius || gr > 0)) {
+			setRadius(newR);
+			if (massChange > 0)
+				useConstructionMass(massChange);
+		}
+		if (newR < Settings.minPlantBirthRadius)
+			kill();
 	}
 
 	public void setGrowthRate(float gr) {
@@ -253,13 +250,15 @@ public abstract class Cell extends Particle implements Serializable
 
 	@Override
 	public void onCollision(Rock rock) {
-		if (rock.isPointInside(getPos())) {
+		super.onCollision(rock);
+		if (rock.pointInside(getPos())) {
 			kill();
 		}
 	}
 
 	@Override
 	public void onCollision(Particle other) {
+		super.onCollision(other);
 		if (other.isPointInside(getPos())) {
 			kill();
 		}
@@ -271,11 +270,11 @@ public abstract class Cell extends Particle implements Serializable
 	}
 
 	public void onCollision(Cell other) {
-		if (!isBoundTo(other)) {
-			JointsManager jointsManager = getEnv().getJointManager();
-			jointsManager.createJoint(getBody(), other.getBody());
-		}
 		if (attachCondition(other)) {
+			if (!isBoundTo(other)) {
+				JointsManager jointsManager = getEnv().getJointManager();
+				jointsManager.createJoint(getBody(), other.getBody());
+			}
 			for (CellAdhesion.CAM cam : surfaceCAMs.keySet()) {
 				if (getCAMAvailable(cam) > 0 && other.getCAMAvailable(cam) > 0) {
 					createCellBinding(other, cam);
@@ -351,9 +350,9 @@ public abstract class Cell extends Particle implements Serializable
 	
 	public abstract boolean isEdible();
 
-	public void setHealth(float h)
+	public void damage(float d)
 	{
-		health = h;
+		health -= d;
 		if (health > 1) 
 			health = 1;
 
@@ -363,6 +362,10 @@ public abstract class Cell extends Particle implements Serializable
 
 	public String getPrettyName() {
 		return "Cell";
+	}
+
+	public float getTimeAlive() {
+		return timeAlive;
 	}
 
 	public Map<String, Float> getStats() {
@@ -593,11 +596,14 @@ public abstract class Cell extends Particle implements Serializable
 	 * @param mass mass to remove
 	 */
 	public void removeMass(float mass) {
+		damage(mass / getMass());
+
 		double x = 3 * mass / (4 * getMassDensity() * Math.PI);
 		float r = getRadius();
 		float newR = (float) Math.pow(r*r*r - x, 1 / 3.);
 		if (newR < Settings.minParticleRadius * 0.9f)
 			kill();
+
 		setRadius(newR);
 	}
 

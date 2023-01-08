@@ -58,4 +58,8 @@ public class Geometry {
     public static Vector2 randomVector(float length) {
         return Geometry.randomUnit().scl(length);
     }
+
+    public static float getCircleArea(float r) {
+        return (float) (Math.PI * r * r);
+    }
 }

@@ -6,6 +6,7 @@ import com.protoevo.biology.BurstRequest;
 import com.protoevo.biology.Cell;
 import com.protoevo.biology.MeatCell;
 import com.protoevo.biology.PlantCell;
+import com.protoevo.biology.evolution.Evolvable;
 import com.protoevo.biology.protozoa.Protozoan;
 import com.protoevo.core.Particle;
 import com.protoevo.core.settings.Constants;
@@ -42,14 +43,16 @@ public class Environment implements Serializable
 	private boolean hasInitialised;
 
 	private final JointsManager jointsManager;
+	private final InteractionsManager interactionsManager;
 	private final ConcurrentLinkedQueue<BurstRequest<? extends Cell>> burstRequests = new ConcurrentLinkedQueue<>();
 
 	public Environment()
 	{
-		this.world = new World(new Vector2(0, -0), true);
+		world = new World(new Vector2(0, 0), true);
 		world.setContinuousPhysics(false);
 
-		this.jointsManager = new JointsManager(this);
+		interactionsManager = new InteractionsManager(this);
+		jointsManager = new JointsManager(this);
 		world.setContactListener(new EnvContactListener(this));
 
 //		TODO: revisit chemical field implementation
@@ -68,20 +71,20 @@ public class Environment implements Serializable
 
 	public Vector2[] createRocks() {
 		RockGeneration.generateClustersOfRocks(
-				this, new Vector2(0, 0), 1, Settings.populationClusterRadius);
+				this, new Vector2(0, 0), 1, Settings.rockClusterRadius);
 
 		int numClusterCentres = 8;
 		Vector2[] clusterCentres = new Vector2[numClusterCentres];
 
 		for (int i = 0; i < numClusterCentres; i++) {
-			float minR = i * Settings.populationClusterRadius;
-			float maxR = (15 + 2*i) * Settings.populationClusterRadius;
+			float minR = i * Settings.rockClusterRadius;
+			float maxR = (15 + 2*i) * Settings.rockClusterRadius;
 
 			Vector2 centre = RockGeneration.randomPosition(minR, maxR);
 			clusterCentres[i] = centre;
 
 			int nRings = Simulation.RANDOM.nextInt(1, 3);
-			float radiusRange = Simulation.RANDOM.nextFloat( 8.f) * Settings.populationClusterRadius;
+			float radiusRange = Simulation.RANDOM.nextFloat(8.f) * Settings.rockClusterRadius;
 			RockGeneration.generateClustersOfRocks(this, centre, nRings, radiusRange);
 		}
 
@@ -98,22 +101,22 @@ public class Environment implements Serializable
 		return clusterCentres;
 	}
 
-	public void initialise() {
-		if (!hasInitialised) {
-			Vector2[] clusterCentres = createRocks();
+	public Vector2[] initialise() {
+		Vector2[] populationStartCentres = createRocks();
 
-			if (clusterCentres != null)
-				initialisePopulation(Arrays.copyOfRange(clusterCentres, 0, Settings.numPopulationClusters));
-			else
-				initialisePopulation();
+		if (populationStartCentres != null)
+			initialisePopulation(Arrays.copyOfRange(populationStartCentres, 0, Settings.numPopulationClusters));
+		else
+			initialisePopulation();
 
-			flushEntitiesToAdd();
+		flushEntitiesToAdd();
 
-			if (Settings.writeGenomes && genomeFile != null)
-				writeGenomeHeaders();
+		if (Settings.writeGenomes && genomeFile != null)
+			writeGenomeHeaders();
 
-			hasInitialised = true;
-		}
+		hasInitialised = true;
+
+		return populationStartCentres;
 	}
 
 	public void writeGenomeHeaders() {
@@ -140,7 +143,7 @@ public class Environment implements Serializable
 		Function<Float, Vector2> findPlantPosition = this::randomPosition;
 		Function<Float, Vector2> findProtozoaPosition = this::randomPosition;
 		if (clusterCentres != null) {
-			findPlantPosition = r -> randomPosition(1.5f*r, clusterCentres);
+			findPlantPosition = r -> randomPosition(2f*r, clusterCentres);
 			findProtozoaPosition = r -> randomPosition(r, clusterCentres);
 		}
 
@@ -149,15 +152,14 @@ public class Environment implements Serializable
 			cell.setPos(findPlantPosition.apply(cell.getRadius()));
 		}
 
-//		System.out.println(cellsToAdd.size());
-//		for (int i = 0; i < Settings.numInitialProtozoa; i++) {
-//			Protozoan p = Evolvable.createNew(Protozoan.class);
-//			p.setEnv(this);
-//			addRandom(p, findProtozoaPosition);
-//		}
+		for (int i = 0; i < Settings.numInitialProtozoa; i++) {
+			Protozoan p = Evolvable.createNew(Protozoan.class);
+			p.setEnv(this);
+			p.setPos(findProtozoaPosition.apply(p.getRadius()));
+		}
 
 		for (Particle p : cellsToAdd)
-			p.applyImpulse(Geometry.randomVector(1000f));
+			p.applyImpulse(Geometry.randomVector(200f));
 	}
 
 	public void initialisePopulation() {
@@ -170,7 +172,7 @@ public class Environment implements Serializable
 	public Vector2 randomPosition(float entityRadius, Vector2[] clusterCentres) {
 		int clusterIdx = Simulation.RANDOM.nextInt(clusterCentres.length);
 		Vector2 clusterCentre = clusterCentres[clusterIdx];
-		return randomPosition(entityRadius, clusterCentre, 3 * Settings.populationClusterRadius);
+		return randomPosition(entityRadius, clusterCentre, Settings.populationClusterRadius);
 	}
 
 	public Vector2 randomPosition(float entityRadius, Vector2 centre, float clusterRadius) {
@@ -189,12 +191,7 @@ public class Environment implements Serializable
 	}
 
 	public Vector2 randomPosition(float entityRadius) {
-		return randomPosition(entityRadius, Geometry.ZERO, Settings.populationClusterRadius);
-	}
-
-	public void updateCell(Cell e, float delta) {
-		e.handleInteractions(delta);
-		e.update(delta);
+		return randomPosition(entityRadius, Geometry.ZERO, Settings.rockClusterRadius);
 	}
 
 	private void flushEntitiesToAdd() {
@@ -211,31 +208,25 @@ public class Environment implements Serializable
 		genomesToWrite.removeAll(genomeWritesHandled);
 	}
 
-	private float accumulator = 0;
 	public void update(float delta) 
 	{
 		flushEntitiesToAdd();
 
 		elapsedTime += delta;
 		world.step(delta, Constants.VELOCITY_ITERATIONS, Constants.POSITION_ITERATIONS);
-//		flushWrites();
 
-//		Collection<Cell> cells = chunkManager.getAllCells();
-//
-//		cells.parallelStream().forEach(Cell::resetPhysics);
-		burstRequests.clear();
+		interactionsManager.update(delta);
 		cells.parallelStream().forEach(cell -> cell.update(delta));
 		burstRequests.forEach(BurstRequest::burst);
+		burstRequests.clear();
 
-//		cells.parallelStream().forEach(cell -> cell.physicsUpdate(delta));
 		cells.forEach(this::handleDeadEntity);
 		cells.removeIf(Cell::isDead);
 		updateCounts(cells);
 
-		jointsManager.flushJoints();
+		cells.parallelStream().forEach(Particle::reset);
 
-//		if (chemicalSolution != null)
-//			chemicalSolution.update(delta, cells);
+		jointsManager.flushJoints();
 
 	}
 
@@ -396,8 +387,17 @@ public class Environment implements Serializable
 		return jointsManager;
 	}
 
-	public void requestBurst(BurstRequest<? extends Cell> burstRequest) {
-		if (!burstRequests.contains(burstRequest))
-			burstRequests.add(burstRequest);
+	public InteractionsManager getForceManager() {
+		return interactionsManager;
 	}
+
+	public <T extends Cell> void requestBurst(Cell parent, Class<T> cellType, Function<Float, T> createChild) {
+		if (burstRequests.stream().anyMatch(request -> request.parentEquals(parent)))
+			return;
+
+		BurstRequest<T> request = new BurstRequest<>(parent, cellType, createChild);
+		if (!burstRequests.contains(request))
+			burstRequests.add(request);
+	}
+
 }

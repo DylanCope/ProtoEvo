@@ -125,7 +125,7 @@ public class GeneExpressionFunction implements Evolvable.Component, Serializable
 
     @EvolvableObject(
             name="Gene Regulatory Network",
-            geneClassName="protoevo.biology.evolution.GeneRegulatoryNetworkGene",
+            geneClassName="com.protoevo.biology.evolution.GeneRegulatoryNetworkGene",
             geneDependencies="Genes")
     public void setGeneRegulatoryNetwork(NetworkGenome grnGenome) {
         for (String regulator : geneRegulators.keySet())
@@ -144,7 +144,7 @@ public class GeneExpressionFunction implements Evolvable.Component, Serializable
 
     @EvolvableObject(
             name="Genes",
-            geneClassName="protoevo.biology.evolution.GenesGene"
+            geneClassName="com.protoevo.biology.evolution.GenesGene"
     )
     public void setGenes(Genes genes) {
         this.genes = genes;

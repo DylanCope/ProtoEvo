@@ -1,10 +1,9 @@
 package com.protoevo.biology.protozoa;
 
+import com.badlogic.gdx.graphics.Color;
 import com.protoevo.biology.neat.NeuralNetwork;
 import com.protoevo.core.settings.Settings;
 import com.protoevo.env.ChemicalSolution;
-
-import java.awt.*;
 
 public class NNBrain implements Brain {
 
@@ -51,9 +50,9 @@ public class NNBrain implements Brain {
         for (Retina.Cell cell : p.getRetina()) {
             if (cell.anythingVisible()) {
                 Color colour = cell.getColour();
-                inputs[i++] = retinaHealth * (-1 + 2 * colour.getRed() / 255f);
-                inputs[i++] = retinaHealth * (-1 + 2 * colour.getGreen() / 255f);
-                inputs[i++] = retinaHealth * (-1 + 2 * colour.getBlue() / 255f);
+                inputs[i++] = retinaHealth * (-1 + 2 * colour.r / 255f);
+                inputs[i++] = retinaHealth * (-1 + 2 * colour.g / 255f);
+                inputs[i++] = retinaHealth * (-1 + 2 * colour.b / 255f);
             } else {
                 inputs[i++] = 0f;
                 inputs[i++] = 0f;

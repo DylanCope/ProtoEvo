@@ -26,7 +26,7 @@ public class TopBar {
         leftActors = new ArrayList<>();
         rightActors = new ArrayList<>();
         topBarHeight = fontSize + 4 * topBarPadding;
-        topBarButtonSize = topBarHeight - 2 * topBarPadding;
+        topBarButtonSize = 0.8f * (topBarHeight - 2 * topBarPadding);
     }
 
     public float getButtonSize() {
