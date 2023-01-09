@@ -4,6 +4,7 @@ import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.Body;
 import com.badlogic.gdx.physics.box2d.JointEdge;
 import com.badlogic.gdx.physics.box2d.QueryCallback;
+import com.badlogic.gdx.physics.box2d.World;
 import com.badlogic.gdx.utils.Array;
 import com.protoevo.core.Particle;
 import com.protoevo.core.settings.Settings;
@@ -35,28 +36,39 @@ public class InteractionsManager {
 	}
 
     private final Environment environment;
+	private final World sensorWorld;
     private float timeSinceLastInteract = 0;
 	private final float timeToInteract = Settings.simulationUpdateDelta * 10;
 	private final Queue<QueuedInteraction> interactionQueue = new LinkedList<>();
 
     public InteractionsManager(Environment environment) {
         this.environment = environment;
+
+		sensorWorld = new World(new Vector2(0, 0), true);
+		sensorWorld.setContinuousPhysics(false);
     }
 
     public void update(float deltaTime) {
 		timeSinceLastInteract += deltaTime;
+
 		if (timeSinceLastInteract >= timeToInteract) {
 			timeSinceLastInteract = 0;
-			for (Particle particle : environment.getParticles()) {
-				if (particle.doesInteract()) {
-					QueuedInteraction interaction = getInteractions(particle);
-					if (interaction.hasInteractions())
-						interactionQueue.add(interaction);
-				}
-			}
-			interactionQueue.parallelStream().forEach(QueuedInteraction::call);
+			sensorWorld.step(Settings.simulationUpdateDelta, 0, 0);
 		}
-    }
+	}
+//		timeSinceLastInteract += deltaTime;
+//		if (timeSinceLastInteract >= timeToInteract) {
+//			timeSinceLastInteract = 0;
+//			for (Particle particle : environment.getParticles()) {
+//				if (particle.doesInteract()) {
+//					QueuedInteraction interaction = getInteractions(particle);
+//					if (interaction.hasInteractions())
+//						interactionQueue.add(interaction);
+//				}
+//			}
+//			interactionQueue.parallelStream().forEach(QueuedInteraction::call);
+//		}
+//    }
 
 	public QueuedInteraction getInteractions(Particle particle) {
 		List<Object> interactions = new ArrayList<>();

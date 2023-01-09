@@ -3,15 +3,13 @@ package com.protoevo.core;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.*;
+import com.badlogic.gdx.utils.Array;
 import com.protoevo.core.settings.Settings;
 import com.protoevo.env.Environment;
 import com.protoevo.env.Rock;
 import com.protoevo.utils.Geometry;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
+import java.util.*;
 
 
 public class Particle implements Collidable {
@@ -19,19 +17,102 @@ public class Particle implements Collidable {
     private final Vector2[] boundingBox = new Vector2[2];
     private Environment environment;
     private Body body;
-    private Fixture fixture;
+    private Fixture dynamicsFixture, sensorFixture;
     private boolean dead;
     private float radius = 1f;
-    private Vector2 pos = new Vector2(0, 0);
+    private final Vector2 pos = new Vector2(0, 0);
     private final TreeMap<String, Float> stats = new TreeMap<>();
-    private final List<Object> contactObjects = new ArrayList<>();
+    private final Queue<Object> contactObjects = new LinkedList<>();
+    private final Queue<Object> interactionQueue = new LinkedList<>();
 
     public Particle() {}
 
+
+    public Environment getEnv() {
+        return environment;
+    }
+
+    public void setEnv(Environment environment) {
+        this.environment = environment;
+        environment.ensureAddedToEnvironment(this);
+        createBody();
+    }
+
     public void update(float delta) {
-        fixture.getShape().setRadius(radius);
-        fixture.setDensity(getMassDensity());
-        body.resetMassData();
+        dynamicsFixture.getShape().setRadius(radius);
+//        dynamicsFixture.setDensity(getMassDensity());
+//        body.resetMassData();
+    }
+
+    public void createBody() {
+        if (body != null)
+            return;
+
+        CircleShape circle = new CircleShape();
+        circle.setRadius(radius);
+
+        BodyDef bodyDef = new BodyDef();
+        bodyDef.type = BodyDef.BodyType.DynamicBody;
+
+        // Body consists of a dynamics fixture and a sensor fixture
+        // The dynamics fixture is used for collisions and the sensor fixture is used for
+        // detecting when the particle in interaction range with other objects
+        body = environment.getWorld().createBody(bodyDef);
+
+        // Create the dynamics fixture and attach it to the body
+
+        FixtureDef fixtureDef = new FixtureDef();
+        fixtureDef.shape = circle;
+        fixtureDef.density = 1f;  // will be updated later
+        fixtureDef.friction = 0.8f;
+        fixtureDef.restitution = 0.6f;
+
+        if (getSensorCategory() != 0x0000)
+            fixtureDef.filter.categoryBits = getSensorCategory();
+
+        dynamicsFixture = body.createFixture(fixtureDef);
+        dynamicsFixture.setUserData(this);
+        body.setUserData(this);
+        body.setLinearDamping(.5f);
+
+        circle.dispose();
+
+//        // Create the sensor fixture and attach it to the body
+//        PolygonShape boundingBoxShape = new PolygonShape();
+//        boundingBoxShape.setAsBox(radius, radius);
+//
+//        BodyDef sensorBodyDef = new BodyDef();
+//        sensorBodyDef.type = BodyDef.BodyType.StaticBody;
+//
+//        FixtureDef sensorFixtureDef = new FixtureDef();
+//        sensorFixtureDef.shape = boundingBoxShape;
+//        sensorFixtureDef.isSensor = true;
+//        if (getSensorMask() != 0x0000)
+//            sensorFixtureDef.filter.maskBits = getSensorMask();
+//
+//        sensorFixture = body.createFixture(sensorFixtureDef);
+//        sensorFixture.setUserData(this);
+//        sensorFixture.setFilterData(new Filter());
+//
+//        boundingBoxShape.dispose();
+    }
+
+    /**
+     * The category used for the dynamic fixture to determine
+     * which sensors will interact with it.
+     * @return the category bits
+     */
+    public short getSensorCategory() {
+        return 0x0000;
+    }
+
+    /**
+     * The mask used for the sensor fixture to determine
+     * which dynamic fixtures will interact with it.
+     * @return the mask bits
+     */
+    public short getSensorMask() {
+        return 0x0000;
     }
 
     public Body getBody() {
@@ -50,6 +131,14 @@ public class Particle implements Collidable {
         return radius * 2;
     }
 
+    public void queueInteraction(Object object) {
+        interactionQueue.add(object);
+    }
+
+    public Collection<Object> getInteractionQueue() {
+        return interactionQueue;
+    }
+
     public boolean doesInteract() { return true; }
     public void interact(List<Object> interactions) {}
 
@@ -65,7 +154,7 @@ public class Particle implements Collidable {
         contactObjects.clear();
     }
 
-    public List<Object> getContactObjects() {
+    public Collection<Object> getContactObjects() {
         return contactObjects;
     }
 
@@ -75,8 +164,8 @@ public class Particle implements Collidable {
 
     public void setRadius(float radius) {
         this.radius = radius;
-        if (fixture != null) {
-            fixture.getShape().getRadius();
+        if (dynamicsFixture != null) {
+            dynamicsFixture.getShape().getRadius();
         }
     }
 
@@ -173,52 +262,12 @@ public class Particle implements Collidable {
         return other.getPos().dst2(getPos()) < r*r;
     }
 
-
-    public Environment getEnv() {
-        return environment;
-    }
-
-    public void setEnv(Environment environment) {
-        this.environment = environment;
-        environment.ensureAddedToEnvironment(this);
-        createBody();
-    }
-
-    public void createBody() {
-        if (body != null)
-            return;
-
-        CircleShape circle = new CircleShape();
-        circle.setRadius(radius);
-        circle.setPosition(pos);
-        // Create a fixture definition to apply our shape to
-        FixtureDef fixtureDef = new FixtureDef();
-        fixtureDef.shape = circle;
-        fixtureDef.density = 1f; // mass / (float) (Math.PI * radius * radius);
-        fixtureDef.friction = 0.8f;
-        fixtureDef.restitution = 0.6f;
-
-        BodyDef bodyDef = new BodyDef();
-        bodyDef.type = BodyDef.BodyType.DynamicBody;
-
-        body = environment.getWorld().createBody(bodyDef);
-
-        // Create our fixture and attach it to the body
-        fixture = body.createFixture(fixtureDef);
-        fixture.setUserData(this);
-        body.setUserData(this);
-        body.setLinearDamping(.5f);
-
-        circle.dispose();
-    }
-
     public Map<String, Float> getStats() {
         stats.clear();
         stats.put("Size", Settings.statsDistanceScalar * getRadius());
         stats.put("Speed", Settings.statsDistanceScalar * getSpeed());
         stats.put("Total Mass", Settings.statsMassScalar * getMass());
         stats.put("Mass Density", Settings.statsMassScalar * getMassDensity());
-        stats.put("Inertia", body.getInertia());
         return stats;
     }
 
@@ -237,5 +286,22 @@ public class Particle implements Collidable {
 
     public String getPrettyName() {
         return "Particle";
+    }
+
+    public Map<String, Float> getDebugStats() {
+        Map<String, Float> stats = new TreeMap<>();
+        stats.put("Position X", Settings.statsDistanceScalar * getPos().x);
+        stats.put("Position Y", Settings.statsDistanceScalar * getPos().y);
+        stats.put("Inertia", body.getInertia());
+        stats.put("Num Joints", (float) body.getJointList().size);
+        stats.put("Num Fixtures", (float) body.getFixtureList().size);
+        stats.put("Num Contacts", (float) contactObjects.size());
+        stats.put("Num Interactions", (float) interactionQueue.size());
+        stats.put("Is Dead", dead ? 1f : 0f);
+        return stats;
+    }
+
+    public Array<JointEdge> getJoints() {
+        return body.getJointList();
     }
 }

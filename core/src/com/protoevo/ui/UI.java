@@ -5,27 +5,28 @@ import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
+import com.badlogic.gdx.graphics.g2d.GlyphLayout;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator;
-import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.scenes.scene2d.EventListener;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.Touchable;
 import com.badlogic.gdx.scenes.scene2d.ui.ImageButton;
 import com.badlogic.gdx.scenes.scene2d.utils.Drawable;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
+import com.badlogic.gdx.utils.ScreenUtils;
 import com.protoevo.core.Particle;
 import com.protoevo.core.Simulation;
 import com.protoevo.core.settings.Settings;
 import com.protoevo.env.Environment;
 import com.protoevo.input.ParticleTracker;
-import com.protoevo.ui.rendering.Renderer;
+import com.protoevo.ui.rendering.EnvRenderer;
+import com.protoevo.ui.rendering.ShockWave;
 import com.protoevo.utils.CursorUtils;
 import com.protoevo.utils.DebugMode;
 import com.protoevo.utils.Utils;
 
-import java.awt.*;
 import java.util.Map;
 
 public class UI {
@@ -33,9 +34,10 @@ public class UI {
     private final Simulation simulation;
     private final Environment environment;
     private final InputManager inputManager;
-    private final Renderer renderer;
+    private final EnvRenderer envRenderer;
     private final SpriteBatch uiBatch;
-    private Stage stage;
+    private final Stage stage;
+    private final GlyphLayout layout = new GlyphLayout();
     private final OrthographicCamera camera;
     private final BitmapFont font, debugFont, titleFont;
     private final TopBar topBar;
@@ -102,7 +104,12 @@ public class UI {
         topBar.addLeft(homeButton);
 
         inputManager = new InputManager(this);
-        renderer = new Renderer(camera, simulation, inputManager);
+        envRenderer = new EnvRenderer(camera, simulation, inputManager);
+
+        ShockWave shockWave = ShockWave.getInstance();
+        shockWave.setRenderer(envRenderer);
+        shockWave.setCamera(camera);
+        stage.addActor(shockWave);
     }
 
     public ImageButton createImageButton(String texturePath, float width, float height, EventListener listener) {
@@ -147,6 +154,27 @@ public class UI {
             debugString += separator + "Joints: " + environment.getWorld().getJointCount();
             debugString += separator + "Fixtures: " + environment.getWorld().getFixtureCount();
             debugString += separator + "Proxies: " + environment.getWorld().getProxyCount();
+
+            ParticleTracker tracker = inputManager.getParticleTracker();
+            if (tracker.isTracking()) {
+                Particle trackedParticle = tracker.getTrackedParticle();
+                Map<String, Float> stats = trackedParticle.getDebugStats();
+                int lineNumber = 0;
+                int valueLength = 8;
+                for (Map.Entry<String, Float> entityStat : stats.entrySet()) {
+                    String valueStr = Utils.numberToString(entityStat.getValue(), 2);
+                    String text = entityStat.getKey() + ": ";
+                    for (int i = 0; i < valueLength - valueStr.length(); i++) {
+                        text += " ";
+                    }
+                    text += valueStr;
+                    layout.setText(debugFont, text);
+                    float x = camera.viewportWidth - layout.width - textAwayFromEdge;
+                    debugFont.draw(uiBatch, text, x, getYPosRHS(lineNumber));
+                    lineNumber++;
+                }
+            }
+
         }
         debugFont.draw(uiBatch, debugString, 2 * topBar.getPadding(), font.getLineHeight() + topBar.getPadding());
     }
@@ -170,11 +198,19 @@ public class UI {
 
     public void draw(float delta) {
 
-        renderer.render(delta);
+        ScreenUtils.clear(0, 0.1f, 0.2f, 1);
+
+//        ShockWave shockWave = ShockWave.getInstance();
+//        if (shockWave.isEnabled()) {
+//            shockWave.render(delta);
+//        } else {
+        envRenderer.render(delta);
+//        }
 
         topBar.draw(delta);
 
         uiBatch.begin();
+        stage.act(delta);
         stage.draw();
 
         ParticleTracker particleTracker = inputManager.getParticleTracker();
@@ -200,7 +236,7 @@ public class UI {
         uiBatch.dispose();
         font.dispose();
         topBar.dispose();
-        renderer.dispose();
+        envRenderer.dispose();
     }
 
     public boolean overOnScreenControls(int screenX, int screenY) {

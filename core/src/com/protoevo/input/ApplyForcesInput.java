@@ -7,6 +7,7 @@ import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector3;
 import com.protoevo.core.Particle;
+import com.protoevo.ui.rendering.ShockWave;
 
 import java.util.Collection;
 
@@ -21,6 +22,7 @@ public class ApplyForcesInput extends InputAdapter {
     }
 
     public void applyForce(float explosionX, float explosionY, float power) {
+        ShockWave.getInstance().start(explosionX, explosionY);
         Vector2 tmp = new Vector2();
         for (Particle particle : entities) {
             Vector2 bodyPos = particle.getPos();

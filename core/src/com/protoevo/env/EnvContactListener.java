@@ -17,11 +17,20 @@ public class EnvContactListener implements ContactListener, Serializable {
     @Override
     public void beginContact(Contact contact) {
 
-        Body bodyA = contact.getFixtureA().getBody();
-        Body bodyB = contact.getFixtureB().getBody();
+        Fixture fixtureA = contact.getFixtureA();
+        Fixture fixtureB = contact.getFixtureB();
+        Body bodyA = fixtureA.getBody();
+        Body bodyB = fixtureB.getBody();
 
+        if (fixtureA.isSensor()) {  // A has sensed B
+            if (bodyA.getUserData() instanceof Particle) {
+                Particle particle = (Particle) bodyA.getUserData();
+                particle.queueInteraction(bodyB.getUserData());
+            }
+        }
         if (bodyA.getUserData() instanceof Particle)
             onContact((Particle) bodyA.getUserData(), bodyB);
+
         if (bodyB.getUserData() instanceof Particle)
             onContact((Particle) bodyB.getUserData(), bodyA);
     }
@@ -37,17 +46,11 @@ public class EnvContactListener implements ContactListener, Serializable {
     }
 
     @Override
-    public void endContact(Contact contact) {
-
-    }
+    public void endContact(Contact contact) {}
 
     @Override
-    public void preSolve(Contact contact, Manifold oldManifold) {
-
-    }
+    public void preSolve(Contact contact, Manifold oldManifold) {}
 
     @Override
-    public void postSolve(Contact contact, ContactImpulse impulse) {
-
-    }
+    public void postSolve(Contact contact, ContactImpulse impulse) {}
 }

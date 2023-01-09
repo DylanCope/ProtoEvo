@@ -62,19 +62,19 @@ public abstract class Cell extends Particle implements Serializable
 		resourceProduction(delta);
 		progressConstructionProjects(delta);
 
-//		for (Cell other : attachedCells) {
-//			if (detachCellCondition(other)) {
-//				cellsToDetach.add(other);
-//				other.attachedCells.remove(this);
-//				getEnv().getJointManager().requestJointRemoval(this, other);
-//			}
-//		}
-
+		attachedCells.stream()
+				.filter(this::detachCellCondition)
+				.forEach(this::requestJointRemoval);
 		attachedCells.removeIf(cellsToDetach::contains);
 		cellsToDetach.clear();
 
 		for (CellAdhesion.Binding binding : cellBindings)
 			handleBindingInteraction(binding, delta);
+	}
+
+	private void requestJointRemoval(Cell other) {
+		getEnv().getJointsManager().requestJointRemoval(this, other);
+		cellsToDetach.add(other);
 	}
 
 	public void progressConstructionProjects(float delta) {
@@ -177,9 +177,12 @@ public abstract class Cell extends Particle implements Serializable
 	}
 
 	public boolean detachCellCondition(Cell other) {
+		if (other.isDead())
+			return true;
+
 		float dist = other.getPos().cpy().sub(getPos()).len();
-		float maxDist = 1.3f * (other.getRadius() + getRadius());
-		float minDist = 0.95f * (other.getRadius() + getRadius());
+		float maxDist = 1.5f * (other.getRadius() + getRadius());
+		float minDist = 0.9f * (other.getRadius() + getRadius());
 		return dist > maxDist || dist < minDist;
 	}
 
@@ -272,7 +275,7 @@ public abstract class Cell extends Particle implements Serializable
 	public void onCollision(Cell other) {
 		if (attachCondition(other)) {
 			if (!isBoundTo(other)) {
-				JointsManager jointsManager = getEnv().getJointManager();
+				JointsManager jointsManager = getEnv().getJointsManager();
 				jointsManager.createJoint(getBody(), other.getBody());
 			}
 			for (CellAdhesion.CAM cam : surfaceCAMs.keySet()) {
@@ -281,8 +284,10 @@ public abstract class Cell extends Particle implements Serializable
 					other.createCellBinding(this, cam);
 				}
 			}
-			attachedCells.add(other);
-			other.attachedCells.add(this);
+			if (!attachedCells.contains(other))
+				attachedCells.add(other);
+			if (!other.attachedCells.contains(this))
+				other.attachedCells.add(this);
 		}
 	}
 
@@ -419,9 +424,9 @@ public abstract class Cell extends Particle implements Serializable
 	}
 
 	public Map<String, Float> getDebugStats() {
-		TreeMap<String, Float> stats = new TreeMap<>();
-		stats.put("Position X", Settings.statsDistanceScalar * getPos().x);
-		stats.put("Position Y", Settings.statsDistanceScalar * getPos().y);
+		Map<String, Float> stats = super.getDebugStats();
+		stats.put("Num Attached Cells", (float) attachedCells.size());
+		stats.put("Num Cell Bindings", (float) cellBindings.size());
 		return stats;
 	}
 	
@@ -609,5 +614,9 @@ public abstract class Cell extends Particle implements Serializable
 
 	public Map<Food.Type, Food> getFoodToDigest() {
 		return foodToDigest;
+	}
+
+	public Collection<Cell> getAttachedCells() {
+		return attachedCells;
 	}
 }

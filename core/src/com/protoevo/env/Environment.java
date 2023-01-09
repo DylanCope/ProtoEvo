@@ -69,6 +69,28 @@ public class Environment implements Serializable
 		hasInitialised = false;
 	}
 
+	public void update(float delta)
+	{
+		flushEntitiesToAdd();
+
+		elapsedTime += delta;
+		world.step(delta, Constants.VELOCITY_ITERATIONS, Constants.POSITION_ITERATIONS);
+
+//		interactionsManager.update(delta);
+		cells.parallelStream().forEach(cell -> cell.update(delta));
+		burstRequests.forEach(BurstRequest::burst);
+		burstRequests.clear();
+
+		cells.forEach(this::handleDeadEntity);
+		cells.removeIf(Cell::isDead);
+		updateCounts(cells);
+
+		cells.forEach(Particle::reset);
+
+		jointsManager.flushJoints();
+
+	}
+
 	public Vector2[] createRocks() {
 		RockGeneration.generateClustersOfRocks(
 				this, new Vector2(0, 0), 1, Settings.rockClusterRadius);
@@ -206,28 +228,6 @@ public class Environment implements Serializable
 			genomeWritesHandled.add(line);
 		}
 		genomesToWrite.removeAll(genomeWritesHandled);
-	}
-
-	public void update(float delta) 
-	{
-		flushEntitiesToAdd();
-
-		elapsedTime += delta;
-		world.step(delta, Constants.VELOCITY_ITERATIONS, Constants.POSITION_ITERATIONS);
-
-		interactionsManager.update(delta);
-		cells.parallelStream().forEach(cell -> cell.update(delta));
-		burstRequests.forEach(BurstRequest::burst);
-		burstRequests.clear();
-
-		cells.forEach(this::handleDeadEntity);
-		cells.removeIf(Cell::isDead);
-		updateCounts(cells);
-
-		cells.parallelStream().forEach(Particle::reset);
-
-		jointsManager.flushJoints();
-
 	}
 
 	private void updateCounts(Collection<Cell> entities) {
@@ -383,7 +383,7 @@ public class Environment implements Serializable
 		}
 	}
 
-	public JointsManager getJointManager() {
+	public JointsManager getJointsManager() {
 		return jointsManager;
 	}
 

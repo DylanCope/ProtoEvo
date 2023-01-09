@@ -7,19 +7,50 @@ import com.badlogic.gdx.utils.Array;
 import com.protoevo.core.Particle;
 
 import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 public class JointsManager implements Serializable {
     public static long serialVersionUID = 1L;
 
+    public static class JoinedParticles implements Serializable {
+        public static long serialVersionUID = 1L;
+        public Particle particleA;
+        public Particle particleB;
+
+        public JoinedParticles(Particle particleA, Particle particleB) {
+            this.particleA = particleA;
+            this.particleB = particleB;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (o == null) return false;
+            if (o == this) return true;
+            if (!(o instanceof JoinedParticles)) return false;
+            JoinedParticles jp = (JoinedParticles) o;
+            return (particleA == jp.particleA && particleB == jp.particleB)
+                    | (particleA == jp.particleB && particleB == jp.particleA);
+        }
+
+        @Override
+        public int hashCode() {
+            return particleA.hashCode() + particleB.hashCode();
+        }
+    }
+
     private final Environment environment;
     private final List<JointDef> jointsToAdd = new ArrayList<>();
-    private final List<JointDef> jointsToRemove = new ArrayList<>();
+    private final ConcurrentLinkedQueue<JoinedParticles> jointRemovalRequests = new ConcurrentLinkedQueue<>();
 
+    private final Set<JoinedParticles> particleBindings = new HashSet<>();
 
     public JointsManager(Environment environment) {
         this.environment = environment;
+    }
+
+    public Collection<JoinedParticles> getParticleBindings() {
+        return particleBindings;
     }
 
     public void flushJoints() {
@@ -41,6 +72,10 @@ public class JointsManager implements Serializable {
                     continue;
             }
             environment.getWorld().createJoint(jointDef);
+            JoinedParticles joining = new JoinedParticles(
+                    (Particle) jointDef.bodyA.getUserData(),
+                    (Particle) jointDef.bodyB.getUserData());
+            particleBindings.add(joining);
         }
         jointsToAdd.clear();
     }
@@ -48,32 +83,32 @@ public class JointsManager implements Serializable {
     private boolean removalRequested(Joint joint) {
         Body bodyA = joint.getBodyA();
         Body bodyB = joint.getBodyB();
+        Particle p1 = (Particle) joint.getBodyA().getUserData();
+        Particle p2 = (Particle) joint.getBodyB().getUserData();
 
-        for (JointDef jointDef : jointsToRemove) {
-            if (jointDef.bodyA == bodyA && jointDef.bodyB == bodyB && jointDef.type == joint.getType()) {
-                environment.getWorld().destroyJoint(joint);
-                return true;
-            }
-        }
+        return jointRemovalRequests.contains(new JoinedParticles(p1, p2));
+    }
 
-        return false;
+    private void destroyJointAndUpdateJoinedParticles(Joint joint) {
+        environment.getWorld().destroyJoint(joint);
+        Particle p1 = (Particle) joint.getBodyA().getUserData();
+        Particle p2 = (Particle) joint.getBodyB().getUserData();
     }
 
     public void handleStaleJoints() {
         Array<Joint> joints = new Array<>();
         environment.getWorld().getJoints(joints);
 
+        particleBindings.removeIf(joinedParticles ->
+            joinedParticles.particleA.isDead() || joinedParticles.particleB.isDead()
+        );
+
         for (Joint joint : joints) {
             Body bodyA = joint.getBodyA();
             Body bodyB = joint.getBodyB();
 
             if (bodyA == null || bodyB == null) {
-                environment.getWorld().destroyJoint(joint);
-                continue;
-            }
-
-            if (removalRequested(joint)) {
-                environment.getWorld().destroyJoint(joint);
+                destroyJointAndUpdateJoinedParticles(joint);
                 continue;
             }
 
@@ -83,12 +118,23 @@ public class JointsManager implements Serializable {
                 Particle p2 = (Particle) joint.getBodyB().getUserData();
 
                 if (p1.isDead() || p2.isDead()) {
-                    environment.getWorld().destroyJoint(joint);
+                    destroyJointAndUpdateJoinedParticles(joint);
                 }
 
                 handleGrowingParticle(joint, p1, p2);
             }
         }
+
+        for (JoinedParticles joining : jointRemovalRequests) {
+            particleBindings.remove(joining);
+            for (JointEdge jointEdge : joining.particleA.getJoints()) {
+                if (jointEdge.joint.getBodyA() == joining.particleB.getBody()
+                        || jointEdge.joint.getBodyB() == joining.particleB.getBody()) {
+                    environment.getWorld().destroyJoint(jointEdge.joint);
+                }
+            }
+        }
+        jointRemovalRequests.clear();
     }
 
     private void handleGrowingParticle(Joint joint, Particle p1, Particle p2) {
@@ -129,6 +175,6 @@ public class JointsManager implements Serializable {
     }
 
     public void requestJointRemoval(Particle particleA, Particle particleB) {
-        jointsToRemove.add(makeJointDef(particleA, particleB));
+        jointRemovalRequests.add(new JoinedParticles(particleA, particleB));
     }
 }
