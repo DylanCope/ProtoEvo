@@ -12,7 +12,7 @@ import java.util.List;
 
 public class TopBar {
 
-    private UI ui;
+    private SimulationScreen simulationScreen;
     private final List<Actor> leftActors;
     private final List<Actor> rightActors;
     private float topBarHeight;
@@ -20,8 +20,8 @@ public class TopBar {
     private final float topBarPadding = 10f;
     private final ShapeRenderer shapeRenderer;
 
-    public TopBar(UI ui, float fontSize) {
-        this.ui = ui;
+    public TopBar(SimulationScreen simulationScreen, float fontSize) {
+        this.simulationScreen = simulationScreen;
         shapeRenderer = new ShapeRenderer();
         leftActors = new ArrayList<>();
         rightActors = new ArrayList<>();
@@ -51,7 +51,7 @@ public class TopBar {
              x = 2 * topBarPadding;
         }
 
-        float y = ui.getCamera().viewportHeight - topBarButtonSize - (topBarHeight - topBarButtonSize) / 2f;
+        float y = simulationScreen.getCamera().viewportHeight - topBarButtonSize - (topBarHeight - topBarButtonSize) / 2f;
 
         return new Vector2(x, y);
     }
@@ -60,7 +60,7 @@ public class TopBar {
         Vector2 nextLeft = nextLeftButtonPosition();
         button.setPosition(nextLeft.x, nextLeft.y);
         leftActors.add(button);
-        ui.getStage().addActor(button);
+        simulationScreen.getStage().addActor(button);
     }
 
     public Vector2 nextRightButtonPosition() {
@@ -69,10 +69,10 @@ public class TopBar {
             Actor lastActor = rightActors.get(rightActors.size() - 1);
             x = lastActor.getX() - 1.5f * topBarPadding;
         } else {
-            x = ui.getCamera().viewportWidth - 2 * topBarPadding;
+            x = simulationScreen.getCamera().viewportWidth - 2 * topBarPadding;
         }
 
-        float y = ui.getCamera().viewportHeight - topBarButtonSize - (topBarHeight - topBarButtonSize) / 2f;
+        float y = simulationScreen.getCamera().viewportHeight - topBarButtonSize - (topBarHeight - topBarButtonSize) / 2f;
 
         return new Vector2(x, y);
     }
@@ -81,7 +81,7 @@ public class TopBar {
         Vector2 nextRight = nextRightButtonPosition();
         button.setPosition(nextRight.x - button.getWidth(), nextRight.y);
         rightActors.add(button);
-        ui.getStage().addActor(button);
+        simulationScreen.getStage().addActor(button);
     }
 
     public void draw(float delta) {
@@ -89,7 +89,7 @@ public class TopBar {
         Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
         shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
         shapeRenderer.setColor(0, 0, 0, 0.5f);
-        shapeRenderer.box(0, ui.getCamera().viewportHeight - topBarHeight, 0, ui.getCamera().viewportWidth,
+        shapeRenderer.box(0, simulationScreen.getCamera().viewportHeight - topBarHeight, 0, simulationScreen.getCamera().viewportWidth,
                 topBarHeight, 0);
         shapeRenderer.end();
         Gdx.gl.glDisable(GL20.GL_BLEND);

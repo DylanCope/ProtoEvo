@@ -11,6 +11,7 @@ import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.physics.box2d.Box2DDebugRenderer;
+import com.badlogic.gdx.utils.ScreenUtils;
 import com.protoevo.biology.Cell;
 import com.protoevo.core.Particle;
 import com.protoevo.core.Simulation;
@@ -24,15 +25,15 @@ import com.protoevo.utils.DebugMode;
 
 import static com.protoevo.utils.Utils.lerp;
 
-public class EnvRenderer {
+public class EnvRenderer implements Renderer {
 
     private final Box2DDebugRenderer debugRenderer;
-    private final SpriteBatch worldBatch;
+//    private final SpriteBatch worldBatch;
     private final SpriteBatch particlesBatch;
     private final Texture circleTexture;
     private final Sprite jointSprite;
     private final ShapeRenderer shapeRenderer;
-    private final ShaderProgram vignetteShader;
+//    private final ShaderProgram vignetteShader;
 
     private final Environment environment;
     private final OrthographicCamera camera;
@@ -51,7 +52,7 @@ public class EnvRenderer {
         this.inputManager = inputManager;
 
         debugRenderer = new Box2DDebugRenderer();
-        worldBatch = new SpriteBatch();
+//        worldBatch = new SpriteBatch();
         particlesBatch = new SpriteBatch();
         environment = simulation.getEnv();
 
@@ -64,12 +65,12 @@ public class EnvRenderer {
         shapeRenderer = new ShapeRenderer();
         shapeRenderer.setAutoShapeType(true);
 
-        vignetteShader = new ShaderProgram(
-                Gdx.files.internal("shaders/vignette.vsh"),
-                Gdx.files.internal("shaders/vignette.fsh"));
-
-        if (!vignetteShader.isCompiled())
-            throw new RuntimeException("Shader compilation failed: " + vignetteShader.getLog());
+//        vignetteShader = new ShaderProgram(
+//                Gdx.files.internal("shaders/vignette/vertex.glsl"),
+//                Gdx.files.internal("shaders/vignette/fragment.glsl"));
+//
+//        if (!vignetteShader.isCompiled())
+//            throw new RuntimeException("Shader compilation failed: " + vignetteShader.getLog());
     }
 
     public void renderJoinedParticles(JointsManager.JoinedParticles joinedParticles) {
@@ -97,11 +98,9 @@ public class EnvRenderer {
         jointSprite.draw(particlesBatch);
     }
 
-    public void renderWorld() {
+    public void render(float delta) {
 
-        camera.update();
-        if (inputManager.getParticleTracker().isTracking())
-            camera.position.set(inputManager.getParticleTracker().getTrackedParticlePosition());
+        ScreenUtils.clear(0, 0.1f, 0.2f, 1);
 
         // Render Particles
         particlesBatch.enableBlending();
@@ -121,61 +120,6 @@ public class EnvRenderer {
             shapeRenderer.triangle(ps[0].x, ps[0].y, ps[1].x, ps[1].y, ps[2].x, ps[2].y);
         }
         shapeRenderer.end();
-    }
-
-    public void render(float delta) {
-
-        Gdx.gl.glActiveTexture(GL20.GL_TEXTURE0);
-
-        FrameBuffer fbo = new FrameBuffer(
-                Pixmap.Format.RGBA8888,
-                (int) camera.viewportWidth,
-                (int) camera.viewportHeight,
-                false);
-        fbo.begin();
-        renderWorld();
-        fbo.end();
-
-        Sprite worldSprite = new Sprite(fbo.getColorBufferTexture());
-        worldSprite.flip(false, true);
-
-        ShockWave shockWave = ShockWave.getInstance();
-        if (shockWave.isEnabled()) {
-            ShaderProgram shaderProgram = shockWave.getShaderProgram();
-            ShaderProgram.pedantic = false;
-            shaderProgram.bind();
-            Vector2 shockWavePos = shockWave.getShockWavePos();
-            Vector3 viewSpacePos = camera.project(new Vector3(shockWavePos.x, shockWavePos.y, 0));
-            viewSpacePos.x = viewSpacePos.x / camera.viewportWidth;
-            viewSpacePos.y = viewSpacePos.y / camera.viewportHeight;
-            shaderProgram.setUniformf("cameraZoom", camera.zoom);
-            shaderProgram.setUniformf("resolution", new Vector2(camera.viewportWidth, camera.viewportHeight));
-            shaderProgram.setUniformf("time", shockWave.getTime());
-            shaderProgram.setUniformf("center", new Vector2(viewSpacePos.x, viewSpacePos.y));
-            worldBatch.setShader(shaderProgram);
-        }
-
-        worldBatch.begin();
-        worldBatch.draw(worldSprite, 0, 0, camera.viewportWidth, camera.viewportHeight);
-        worldBatch.end();
-        if (worldBatch.getShader() != null)
-            worldBatch.setShader(null);
-
-//        ShaderProgram.pedantic = false;
-//        vignetteShader.bind();
-//        vignetteShader.setUniformMatrix("u_projTrans", camera.combined);
-//        vignetteShader.setUniformf("u_resolution", camera.viewportWidth, camera.viewportHeight);
-//        vignetteShader.setUniformi("u_tracking", inputManager.getParticleTracker().isTracking() ? 1 : 0);
-//
-//        Sprite worldSprite = new Sprite(fbo.getColorBufferTexture());
-//        worldSprite.flip(false, true);
-//        worldBatch.setShader(vignetteShader);
-//
-//        worldBatch.begin();
-//        worldBatch.draw(worldSprite, 0, 0, camera.viewportWidth, camera.viewportHeight);
-//        worldBatch.end();
-
-        fbo.dispose();
 
         if (DebugMode.isDebugModePhysicsDebug()) {
             renderPhysicsDebug();
@@ -239,10 +183,8 @@ public class EnvRenderer {
     }
 
     public void dispose() {
-        worldBatch.dispose();
         particlesBatch.dispose();
         circleTexture.dispose();
         shapeRenderer.dispose();
-        vignetteShader.dispose();
     }
 }

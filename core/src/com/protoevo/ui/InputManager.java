@@ -20,21 +20,21 @@ public class InputManager {
     private final LightningButton lightningButton;
 
 
-    public InputManager(UI ui)  {
-        OrthographicCamera camera = ui.getCamera();
+    public InputManager(SimulationScreen simulationScreen)  {
+        OrthographicCamera camera = simulationScreen.getCamera();
         ToggleDebug toggleDebug = new ToggleDebug();
 
-        InputLayers inputLayers = new InputLayers(ui.getStage(), toggleDebug);
+        InputLayers inputLayers = new InputLayers(simulationScreen.getStage(), toggleDebug);
         Gdx.input.setInputProcessor(inputLayers);
 
-        Collection<? extends Particle> particles = ui.getEnvironment().getParticles();
+        Collection<? extends Particle> particles = simulationScreen.getEnvironment().getParticles();
         inputLayers.addLayer(new ApplyForcesInput(particles, camera));
         PanZoomCameraInput panZoomCameraInput = new PanZoomCameraInput(camera);
 
-        TopBar topBar = ui.getTopBar();
+        TopBar topBar = simulationScreen.getTopBar();
 
         lightningButton = new LightningButton(this, topBar.getButtonSize());
-        inputLayers.addLayer(new LightningStrikeInput(ui, lightningButton));
+        inputLayers.addLayer(new LightningStrikeInput(simulationScreen, lightningButton));
 
         particleTracker = new ParticleTracker(particles, camera, panZoomCameraInput);
 
@@ -42,11 +42,11 @@ public class InputManager {
         Vector2 pos = topBar.nextLeftButtonPosition();
         moveParticleButton.setPosition(pos.x, pos.y);
 
-        SpawnParticleInput spawnParticleInput = new SpawnParticleInput(camera, ui.getEnvironment());
+        SpawnParticleInput spawnParticleInput = new SpawnParticleInput(camera, simulationScreen.getEnvironment());
         MoveParticle moveParticle = new MoveParticle(camera, particles, moveParticleButton, particleTracker);
-        CursorUpdater cursorUpdater = new CursorUpdater(ui, this);
+        CursorUpdater cursorUpdater = new CursorUpdater(simulationScreen, this);
 
-        ImageButton jediButton = ui.createBarImageButton("icons/jedi_on.png", event -> {
+        ImageButton jediButton = simulationScreen.createBarImageButton("icons/jedi_on.png", event -> {
             if (event.toString().equals("touchDown")) {
                 moveParticle.toggleJediMode();
                 ImageButton button = (ImageButton) event.getListenerActor();

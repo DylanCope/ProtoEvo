@@ -2,6 +2,7 @@ package com.protoevo.ui;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Color;
+import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
@@ -15,26 +16,24 @@ import com.badlogic.gdx.scenes.scene2d.Touchable;
 import com.badlogic.gdx.scenes.scene2d.ui.ImageButton;
 import com.badlogic.gdx.scenes.scene2d.utils.Drawable;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
-import com.badlogic.gdx.utils.ScreenUtils;
 import com.protoevo.core.Particle;
 import com.protoevo.core.Simulation;
 import com.protoevo.core.settings.Settings;
 import com.protoevo.env.Environment;
 import com.protoevo.input.ParticleTracker;
-import com.protoevo.ui.rendering.EnvRenderer;
-import com.protoevo.ui.rendering.ShockWave;
+import com.protoevo.ui.rendering.*;
 import com.protoevo.utils.CursorUtils;
 import com.protoevo.utils.DebugMode;
 import com.protoevo.utils.Utils;
 
 import java.util.Map;
 
-public class UI {
+public class SimulationScreen {
 
     private final Simulation simulation;
     private final Environment environment;
     private final InputManager inputManager;
-    private final EnvRenderer envRenderer;
+    private final Renderer renderer;
     private final SpriteBatch uiBatch;
     private final Stage stage;
     private final GlyphLayout layout = new GlyphLayout();
@@ -51,7 +50,7 @@ public class UI {
         return generator.generateFont(parameter);
     }
 
-    public UI(Simulation simulation) {
+    public SimulationScreen(Simulation simulation) {
         CursorUtils.setDefaultCursor();
 
         float graphicsHeight = Gdx.graphics.getHeight();
@@ -104,12 +103,11 @@ public class UI {
         topBar.addLeft(homeButton);
 
         inputManager = new InputManager(this);
-        envRenderer = new EnvRenderer(camera, simulation, inputManager);
-
-        ShockWave shockWave = ShockWave.getInstance();
-        shockWave.setRenderer(envRenderer);
-        shockWave.setCamera(camera);
-        stage.addActor(shockWave);
+        renderer = new ShaderLayers(
+                new EnvRenderer(camera, simulation, inputManager),
+                new ShockWaveLayer(camera),
+                new VignetteLayer(camera, inputManager.getParticleTracker())
+        );
     }
 
     public ImageButton createImageButton(String texturePath, float width, float height, EventListener listener) {
@@ -197,15 +195,14 @@ public class UI {
     }
 
     public void draw(float delta) {
+        camera.update();
+        if (inputManager.getParticleTracker().isTracking())
+            camera.position.set(inputManager.getParticleTracker().getTrackedParticlePosition());
 
-        ScreenUtils.clear(0, 0.1f, 0.2f, 1);
+        Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
+        Gdx.gl.glActiveTexture(GL20.GL_TEXTURE0);
 
-//        ShockWave shockWave = ShockWave.getInstance();
-//        if (shockWave.isEnabled()) {
-//            shockWave.render(delta);
-//        } else {
-        envRenderer.render(delta);
-//        }
+        renderer.render(delta);
 
         topBar.draw(delta);
 
@@ -236,7 +233,7 @@ public class UI {
         uiBatch.dispose();
         font.dispose();
         topBar.dispose();
-        envRenderer.dispose();
+        renderer.dispose();
     }
 
     public boolean overOnScreenControls(int screenX, int screenY) {

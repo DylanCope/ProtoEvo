@@ -3,33 +3,32 @@ package com.protoevo.core;
 import com.badlogic.gdx.ApplicationAdapter;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.math.Vector2;
-import com.badlogic.gdx.math.Vector3;
 import com.protoevo.core.settings.Settings;
-import com.protoevo.ui.UI;
+import com.protoevo.ui.SimulationScreen;
 
 public class Application extends ApplicationAdapter {
 	public static final float refreshDelay = 1000 / 120f;
 
 	private Simulation simulation;
-	private UI ui;
+	private SimulationScreen simulationScreen;
 
 
 	@Override
 	public void create () {
 		simulation = new Simulation();
 		Vector2[] populationCentres = simulation.getEnv().initialise();
-		ui = new UI(simulation);
+		simulationScreen = new SimulationScreen(simulation);
 
 		Vector2 pos = populationCentres[0];
-		ui.getCamera().position.set(pos.x, pos.y, 0);
-		ui.getCamera().zoom = 0.5f;
+		simulationScreen.getCamera().position.set(pos.x, pos.y, 0);
+		simulationScreen.getCamera().zoom = 0.5f;
 	}
 
 
 	@Override
 	public void render () {
 		float deltaTime = Gdx.graphics.getDeltaTime();
-		ui.draw(deltaTime);
+		simulationScreen.draw(deltaTime);
 		simulation.update(Settings.simulationUpdateDelta);
 
 
@@ -47,7 +46,7 @@ public class Application extends ApplicationAdapter {
 	@Override
 	public void dispose () {
 		simulation.dispose();
-		ui.dispose();
+		simulationScreen.dispose();
 	}
 
 }

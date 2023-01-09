@@ -6,24 +6,24 @@ import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector3;
 import com.protoevo.core.Particle;
 import com.protoevo.ui.InputManager;
-import com.protoevo.ui.UI;
+import com.protoevo.ui.SimulationScreen;
 import com.protoevo.utils.CursorUtils;
 import com.protoevo.utils.Geometry;
 
 public class CursorUpdater extends InputAdapter {
-    private final UI ui;
+    private final SimulationScreen simulationScreen;
     private final InputManager inputManager;
     private final Vector2 touchPos = new Vector2(0, 0);
 
-    public CursorUpdater(UI ui, InputManager inputManager) {
-        this.ui = ui;
+    public CursorUpdater(SimulationScreen simulationScreen, InputManager inputManager) {
+        this.simulationScreen = simulationScreen;
         this.inputManager = inputManager;
     }
 
     @Override
     public boolean mouseMoved(int screenX, int screenY) {
-        OrthographicCamera camera = ui.getCamera();
-        if (ui.overOnScreenControls(screenX, screenY)) {
+        OrthographicCamera camera = simulationScreen.getCamera();
+        if (simulationScreen.overOnScreenControls(screenX, screenY)) {
             CursorUtils.setDefaultCursor();
             return false;
         }
@@ -32,7 +32,7 @@ public class CursorUpdater extends InputAdapter {
         touchPos.set(worldSpace.x, worldSpace.y);
 
         float cameraScaling = camera.project(new Vector3(1, 0, 0)).len();
-        for (Particle particle : ui.getEnvironment().getParticles()) {
+        for (Particle particle : simulationScreen.getEnvironment().getParticles()) {
             float screenR = particle.getRadius() * cameraScaling;
             if (screenR > 30 && Geometry.isPointInsideCircle(particle.getPos(), particle.getRadius(), touchPos)) {
                 if (inputManager.getLightningButton().canStrike()) {

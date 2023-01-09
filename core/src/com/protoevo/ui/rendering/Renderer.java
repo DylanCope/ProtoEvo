@@ -1,5 +1,6 @@
 package com.protoevo.ui.rendering;
 
 public interface Renderer {
-    void render();
+    void render(float delta);
+    void dispose();
 }

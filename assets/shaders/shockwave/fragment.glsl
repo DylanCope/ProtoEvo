@@ -20,7 +20,7 @@ void main()
 {
 	// get pixel coordinates
 	vec2 l_texCoords = v_texCoords;
-//	vec2 center = vec2(0.5, 0.5);
+//		vec2 center = vec2(0.5, 0.5);
 	vec3 shockParams = vec3(10.0, 0.8, 0.1);
 
 	float offset = (time- floor(time))/time;
@@ -47,7 +47,7 @@ void main()
 		vec2 diffUV = normalize(v_texCoords-center);
 		//Perform the distortion and reduce the effect over time
 		l_texCoords = v_texCoords + ((diffUV * diffTime)/(CurrentTime * distance * 100.0));
-//		l_texCoords.x *= aspect;
+		//		l_texCoords.x *= aspect;
 		vec4 color = gl_FragColor = texture2D(sceneTex, l_texCoords);
 		color += (gl_FragColor * powDiff) / (time * distance * 100.0);
 		gl_FragColor = color;
