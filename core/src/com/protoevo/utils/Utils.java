@@ -1,6 +1,7 @@
 package com.protoevo.utils;
 
 import com.badlogic.gdx.graphics.Color;
+import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector2;
 
 public class Utils {
@@ -44,5 +45,14 @@ public class Utils {
                 a.x + (b.x - a.x) * t,
                 a.y + (b.y - a.y) * t
         );
+    }
+
+    public static float linearRemap(float x, float xStart, float xEnd, float outStart, float outEnd) {
+        float value = outStart + (outEnd - outStart) * ((x - xStart) / (xEnd - xStart));
+        if (outStart < outEnd) {
+            return MathUtils.clamp(value, outStart, outEnd);
+        } else {
+            return MathUtils.clamp(value, outEnd, outStart);
+        }
     }
 }

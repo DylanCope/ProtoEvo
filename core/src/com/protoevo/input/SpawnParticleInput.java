@@ -10,14 +10,16 @@ import com.protoevo.biology.PlantCell;
 import com.protoevo.core.Particle;
 import com.protoevo.env.Environment;
 import com.protoevo.utils.Geometry;
+import com.protoevo.utils.Utils;
 
 public class SpawnParticleInput extends InputAdapter {
 
     private final OrthographicCamera camera;
     private final Environment environment;
 
-    private final float rate = 0.05f;
+    private final float rate = 0.1f;
     private float timeSinceSpawn = 0;
+    private final Vector3 lastMousePos = new Vector3(), mousePos = new Vector3();
 
     public SpawnParticleInput(OrthographicCamera camera, Environment environment) {
         this.camera = camera;
@@ -40,6 +42,7 @@ public class SpawnParticleInput extends InputAdapter {
     @Override
     public boolean touchDown(int screenX, int screenY, int pointer, int button) {
         if (Gdx.input.isButtonPressed(Input.Buttons.MIDDLE)) {
+            lastMousePos.set(screenX, screenY, 0);
             Vector3 worldSpace = camera.unproject(new Vector3(screenX, screenY, 0));
             addParticle(worldSpace.x, worldSpace.y);
             return true;
@@ -49,9 +52,12 @@ public class SpawnParticleInput extends InputAdapter {
 
     @Override
     public boolean touchDragged(int screenX, int screenY, int pointer) {
+        mousePos.set(screenX, screenY, 0);
         if (Gdx.input.isButtonPressed(Input.Buttons.MIDDLE)) {
             timeSinceSpawn += Gdx.graphics.getDeltaTime();
-            if (timeSinceSpawn > rate) {
+            float speed = mousePos.dst(lastMousePos);
+            float dynamicRate = Utils.linearRemap(speed, 0f, Gdx.graphics.getWidth() / 4f, rate, 0f);
+            if (timeSinceSpawn > dynamicRate) {
                 Vector3 worldSpace = camera.unproject(new Vector3(screenX, screenY, 0));
                 addParticle(worldSpace.x, worldSpace.y);
                 timeSinceSpawn = 0f;
