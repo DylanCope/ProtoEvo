@@ -51,7 +51,8 @@ public class Neuron implements Comparable<Neuron>, Serializable {
     private float learningRate = 0;
     private Activation activation;
     private int depth = -1;
-    private int graphicsX = -1, graphicsY = -1;
+    private float graphicsX = -1;
+    private float graphicsY = -1;
     private boolean connectedToOutput = true;
     private final String label;
 
@@ -170,16 +171,16 @@ public class Neuron implements Comparable<Neuron>, Serializable {
         this.connectedToOutput = connectedToOutput;
     }
 
-    public void setGraphicsPosition(int x, int y) {
+    public void setGraphicsPosition(float x, float y) {
         graphicsX = x;
         graphicsY = y;
     }
 
-    public int getGraphicsX() {
+    public float getGraphicsX() {
         return graphicsX;
     }
 
-    public int getGraphicsY() {
+    public float getGraphicsY() {
         return graphicsY;
     }
 

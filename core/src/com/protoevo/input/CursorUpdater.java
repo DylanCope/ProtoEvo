@@ -42,7 +42,8 @@ public class CursorUpdater extends InputAdapter {
                     CursorUtils.setClosedHandCursor();
                 else if (inputManager.getMoveParticleButton().couldHold())
                         CursorUtils.setOpenHandCursor();
-                else if (inputManager.getParticleTracker().canTrack())
+                else if (inputManager.getParticleTracker().canTrack() &&
+                        inputManager.getParticleTracker().getTrackedParticle() != particle)
                     CursorUtils.setMagnifyingGlassCursor();
                 else
                     CursorUtils.setDefaultCursor();

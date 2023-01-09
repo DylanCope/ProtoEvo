@@ -16,10 +16,11 @@ import com.badlogic.gdx.scenes.scene2d.Touchable;
 import com.badlogic.gdx.scenes.scene2d.ui.ImageButton;
 import com.badlogic.gdx.scenes.scene2d.utils.Drawable;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
+import com.protoevo.biology.protozoa.NNBrain;
+import com.protoevo.biology.protozoa.Protozoan;
 import com.protoevo.core.Particle;
 import com.protoevo.core.Simulation;
 import com.protoevo.core.settings.EnvironmentSettings;
-import com.protoevo.core.settings.Settings;
 import com.protoevo.env.Environment;
 import com.protoevo.input.ParticleTracker;
 import com.protoevo.ui.rendering.*;
@@ -42,6 +43,7 @@ public class SimulationScreen {
     private final BitmapFont font, debugFont, titleFont;
     private final TopBar topBar;
     private final int infoTextSize, textAwayFromEdge;
+    private final NetworkRenderer networkRenderer;
 
     private float graphicsHeight;
     private float graphicsWidth;
@@ -118,6 +120,13 @@ public class SimulationScreen {
                 new ShockWaveLayer(camera),
                 new VignetteLayer(camera, inputManager.getParticleTracker())
         );
+
+
+        float boxWidth = (graphicsWidth / 2.0f - 1.2f * graphicsHeight * .4f);
+        float boxHeight = 3 * graphicsHeight / 4;
+        float boxXStart = graphicsWidth - boxWidth * 1.1f;
+        float boxYStart = (graphicsHeight - boxHeight) / 2;
+        networkRenderer = new NetworkRenderer(simulation, boxXStart, boxYStart, boxWidth, boxHeight, infoTextSize);
     }
 
     public ImageButton createImageButton(String texturePath, float width, float height, EventListener listener) {
@@ -230,6 +239,11 @@ public class SimulationScreen {
             float titleY = (float) (getYPosLHS(0) + 1.5 * titleFont.getLineHeight());
             titleFont.draw(uiBatch, particle.getPrettyName() + " Stats", textAwayFromEdge, titleY);
             renderStats(particle.getStats());
+//            if (particle instanceof Protozoan) {
+//                NNBrain nnBrain = (NNBrain) ((Protozoan) particle).getBrain();
+//                networkRenderer.setNeuralNetwork(nnBrain.network);
+//                networkRenderer.render(delta);
+//            }
         } else {
             float titleY = (float) (getYPosLHS(0) + 1.5 * titleFont.getLineHeight());
             titleFont.draw(uiBatch, "Simulation Stats", textAwayFromEdge, titleY);
@@ -240,6 +254,15 @@ public class SimulationScreen {
             drawDebugInfo();
 
         uiBatch.end();
+
+        if (particleTracker.isTracking()) {
+            Particle particle = particleTracker.getTrackedParticle();
+            if (particle instanceof Protozoan) {
+                NNBrain nnBrain = (NNBrain) ((Protozoan) particle).getBrain();
+                networkRenderer.setNeuralNetwork(nnBrain.network);
+                networkRenderer.render(delta);
+            }
+        }
     }
 
     public void dispose() {

@@ -54,7 +54,7 @@ public class BurstRequest<T extends Cell> {
 
             T child = createChild.apply(parent.getRadius() * p);
             child.setPos(parent.getPos().add(dir.scl(2 * child.getRadius())));
-            child.applyImpulse(dir.scl(2f));
+            child.applyImpulse(dir.scl(.01f));
 
             child.setGeneration(parent.getGeneration() + 1);
             allocateChildResources(child, p);

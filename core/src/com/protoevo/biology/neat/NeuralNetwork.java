@@ -17,7 +17,7 @@ public class NeuralNetwork implements Serializable
     private final int depth;
     private final int nInputs;
     private boolean computedGraphics = false;
-    private int nodeSpacing;
+    private float nodeSpacing;
 
     public NeuralNetwork(Neuron[] neurons) {
         this.neurons = neurons;
@@ -144,11 +144,11 @@ public class NeuralNetwork implements Serializable
         this.computedGraphics = computedGraphics;
     }
 
-    public void setGraphicsNodeSpacing(int nodeSpacing) {
+    public void setGraphicsNodeSpacing(float nodeSpacing) {
         this.nodeSpacing = nodeSpacing;
     }
 
-    public int getGraphicsNodeSpacing() {
+    public float getGraphicsNodeSpacing() {
         return nodeSpacing;
     }
 
