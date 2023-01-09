@@ -5,11 +5,8 @@ import com.badlogic.gdx.files.FileHandle;
 import com.badlogic.gdx.graphics.*;
 import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
-import com.badlogic.gdx.graphics.glutils.FrameBuffer;
-import com.badlogic.gdx.graphics.glutils.ShaderProgram;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.Vector2;
-import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.physics.box2d.Box2DDebugRenderer;
 import com.badlogic.gdx.utils.ScreenUtils;
 import com.protoevo.biology.Cell;
@@ -25,15 +22,13 @@ import com.protoevo.utils.DebugMode;
 
 import static com.protoevo.utils.Utils.lerp;
 
-public class EnvRenderer implements Renderer {
+public class EnvironmentRenderer implements Renderer {
 
     private final Box2DDebugRenderer debugRenderer;
-//    private final SpriteBatch worldBatch;
     private final SpriteBatch particlesBatch;
     private final Texture circleTexture;
     private final Sprite jointSprite;
     private final ShapeRenderer shapeRenderer;
-//    private final ShaderProgram vignetteShader;
 
     private final Environment environment;
     private final OrthographicCamera camera;
@@ -46,13 +41,12 @@ public class EnvRenderer implements Renderer {
         return new Sprite(texture);
     }
 
-    public EnvRenderer(OrthographicCamera camera, Simulation simulation, InputManager inputManager) {
+    public EnvironmentRenderer(OrthographicCamera camera, Simulation simulation, InputManager inputManager) {
         this.camera = camera;
         this.simulation = simulation;
         this.inputManager = inputManager;
 
         debugRenderer = new Box2DDebugRenderer();
-//        worldBatch = new SpriteBatch();
         particlesBatch = new SpriteBatch();
         environment = simulation.getEnv();
 
@@ -64,13 +58,6 @@ public class EnvRenderer implements Renderer {
 
         shapeRenderer = new ShapeRenderer();
         shapeRenderer.setAutoShapeType(true);
-
-//        vignetteShader = new ShaderProgram(
-//                Gdx.files.internal("shaders/vignette/vertex.glsl"),
-//                Gdx.files.internal("shaders/vignette/fragment.glsl"));
-//
-//        if (!vignetteShader.isCompiled())
-//            throw new RuntimeException("Shader compilation failed: " + vignetteShader.getLog());
     }
 
     public void renderJoinedParticles(JointsManager.JoinedParticles joinedParticles) {
@@ -133,7 +120,7 @@ public class EnvRenderer implements Renderer {
             Particle particle = particleTracker.getTrackedParticle();
             shapeRenderer.begin();
             shapeRenderer.setColor(0, 1, 0, 1);
-            InteractionsManager interactionsManager = simulation.getEnv().getForceManager();
+
             float maxDistance = particle.getInteractionRange();
             shapeRenderer.box(
                     particle.getPos().x - maxDistance,

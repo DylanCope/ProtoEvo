@@ -10,6 +10,7 @@ import com.badlogic.gdx.graphics.g2d.GlyphLayout;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator;
+import com.badlogic.gdx.math.Matrix4;
 import com.badlogic.gdx.scenes.scene2d.EventListener;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.Touchable;
@@ -42,20 +43,27 @@ public class SimulationScreen {
     private final TopBar topBar;
     private final int infoTextSize, textAwayFromEdge;
 
+    private float graphicsHeight;
+    private float graphicsWidth;
+
     public static BitmapFont createFiraCode(int size) {
         String fontPath = "fonts/FiraCode-Retina.ttf";
         FreeTypeFontGenerator generator = new FreeTypeFontGenerator(Gdx.files.local(fontPath));
         FreeTypeFontGenerator.FreeTypeFontParameter parameter = new FreeTypeFontGenerator.FreeTypeFontParameter();
         parameter.size = size;
+        parameter.borderWidth = size / 10f;
+        parameter.borderColor = new Color(0, 0, 0, .5f);
         return generator.generateFont(parameter);
     }
 
     public SimulationScreen(Simulation simulation) {
         CursorUtils.setDefaultCursor();
 
-        float graphicsHeight = Gdx.graphics.getHeight();
-        float graphicsWidth = Gdx.graphics.getWidth();
+        graphicsHeight = Gdx.graphics.getHeight();
+        graphicsWidth = Gdx.graphics.getWidth();
+
         camera = new OrthographicCamera();
+//        camera.setToOrtho(false, 1, graphicsHeight / graphicsWidth);
         camera.setToOrtho(false, graphicsWidth, graphicsHeight);
         camera.position.set(0, 0, 0);
         camera.zoom = Math.max(graphicsWidth, graphicsHeight) / Settings.tankRadius;
@@ -104,7 +112,7 @@ public class SimulationScreen {
 
         inputManager = new InputManager(this);
         renderer = new ShaderLayers(
-                new EnvRenderer(camera, simulation, inputManager),
+                new EnvironmentRenderer(camera, simulation, inputManager),
                 new ShockWaveLayer(camera),
                 new VignetteLayer(camera, inputManager.getParticleTracker())
         );
@@ -196,6 +204,9 @@ public class SimulationScreen {
 
     public void draw(float delta) {
         camera.update();
+//        float factor = 2f;
+//        camera.combined.mul(new Matrix4().setToScaling(2, 2, 0));
+//        camera.invProjectionView.mul(new Matrix4().setToScaling(1 / factor, 1 / factor, 0));
         if (inputManager.getParticleTracker().isTracking())
             camera.position.set(inputManager.getParticleTracker().getTrackedParticlePosition());
 

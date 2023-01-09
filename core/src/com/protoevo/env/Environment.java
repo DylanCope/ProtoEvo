@@ -53,7 +53,7 @@ public class Environment implements Serializable
 
 		interactionsManager = new InteractionsManager(this);
 		jointsManager = new JointsManager(this);
-		world.setContactListener(new EnvContactListener(this));
+		world.setContactListener(new CollisionHandler(this));
 
 //		TODO: revisit chemical field implementation
 //		if (Settings.enableChemicalField) {
@@ -137,6 +137,9 @@ public class Environment implements Serializable
 			writeGenomeHeaders();
 
 		hasInitialised = true;
+
+		for (int i = 0; i < 3; i++)
+			update(Settings.simulationUpdateDelta);
 
 		return populationStartCentres;
 	}

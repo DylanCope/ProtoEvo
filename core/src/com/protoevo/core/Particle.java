@@ -40,8 +40,8 @@ public class Particle implements Collidable {
 
     public void update(float delta) {
         dynamicsFixture.getShape().setRadius(radius);
-//        dynamicsFixture.setDensity(getMassDensity());
-//        body.resetMassData();
+        if (doesInteract())
+            sensorFixture.getShape().setRadius(getInteractionRange());
     }
 
     public void createBody() {
@@ -67,8 +67,8 @@ public class Particle implements Collidable {
         fixtureDef.friction = 0.8f;
         fixtureDef.restitution = 0.6f;
 
-        if (getSensorCategory() != 0x0000)
-            fixtureDef.filter.categoryBits = getSensorCategory();
+//        if (getSensorCategory() != 0x0000)
+//            fixtureDef.filter.categoryBits = getSensorCategory();
 
         dynamicsFixture = body.createFixture(fixtureDef);
         dynamicsFixture.setUserData(this);
@@ -77,24 +77,22 @@ public class Particle implements Collidable {
 
         circle.dispose();
 
-//        // Create the sensor fixture and attach it to the body
-//        PolygonShape boundingBoxShape = new PolygonShape();
-//        boundingBoxShape.setAsBox(radius, radius);
-//
-//        BodyDef sensorBodyDef = new BodyDef();
-//        sensorBodyDef.type = BodyDef.BodyType.StaticBody;
-//
-//        FixtureDef sensorFixtureDef = new FixtureDef();
-//        sensorFixtureDef.shape = boundingBoxShape;
-//        sensorFixtureDef.isSensor = true;
+        if (doesInteract()) {
+            // Create the sensor fixture and attach it to the body
+            CircleShape interactionCircle = new CircleShape();
+
+            FixtureDef sensorFixtureDef = new FixtureDef();
+            sensorFixtureDef.shape = interactionCircle;
+            sensorFixtureDef.isSensor = true;
 //        if (getSensorMask() != 0x0000)
 //            sensorFixtureDef.filter.maskBits = getSensorMask();
-//
-//        sensorFixture = body.createFixture(sensorFixtureDef);
-//        sensorFixture.setUserData(this);
-//        sensorFixture.setFilterData(new Filter());
-//
-//        boundingBoxShape.dispose();
+
+            sensorFixture = body.createFixture(sensorFixtureDef);
+            sensorFixture.setUserData(this);
+            sensorFixture.setFilterData(new Filter());
+
+            interactionCircle.dispose();
+        }
     }
 
     /**
@@ -298,6 +296,7 @@ public class Particle implements Collidable {
         stats.put("Num Contacts", (float) contactObjects.size());
         stats.put("Num Interactions", (float) interactionQueue.size());
         stats.put("Is Dead", dead ? 1f : 0f);
+        stats.put("Is Sleeping", body.isAwake() ? 0f : 1f);
         return stats;
     }
 

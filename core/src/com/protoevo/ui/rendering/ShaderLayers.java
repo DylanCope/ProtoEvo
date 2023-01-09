@@ -1,5 +1,6 @@
 package com.protoevo.ui.rendering;
 
+import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.g2d.Sprite;
@@ -23,7 +24,7 @@ public class ShaderLayers implements Renderer {
         if (!layers.isEmpty()) {
             camera = layers.get(0).getCamera();
             fbo = new FrameBuffer(Pixmap.Format.RGBA8888,
-                    (int) camera.viewportWidth, (int) camera.viewportHeight, false);
+                    Gdx.graphics.getWidth(), Gdx.graphics.getHeight(), false);
             batch = new SpriteBatch();
         } else {
             camera = null;

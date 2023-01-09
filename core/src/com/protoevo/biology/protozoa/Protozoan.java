@@ -303,11 +303,16 @@ public class Protozoan extends Cell implements Evolvable
 
 	@Override
 	public float getInteractionRange() {
-		if (spikes.getNumSpikes() > 0 && retina.numberOfCells() == 0) {
-			float maxSpikeLen = 0;
-			for (Spikes.Spike spike : spikes.getSpikes())
-				maxSpikeLen = Math.max(maxSpikeLen, getSpikeLength(spike));
-			return getRadius() + maxSpikeLen;
+		if (retina.numberOfCells() == 0) {
+			if (spikes.getNumSpikes() > 0) {
+				float maxSpikeLen = 0;
+				for (Spikes.Spike spike : spikes.getSpikes())
+					maxSpikeLen = Math.max(maxSpikeLen, getSpikeLength(spike));
+				return getRadius() * 1.1f + maxSpikeLen;
+			}
+			else {
+				return getRadius() * 1.1f;
+			}
 		}
 		return Settings.protozoaInteractRange;
 	}

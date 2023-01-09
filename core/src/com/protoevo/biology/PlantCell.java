@@ -118,24 +118,24 @@ public class PlantCell extends EdibleCell {
         return 3;
     }
 
-    public float getInteractionRange() {
-        return  5 * getRadius();
+    public boolean doesInteract() {
+        return false;
     }
 
-    @Override
-    public void interact(List<Object> interactions) {
-        float maxDist2 = getInteractionRange() * getInteractionRange();
-        float minDist2 = getRadius() * getRadius() * 1.1f * 1.1f;
-        for (Object interaction : interactions) {
-            if (interaction instanceof PlantCell) {
-                PlantCell other = (PlantCell) interaction;
-                Vector2 pos = other.getPos();
-                float dist2 = pos.dst2(getPos());
-                if (minDist2 < dist2 && dist2 < maxDist2) {
-                    Vector2 impulse = pos.cpy().sub(getPos()).setLength(10f / dist2);
-                    applyImpulse(impulse);
-                }
-            }
-        }
-    }
+//    @Override
+//    public void interact(List<Object> interactions) {
+//        float maxDist2 = getInteractionRange() * getInteractionRange();
+//        float minDist2 = getRadius() * getRadius() * 1.1f * 1.1f;
+//        for (Object interaction : interactions) {
+//            if (interaction instanceof PlantCell) {
+//                PlantCell other = (PlantCell) interaction;
+//                Vector2 pos = other.getPos();
+//                float dist2 = pos.dst2(getPos());
+//                if (minDist2 < dist2 && dist2 < maxDist2) {
+//                    Vector2 impulse = pos.cpy().sub(getPos()).setLength(10f / dist2);
+//                    applyImpulse(impulse);
+//                }
+//            }
+//        }
+//    }
 }

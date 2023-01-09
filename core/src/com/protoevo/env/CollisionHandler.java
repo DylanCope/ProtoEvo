@@ -5,12 +5,12 @@ import com.protoevo.core.Particle;
 
 import java.io.Serializable;
 
-public class EnvContactListener implements ContactListener, Serializable {
+public class CollisionHandler implements ContactListener, Serializable {
     public static long serialVersionUID = 1L;
 
     private final Environment environment;
 
-    public EnvContactListener(Environment environment) {
+    public CollisionHandler(Environment environment) {
         this.environment = environment;
     }
 
@@ -22,17 +22,21 @@ public class EnvContactListener implements ContactListener, Serializable {
         Body bodyA = fixtureA.getBody();
         Body bodyB = fixtureB.getBody();
 
-        if (fixtureA.isSensor()) {  // A has sensed B
-            if (bodyA.getUserData() instanceof Particle) {
-                Particle particle = (Particle) bodyA.getUserData();
-                particle.queueInteraction(bodyB.getUserData());
-            }
+        if (fixtureA.isSensor() && bodyA.getUserData() instanceof Particle) {
+            Particle particleA = (Particle) bodyA.getUserData();
+            particleA.queueInteraction(bodyB.getUserData());
         }
-        if (bodyA.getUserData() instanceof Particle)
-            onContact((Particle) bodyA.getUserData(), bodyB);
+        else if (fixtureB.isSensor() && bodyA.getUserData() instanceof Particle) {
+            Particle particleB = (Particle) bodyB.getUserData();
+            particleB.queueInteraction(bodyA.getUserData());
+        }
+        else {
+            if (bodyA.getUserData() instanceof Particle)
+                onContact((Particle) bodyA.getUserData(), bodyB);
 
-        if (bodyB.getUserData() instanceof Particle)
-            onContact((Particle) bodyB.getUserData(), bodyA);
+            if (bodyB.getUserData() instanceof Particle)
+                onContact((Particle) bodyB.getUserData(), bodyA);
+        }
     }
 
     private void onContact(Particle particle, Body body) {
