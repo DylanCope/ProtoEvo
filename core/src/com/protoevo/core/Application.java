@@ -30,16 +30,6 @@ public class Application extends ApplicationAdapter {
 		float deltaTime = Gdx.graphics.getDeltaTime();
 		simulationScreen.draw(deltaTime);
 		simulation.update(Settings.simulationUpdateDelta);
-
-
-//		if (paused)
-//			return;
-
-//		timeToAttractionTracker += deltaTime;
-//		particles.forEach(this::updateParticle);
-//		if (timeToAttractionTracker >= .25f)
-//			timeToAttractionTracker = 0;
-
 	}
 
 

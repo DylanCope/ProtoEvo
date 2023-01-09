@@ -51,6 +51,9 @@ public class ShaderLayers implements Renderer {
         baseRenderer.render(delta);
         fbo.end();
 
+        float graphicsWidth = Gdx.graphics.getWidth();
+        float graphicsHeight = Gdx.graphics.getHeight();
+
         for (int i = 0; i < layers.size(); i++) {
             ShaderLayer layer = layers.get(i);
             if (layer.isEnabled()) {
@@ -64,18 +67,18 @@ public class ShaderLayers implements Renderer {
                     fbo.bind();
                     fbo.begin();
                     batch.begin();
-                    batch.draw(sprite, 0, 0, camera.viewportWidth, camera.viewportHeight);
+                    batch.draw(sprite, 0, 0, graphicsWidth, graphicsHeight);
                     batch.end();
                     fbo.end();
                 } else {
                     batch.begin();
-                    batch.draw(sprite, 0, 0, camera.viewportWidth, camera.viewportHeight);
+                    batch.draw(sprite, 0, 0, graphicsWidth, graphicsHeight);
                     batch.end();
                 }
             } else if (i == layers.size() - 1) {
                 Sprite sprite = getFBOSprite();
                 batch.begin();
-                batch.draw(sprite, 0, 0, camera.viewportWidth, camera.viewportHeight);
+                batch.draw(sprite, 0, 0, graphicsWidth, graphicsHeight);
                 batch.end();
             }
             layer.update(delta);

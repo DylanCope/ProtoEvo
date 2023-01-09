@@ -1,5 +1,6 @@
 package com.protoevo.ui.rendering;
 
+import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.glutils.ShaderProgram;
 import com.badlogic.gdx.math.Vector2;
@@ -50,12 +51,14 @@ public class ShockWaveLayer extends ShaderLayer {
 
         OrthographicCamera camera = getCamera();
         Vector3 viewSpacePos = camera.project(new Vector3(worldSpaceShockPos.x, worldSpaceShockPos.y, 0));
-        viewSpacePos.x = viewSpacePos.x / camera.viewportWidth;
-        viewSpacePos.y = viewSpacePos.y / camera.viewportHeight;
+        float graphicsWidth = Gdx.graphics.getWidth();
+        float graphicsHeight = Gdx.graphics.getHeight();
+        viewSpacePos.x = viewSpacePos.x / graphicsWidth;
+        viewSpacePos.y = viewSpacePos.y / graphicsHeight;
         System.out.println("viewSpacePos: " + viewSpacePos);
         System.out.println("worldSpaceShockPos: " + worldSpaceShockPos);
         shaderProgram.setUniformf("cameraZoom", camera.zoom);
-        shaderProgram.setUniformf("resolution", new Vector2(camera.viewportWidth, camera.viewportHeight));
+        shaderProgram.setUniformf("resolution", new Vector2(graphicsWidth, graphicsHeight));
         shaderProgram.setUniformf("time", time / SHOCK_WAVE_TIME);
         shaderProgram.setUniformf("center", new Vector2(viewSpacePos.x, viewSpacePos.y));
     }

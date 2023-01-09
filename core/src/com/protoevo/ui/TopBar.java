@@ -51,7 +51,7 @@ public class TopBar {
              x = 2 * topBarPadding;
         }
 
-        float y = simulationScreen.getCamera().viewportHeight - topBarButtonSize - (topBarHeight - topBarButtonSize) / 2f;
+        float y = Gdx.graphics.getHeight() - topBarButtonSize - (topBarHeight - topBarButtonSize) / 2f;
 
         return new Vector2(x, y);
     }
@@ -69,10 +69,10 @@ public class TopBar {
             Actor lastActor = rightActors.get(rightActors.size() - 1);
             x = lastActor.getX() - 1.5f * topBarPadding;
         } else {
-            x = simulationScreen.getCamera().viewportWidth - 2 * topBarPadding;
+            x = Gdx.graphics.getWidth() - 2 * topBarPadding;
         }
 
-        float y = simulationScreen.getCamera().viewportHeight - topBarButtonSize - (topBarHeight - topBarButtonSize) / 2f;
+        float y = Gdx.graphics.getHeight() - topBarButtonSize - (topBarHeight - topBarButtonSize) / 2f;
 
         return new Vector2(x, y);
     }
@@ -89,7 +89,7 @@ public class TopBar {
         Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
         shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
         shapeRenderer.setColor(0, 0, 0, 0.5f);
-        shapeRenderer.box(0, simulationScreen.getCamera().viewportHeight - topBarHeight, 0, simulationScreen.getCamera().viewportWidth,
+        shapeRenderer.box(0, Gdx.graphics.getHeight() - topBarHeight, 0, Gdx.graphics.getWidth(),
                 topBarHeight, 0);
         shapeRenderer.end();
         Gdx.gl.glDisable(GL20.GL_BLEND);

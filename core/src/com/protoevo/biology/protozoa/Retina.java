@@ -2,6 +2,7 @@ package com.protoevo.biology.protozoa;
 
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.math.Vector2;
+import com.google.common.collect.Iterators;
 import com.protoevo.biology.ConstructionProject;
 import com.protoevo.biology.Food;
 import com.protoevo.biology.evolution.Evolvable;
@@ -9,6 +10,7 @@ import com.protoevo.biology.evolution.EvolvableFloat;
 import com.protoevo.biology.evolution.EvolvableInteger;
 import com.protoevo.biology.evolution.GeneRegulator;
 import com.protoevo.core.settings.Settings;
+import com.protoevo.core.settings.SimulationSettings;
 import com.protoevo.utils.Geometry;
 
 import java.io.Serializable;
@@ -123,7 +125,7 @@ public class Retina implements Evolvable.Component, Iterable<Retina.Cell>, Seria
 		}
 
 		public static float getRequiredMass(float retinaFoV, int nCells) {
-			float r = Settings.minParticleRadius;
+			float r = SimulationSettings.minParticleRadius;
 			return (float) (Math.log(nCells + 1) * Math.log(retinaFoV + 1) * r * r * r / 20f);
 		}
 
@@ -137,7 +139,7 @@ public class Retina implements Evolvable.Component, Iterable<Retina.Cell>, Seria
 
 		public static Map<Food.ComplexMolecule, Float> getRequiredComplexMolecules(float retinaFoV, int nCells) {
 			Map<Food.ComplexMolecule, Float> requiredMolecules = new HashMap<>();
-			float r = Settings.minParticleRadius;
+			float r = SimulationSettings.minParticleRadius;
 			requiredMolecules.put(
 					Food.ComplexMolecule.Retinal,
 					(float) (nCells * retinaFoV * r * r * r / (20 * Math.PI))
@@ -206,8 +208,7 @@ public class Retina implements Evolvable.Component, Iterable<Retina.Cell>, Seria
 
 	@Override
 	public Iterator<Cell> iterator() {
-//		return Iterators.forArray(cells);
-		return null;
+		return Iterators.forArray(cells);
 	}
 
 	public float getCellAngle() {

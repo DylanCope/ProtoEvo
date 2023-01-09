@@ -10,7 +10,6 @@ import com.badlogic.gdx.graphics.g2d.GlyphLayout;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator;
-import com.badlogic.gdx.math.Matrix4;
 import com.badlogic.gdx.scenes.scene2d.EventListener;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.Touchable;
@@ -19,6 +18,7 @@ import com.badlogic.gdx.scenes.scene2d.utils.Drawable;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 import com.protoevo.core.Particle;
 import com.protoevo.core.Simulation;
+import com.protoevo.core.settings.EnvironmentSettings;
 import com.protoevo.core.settings.Settings;
 import com.protoevo.env.Environment;
 import com.protoevo.input.ParticleTracker;
@@ -63,10 +63,12 @@ public class SimulationScreen {
         graphicsWidth = Gdx.graphics.getWidth();
 
         camera = new OrthographicCamera();
-//        camera.setToOrtho(false, 1, graphicsHeight / graphicsWidth);
-        camera.setToOrtho(false, graphicsWidth, graphicsHeight);
+        camera.setToOrtho(
+                false, EnvironmentSettings.environmentSize,
+                EnvironmentSettings.environmentSize * graphicsHeight / graphicsWidth);
+//        camera.setToOrtho(false, graphicsWidth, graphicsHeight);
         camera.position.set(0, 0, 0);
-        camera.zoom = Math.max(graphicsWidth, graphicsHeight) / Settings.tankRadius;
+        camera.zoom = Math.max(graphicsWidth, graphicsHeight) / EnvironmentSettings.environmentSize;
 
         this.simulation = simulation;
         this.environment = simulation.getEnv();
@@ -153,7 +155,8 @@ public class SimulationScreen {
         String separator = " | ";
         String debugString = "FPS: " + Gdx.graphics.getFramesPerSecond();
         debugString += separator + "Zoom: " + ((int) (100 * camera.zoom)) / 100.f;
-        debugString += separator + "Pos: " + (int) camera.position.x + ", " + (int) camera.position.y;
+        debugString += separator + "Pos: " + Utils.numberToString(camera.position.x, 2)
+                + ", " + Utils.numberToString(camera.position.y, 2);
         if (DebugMode.isDebugModePhysicsDebug()) {
             debugString += separator + "Bodies: " + environment.getWorld().getBodyCount();
             debugString += separator + "Contacts: " + environment.getWorld().getContactCount();
@@ -175,7 +178,7 @@ public class SimulationScreen {
                     }
                     text += valueStr;
                     layout.setText(debugFont, text);
-                    float x = camera.viewportWidth - layout.width - textAwayFromEdge;
+                    float x = graphicsWidth - layout.width - textAwayFromEdge;
                     debugFont.draw(uiBatch, text, x, getYPosRHS(lineNumber));
                     lineNumber++;
                 }
@@ -186,11 +189,11 @@ public class SimulationScreen {
     }
 
     public float getYPosLHS(int i) {
-        return camera.viewportHeight - (1.3f*infoTextSize*i + 3 * camera.viewportHeight / 20f);
+        return graphicsHeight - (1.3f*infoTextSize*i + 3 * graphicsHeight / 20f);
     }
 
     public float getYPosRHS(int i) {
-        return 1.3f*infoTextSize*i + camera.viewportHeight / 20f;
+        return 1.3f*infoTextSize*i + graphicsHeight / 20f;
     }
 
     private void renderStats(Map<String, Float> stats) {

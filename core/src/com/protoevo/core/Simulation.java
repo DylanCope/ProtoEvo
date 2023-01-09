@@ -5,6 +5,7 @@ import com.protoevo.biology.MeatCell;
 import com.protoevo.biology.PlantCell;
 import com.protoevo.biology.protozoa.Protozoan;
 import com.protoevo.core.settings.Settings;
+import com.protoevo.core.settings.SimulationSettings;
 import com.protoevo.env.Environment;
 import com.protoevo.utils.FileIO;
 import com.protoevo.utils.Utils;
@@ -76,9 +77,9 @@ public class Simulation
 	}
 
 	private void loadSettings() {
-		environment.cellCapacities.put(Protozoan.class, Settings.maxProtozoa);
-		environment.cellCapacities.put(PlantCell.class, Settings.maxPlants);
-		environment.cellCapacities.put(MeatCell.class, Settings.maxMeat);
+		environment.cellCapacities.put(Protozoan.class, SimulationSettings.maxProtozoa);
+		environment.cellCapacities.put(PlantCell.class, SimulationSettings.maxPlants);
+		environment.cellCapacities.put(MeatCell.class, SimulationSettings.maxMeat);
 	}
 
 	private void newSaveDir() {
@@ -180,6 +181,9 @@ public class Simulation
 
 	public void update(float delta)
 	{
+		if (isPaused())
+			return;
+
 //		float delta = timeDilation * Settings.simulationUpdateDelta;
 		synchronized (environment) {
 			environment.update(delta);

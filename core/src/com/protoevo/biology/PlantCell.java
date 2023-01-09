@@ -4,6 +4,7 @@ import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.math.Vector2;
 import com.protoevo.core.settings.Settings;
 import com.protoevo.core.Simulation;
+import com.protoevo.core.settings.SimulationSettings;
 import com.protoevo.env.Environment;
 
 import java.util.List;
@@ -21,7 +22,7 @@ public class PlantCell extends EdibleCell {
         super(Math.max(radius, Settings.minPlantBirthRadius), Food.Type.Plant, environment);
         setGrowthRate(Settings.minPlantGrowth + Settings.plantGrowthRange * Simulation.RANDOM.nextFloat());
 
-        maxRadius = Simulation.RANDOM.nextFloat(2 * Settings.minParticleRadius, Settings.maxParticleRadius);
+        maxRadius = Simulation.RANDOM.nextFloat(2 * SimulationSettings.minParticleRadius, SimulationSettings.maxParticleRadius);
 
         setMaxAttachedCells(2);
         setCAMAvailable(plantCAM, 1f);

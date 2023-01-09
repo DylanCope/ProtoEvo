@@ -1,6 +1,7 @@
 package com.protoevo.env;
 
 import com.badlogic.gdx.math.Vector2;
+import com.protoevo.core.settings.EnvironmentSettings;
 import com.protoevo.core.settings.Settings;
 import com.protoevo.core.Simulation;
 import com.protoevo.utils.Geometry;
@@ -17,7 +18,7 @@ public class RockGeneration {
     }
 
     public static Vector2 randomPosition(float entityRadius) {
-        return randomPosition(Geometry.ZERO, entityRadius, Settings.tankRadius);
+        return randomPosition(Geometry.ZERO, entityRadius, EnvironmentSettings.environmentSize);
     }
 
     public static Vector2 randomPosition(float minR, float maxR) {
@@ -26,10 +27,10 @@ public class RockGeneration {
 
     public static void generateClustersOfRocks(Environment environment, Vector2 pos, int nRings, float radiusRange) {
 
-        if (Settings.initialPopulationClustering) {
+        if (EnvironmentSettings.initialPopulationClustering) {
             // generate a ring for each population cluster
             for (int i = 0; i < nRings; i++) {
-                Vector2 centre = randomPosition(Settings.rockClusterRadius).add(pos);
+                Vector2 centre = randomPosition(EnvironmentSettings.rockClusterRadius).add(pos);
                 float minR = Math.max(0.1f, radiusRange);
                 float radius = Simulation.RANDOM.nextFloat() * (radiusRange - minR) + minR;
                 generateRingOfRocks(environment, centre, radius);
@@ -38,20 +39,22 @@ public class RockGeneration {
     }
 
     public static void generateRingOfRocks(Environment environment, Vector2 ringCentre, float ringRadius) {
-        generateRingOfRocks(environment, ringCentre, ringRadius, .01f);
+        generateRingOfRocks(environment, ringCentre, ringRadius, EnvironmentSettings.ringBreakProbability);
     }
 
     public static void generateRingOfRocks(Environment environment, Vector2 ringCentre, float ringRadius, float breakProb) {
-        float angleDelta = (float) (2 * Math.asin(Settings.minRockSize / (20 * ringRadius)));
+        float angleDelta = (float) (2 * Math.asin(EnvironmentSettings.minRockSize / (20 * ringRadius)));
         Rock currentRock = null;
         for (float angle = 0; angle < 2*Math.PI; angle += angleDelta) {
             if (breakProb > 0 && Simulation.RANDOM.nextFloat() < breakProb) {
                 currentRock = null;
-                angle += angleDelta * 10;
+                angle += Simulation.RANDOM.nextFloat(
+                        EnvironmentSettings.ringBreakAngleMinSkip,
+                        EnvironmentSettings.ringBreakAngleMaxSkip);
             }
             if (currentRock == null || currentRock.allEdgesAttached()) {
                 currentRock = newCircumferenceRockAtAngle(ringCentre, ringRadius, angle);
-                if (isRockObstructed(currentRock, environment.getRocks(), Settings.minRockOpeningSize)) {
+                if (isRockObstructed(currentRock, environment.getRocks(), EnvironmentSettings.minRockOpeningSize)) {
                     currentRock = null;
                 } else {
                     environment.getRocks().add(currentRock);
@@ -61,8 +64,8 @@ public class RockGeneration {
                 float bestRockDistToCirc = Float.MAX_VALUE;
                 int bestRockAttachIdx = -1;
                 for (int i = 0; i < currentRock.getEdges().length; i++) {
-                    float sizeRange = (Settings.maxRockSize - Settings.minRockOpeningSize);
-                    float rockSize = 1.5f * Settings.minRockOpeningSize + sizeRange * Simulation.RANDOM.nextFloat();
+                    float sizeRange = (EnvironmentSettings.maxRockSize - EnvironmentSettings.minRockOpeningSize);
+                    float rockSize = 1.5f * EnvironmentSettings.minRockOpeningSize + sizeRange * Simulation.RANDOM.nextFloat();
                     if (!currentRock.isEdgeAttached(i)) {
                         Rock newRock = newAttachedRock(currentRock, i, environment.getRocks(), rockSize);
                         if (newRock != null) {
@@ -100,7 +103,7 @@ public class RockGeneration {
 
         for (int i = 0; i < nIterations; i++) {
             if (unattachedRocks.size() == 0
-                    || Simulation.RANDOM.nextFloat() > Settings.rockClustering) {
+                    || Simulation.RANDOM.nextFloat() > EnvironmentSettings.rockClustering) {
                 Rock rock = newRock(environment);
                 if (tryAdd(rock, environment.getRocks())) {
                     unattachedRocks.add(rock);
@@ -130,8 +133,8 @@ public class RockGeneration {
     }
 
     public static Rock newAttachedRock(Rock toAttach, int edgeIdx, List<Rock> rocks) {
-        float sizeRange = (Settings.maxRockSize - Settings.minRockSize);
-        float rockSize = Settings.minRockSize + sizeRange * Simulation.RANDOM.nextFloat();
+        float sizeRange = (EnvironmentSettings.maxRockSize - EnvironmentSettings.minRockSize);
+        float rockSize = EnvironmentSettings.minRockSize + sizeRange * Simulation.RANDOM.nextFloat();
         return newAttachedRock(toAttach, edgeIdx, rocks, rockSize);
     }
 
@@ -145,7 +148,7 @@ public class RockGeneration {
         Vector2[] newEdge1 = new Vector2[]{p1, p3};
         Vector2[] newEdge2 = new Vector2[]{p2, p3};
         if (notInAnyRocks(newEdge1, newEdge2, rocks, toAttach)
-                && leavesOpening(p3, rocks, Settings.minRockOpeningSize)) {
+                && leavesOpening(p3, rocks, EnvironmentSettings.minRockOpeningSize)) {
             return new Rock(p1, p2, p3);
         }
         return null;
@@ -195,7 +198,7 @@ public class RockGeneration {
     }
 
     public static Rock newRock(Environment environment) {
-        float centreR = Settings.tankRadius * Simulation.RANDOM.nextFloat();
+        float centreR = EnvironmentSettings.environmentSize * Simulation.RANDOM.nextFloat();
         float centreT = (float) (2*Math.PI * Simulation.RANDOM.nextFloat());
         Vector2 centre = Geometry.fromAngle(centreT).setLength(centreR);
         return newRockAt(centre);
@@ -207,13 +210,13 @@ public class RockGeneration {
     }
 
     public static Rock newRockAt(Vector2 centre, Vector2 dir) {
-        float sizeRange = (Settings.maxRockSize - Settings.minRockSize);
-        float rockSize = Settings.minRockSize + sizeRange * Simulation.RANDOM.nextFloat();
+        float sizeRange = (EnvironmentSettings.maxRockSize - EnvironmentSettings.minRockSize);
+        float rockSize = EnvironmentSettings.minRockSize + sizeRange * Simulation.RANDOM.nextFloat();
 
         float k1 = 0.95f + 0.1f * Simulation.RANDOM.nextFloat();
         Vector2 p1 = centre.cpy().add(dir.cpy().setLength(k1 * rockSize));
 //(417.3416,-608.31537)
-        float tMin = Settings.minRockSpikiness;
+        float tMin = EnvironmentSettings.minRockSpikiness;
         float tMax = (float) (2*Math.PI / 3);
         float t1 = tMin + (tMax - 2*tMin) * Simulation.RANDOM.nextFloat();
         float k2 = 0.95f + 0.1f * Simulation.RANDOM.nextFloat();
@@ -222,7 +225,7 @@ public class RockGeneration {
         Vector2 p2 = centre.cpy().add(dir.cpy().setLength(k2 * rockSize));
 //(702.7173,224.46463)
         float t2 = tMin + (tMax - tMin) * Simulation.RANDOM.nextFloat();
-        float l3 = Settings.minRockSize + sizeRange * Simulation.RANDOM.nextFloat();
+        float l3 = EnvironmentSettings.minRockSize + sizeRange * Simulation.RANDOM.nextFloat();
         dir.rotateRad(t2);
         Vector2 p3 = centre.cpy().add(dir.cpy().setLength(l3));
 

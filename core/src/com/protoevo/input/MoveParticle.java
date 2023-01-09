@@ -93,7 +93,7 @@ public class MoveParticle extends InputAdapter {
             lastMousePos.set(worldSpace.x, worldSpace.y);
 
             if (jediMode) {
-                Vector2 impulse = new Vector2(mouseVel);
+                Vector2 impulse = new Vector2(mouseVel).scl(.001f);
                 grabbedParticle.getBody().applyLinearImpulse(
                         impulse, grabbedParticle.getBody().getWorldCenter(), true);
             } else {
@@ -118,7 +118,7 @@ public class MoveParticle extends InputAdapter {
 
                 if (mouseVel.len2() > 5000) {
                     // add a little velocity to the particle
-                    Vector2 impulse = mouseVel.scl(10f);
+                    Vector2 impulse = mouseVel.scl(.005f);
                     grabbedParticle.getBody().applyLinearImpulse(impulse, grabbedParticle.getPos(), true);
                 }
             }

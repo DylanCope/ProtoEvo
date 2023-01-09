@@ -157,6 +157,8 @@ public class JointsManager implements Serializable {
         defJoint.maxLength = idealJointLength(particleA, particleB);
         defJoint.bodyA = particleA.getBody();
         defJoint.bodyB = particleB.getBody();
+        defJoint.localAnchorA.set(0, 0);
+        defJoint.localAnchorB.set(0, 0);
         defJoint.collideConnected = true;
         return defJoint;
     }

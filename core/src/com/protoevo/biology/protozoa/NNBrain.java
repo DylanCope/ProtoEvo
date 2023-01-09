@@ -27,7 +27,7 @@ public class NNBrain implements Brain {
         inputs[i++] = 2 * p.getRadius() / p.getSplitRadius() - 1;
         inputs[i++] = 2 * p.getConstructionMassAvailable() / p.getConstructionMassCap() - 1;
 
-        if (p.getContactSensors() != null)
+//        if (p.getContactSensors() != null)
 //            for (ContactSensor sensor : p.getContactSensors())
 //                inputs[i++] = sensor.inContact() ? 1f : 0f;
 

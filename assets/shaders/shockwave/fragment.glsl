@@ -14,7 +14,7 @@ uniform mat4 u_projTrans;
 varying vec2 v_texCoords;
 
 const vec3 shockParams = vec3(10.0, 0.1, 0.1);
-const float shockSizeScale = 40f;   // bigger = smaller shock size
+const float shockSizeScale = 20f;   // bigger = smaller shock size
 
 void main()
 {

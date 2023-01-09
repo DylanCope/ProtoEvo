@@ -5,6 +5,7 @@ import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.*;
 import com.badlogic.gdx.utils.Array;
 import com.protoevo.core.settings.Settings;
+import com.protoevo.core.settings.SimulationSettings;
 import com.protoevo.env.Environment;
 import com.protoevo.env.Rock;
 import com.protoevo.utils.Geometry;
@@ -19,7 +20,7 @@ public class Particle implements Collidable {
     private Body body;
     private Fixture dynamicsFixture, sensorFixture;
     private boolean dead;
-    private float radius = 1f;
+    private float radius = SimulationSettings.minParticleRadius;
     private final Vector2 pos = new Vector2(0, 0);
     private final TreeMap<String, Float> stats = new TreeMap<>();
     private final Queue<Object> contactObjects = new LinkedList<>();
@@ -40,8 +41,8 @@ public class Particle implements Collidable {
 
     public void update(float delta) {
         dynamicsFixture.getShape().setRadius(radius);
-        if (doesInteract())
-            sensorFixture.getShape().setRadius(getInteractionRange());
+//        if (doesInteract())
+//            sensorFixture.getShape().setRadius(getInteractionRange());
     }
 
     public void createBody() {
@@ -73,26 +74,26 @@ public class Particle implements Collidable {
         dynamicsFixture = body.createFixture(fixtureDef);
         dynamicsFixture.setUserData(this);
         body.setUserData(this);
-        body.setLinearDamping(.5f);
+        body.setLinearDamping(5f);
 
         circle.dispose();
 
-        if (doesInteract()) {
+//        if (doesInteract()) {
             // Create the sensor fixture and attach it to the body
-            CircleShape interactionCircle = new CircleShape();
-
-            FixtureDef sensorFixtureDef = new FixtureDef();
-            sensorFixtureDef.shape = interactionCircle;
-            sensorFixtureDef.isSensor = true;
-//        if (getSensorMask() != 0x0000)
-//            sensorFixtureDef.filter.maskBits = getSensorMask();
-
-            sensorFixture = body.createFixture(sensorFixtureDef);
-            sensorFixture.setUserData(this);
-            sensorFixture.setFilterData(new Filter());
-
-            interactionCircle.dispose();
-        }
+//            CircleShape interactionCircle = new CircleShape();
+//
+//            FixtureDef sensorFixtureDef = new FixtureDef();
+//            sensorFixtureDef.shape = interactionCircle;
+//            sensorFixtureDef.isSensor = true;
+////        if (getSensorMask() != 0x0000)
+////            sensorFixtureDef.filter.maskBits = getSensorMask();
+//
+//            sensorFixture = body.createFixture(sensorFixtureDef);
+//            sensorFixture.setUserData(this);
+//            sensorFixture.setFilterData(new Filter());
+//
+//            interactionCircle.dispose();
+//        }
     }
 
     /**

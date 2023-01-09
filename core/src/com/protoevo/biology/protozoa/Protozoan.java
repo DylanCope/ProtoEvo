@@ -9,6 +9,7 @@ import com.protoevo.core.Collidable;
 import com.protoevo.core.Particle;
 import com.protoevo.core.settings.Settings;
 import com.protoevo.core.Simulation;
+import com.protoevo.core.settings.SimulationSettings;
 
 import java.util.List;
 import java.util.Map;
@@ -189,7 +190,7 @@ public class Protozoan extends Cell implements Evolvable
 	@Override
 	public void eat(EdibleCell e, float delta)
 	{
-		float extraction = .7f * getMass() / e.getMass();
+		float extraction = 5f * getRadius() / e.getRadius();
 		if (e instanceof PlantCell) {
 			if (spikes.getNumSpikes() > 0)
 				extraction *= Math.pow(Settings.spikePlantConsumptionPenalty, spikes.getNumSpikes());
@@ -221,20 +222,21 @@ public class Protozoan extends Cell implements Evolvable
 	
 	public void think(float delta)
 	{
-//		brain.tick(this);
+		brain.tick(this);
 		dir.rotateRad(delta * 80 * maxTurning * brain.turn(this) + 0.00001f * getTimeAlive());
 //		growthControlFactor = brain.growthControl();
 		float spikeDecay = (float) Math.pow(Settings.spikeMovementPenalty, spikes.getNumSpikes());
-		float sizePenalty = getRadius() / Settings.maxParticleRadius; // smaller flagella generate less impulse
-//		float speed = Math.abs(brain.speed(this));
-		Vector2 impulse = dir.cpy().setLength(50000f * sizePenalty);
-		float v1 = getSpeed();
-		float m = getMass();
-		float work = .5f * m * (v1*v1 - impulse.len2() / (m * m));  // change in kinetic energy
-		if (enoughEnergyAvailable(work)) {
-			useEnergy(work);
-			applyImpulse(impulse);
-		}
+		float sizePenalty = getRadius() / SimulationSettings.maxParticleRadius; // smaller flagella generate less impulse
+		float speed = Math.abs(brain.speed(this));
+		Vector2 impulse = dir.cpy().setLength(.0005f * sizePenalty * speed);
+		applyImpulse(impulse);
+//		float v1 = getSpeed();
+//		float m = getMass();
+//		float work = .5f * m * (v1*v1 - impulse.len2() / (m * m));  // change in kinetic energy
+//		if (enoughEnergyAvailable(work)) {
+//			useEnergy(work);
+//			applyImpulse(impulse);
+//		}
 	}
 
 	private boolean shouldSplit() {
@@ -399,7 +401,7 @@ public class Protozoan extends Cell implements Evolvable
 		age(delta);
 		think(delta);
 		handleCollisions(delta);
-		handleInteractions(delta);
+//		handleInteractions(delta);
 //		spikes.update(delta);
 //
 //		maintainRetina(delta);

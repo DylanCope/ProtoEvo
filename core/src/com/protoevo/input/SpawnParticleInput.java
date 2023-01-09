@@ -27,7 +27,7 @@ public class SpawnParticleInput extends InputAdapter {
     public void addParticle(float x, float y) {
         Particle particle = new PlantCell(environment);
         particle.setPos(new Vector2(x, y));
-        Vector2 impulse = Geometry.fromAngle((float) (Math.random() * Math.PI * 2)).scl(100f);
+        Vector2 impulse = Geometry.fromAngle((float) (Math.random() * Math.PI * 2)).scl(.01f);
         particle.getBody().applyLinearImpulse(impulse, particle.getPos(), true);
     }
 

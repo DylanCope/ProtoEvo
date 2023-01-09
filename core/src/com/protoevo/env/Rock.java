@@ -140,6 +140,13 @@ public class Rock implements Serializable, Collidable {
         return false;
     }
 
+    public boolean intersectsWith(Vector2 circlePos, float radius) {
+        for (Vector2[] e : getEdges())
+            if (Geometry.doesLineIntersectCircle(e, circlePos, radius))
+                return true;
+        return false;
+    }
+
     public static float[] edgesIntersectCoef(Vector2 start1, Vector2 dir1, Vector2 start2, Vector2 dir2) {
 
         float[][] coefs = new float[][]{

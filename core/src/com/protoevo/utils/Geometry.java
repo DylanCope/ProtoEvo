@@ -62,4 +62,8 @@ public class Geometry {
     public static float getCircleArea(float r) {
         return (float) (Math.PI * r * r);
     }
+
+    public static boolean doCirclesCollide(Vector2 pos1, float r1, Vector2 pos2, float r2) {
+        return pos1.dst2(pos2) <= (r1 + r2) * (r1 + r2);
+    }
 }

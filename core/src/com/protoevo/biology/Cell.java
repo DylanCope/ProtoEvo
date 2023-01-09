@@ -4,6 +4,7 @@ import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.math.MathUtils;
 import com.protoevo.core.Particle;
 import com.protoevo.core.settings.Settings;
+import com.protoevo.core.settings.SimulationSettings;
 import com.protoevo.env.JointsManager;
 import com.protoevo.env.Rock;
 import com.protoevo.utils.Geometry;
@@ -24,7 +25,7 @@ public abstract class Cell extends Particle implements Serializable
 	private float timeAlive = 0f;
 	private float health = 1f;
 	private float growthRate = 0.0f;
-	private float energyAvailable = Settings.startingAvailableCellEnergy;
+	private float energyAvailable = SimulationSettings.startingAvailableCellEnergy;
 	private float constructionMassAvailable, wasteMass;
 	private final Map<Food.ComplexMolecule, Float> availableComplexMolecules;
 	private int maxAttachedCells = 0;
@@ -490,7 +491,7 @@ public abstract class Cell extends Particle implements Serializable
 	}
 
 	public float getMinBurstRadius() {
-		return 2 * Settings.minParticleRadius;
+		return 2 * SimulationSettings.minParticleRadius;
 	}
 
 	public void setFoodToDigest(Food.Type foodType, Food food) {
@@ -522,7 +523,7 @@ public abstract class Cell extends Particle implements Serializable
 	}
 
 	private float getAvailableEnergyCap() {
-		return Settings.startingAvailableCellEnergy * getRadius() / Settings.minParticleRadius;
+		return SimulationSettings.startingAvailableCellEnergy * getRadius() / SimulationSettings.minParticleRadius;
 	}
 
 	public void setEnergyAvailable(float energy) {
@@ -601,12 +602,11 @@ public abstract class Cell extends Particle implements Serializable
 	 * @param mass mass to remove
 	 */
 	public void removeMass(float mass) {
-		damage(mass / getMass());
+		float percentRemoved = mass / getMass();
+		damage(percentRemoved);
 
-		double x = 3 * mass / (4 * getMassDensity() * Math.PI);
-		float r = getRadius();
-		float newR = (float) Math.pow(r*r*r - x, 1 / 3.);
-		if (newR < Settings.minParticleRadius * 0.9f)
+		float newR = (1 - percentRemoved) * getRadius();
+		if (newR < SimulationSettings.minParticleRadius * 0.5f)
 			kill();
 
 		setRadius(newR);

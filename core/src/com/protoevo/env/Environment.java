@@ -1,7 +1,9 @@
 package com.protoevo.env;
 
+import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.*;
+import com.google.common.collect.Streams;
 import com.protoevo.biology.BurstRequest;
 import com.protoevo.biology.Cell;
 import com.protoevo.biology.MeatCell;
@@ -10,6 +12,7 @@ import com.protoevo.biology.evolution.Evolvable;
 import com.protoevo.biology.protozoa.Protozoan;
 import com.protoevo.core.Particle;
 import com.protoevo.core.settings.Constants;
+import com.protoevo.core.settings.EnvironmentSettings;
 import com.protoevo.core.settings.Settings;
 import com.protoevo.core.Simulation;
 import com.protoevo.utils.FileIO;
@@ -92,21 +95,22 @@ public class Environment implements Serializable
 	}
 
 	public Vector2[] createRocks() {
+		System.out.println("Creating rocks structures...");
 		RockGeneration.generateClustersOfRocks(
-				this, new Vector2(0, 0), 1, Settings.rockClusterRadius);
+				this, new Vector2(0, 0), 1, EnvironmentSettings.rockClusterRadius);
 
 		int numClusterCentres = 8;
 		Vector2[] clusterCentres = new Vector2[numClusterCentres];
 
 		for (int i = 0; i < numClusterCentres; i++) {
-			float minR = i * Settings.rockClusterRadius;
-			float maxR = (15 + 2*i) * Settings.rockClusterRadius;
+			float minR = EnvironmentSettings.rockClusterRadius;
+			float maxR = EnvironmentSettings.environmentSize / 5f - EnvironmentSettings.rockClusterRadius;
 
 			Vector2 centre = RockGeneration.randomPosition(minR, maxR);
 			clusterCentres[i] = centre;
 
 			int nRings = Simulation.RANDOM.nextInt(1, 3);
-			float radiusRange = Simulation.RANDOM.nextFloat(8.f) * Settings.rockClusterRadius;
+			float radiusRange = Simulation.RANDOM.nextFloat(8.f) * EnvironmentSettings.rockClusterRadius;
 			RockGeneration.generateClustersOfRocks(this, centre, nRings, radiusRange);
 		}
 
@@ -124,10 +128,11 @@ public class Environment implements Serializable
 	}
 
 	public Vector2[] initialise() {
+		System.out.print("Initialising environment... ");
 		Vector2[] populationStartCentres = createRocks();
 
 		if (populationStartCentres != null)
-			initialisePopulation(Arrays.copyOfRange(populationStartCentres, 0, Settings.numPopulationClusters));
+			initialisePopulation(Arrays.copyOfRange(populationStartCentres, 0, EnvironmentSettings.numPopulationClusters));
 		else
 			initialisePopulation();
 
@@ -138,8 +143,8 @@ public class Environment implements Serializable
 
 		hasInitialised = true;
 
-		for (int i = 0; i < 3; i++)
-			update(Settings.simulationUpdateDelta);
+//		for (int i = 0; i < 3; i++)
+//			update(Settings.simulationUpdateDelta);
 
 		return populationStartCentres;
 	}
@@ -172,51 +177,62 @@ public class Environment implements Serializable
 			findProtozoaPosition = r -> randomPosition(r, clusterCentres);
 		}
 
-		for (int i = 0; i < Settings.numInitialPlantPellets; i++) {
+		for (int i = 0; i < EnvironmentSettings.numInitialPlantPellets; i++) {
 			PlantCell cell = new PlantCell(this);
-			cell.setPos(findPlantPosition.apply(cell.getRadius()));
+			Vector2 pos = findPlantPosition.apply(cell.getRadius());
+			if (pos != null)
+				cell.setPos(pos);
+			else {
+				System.out.println(
+					"Failed to find position for plant pellet. " +
+					"Try increasing the number of population clusters or reduce the number of initial plants.");
+				break;
+			}
 		}
 
-		for (int i = 0; i < Settings.numInitialProtozoa; i++) {
+		for (int i = 0; i < EnvironmentSettings.numInitialProtozoa; i++) {
 			Protozoan p = Evolvable.createNew(Protozoan.class);
 			p.setEnv(this);
-			p.setPos(findProtozoaPosition.apply(p.getRadius()));
+			Vector2 pos = findProtozoaPosition.apply(p.getRadius());
+			if (pos != null)
+				p.setPos(pos);
+			else {
+				System.out.println(
+					"Failed to find position for protozoan. " +
+					"Try increasing the number of population clusters or reduce the number of initial protozoa.");
+				break;
+			}
 		}
 
 		for (Particle p : cellsToAdd)
-			p.applyImpulse(Geometry.randomVector(200f));
+			p.applyImpulse(Geometry.randomVector(.01f));
 	}
 
 	public void initialisePopulation() {
-		Vector2[] clusterCentres = new Vector2[Settings.numPopulationClusters];
+		Vector2[] clusterCentres = new Vector2[EnvironmentSettings.numPopulationClusters];
 		for (int i = 0; i < clusterCentres.length; i++)
-			clusterCentres[i] = randomPosition(Settings.populationClusterRadius);
+			clusterCentres[i] = randomPosition(EnvironmentSettings.populationClusterRadius);
 		initialisePopulation(clusterCentres);
 	}
 
 	public Vector2 randomPosition(float entityRadius, Vector2[] clusterCentres) {
 		int clusterIdx = Simulation.RANDOM.nextInt(clusterCentres.length);
 		Vector2 clusterCentre = clusterCentres[clusterIdx];
-		return randomPosition(entityRadius, clusterCentre, Settings.populationClusterRadius);
+		return randomPosition(entityRadius, clusterCentre, EnvironmentSettings.populationClusterRadius);
 	}
 
 	public Vector2 randomPosition(float entityRadius, Vector2 centre, float clusterRadius) {
-		Vector2 pos = Geometry.randomVector(clusterRadius * Simulation.RANDOM.nextFloat()).add(centre);
-		if (!isCollidingWithAnything(pos, entityRadius))
-			return pos;
-
-		// 5 attempts to find a position
-		for (int i = 0; i < 4; i++) {
-			pos = Geometry.randomVector(clusterRadius * Simulation.RANDOM.nextFloat()).add(centre);
-			if (!isCollidingWithAnything(pos, entityRadius))
+		for (int i = 0; i < 20; i++) {
+			Vector2 pos = Geometry.randomVector(clusterRadius * Simulation.RANDOM.nextFloat()).add(centre);
+			if (notCollidingWithAnything(pos, entityRadius))
 				return pos;
 		}
 
-		return pos;
+		return null;
 	}
 
 	public Vector2 randomPosition(float entityRadius) {
-		return randomPosition(entityRadius, Geometry.ZERO, Settings.rockClusterRadius);
+		return randomPosition(entityRadius, Geometry.ZERO, EnvironmentSettings.rockClusterRadius);
 	}
 
 	private void flushEntitiesToAdd() {
@@ -332,18 +348,13 @@ public class Environment implements Serializable
 		return generation;
 	}
 
-	public boolean isCollidingWithAnything(Vector2 pos, float r) {
-		Vector2 p1 = pos.cpy().sub(r, r);
-		Vector2 p2 = pos.cpy().add(r, r);
+	public boolean notCollidingWithAnything(Vector2 pos, float r) {
+		boolean anyCellCollisions = Streams.concat(cells.stream(), cellsToAdd.stream())
+				.noneMatch(cell -> Geometry.doCirclesCollide(pos, r, cell.getPos(), cell.getRadius()));
+		if (!anyCellCollisions)
+			return false;
 
-		final Vector2 collisionPoint = new Vector2();
-
-		world.rayCast((fixture, point, normal, fraction) -> {
-			collisionPoint.set(point);
-			return 1;
-		}, p1, p2);
-
-		return collisionPoint.epsilonEquals(p1, 0.0001f);
+		return rocks.stream().noneMatch(rock -> rock.intersectsWith(pos, r));
 	}
 
 	public float getElapsedTime() {

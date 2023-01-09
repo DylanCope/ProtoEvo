@@ -30,7 +30,8 @@ public class ApplyForcesInput extends InputAdapter {
             tmp.set(bodyPos.x - explosionX, bodyPos.y - explosionY);
             float dist2 = tmp.len2();
             if (power / dist2 > 1) {
-                tmp.setLength(power / dist2);
+                float explosionFallout = 10f;
+                tmp.setLength((float) (power * Math.exp(-explosionFallout * dist2)));
                 particle.getBody().applyLinearImpulse(tmp,  bodyPos, true);
             }
         }
@@ -40,7 +41,7 @@ public class ApplyForcesInput extends InputAdapter {
     public boolean touchDown(int screenX, int screenY, int pointer, int button) {
         if (Gdx.input.isButtonPressed(Input.Buttons.RIGHT)) {
             Vector3 worldSpace = camera.unproject(new Vector3(screenX, screenY, 0));
-            applyForce(worldSpace.x, worldSpace.y, 1000000);
+            applyForce(worldSpace.x, worldSpace.y, .1f);
         }
         return false;
     }

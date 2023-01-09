@@ -2,7 +2,9 @@ package com.protoevo.biology;
 
 import com.badlogic.gdx.math.Vector2;
 import com.protoevo.core.Simulation;
+import com.protoevo.core.settings.EnvironmentSettings;
 import com.protoevo.core.settings.Settings;
+import com.protoevo.core.settings.SimulationSettings;
 import com.protoevo.env.Environment;
 import com.protoevo.utils.Geometry;
 
@@ -30,7 +32,7 @@ public class BurstRequest<T extends Cell> {
         float angle = (float) (2 * Math.PI * Simulation.RANDOM.nextDouble());
 
         float volume = Geometry.getSphereVolume(parent.getRadius());
-        float minVolume = Geometry.getSphereVolume(Settings.minParticleRadius);
+        float minVolume = Geometry.getSphereVolume(SimulationSettings.minParticleRadius);
         int maxChildren = Math.min(6, (int) (volume / minVolume));
 
         int nChildren = 2;
