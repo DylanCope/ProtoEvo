@@ -12,8 +12,9 @@ import com.badlogic.gdx.utils.ScreenUtils;
 import com.protoevo.biology.Cell;
 import com.protoevo.core.Particle;
 import com.protoevo.core.Simulation;
+import com.protoevo.core.settings.Settings;
+import com.protoevo.env.ChemicalSolution;
 import com.protoevo.env.Environment;
-import com.protoevo.env.InteractionsManager;
 import com.protoevo.env.JointsManager;
 import com.protoevo.env.Rock;
 import com.protoevo.input.ParticleTracker;
@@ -25,7 +26,7 @@ import static com.protoevo.utils.Utils.lerp;
 public class EnvironmentRenderer implements Renderer {
 
     private final Box2DDebugRenderer debugRenderer;
-    private final SpriteBatch particlesBatch;
+    private final SpriteBatch batch;
     private final Texture circleTexture;
     private final Sprite jointSprite;
     private final ShapeRenderer shapeRenderer;
@@ -47,7 +48,7 @@ public class EnvironmentRenderer implements Renderer {
         this.inputManager = inputManager;
 
         debugRenderer = new Box2DDebugRenderer();
-        particlesBatch = new SpriteBatch();
+        batch = new SpriteBatch();
         environment = simulation.getEnv();
 
         FileHandle particleFile = Gdx.files.internal("entity/particle_base_128x128.png");
@@ -82,7 +83,19 @@ public class EnvironmentRenderer implements Renderer {
         jointSprite.setRotation(angle);
         jointSprite.setColor(lerp(p1.getColor(), p2.getColor(), .5f));
 
-        jointSprite.draw(particlesBatch);
+        jointSprite.draw(batch);
+    }
+
+    public void renderChemicalField() {
+        ChemicalSolution chemicalSolution = environment.getChemicalSolution();
+        if (chemicalSolution == null) {
+            return;
+        }
+        Texture chemicalTexture = chemicalSolution.getChemicalTexture();
+        float x = -chemicalSolution.getFieldWidth() / 2;
+        float y = -chemicalSolution.getFieldHeight() / 2;
+        batch.draw(chemicalTexture, x, y,
+                chemicalSolution.getFieldWidth(), chemicalSolution.getFieldWidth());
     }
 
     public void render(float delta) {
@@ -90,13 +103,18 @@ public class EnvironmentRenderer implements Renderer {
         ScreenUtils.clear(0, 0.1f, 0.2f, 1);
 
         // Render Particles
-        particlesBatch.enableBlending();
-        particlesBatch.setProjectionMatrix(camera.combined);
+        batch.enableBlending();
+        batch.setProjectionMatrix(camera.combined);
 
-        particlesBatch.begin();
+        batch.begin();
+
+        if (Settings.enableChemicalField) {
+            renderChemicalField();
+        }
+
         environment.getJointsManager().getParticleBindings().forEach(this::renderJoinedParticles);
         environment.getParticles().forEach(this::drawParticle);
-        particlesBatch.end();
+        batch.end();
 
         // Render rocks
         shapeRenderer.setProjectionMatrix(camera.combined);
@@ -165,12 +183,12 @@ public class EnvironmentRenderer implements Renderer {
         float y = p.getPos().y - p.getRadius();
         float r = p.getRadius() * 2;
 
-        particlesBatch.setColor(p.getColor());
-        particlesBatch.draw(circleTexture, x, y, r, r);
+        batch.setColor(p.getColor());
+        batch.draw(circleTexture, x, y, r, r);
     }
 
     public void dispose() {
-        particlesBatch.dispose();
+        batch.dispose();
         circleTexture.dispose();
         shapeRenderer.dispose();
     }

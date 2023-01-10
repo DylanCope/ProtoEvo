@@ -38,7 +38,6 @@ public class ShockWaveLayer extends ShaderLayer {
     }
 
     public void start(float worldSpacePosX, float worldSpacePosY) {
-        System.out.println(worldSpacePosX + " " + worldSpacePosY);
         worldSpaceShockPos = new Vector3(worldSpacePosX, worldSpacePosY, 0);
         disabled = false;
         time = 0;
@@ -55,8 +54,7 @@ public class ShockWaveLayer extends ShaderLayer {
         float graphicsHeight = Gdx.graphics.getHeight();
         viewSpacePos.x = viewSpacePos.x / graphicsWidth;
         viewSpacePos.y = viewSpacePos.y / graphicsHeight;
-        System.out.println("viewSpacePos: " + viewSpacePos);
-        System.out.println("worldSpaceShockPos: " + worldSpaceShockPos);
+
         shaderProgram.setUniformf("cameraZoom", camera.zoom);
         shaderProgram.setUniformf("resolution", new Vector2(graphicsWidth, graphicsHeight));
         shaderProgram.setUniformf("time", time / SHOCK_WAVE_TIME);

@@ -15,6 +15,7 @@ import com.protoevo.core.settings.Constants;
 import com.protoevo.core.settings.EnvironmentSettings;
 import com.protoevo.core.settings.Settings;
 import com.protoevo.core.Simulation;
+import com.protoevo.core.settings.SimulationSettings;
 import com.protoevo.utils.FileIO;
 import com.protoevo.utils.Geometry;
 
@@ -34,7 +35,7 @@ public class Environment implements Serializable
 			new ConcurrentHashMap<>(3, 1);
 	public final ConcurrentHashMap<Class<? extends Cell>, Integer> cellCapacities =
 			new ConcurrentHashMap<>(3, 1);
-	private final ChemicalSolution chemicalSolution = null;
+	private final ChemicalSolution chemicalSolution;
 	private final List<Rock> rocks;
 	private long generation = 1, protozoaBorn = 0, totalCellsAdded = 0, crossoverEvents = 0;
 
@@ -58,13 +59,12 @@ public class Environment implements Serializable
 		jointsManager = new JointsManager(this);
 		world.setContactListener(new CollisionHandler(this));
 
-//		TODO: revisit chemical field implementation
-//		if (Settings.enableChemicalField) {
-//			float chemicalGridSize = 2 * radius / Settings.numChemicalBreaks;
-//			chemicalSolution = new ChemicalSolution(-radius, radius, -radius, radius, chemicalGridSize);
-//		} else {
-//			chemicalSolution = null;
-//		}
+		if (Settings.enableChemicalField) {
+			chemicalSolution = new ChemicalSolution(
+				this, SimulationSettings.chemicalFieldResolution, SimulationSettings.chemicalFieldRadius);
+		} else {
+			chemicalSolution = null;
+		}
 
 		rocks = new ArrayList<>();
 
@@ -92,6 +92,9 @@ public class Environment implements Serializable
 
 		jointsManager.flushJoints();
 
+		if (Settings.enableChemicalField) {
+			chemicalSolution.update(delta);
+		}
 	}
 
 	public Vector2[] createRocks() {

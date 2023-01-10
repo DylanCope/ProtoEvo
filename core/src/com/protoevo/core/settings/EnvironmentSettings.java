@@ -1,8 +1,8 @@
 package com.protoevo.core.settings;
 
 public class EnvironmentSettings {
-    public static final int numInitialProtozoa = 300;
-    public static final int numInitialPlantPellets = 1000;
+    public static final int numInitialProtozoa = 0;
+    public static final int numInitialPlantPellets = 0;
     public static final boolean initialPopulationClustering = true;
     public static final int numRingClusters = 6;
     public static final int numPopulationClusters = 3;

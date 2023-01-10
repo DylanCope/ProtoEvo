@@ -29,12 +29,12 @@ public final class Settings {
     // Tank settings
 
     // Chemical settings
-    public static final boolean enableChemicalField = false;
+    public static final boolean enableChemicalField = true;
 //    public static final int numChemicalBreaks = numChunkBreaks * 4;
-    public static final float pheromoneUpdateTime = simulationUpdateDelta * 10f;
-    public static final float pheromoneDecay = 1f;
+    public static final float chemicalUpdateTime = simulationUpdateDelta * 10f;
+    public static final float chemicalDiffusionRate = 1f;
     public static final float pheromoneFlow = 0.05f;
-    public static final float plantPheromoneDeposit = 50f;
+    public static final float plantPheromoneDeposit = 500f;
 
     // Protozoa settings
     public static final float minProtozoanBirthRadius = 3f / 100f;

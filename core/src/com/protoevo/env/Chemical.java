@@ -18,7 +18,7 @@ public class Chemical implements Serializable {
             incoming /= neighbours.length;
             nextPlantPheromoneDensity += delta * incoming;
         }
-        nextPlantPheromoneDensity *= 1 - delta * Settings.pheromoneDecay;
+        nextPlantPheromoneDensity *= 1 - delta * Settings.chemicalDiffusionRate;
     }
 
     public void update() {

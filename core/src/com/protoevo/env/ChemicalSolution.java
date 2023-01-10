@@ -1,128 +1,177 @@
 package com.protoevo.env;
 
+import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.graphics.Color;
+import com.badlogic.gdx.graphics.Pixmap;
+import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.graphics.glutils.FrameBuffer;
+import com.badlogic.gdx.graphics.glutils.ShaderProgram;
 import com.badlogic.gdx.math.Vector2;
 import com.protoevo.biology.Cell;
 import com.protoevo.biology.PlantCell;
 import com.protoevo.core.settings.Settings;
+import com.protoevo.utils.Utils;
 
 import java.io.Serializable;
-import java.util.Arrays;
-import java.util.Collection;
 
 public class ChemicalSolution implements Serializable {
     public static final long serialVersionUID = 1L;
 
-    private final float gridSize;
-    private final float xMin;
-    private final float yMin;
-    private final float xMax;
-    private final float yMax;
-    private final int nYChunks;
-    private final int nXChunks;
-    private final Chemical[][] chemicalGrid;
+    private final Environment environment;
+    private final float cellSizeX, cellSizeY;
+    private final float xMin, yMin, xMax, yMax;
+    private final int chemicalTextureHeight;
+    private final int chemicalTextureWidth;
+    private final Pixmap depositPixmap;
+    private Texture chemicalTexture;
+    private final FrameBuffer chemicalFrameBuffer;
+    private final SpriteBatch batch;
+    private final ShaderProgram diffuseShader;
     private float timeSinceUpdate = 0;
 
-    public ChemicalSolution(float xMin, float xMax,
+    public ChemicalSolution(Environment environment, int cells, float mapRadius) {
+        this(environment, -mapRadius, mapRadius, -mapRadius, mapRadius, cells);
+    }
+
+    public ChemicalSolution(Environment environment,
+                            float xMin, float xMax,
                             float yMin, float yMax,
-                            float gridSize) {
+                            int cells) {
+        this.environment = environment;
+
         this.xMin = xMin;
         this.xMax = xMax;
         this.yMin = yMin;
         this.yMax = yMax;
-        this.gridSize = gridSize;
 
-        this.nXChunks = 2 + (int) ((xMax - xMin) / gridSize);
-        this.nYChunks = 2 + (int) ((yMax - yMin) / gridSize);
+        this.chemicalTextureWidth = cells;
+        this.chemicalTextureHeight = cells;
 
-        chemicalGrid = new Chemical[nXChunks][nYChunks];
-        for (int i = 0; i < nXChunks; i++)
-            for (int j = 0; j < nYChunks; j++)
-                chemicalGrid[i][j] = new Chemical();
+        this.cellSizeX = cells / (xMax - xMin);
+        this.cellSizeY = cells / (yMax - yMin);
+
+        depositPixmap = new Pixmap(cells, cells, Pixmap.Format.RGBA8888);
+        depositPixmap.setColor(0, 0, 0, 0);
+        chemicalTexture = new Texture(depositPixmap);
+        chemicalFrameBuffer = new FrameBuffer(Pixmap.Format.RGBA8888,
+                cells, cells, false);
+        batch = new SpriteBatch();
+        diffuseShader = new ShaderProgram(
+                Gdx.files.internal("shaders/diffuse/vertex.glsl"),
+                Gdx.files.internal("shaders/diffuse/fragment.glsl"));
+        if (!diffuseShader.isCompiled()) {
+            System.err.println(diffuseShader.getLog());
+            System.exit(1);
+        }
     }
 
-    public void initialise() {
-        for (int i = 1; i < nXChunks - 1; i++)
-            for (int j = 1; j < nYChunks - 1; j++)
-                chemicalGrid[i][j].setNeighbours(
-                        chemicalGrid[i][j-1],
-                        chemicalGrid[i][j+1],
-                        chemicalGrid[i-1][j],
-                        chemicalGrid[i+1][j]
-                );
+    public float getFieldWidth() {
+        return xMax - xMin;
     }
 
-    public Vector2 toTankCoords(int i, int j) {
-        float x = (i - 1) * gridSize + xMin;
-        float y = (j - 1) * gridSize + yMin;
+    public float getFieldHeight() {
+        return yMax - yMin;
+    }
+
+    public Vector2 toEnvironmentCoords(int i, int j) {
+        float x = xMin + (0.5f + i) * cellSizeX;
+        float y = yMin + (0.5f + j) * cellSizeY;
         return new Vector2(x, y);
     }
 
-    public float getGridSize() {
-        return gridSize;
+    public int toChemicalGridXDist(float dist) {
+        return (int) (dist * cellSizeX);
     }
 
     public int toChemicalGridX(float x) {
-        int i = (int) (1 + (x - xMin) / gridSize);
-        if (i < 0)
-            return 0;
-        if (i >= nXChunks)
-            return nXChunks - 1;
-        return i;
+        return (int) Utils.linearRemap(x, xMin, xMax, 0, chemicalTextureWidth);
     }
 
     public int toChemicalGridY(float y) {
-        int j = (int) (1 + (y - yMin) / gridSize);
-        if (j < 0)
-            return 0;
-        if (j >= nYChunks)
-            return nYChunks - 1;
-        return j;
+        return (int) Utils.linearRemap(y, yMin, yMax, 0, chemicalTextureHeight);
     }
 
     public void depositChemicals(float delta, Cell e) {
         if (e instanceof PlantCell && !e.isDead()) {
-            int i = toChemicalGridX(e.getPos().x);
-            int j = toChemicalGridY(e.getPos().y);
+//            int i = toChemicalGridX(e.getPos().x);
+//            int j = toChemicalGridY(-e.getPos().y);
             float k = Settings.plantPheromoneDeposit;
-            chemicalGrid[i][j].currentPlantPheromoneDensity += delta * k * e.getRadius() * e.getHealth();
+            float deposit = .5f; // Math.min(1f, delta * k * e.getRadius() * e.getHealth());
+//            float deposit = delta * 1000f;
+            Color cellColour = e.getColor();
+//            System.out.println("depositing " + deposit + " at " + e.getPos()  + " ( " + i + ", " + j + ")");
+            depositPixmap.setColor(cellColour.r, cellColour.g, cellColour.b, deposit);
+//            int i = toChemicalGridX(e.getPos().x);
+//            int j = toChemicalGridY(-e.getPos().y);
+//            depositPixmap.drawPixel(i, j);
+
+            int i = toChemicalGridX(e.getPos().x);
+            int j = toChemicalGridY(-e.getPos().y);
+            int r = toChemicalGridXDist(e.getRadius() * 0.8f);
+            depositPixmap.fillCircle(i, j, r);
+
         }
     }
 
-    public void update(float delta, Collection<Cell> entities) {
+    public void deposit() {
+//        depositPixmap.setColor(0, 0, 0, 0);
+//        depositPixmap.fill();
+        environment.getCells()
+                .forEach(e -> depositChemicals(timeSinceUpdate, e));
+        chemicalTexture.draw(depositPixmap, 0, 0);
+    }
+
+    public void diffuse() {
+        diffuseShader.bind();
+        diffuseShader.setUniformf("u_decay", 1 - timeSinceUpdate * Settings.chemicalDiffusionRate);
+        diffuseShader.setUniformf("u_resolution", chemicalTextureWidth, chemicalTextureHeight);
+        batch.setShader(diffuseShader);
+        batch.enableBlending();
+        chemicalFrameBuffer.begin();
+        batch.begin();
+        batch.draw(chemicalTexture, 0, 0, chemicalTextureWidth, chemicalTextureHeight);
+        batch.end();
+        chemicalFrameBuffer.end();
+
+        chemicalTexture = chemicalFrameBuffer.getColorBufferTexture();
+    }
+
+    public void update(float delta) {
         timeSinceUpdate += delta;
-        if (timeSinceUpdate >= Settings.pheromoneUpdateTime) {
-            entities.parallelStream().forEach(e -> depositChemicals(timeSinceUpdate, e));
-            Arrays.stream(chemicalGrid).parallel().forEach(
-                    row -> Arrays.stream(row).forEach(chemical -> chemical.propagate(timeSinceUpdate))
-            );
-            Arrays.stream(chemicalGrid).parallel().forEach(
-                    row -> Arrays.stream(row).forEach(Chemical::update)
-            );
+        if (timeSinceUpdate >= Settings.chemicalUpdateTime) {
+            deposit();
+            diffuse();
             timeSinceUpdate = 0;
         }
     }
 
-    public float getPlantPheromoneGradientX(int i, int j) {
-        if (i < 1 || i >= nXChunks - 1)
-            return 0f;
-        return chemicalGrid[i-1][j].currentPlantPheromoneDensity - chemicalGrid[i+1][j].currentPlantPheromoneDensity;
+    public Texture getChemicalTexture() {
+        return chemicalTexture;
     }
 
-    public float getPlantPheromoneGradientY(int i, int j) {
-        if (j < 1 || j >= nYChunks - 1)
-            return 0f;
-        return chemicalGrid[i][j-1].currentPlantPheromoneDensity - chemicalGrid[i][j+1].currentPlantPheromoneDensity;
-    }
+//    public float getPlantPheromoneGradientX(int i, int j) {
+//        if (i < 1 || i >= nXChunks - 1)
+//            return 0f;
+//        return chemicalTexture[i-1][j].currentPlantPheromoneDensity - chemicalTexture[i+1][j].currentPlantPheromoneDensity;
+//    }
+//
+//    public float getPlantPheromoneGradientY(int i, int j) {
+//        if (j < 1 || j >= nYChunks - 1)
+//            return 0f;
+//        return chemicalTexture[i][j-1].currentPlantPheromoneDensity - chemicalTexture[i][j+1].currentPlantPheromoneDensity;
+//    }
 
     public int getNYChunks() {
-        return nYChunks;
+        return chemicalTextureHeight;
     }
 
     public int getNXChunks() {
-        return nXChunks;
+        return chemicalTextureWidth;
     }
 
     public float getPlantPheromoneDensity(int i, int j) {
-        return chemicalGrid[i][j].currentPlantPheromoneDensity;
+        Color depositColour = new Color(depositPixmap.getPixel(i, j));
+        return depositColour.g;
     }
 }

@@ -12,4 +12,6 @@ public class SimulationSettings {
     public static final float minParticleRadius = 3f / 100f;
     public static final float maxParticleRadius = 15f / 100f;
     public static final float startingAvailableCellEnergy = 0.01f;
+    public static int chemicalFieldResolution = 1024;
+    public static float chemicalFieldRadius = 3 * EnvironmentSettings.environmentSize;
 }

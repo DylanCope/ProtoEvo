@@ -5,8 +5,9 @@ import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.glutils.ShaderProgram;
 
-public abstract class ShaderLayer {
-    public abstract void setShaderUniformVariables(ShaderProgram shaderProgram);
+public class ShaderLayer {
+
+    public void setShaderUniformVariables(ShaderProgram shaderProgram) {}
 
     public boolean isEnabled() {
         return true;

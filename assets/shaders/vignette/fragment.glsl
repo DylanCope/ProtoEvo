@@ -20,7 +20,6 @@ void main() {
     color.rgb = mix(color.rgb, color.rgb * alpha, intensity);
 
     if (u_tracking == 1) {
-
         float alpha = smoothstep(0.402, 0.4, distance);
         color.rgb = mix(color.rgb, color.rgb * alpha, .6);
     }
