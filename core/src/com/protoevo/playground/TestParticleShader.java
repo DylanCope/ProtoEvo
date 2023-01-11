@@ -1,4 +1,4 @@
-package com.protoevo.core;
+package com.protoevo.playground;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.InputAdapter;

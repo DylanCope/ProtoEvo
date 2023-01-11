@@ -47,8 +47,8 @@ public class Utils {
         );
     }
 
-    public static float linearRemap(float x, float xStart, float xEnd, float outStart, float outEnd) {
-        float value = outStart + (outEnd - outStart) * ((x - xStart) / (xEnd - xStart));
+    public static float linearRemap(float v, float vStart, float vEnd, float outStart, float outEnd) {
+        float value = outStart + (outEnd - outStart) * ((v - vStart) / (vEnd - vStart));
         if (outStart < outEnd) {
             return MathUtils.clamp(value, outStart, outEnd);
         } else {

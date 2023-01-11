@@ -88,30 +88,33 @@ public class EnvironmentRenderer implements Renderer {
 
     public void renderChemicalField() {
         ChemicalSolution chemicalSolution = environment.getChemicalSolution();
+
         if (chemicalSolution == null) {
             return;
         }
+//        chemicalSolution.render(camera);
+        batch.begin();
         Texture chemicalTexture = chemicalSolution.getChemicalTexture();
         float x = -chemicalSolution.getFieldWidth() / 2;
         float y = -chemicalSolution.getFieldHeight() / 2;
         batch.draw(chemicalTexture, x, y,
                 chemicalSolution.getFieldWidth(), chemicalSolution.getFieldWidth());
+        batch.end();
     }
 
     public void render(float delta) {
 
         ScreenUtils.clear(0, 0.1f, 0.2f, 1);
 
-        // Render Particles
         batch.enableBlending();
         batch.setProjectionMatrix(camera.combined);
-
-        batch.begin();
 
         if (Settings.enableChemicalField) {
             renderChemicalField();
         }
 
+        // Render Particles
+        batch.begin();
         environment.getJointsManager().getParticleBindings().forEach(this::renderJoinedParticles);
         environment.getParticles().forEach(this::drawParticle);
         batch.end();

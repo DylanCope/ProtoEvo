@@ -1,13 +1,15 @@
 package com.protoevo.env;
 
 import com.badlogic.gdx.Gdx;
-import com.badlogic.gdx.graphics.Color;
-import com.badlogic.gdx.graphics.Pixmap;
-import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.graphics.*;
+import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.graphics.glutils.FrameBuffer;
 import com.badlogic.gdx.graphics.glutils.ShaderProgram;
+import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector2;
+import com.badlogic.gdx.utils.ScreenUtils;
 import com.protoevo.biology.Cell;
 import com.protoevo.biology.PlantCell;
 import com.protoevo.core.settings.Settings;
@@ -23,8 +25,10 @@ public class ChemicalSolution implements Serializable {
     private final float xMin, yMin, xMax, yMax;
     private final int chemicalTextureHeight;
     private final int chemicalTextureWidth;
-    private final Pixmap depositPixmap;
+    private Pixmap depositPixmap;
     private Texture chemicalTexture;
+    private TextureRegion textureRegion;
+    private Sprite chemicalSprite;
     private final FrameBuffer chemicalFrameBuffer;
     private final SpriteBatch batch;
     private final ShaderProgram diffuseShader;
@@ -53,10 +57,13 @@ public class ChemicalSolution implements Serializable {
 
         depositPixmap = new Pixmap(cells, cells, Pixmap.Format.RGBA8888);
         depositPixmap.setColor(0, 0, 0, 0);
+
         chemicalTexture = new Texture(depositPixmap);
         chemicalFrameBuffer = new FrameBuffer(Pixmap.Format.RGBA8888,
                 cells, cells, false);
+
         batch = new SpriteBatch();
+
         diffuseShader = new ShaderProgram(
                 Gdx.files.internal("shaders/diffuse/vertex.glsl"),
                 Gdx.files.internal("shaders/diffuse/fragment.glsl"));
@@ -122,28 +129,64 @@ public class ChemicalSolution implements Serializable {
         chemicalTexture.draw(depositPixmap, 0, 0);
     }
 
-    public void diffuse() {
+    private void bindShader() {
         diffuseShader.bind();
-        diffuseShader.setUniformf("u_decay", 1 - timeSinceUpdate * Settings.chemicalDiffusionRate);
+        diffuseShader.setUniformf("u_delta", timeSinceUpdate);
         diffuseShader.setUniformf("u_resolution", chemicalTextureWidth, chemicalTextureHeight);
+
+//        Gdx.graphics.getGL20().glActiveTexture(GL20.GL_TEXTURE0);
+//        chemicalTexture.bind(0);
+//        diffuseShader.setUniformi("u_texture_pos", 0);
+
         batch.setShader(diffuseShader);
-        batch.enableBlending();
+    }
+
+    public void diffuse() {
+//        Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
+//        Gdx.gl.glActiveTexture(GL20.GL_TEXTURE0);
+
+        chemicalFrameBuffer.bind();
         chemicalFrameBuffer.begin();
+//        batch.enableBlending();
         batch.begin();
         batch.draw(chemicalTexture, 0, 0, chemicalTextureWidth, chemicalTextureHeight);
         batch.end();
-        chemicalFrameBuffer.end();
 
+        chemicalFrameBuffer.end();
+//
         chemicalTexture = chemicalFrameBuffer.getColorBufferTexture();
+//        Pixmap pixmap = chemicalTexture.getTextureData().consumePixmap();
+//        chemicalSprite = new Sprite(chemicalFrameBuffer.getColorBufferTexture());
+//        chemicalSprite.flip(false, true);
+//        textureRegion = new TextureRegion(chemicalFrameBuffer.getColorBufferTexture());
+//        textureRegion.flip(false, true);
+//        chemicalTexture = textureRegion.getTexture();
+//        chemicalTexture.setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest);
+//        batch.setShader(null);
     }
 
     public void update(float delta) {
         timeSinceUpdate += delta;
-        if (timeSinceUpdate >= Settings.chemicalUpdateTime) {
+//        if (timeSinceUpdate >= Settings.chemicalUpdateTime) {
             deposit();
-            diffuse();
+//            diffuse();
             timeSinceUpdate = 0;
-        }
+//        }
+    }
+
+    public void render(OrthographicCamera camera) {
+//        diffuse();
+//        bindShader();
+        batch.setProjectionMatrix(camera.combined);
+        batch.begin();
+        batch.draw(chemicalTexture,
+                0, 0,
+                Gdx.graphics.getHeight(), Gdx.graphics.getHeight());
+
+        float x = -getFieldWidth() / 2;
+        float y = -getFieldHeight() / 2;
+        batch.draw(chemicalTexture, x, y, getFieldWidth(), getFieldWidth());
+        batch.end();
     }
 
     public Texture getChemicalTexture() {

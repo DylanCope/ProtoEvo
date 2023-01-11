@@ -5,7 +5,8 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.utils.ScreenUtils;
-import com.protoevo.core.settings.Settings;
+import com.protoevo.core.settings.SimulationSettings;
+import com.protoevo.playground.TestParticleShader;
 import com.protoevo.ui.SimulationScreen;
 
 public class Application extends ApplicationAdapter {
@@ -38,9 +39,10 @@ public class Application extends ApplicationAdapter {
 		Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
 		Gdx.gl.glActiveTexture(GL20.GL_TEXTURE0);
 
+		simulation.update(SimulationSettings.simulationUpdateDelta);
+
 		float deltaTime = Gdx.graphics.getDeltaTime();
 		simulationScreen.draw(deltaTime);
-		simulation.update(Settings.simulationUpdateDelta);
 
 //		testParticleShader.render();
 	}
