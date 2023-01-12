@@ -31,7 +31,7 @@ public final class Settings {
     // Chemical settings
     public static final boolean enableChemicalField = true;
 //    public static final int numChemicalBreaks = numChunkBreaks * 4;
-    public static final float chemicalUpdateTime = simulationUpdateDelta * 10f;
+    public static final float chemicalUpdateTime = simulationUpdateDelta * 100f;
     public static final float chemicalDiffusionRate = 1f;
     public static final float pheromoneFlow = 0.05f;
     public static final float plantPheromoneDeposit = 500f;

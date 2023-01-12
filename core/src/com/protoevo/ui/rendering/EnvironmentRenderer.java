@@ -5,8 +5,10 @@ import com.badlogic.gdx.files.FileHandle;
 import com.badlogic.gdx.graphics.*;
 import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.Vector2;
+import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.physics.box2d.Box2DDebugRenderer;
 import com.badlogic.gdx.utils.ScreenUtils;
 import com.protoevo.biology.Cell;
@@ -20,6 +22,10 @@ import com.protoevo.env.Rock;
 import com.protoevo.input.ParticleTracker;
 import com.protoevo.ui.InputManager;
 import com.protoevo.utils.DebugMode;
+
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.nio.FloatBuffer;
 
 import static com.protoevo.utils.Utils.lerp;
 
@@ -92,9 +98,13 @@ public class EnvironmentRenderer implements Renderer {
         if (chemicalSolution == null) {
             return;
         }
-//        chemicalSolution.render(camera);
+
+        SpriteBatch batch = new SpriteBatch();;
+
+        batch.enableBlending();
+        batch.setProjectionMatrix(camera.combined);
         batch.begin();
-        Texture chemicalTexture = chemicalSolution.getChemicalTexture();
+        Texture chemicalTexture = chemicalSolution.getChemicalTexture(camera);
         float x = -chemicalSolution.getFieldWidth() / 2;
         float y = -chemicalSolution.getFieldHeight() / 2;
         batch.draw(chemicalTexture, x, y,

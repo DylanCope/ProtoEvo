@@ -1,9 +1,9 @@
-package com.protoevo.playground;
+package com.protoevo.test;
 
+import com.protoevo.utils.JCudaKernelRunner;
 import jcuda.Pointer;
 import jcuda.Sizeof;
 import jcuda.driver.*;
-import jcuda.runtime.JCuda;
 
 import javax.imageio.ImageIO;
 
@@ -16,19 +16,19 @@ import static jcuda.driver.JCudaDriver.*;
 
 public class JCudaTest {
 
-    private static final int[] filterDelute = new int[] {
+    private static final int[] convFilter = new int[] {
             1, 2, 1,
             2, 4, 2,
             1, 2, 1
     };
 
-    public static void main(String[] args) {
+    private void processTestImage() {
         try {
             // Enable exceptions and omit all subsequent error checks
             JCudaDriver.setExceptionsEnabled(true);
 
             // Create the PTX file by calling the NVCC
-            String ptxFileName = "kernels/test_kernel.ptx";
+            String ptxFileName = "kernels/diffusion.ptx";
 
             // Initialize the driver and create a context for the first device.
             cuInit(0);
@@ -48,28 +48,26 @@ public class JCudaTest {
             BufferedImage bi = ImageIO.read(new File("test/test.png"));
             int w = bi.getWidth();
             int h = bi.getHeight();
-            int[] pixels = new int[w * h];
-            int[] result = new int[w * h];
+            int c = bi.getColorModel().getNumComponents();
+            int[] pixels = new int[w * h * c];
+            int[] result = new int[w * h * c];
 
-            BufferedImage grayscaleImg = new BufferedImage(w, h, BufferedImage.TYPE_BYTE_GRAY);
-            Graphics g = grayscaleImg.getGraphics();
-            g.drawImage(bi, 0, 0, null);
-            g.dispose();
+    //            BufferedImage grayscaleImg = new BufferedImage(w, h, BufferedImage.TYPE_INT_ARGB);
+    //            Graphics g = grayscaleImg.getGraphics();
+    //            g.drawImage(bi, 0, 0, null);
+    //            g.dispose();
 
-            pixels = grayscaleImg.getRaster().getPixels(0, 0, w, h, pixels);
+            pixels = bi.getRaster().getPixels(0, 0, w, h, pixels);
 
             long start = System.currentTimeMillis();
 
-            int numElements = w * h;
+            int numElements = pixels.length;
 
             // Allocate the device input data, and copy the
             // host input data to the device
             CUdeviceptr devicePixels = new CUdeviceptr();
             cuMemAlloc(devicePixels, numElements * Sizeof.INT);
             cuMemcpyHtoD(devicePixels, Pointer.to(pixels), numElements * Sizeof.INT);
-            CUdeviceptr deviceFilter = new CUdeviceptr();
-            cuMemAlloc(deviceFilter, numElements * Sizeof.INT);
-            cuMemcpyHtoD(deviceFilter, Pointer.to(filterDelute), 9 * Sizeof.INT);
 
             // Allocate device output memory
             CUdeviceptr deviceOutput = new CUdeviceptr();
@@ -80,8 +78,8 @@ public class JCudaTest {
             Pointer kernelParameters = Pointer.to(
                     Pointer.to(new int[]{w}),
                     Pointer.to(new int[]{h}),
+                    Pointer.to(new int[]{c}),
                     Pointer.to(devicePixels),
-                    Pointer.to(deviceFilter),
                     Pointer.to(deviceOutput)
             );
 
@@ -105,16 +103,52 @@ public class JCudaTest {
 
             System.out.println("Time " + (System.currentTimeMillis() - start));
 
-            grayscaleImg.getRaster().setPixels(0, 0, w, h, hostOutput);
+            bi.getRaster().setPixels(0, 0, w, h, hostOutput);
 
-            ImageIO.write(grayscaleImg, "PNG", new File("test/cuda-result.png"));
+            ImageIO.write(bi, "PNG", new File("test/cuda-result.png"));
             cuMemFree(devicePixels);
-            cuMemFree(deviceFilter);
             cuMemFree(deviceOutput);
         } catch (RuntimeException e) {
             throw e;
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    public void testJCudaKernelRunner() {
+
+        BufferedImage bi;
+        try {
+            bi = ImageIO.read(new File("test/test.png"));
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        int w = bi.getWidth();
+        int h = bi.getHeight();
+        int c = bi.getColorModel().getNumComponents();
+        int[] pixels = new int[w * h * c];
+        pixels = bi.getRaster().getPixels(0, 0, w, h, pixels);
+        int[] result = new int[w * h * c];
+
+        JCudaKernelRunner kernelRunner = new JCudaKernelRunner("diffusion");
+//        for (int i = 0; i < 1; i++) {
+            kernelRunner.processImage(pixels, result, w, h, c);
+//            int[] tmp = pixels;
+//            pixels = result;
+//            result = tmp;
+//        }
+
+        bi.getRaster().setPixels(0, 0, w, h, result);
+        try {
+            ImageIO.write(bi, "PNG", new File("test/cuda-result2.png"));
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static void main(String[] args) {
+        JCudaTest tester = new JCudaTest();
+//        tester.processTestImage();
+        tester.testJCudaKernelRunner();
     }
 }

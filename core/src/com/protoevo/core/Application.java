@@ -6,7 +6,6 @@ import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.utils.ScreenUtils;
 import com.protoevo.core.settings.SimulationSettings;
-import com.protoevo.playground.TestParticleShader;
 import com.protoevo.ui.SimulationScreen;
 
 public class Application extends ApplicationAdapter {
@@ -14,8 +13,6 @@ public class Application extends ApplicationAdapter {
 
 	private Simulation simulation;
 	private SimulationScreen simulationScreen;
-
-	private TestParticleShader testParticleShader;
 
 
 	@Override
@@ -27,8 +24,6 @@ public class Application extends ApplicationAdapter {
 		Vector2 pos = populationCentres[0];
 		simulationScreen.getCamera().position.set(pos.x, pos.y, 0);
 		simulationScreen.getCamera().zoom = 0.5f;
-
-//		testParticleShader = new TestParticleShader();
 	}
 
 
@@ -43,8 +38,6 @@ public class Application extends ApplicationAdapter {
 
 		float deltaTime = Gdx.graphics.getDeltaTime();
 		simulationScreen.draw(deltaTime);
-
-//		testParticleShader.render();
 	}
 
 
