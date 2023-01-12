@@ -208,6 +208,9 @@ public abstract class Cell extends Particle implements Serializable
 	public void grow(float delta) {
 		float gr = getGrowthRate();
 		float newR = getRadius() * (1 + 5f * gr * delta);
+		if (newR > SimulationSettings.maxParticleRadius)
+			return;
+
 		float massChange = getMass(newR) - getMass(super.getRadius());
 		if (massChange < constructionMassAvailable &&
 				(newR > Settings.minPlantBirthRadius || gr > 0)) {

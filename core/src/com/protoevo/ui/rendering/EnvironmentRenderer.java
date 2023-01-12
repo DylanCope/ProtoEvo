@@ -32,7 +32,7 @@ import static com.protoevo.utils.Utils.lerp;
 public class EnvironmentRenderer implements Renderer {
 
     private final Box2DDebugRenderer debugRenderer;
-    private final SpriteBatch batch;
+    private final SpriteBatch batch, chemicalBatch;
     private final Texture circleTexture;
     private final Sprite jointSprite;
     private final ShapeRenderer shapeRenderer;
@@ -52,10 +52,11 @@ public class EnvironmentRenderer implements Renderer {
         this.camera = camera;
         this.simulation = simulation;
         this.inputManager = inputManager;
+        environment = simulation.getEnv();
 
         debugRenderer = new Box2DDebugRenderer();
         batch = new SpriteBatch();
-        environment = simulation.getEnv();
+        chemicalBatch = new SpriteBatch();
 
         FileHandle particleFile = Gdx.files.internal("entity/particle_base_128x128.png");
         circleTexture = new Texture(particleFile, true);
@@ -99,17 +100,15 @@ public class EnvironmentRenderer implements Renderer {
             return;
         }
 
-        SpriteBatch batch = new SpriteBatch();;
-
-        batch.enableBlending();
-        batch.setProjectionMatrix(camera.combined);
-        batch.begin();
+        chemicalBatch.enableBlending();
+        chemicalBatch.setProjectionMatrix(camera.combined);
+        chemicalBatch.begin();
         Texture chemicalTexture = chemicalSolution.getChemicalTexture(camera);
         float x = -chemicalSolution.getFieldWidth() / 2;
         float y = -chemicalSolution.getFieldHeight() / 2;
-        batch.draw(chemicalTexture, x, y,
+        chemicalBatch.draw(chemicalTexture, x, y,
                 chemicalSolution.getFieldWidth(), chemicalSolution.getFieldWidth());
-        batch.end();
+        chemicalBatch.end();
     }
 
     public void render(float delta) {

@@ -79,7 +79,6 @@ public class Environment implements Serializable
 		elapsedTime += delta;
 		world.step(delta, Constants.VELOCITY_ITERATIONS, Constants.POSITION_ITERATIONS);
 
-//		interactionsManager.update(delta);
 		cells.parallelStream().forEach(cell -> cell.update(delta));
 		burstRequests.forEach(BurstRequest::burst);
 		burstRequests.clear();
@@ -133,6 +132,11 @@ public class Environment implements Serializable
 	public Vector2[] initialise() {
 		System.out.print("Initialising environment... ");
 		Vector2[] populationStartCentres = createRocks();
+
+		// random shuffle population start centres
+		List<Vector2> populationStartCentresList = Arrays.asList(populationStartCentres);
+		Collections.shuffle(populationStartCentresList);
+		populationStartCentres = populationStartCentresList.toArray(new Vector2[0]);
 
 		if (populationStartCentres != null)
 			initialisePopulation(Arrays.copyOfRange(populationStartCentres, 0, EnvironmentSettings.numPopulationClusters));
@@ -226,7 +230,10 @@ public class Environment implements Serializable
 
 	public Vector2 randomPosition(float entityRadius, Vector2 centre, float clusterRadius) {
 		for (int i = 0; i < 20; i++) {
-			Vector2 pos = Geometry.randomVector(clusterRadius * Simulation.RANDOM.nextFloat()).add(centre);
+			float r = clusterRadius * Simulation.RANDOM.nextFloat();
+			Vector2 pos = Geometry.randomVector(r*r);
+			pos.setLength((float) Math.sqrt(pos.len()));
+			pos.add(centre);
 			if (notCollidingWithAnything(pos, entityRadius))
 				return pos;
 		}
@@ -409,6 +416,12 @@ public class Environment implements Serializable
 	}
 
 	public <T extends Cell> void requestBurst(Cell parent, Class<T> cellType, Function<Float, T> createChild) {
+
+		int nEntities = cellCounts.getOrDefault(cellType, 0);
+		int maxEntities = cellCapacities.getOrDefault(cellType, 0);
+		if (nEntities > maxEntities)
+			return;
+
 		if (burstRequests.stream().anyMatch(request -> request.parentEquals(parent)))
 			return;
 

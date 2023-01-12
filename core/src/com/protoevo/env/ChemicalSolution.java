@@ -15,6 +15,7 @@ import com.google.common.collect.Streams;
 import com.protoevo.biology.Cell;
 import com.protoevo.biology.PlantCell;
 import com.protoevo.core.settings.Settings;
+import com.protoevo.core.settings.SimulationSettings;
 import com.protoevo.utils.JCudaKernelRunner;
 import com.protoevo.utils.Java2DTexture;
 import com.protoevo.utils.Utils;
@@ -141,28 +142,31 @@ public class ChemicalSolution implements Serializable {
         tmpChemicalField = tmp;
     }
 
-    public void update(float delta) {
-//        if (environment.getElapsedTime() > .1)
-//            return;
-        timeSinceUpdate += delta;
-        deposit();
-//        if (timeSinceUpdate >= Settings.chemicalUpdateTime / 100) {
-            diffuse();
+    public void updateTexture() {
         chemicalPixmap.setColor(0, 0, 0 , 0);
         chemicalPixmap.fill();
-            IntStream.range(0, chemicalField.length / 4).parallel()
-                    .forEach(i -> {
-                        float r = chemicalField[i * 4] / 255f;
-                        float g = chemicalField[i * 4 + 1] / 255f;
-                        float b = chemicalField[i * 4 + 2] / 255f;
-                        float a = chemicalField[i * 4 + 3] / 255f;
-                        chemicalPixmap.drawPixel(
+        IntStream.range(0, chemicalField.length / 4).parallel()
+                .forEach(i -> {
+                    float r = chemicalField[i * 4] / 255f;
+                    float g = chemicalField[i * 4 + 1] / 255f;
+                    float b = chemicalField[i * 4 + 2] / 255f;
+                    float a = chemicalField[i * 4 + 3] / 255f;
+                    chemicalPixmap.drawPixel(
                             i % chemicalTextureWidth, i / chemicalTextureWidth,
-                                Color.rgba8888(r, g, b, a));
-                    });
-            chemicalTexture = new Texture(chemicalPixmap, Pixmap.Format.RGBA8888, false);
+                            Color.rgba8888(r, g, b, a));
+                });
+        chemicalTexture = new Texture(chemicalPixmap, Pixmap.Format.RGBA8888, false);
+        timeSinceUpdate = 0;
+    }
+
+    public void update(float delta) {
+        timeSinceUpdate += delta;
+        if (timeSinceUpdate > SimulationSettings.chemicalDiffusionInterval) {
+            deposit();
+            diffuse();
+            updateTexture();
             timeSinceUpdate = 0;
-//        }
+        }
     }
 
     public Texture getChemicalTexture(OrthographicCamera camera) {
@@ -179,7 +183,11 @@ public class ChemicalSolution implements Serializable {
 
     public float getPlantPheromoneDensity(int i, int j) {
 //        Color depositColour = new Color(depositPixmap.getPixel(i, j));
-        return chemicalField[toFloatBufferIndex(i, j) + 3] / 255f;
+        i = toFloatBufferIndex(i, j);
+        if (i >= 0 && i < chemicalField.length) {
+            return chemicalField[i + 3] / 255f;
+        }
+        return 0f;
     }
 
     public float getMinX() {

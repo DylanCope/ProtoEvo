@@ -223,12 +223,12 @@ public class Protozoan extends Cell implements Evolvable
 	public void think(float delta)
 	{
 		brain.tick(this);
-		dir.rotateRad(delta * 80 * maxTurning * brain.turn(this) + 0.00001f * getTimeAlive());
+		dir.rotateRad(delta * 80 * maxTurning * brain.turn(this));
 //		growthControlFactor = brain.growthControl();
 		float spikeDecay = (float) Math.pow(Settings.spikeMovementPenalty, spikes.getNumSpikes());
 		float sizePenalty = getRadius() / SimulationSettings.maxParticleRadius; // smaller flagella generate less impulse
 		float speed = Math.abs(brain.speed(this));
-		Vector2 impulse = dir.cpy().setLength(.0005f * sizePenalty * speed);
+		Vector2 impulse = dir.cpy().setLength(.05f * sizePenalty * speed);
 		applyImpulse(impulse);
 //		float v1 = getSpeed();
 //		float m = getMass();
