@@ -20,7 +20,7 @@ import com.protoevo.biology.protozoa.NNBrain;
 import com.protoevo.biology.protozoa.Protozoan;
 import com.protoevo.core.Particle;
 import com.protoevo.core.Simulation;
-import com.protoevo.core.settings.EnvironmentSettings;
+import com.protoevo.core.settings.WorldGenerationSettings;
 import com.protoevo.env.Environment;
 import com.protoevo.input.ParticleTracker;
 import com.protoevo.ui.rendering.*;
@@ -66,11 +66,10 @@ public class SimulationScreen {
 
         camera = new OrthographicCamera();
         camera.setToOrtho(
-                false, EnvironmentSettings.environmentSize,
-                EnvironmentSettings.environmentSize * graphicsHeight / graphicsWidth);
-//        camera.setToOrtho(false, graphicsWidth, graphicsHeight);
+                false, WorldGenerationSettings.environmentRadius,
+                WorldGenerationSettings.environmentRadius * graphicsHeight / graphicsWidth);
         camera.position.set(0, 0, 0);
-        camera.zoom = Math.max(graphicsWidth, graphicsHeight) / EnvironmentSettings.environmentSize;
+        camera.zoom = WorldGenerationSettings.environmentRadius;
 
         this.simulation = simulation;
         this.environment = simulation.getEnv();
@@ -108,7 +107,7 @@ public class SimulationScreen {
         ImageButton homeButton = createBarImageButton("icons/home_icon.png", event -> {
             if (event.toString().equals("touchDown")) {
                 camera.position.set(0, 0, 0);
-                camera.zoom = 1;
+                camera.zoom = WorldGenerationSettings.environmentRadius;
             }
             return true;
         });

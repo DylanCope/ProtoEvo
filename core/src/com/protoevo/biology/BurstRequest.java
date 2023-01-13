@@ -2,8 +2,6 @@ package com.protoevo.biology;
 
 import com.badlogic.gdx.math.Vector2;
 import com.protoevo.core.Simulation;
-import com.protoevo.core.settings.EnvironmentSettings;
-import com.protoevo.core.settings.Settings;
 import com.protoevo.core.settings.SimulationSettings;
 import com.protoevo.env.Environment;
 import com.protoevo.utils.Geometry;
@@ -27,7 +25,7 @@ public class BurstRequest<T extends Cell> {
         if (parent.getRadius() < parent.getMinBurstRadius())
             return;
 
-        parent.kill();
+        parent.kill(CauseOfDeath.CYTOKINESIS);
 
         float angle = (float) (2 * Math.PI * Simulation.RANDOM.nextDouble());
 

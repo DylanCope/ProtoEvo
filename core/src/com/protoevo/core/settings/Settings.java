@@ -39,7 +39,7 @@ public final class Settings {
     // Protozoa settings
     public static final float minProtozoanBirthRadius = 3f / 100f;
     public static final float maxProtozoanBirthRadius = 8f / 100f;
-    public static final float protozoaStarvationFactor = 0.006f;
+    public static final float protozoaStarvationFactor = 0.05f;
     public static final int defaultRetinaSize = 0;
     public static final int maxRetinaSize = 8;
     public static final float retinaCellGrowthCost = .03f;
@@ -64,26 +64,11 @@ public final class Settings {
     public static final float protozoaInteractRange = 8 * 20f;
     public static final float eatingConversionRatio = 0.75f;
 
-    // Plant Settings
-    public static final float minMaxPlantRadius = 0.015f;
-    public static final float minPlantSplitRadius = 0.01f;
-    public static final float minPlantBirthRadius = 2f / 100f;
-    public static final float maxPlantBirthRadius = 8f / 100f;
-
-    public static final float minPlantGrowth = 0.02f;
-    public static final float plantGrowthRange = 0.05f;
-    public static final float plantCrowdingGrowthDecay = 1.0f;
-    public static final float plantCriticalCrowding = 6.0f;
-    public static final float plantRegen = .2f;
-
-    public static final float protozoaMinMaxTurn = 0.0174533f; // (float) Math.toRadians(1);
-    public static final float protozoaMaxMaxTurn = 0.10472f; // (float) Math.toRadians(6);
-
     // Stats
 
     public static final float statsDistanceScalar = 1.0f;
     public static final float statsTimeScalar = 100.0f;
-    public static final float statsMassScalar = 1f;
+    public static final float statsMassScalar = 1e6f;
 
     // Rendering
 

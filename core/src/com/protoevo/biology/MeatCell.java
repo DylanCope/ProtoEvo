@@ -23,7 +23,7 @@ public class MeatCell extends EdibleCell {
 
     public void age(float delta) {
         float deathRate = getRadius() * delta * 100;
-        damage(getHealth() * deathRate);
+        damage(getHealth() * deathRate, CauseOfDeath.OLD_AGE);
         rottenness = rottenness * (1 - deathRate);
         if (rottenness > 1)
             rottenness = 1;

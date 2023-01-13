@@ -18,12 +18,8 @@ public class Application extends ApplicationAdapter {
 	@Override
 	public void create () {
 		simulation = new Simulation();
-		Vector2[] populationCentres = simulation.getEnv().initialise();
+		simulation.getEnv().initialise();
 		simulationScreen = new SimulationScreen(simulation);
-
-		Vector2 pos = populationCentres[0];
-		simulationScreen.getCamera().position.set(pos.x, pos.y, 0);
-		simulationScreen.getCamera().zoom = 0.5f;
 	}
 
 

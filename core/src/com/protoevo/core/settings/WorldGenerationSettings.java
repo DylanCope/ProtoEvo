@@ -1,6 +1,7 @@
 package com.protoevo.core.settings;
 
-public class EnvironmentSettings {
+public class WorldGenerationSettings {
+    public static final int worldGenerationSeed = 1;
     public static final int numInitialProtozoa = 500;
     public static final int numInitialPlantPellets = 5000;
     public static final boolean initialPopulationClustering = true;
@@ -9,7 +10,7 @@ public class EnvironmentSettings {
     public static final float populationClusterRadius = 30f;
     public static final float rockClusterRadius = 2f;
     public static final float populationClusterRadiusRange = 0.f;
-    public static final float environmentSize = 10.0f;
+    public static final float environmentRadius = 10.0f;
     public static final boolean sphericalTank = false;
     public static final int numChunkBreaks = 100;
     public static final float maxParticleRadius = 15f / 100f;

@@ -3,6 +3,7 @@ package com.protoevo.biology.neat;
 import com.protoevo.biology.protozoa.Retina;
 import com.protoevo.core.settings.Settings;
 import com.protoevo.core.Simulation;
+import com.protoevo.core.settings.SimulationSettings;
 
 import java.io.Serializable;
 import java.util.*;
@@ -17,7 +18,7 @@ public class NetworkGenome implements Serializable
 	private int nNeuronGenes;
 	private SynapseGene[] synapseGenes;
 	private Random random = Simulation.RANDOM;
-	private float mutationChance = Settings.globalMutationChance;
+	private float mutationChance = SimulationSettings.globalMutationChance;
 	private Neuron.Activation defaultActivation = Neuron.Activation.LINEAR;
 	private float fitness = 0.0f;
 	private int numMutations = 0, nSensors, nOutputs;
@@ -233,7 +234,7 @@ public class NetworkGenome implements Serializable
 				g = Simulation.RANDOM.nextBoolean() ?
 						myConnections.get(innovation) :
 						theirConnections.get(innovation);
-				if (g.isDisabled() && Simulation.RANDOM.nextFloat() < Settings.globalMutationChance)
+				if (g.isDisabled() && Simulation.RANDOM.nextFloat() < SimulationSettings.globalMutationChance)
 					g.setDisabled(false);
 				childSynapses.add(g);
 				continue;

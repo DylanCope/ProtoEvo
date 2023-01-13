@@ -2,6 +2,7 @@ package com.protoevo.biology;
 
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.math.Vector2;
+import com.protoevo.core.settings.PlantSettings;
 import com.protoevo.core.settings.Settings;
 import com.protoevo.core.Simulation;
 import com.protoevo.core.settings.SimulationSettings;
@@ -19,8 +20,8 @@ public class PlantCell extends EdibleCell {
     private float crowdingFactor;
 
     public PlantCell(float radius, Environment environment) {
-        super(Math.max(radius, Settings.minPlantBirthRadius), Food.Type.Plant, environment);
-        setGrowthRate(Settings.minPlantGrowth + Settings.plantGrowthRange * Simulation.RANDOM.nextFloat());
+        super(Math.max(radius, PlantSettings.minPlantBirthRadius), Food.Type.Plant, environment);
+        setGrowthRate(PlantSettings.minPlantGrowth + PlantSettings.plantGrowthRange * Simulation.RANDOM.nextFloat());
 
         maxRadius = Simulation.RANDOM.nextFloat(2 * SimulationSettings.minParticleRadius, SimulationSettings.maxParticleRadius);
 
@@ -36,8 +37,8 @@ public class PlantCell extends EdibleCell {
     }
 
     private static float randomPlantRadius() {
-        float range = Settings.maxPlantBirthRadius * .5f - Settings.minPlantBirthRadius;
-        return Settings.minPlantBirthRadius + range * Simulation.RANDOM.nextFloat();
+        float range = PlantSettings.maxPlantBirthRadius * .5f - PlantSettings.minPlantBirthRadius;
+        return PlantSettings.minPlantBirthRadius + range * Simulation.RANDOM.nextFloat();
     }
 
     public PlantCell(Environment environment) {
@@ -93,9 +94,9 @@ public class PlantCell extends EdibleCell {
      */
     @Override
     public float getGrowthRate() {
-        float x = (-getCrowdingFactor() + Settings.plantCriticalCrowding) / Settings.plantCrowdingGrowthDecay;
+        float x = (-getCrowdingFactor() + PlantSettings.plantCriticalCrowding) / PlantSettings.plantCrowdingGrowthDecay;
         x = (float) (Math.tanh(x));// * Math.tanh(-0.01 + 50 * getCrowdingFactor() / Settings.plantCriticalCrowding));
-        x = x < 0 ? (float) (1 - Math.exp(-Settings.plantCrowdingGrowthDecay * x)) : x;
+        x = x < 0 ? (float) (1 - Math.exp(-PlantSettings.plantCrowdingGrowthDecay * x)) : x;
         float growthRate = super.getGrowthRate() * x;
         if (getRadius() > maxRadius)
             growthRate *= Math.exp(maxRadius - getRadius());

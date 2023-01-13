@@ -57,6 +57,7 @@ public abstract class Cell extends Particle implements Serializable
 	public void update(float delta) {
 		super.update(delta);
 		timeAlive += delta;
+		voidDamage(delta);
 		digest(delta);
 		repair(delta);
 		grow(delta);
@@ -71,6 +72,11 @@ public abstract class Cell extends Particle implements Serializable
 
 		for (CellAdhesion.Binding binding : cellBindings)
 			handleBindingInteraction(binding, delta);
+	}
+
+	public void voidDamage(float delta) {
+		if (getPos().len2() > SimulationSettings.voidStartDistance2)
+			damage(delta * SimulationSettings.voidDamagePerSecond, CauseOfDeath.THE_VOID);
 	}
 
 	private void requestJointRemoval(Cell other) {
@@ -130,7 +136,7 @@ public abstract class Cell extends Particle implements Serializable
 	public void eat(EdibleCell cell, float extraction) {
 		Food.Type foodType = cell.getFoodType();
 		float extractedMass = cell.getMass() * extraction;
-		cell.removeMass(Settings.foodExtractionWasteMultiplier * extractedMass);
+		cell.removeMass(Settings.foodExtractionWasteMultiplier * extractedMass, CauseOfDeath.EATEN);
 
 		Food food = foodToDigest.getOrDefault(foodType, new Food(extractedMass, foodType));
 		food.addSimpleMass(extractedMass);
@@ -172,7 +178,7 @@ public abstract class Cell extends Particle implements Serializable
 			if (massRequired < constructionMassAvailable && energyRequired < energyAvailable) {
 				useEnergy(energyRequired);
 				useConstructionMass(massRequired);
-				damage(-delta * Settings.cellRepairRate * getGrowthRate());
+				heal(delta * Settings.cellRepairRate * getGrowthRate());
 			}
 		}
 	}
@@ -213,13 +219,13 @@ public abstract class Cell extends Particle implements Serializable
 
 		float massChange = getMass(newR) - getMass(super.getRadius());
 		if (massChange < constructionMassAvailable &&
-				(newR > Settings.minPlantBirthRadius || gr > 0)) {
+				(newR > SimulationSettings.minParticleRadius || gr > 0)) {
 			setRadius(newR);
 			if (massChange > 0)
 				useConstructionMass(massChange);
 		}
-		if (newR < Settings.minPlantBirthRadius)
-			kill();
+		if (newR < SimulationSettings.minParticleRadius)
+			kill(CauseOfDeath.GREW_TOO_SMALL);
 	}
 
 	public void setGrowthRate(float gr) {
@@ -259,7 +265,7 @@ public abstract class Cell extends Particle implements Serializable
 	public void onCollision(Rock rock) {
 		super.onCollision(rock);
 		if (rock.pointInside(getPos())) {
-			kill();
+			kill(CauseOfDeath.SUFFOCATION);
 		}
 	}
 
@@ -267,7 +273,7 @@ public abstract class Cell extends Particle implements Serializable
 	public void onCollision(Particle other) {
 		super.onCollision(other);
 		if (other.isPointInside(getPos())) {
-			kill();
+			kill(CauseOfDeath.SUFFOCATION);
 		}
 
 		if (canMakeBindings() && other instanceof Cell) {
@@ -359,14 +365,18 @@ public abstract class Cell extends Particle implements Serializable
 	
 	public abstract boolean isEdible();
 
-	public void damage(float d)
+	public void heal(float h) {
+		damage(-h, CauseOfDeath.HEALED_TO_DEATH);
+	}
+
+	public void damage(float d, CauseOfDeath cause)
 	{
 		health -= d;
 		if (health > 1) 
 			health = 1;
 
 		if (health < 0.05)
-			kill();
+			kill(cause);
 	}
 
 	public String getPrettyName() {
@@ -440,12 +450,12 @@ public abstract class Cell extends Particle implements Serializable
 
 	public boolean isDead() {
 		if (health <= 0.05f)
-			kill();
+			kill(CauseOfDeath.HEALTH_TOO_LOW);
 		return super.isDead();
 	}
 
-	public void kill() {
-		super.kill();
+	public void kill(CauseOfDeath causeOfDeath) {
+		super.kill(causeOfDeath);
 		health = 0;
 	}
 
@@ -604,15 +614,19 @@ public abstract class Cell extends Particle implements Serializable
 	 * Changes the radius of the cell to remove the given amount of mass
 	 * @param mass mass to remove
 	 */
-	public void removeMass(float mass) {
+	public void removeMass(float mass, CauseOfDeath causeOfDeath) {
 		float percentRemoved = mass / getMass();
-		damage(percentRemoved);
+		damage(percentRemoved, causeOfDeath);
 
 		float newR = (1 - percentRemoved) * getRadius();
 		if (newR < SimulationSettings.minParticleRadius * 0.5f)
-			kill();
+			kill(causeOfDeath);
 
 		setRadius(newR);
+	}
+
+	public void removeMass(float mass) {
+		removeMass(mass, CauseOfDeath.LOST_TOO_MUCH_MASS);
 	}
 
 	public Map<Food.Type, Food> getFoodToDigest() {

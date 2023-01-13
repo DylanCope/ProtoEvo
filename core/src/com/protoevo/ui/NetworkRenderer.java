@@ -46,6 +46,7 @@ public class NetworkRenderer extends InputAdapter implements Renderer {
 
         if (DebugMode.isDebugMode()) {
             shapeRenderer.setColor(Color.GOLD);
+            shapeRenderer.set(ShapeRenderer.ShapeType.Line);
             shapeRenderer.box(boxXStart, boxYStart, 0, boxWidth, boxHeight, 0);
             for (float y = boxYStart; y < boxYStart + boxHeight; y += boxHeight / networkDepth)
                 shapeRenderer.line(boxXStart, y, boxXStart + boxWidth, y);

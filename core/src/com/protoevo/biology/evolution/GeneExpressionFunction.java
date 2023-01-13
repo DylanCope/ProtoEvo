@@ -4,6 +4,7 @@ import com.protoevo.biology.neat.NetworkGenome;
 import com.protoevo.biology.neat.NeuralNetwork;
 import com.protoevo.core.settings.Settings;
 import com.protoevo.core.Simulation;
+import com.protoevo.core.settings.SimulationSettings;
 
 import java.io.Serializable;
 import java.lang.reflect.Constructor;
@@ -102,7 +103,7 @@ public class GeneExpressionFunction implements Evolvable.Component, Serializable
 
     public static final long serialVersionUID = 1L;
     private Genes genes;
-    private float mutationChance = Settings.globalMutationChance;
+    private float mutationChance = SimulationSettings.globalMutationChance;
     private NeuralNetwork geneRegulatoryNetwork;
     private GeneRegulators geneRegulators;
     private Collection<String> regulatedGenes;
@@ -118,7 +119,7 @@ public class GeneExpressionFunction implements Evolvable.Component, Serializable
     }
 
     @EvolvableFloat(name="Mutation Chance",
-            min=Settings.minMutationChance, max=Settings.maxMutationChance)
+            min=SimulationSettings.minMutationChance, max=SimulationSettings.maxMutationChance)
     public void setMutationChance(float mutationChance) {
         this.mutationChance = mutationChance;
     }

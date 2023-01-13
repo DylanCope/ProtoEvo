@@ -1,4 +1,4 @@
-__device__ const int FILTER_SIZE = 5;
+__device__ const int FILTER_SIZE = 3;
 
 extern "C"
 __global__ void kernel(
@@ -11,7 +11,30 @@ __global__ void kernel(
     unsigned int x = blockIdx.x*blockDim.x + threadIdx.x;
     unsigned int y = blockIdx.y*blockDim.y + threadIdx.y;
 
-    float decay = 0.9995;
+    // See voidStartDistance in SimulationSettings
+    float world_radius = 30.0;
+
+    float cellSizeX = 2 * world_radius / ((float) width);
+    float cellSizeY = 2 * world_radius / ((float) height);
+    float world_x = -world_radius + cellSizeX * x;
+    float world_y = -world_radius + cellSizeY * y;
+    float dist2_to_world_centre = world_x*world_x + world_y*world_y;
+
+    // set alpha decay to zero as we approach the void
+    float decay = 0.0;
+
+    float void_p = 0.9;
+    if (dist2_to_world_centre > void_p * void_p * world_radius * world_radius) {
+        float dist_to_world_centre = sqrtf(dist2_to_world_centre);
+        // lerp from 1.0 to 0.0 for distance between void_p*world_radius and world_radius
+        decay = 0.9995 * (1.0 - (dist_to_world_centre - void_p * world_radius) / ((1.0 - void_p) * world_radius));
+        if (decay < 0.0) {
+            decay = 0.0;
+        }
+    } else {
+        decay = 0.9995;
+    }
+
     int alpha_channel = channels - 1;
 
     float final_alpha = 0.0;
@@ -28,6 +51,12 @@ __global__ void kernel(
     }
     final_alpha = decay * final_alpha / ((float) (FILTER_SIZE*FILTER_SIZE));
     result[(y*width + x)*channels + alpha_channel] = (int) (255 * final_alpha);
+
+    if (final_alpha < 0.01) {
+        for (int i = 0; i < channels - 1; i++) {
+            result[(y*width + x)*channels + i] = 0;
+        }
+    }
 
     float final_value = 0.0;
     // assume that the last channel is alpha

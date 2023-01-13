@@ -1,18 +1,13 @@
 package com.protoevo.env;
 
-import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.*;
 import com.google.common.collect.Streams;
-import com.protoevo.biology.BurstRequest;
-import com.protoevo.biology.Cell;
-import com.protoevo.biology.MeatCell;
-import com.protoevo.biology.PlantCell;
+import com.protoevo.biology.*;
 import com.protoevo.biology.evolution.Evolvable;
 import com.protoevo.biology.protozoa.Protozoan;
 import com.protoevo.core.Particle;
-import com.protoevo.core.settings.Constants;
-import com.protoevo.core.settings.EnvironmentSettings;
+import com.protoevo.core.settings.WorldGenerationSettings;
 import com.protoevo.core.settings.Settings;
 import com.protoevo.core.Simulation;
 import com.protoevo.core.settings.SimulationSettings;
@@ -35,6 +30,8 @@ public class Environment implements Serializable
 			new ConcurrentHashMap<>(3, 1);
 	public final ConcurrentHashMap<Class<? extends Cell>, Integer> cellCapacities =
 			new ConcurrentHashMap<>(3, 1);
+	public final ConcurrentHashMap<CauseOfDeath, Integer> causeOfDeathCounts =
+			new ConcurrentHashMap<>(CauseOfDeath.values().length, 1);
 	private final ChemicalSolution chemicalSolution;
 	private final List<Rock> rocks;
 	private long generation = 1, protozoaBorn = 0, totalCellsAdded = 0, crossoverEvents = 0;
@@ -42,8 +39,8 @@ public class Environment implements Serializable
 	private String genomeFile = null;
 	private final List<String> genomesToWrite = new ArrayList<>();
 
-	private final List<Cell> cellsToAdd = new ArrayList<>();
-	private final List<Cell> cells = new ArrayList<>();
+	private final Set<Cell> cellsToAdd = new HashSet<>();
+	private final Set<Cell> cells = new HashSet<>();
 	private boolean hasInitialised;
 
 	private final JointsManager jointsManager;
@@ -77,7 +74,10 @@ public class Environment implements Serializable
 		flushEntitiesToAdd();
 
 		elapsedTime += delta;
-		world.step(delta, Constants.VELOCITY_ITERATIONS, Constants.POSITION_ITERATIONS);
+		world.step(
+				delta,
+				SimulationSettings.physicsVelocityIterations,
+				SimulationSettings.physicsPositionIterations);
 
 		cells.parallelStream().forEach(cell -> cell.update(delta));
 		burstRequests.forEach(BurstRequest::burst);
@@ -98,25 +98,25 @@ public class Environment implements Serializable
 
 	public Vector2[] createRocks() {
 		System.out.println("Creating rocks structures...");
-		RockGeneration.generateClustersOfRocks(
-				this, new Vector2(0, 0), 1, EnvironmentSettings.rockClusterRadius);
+		WorldGeneration.generateClustersOfRocks(
+				this, new Vector2(0, 0), 1, WorldGenerationSettings.rockClusterRadius);
 
 		int numClusterCentres = 8;
 		Vector2[] clusterCentres = new Vector2[numClusterCentres];
 
 		for (int i = 0; i < numClusterCentres; i++) {
-			float minR = EnvironmentSettings.rockClusterRadius;
-			float maxR = EnvironmentSettings.environmentSize / 5f - EnvironmentSettings.rockClusterRadius;
+			float minR = WorldGenerationSettings.rockClusterRadius;
+			float maxR = WorldGenerationSettings.environmentRadius / 5f - WorldGenerationSettings.rockClusterRadius;
 
-			Vector2 centre = RockGeneration.randomPosition(minR, maxR);
+			Vector2 centre = WorldGeneration.randomPosition(minR, maxR);
 			clusterCentres[i] = centre;
 
 			int nRings = Simulation.RANDOM.nextInt(1, 3);
-			float radiusRange = Simulation.RANDOM.nextFloat(8.f) * EnvironmentSettings.rockClusterRadius;
-			RockGeneration.generateClustersOfRocks(this, centre, nRings, radiusRange);
+			float radiusRange = Simulation.RANDOM.nextFloat(8.f) * WorldGenerationSettings.rockClusterRadius;
+			WorldGeneration.generateClustersOfRocks(this, centre, nRings, radiusRange);
 		}
 
-		RockGeneration.generateRocks(this, 500);
+		WorldGeneration.generateRocks(this, 500);
 
 		for (Rock rock : this.getRocks()) {
 			BodyDef rockBodyDef = new BodyDef();
@@ -139,7 +139,7 @@ public class Environment implements Serializable
 		populationStartCentres = populationStartCentresList.toArray(new Vector2[0]);
 
 		if (populationStartCentres != null)
-			initialisePopulation(Arrays.copyOfRange(populationStartCentres, 0, EnvironmentSettings.numPopulationClusters));
+			initialisePopulation(Arrays.copyOfRange(populationStartCentres, 0, WorldGenerationSettings.numPopulationClusters));
 		else
 			initialisePopulation();
 
@@ -184,7 +184,7 @@ public class Environment implements Serializable
 			findProtozoaPosition = r -> randomPosition(r, clusterCentres);
 		}
 
-		for (int i = 0; i < EnvironmentSettings.numInitialPlantPellets; i++) {
+		for (int i = 0; i < WorldGenerationSettings.numInitialPlantPellets; i++) {
 			PlantCell cell = new PlantCell(this);
 			Vector2 pos = findPlantPosition.apply(cell.getRadius());
 			if (pos != null)
@@ -197,7 +197,7 @@ public class Environment implements Serializable
 			}
 		}
 
-		for (int i = 0; i < EnvironmentSettings.numInitialProtozoa; i++) {
+		for (int i = 0; i < WorldGenerationSettings.numInitialProtozoa; i++) {
 			Protozoan p = Evolvable.createNew(Protozoan.class);
 			p.setEnv(this);
 			Vector2 pos = findProtozoaPosition.apply(p.getRadius());
@@ -216,16 +216,16 @@ public class Environment implements Serializable
 	}
 
 	public void initialisePopulation() {
-		Vector2[] clusterCentres = new Vector2[EnvironmentSettings.numPopulationClusters];
+		Vector2[] clusterCentres = new Vector2[WorldGenerationSettings.numPopulationClusters];
 		for (int i = 0; i < clusterCentres.length; i++)
-			clusterCentres[i] = randomPosition(EnvironmentSettings.populationClusterRadius);
+			clusterCentres[i] = randomPosition(WorldGenerationSettings.populationClusterRadius);
 		initialisePopulation(clusterCentres);
 	}
 
 	public Vector2 randomPosition(float entityRadius, Vector2[] clusterCentres) {
 		int clusterIdx = Simulation.RANDOM.nextInt(clusterCentres.length);
 		Vector2 clusterCentre = clusterCentres[clusterIdx];
-		return randomPosition(entityRadius, clusterCentre, EnvironmentSettings.populationClusterRadius);
+		return randomPosition(entityRadius, clusterCentre, WorldGenerationSettings.populationClusterRadius);
 	}
 
 	public Vector2 randomPosition(float entityRadius, Vector2 centre, float clusterRadius) {
@@ -242,7 +242,7 @@ public class Environment implements Serializable
 	}
 
 	public Vector2 randomPosition(float entityRadius) {
-		return randomPosition(entityRadius, Geometry.ZERO, EnvironmentSettings.rockClusterRadius);
+		return randomPosition(entityRadius, Geometry.ZERO, WorldGenerationSettings.rockClusterRadius);
 	}
 
 	private void flushEntitiesToAdd() {
@@ -259,15 +259,30 @@ public class Environment implements Serializable
 		genomesToWrite.removeAll(genomeWritesHandled);
 	}
 
+	public int getCount(Class<? extends Cell> cellClass) {
+		return cellCounts.getOrDefault(cellClass, 0);
+	}
+
 	private void updateCounts(Collection<Cell> entities) {
 		cellCounts.clear();
 		for (Cell e : entities)
-			cellCounts.put(e.getClass(), 1 + cellCounts.getOrDefault(e.getClass(), 0));
+			cellCounts.put(
+					e.getClass(),
+					1 + getCount(e.getClass()));
+	}
+
+	public int getCapacity(Class<? extends Cell> cellClass) {
+		return cellCapacities.getOrDefault(cellClass, 0);
 	}
 
 	private void handleDeadEntity(Particle e) {
 		if (!e.isDead())
 			return;
+		CauseOfDeath cod = e.getCauseOfDeath();
+		if (cod != null) {
+			int count = causeOfDeathCounts.getOrDefault(cod, 0);
+			causeOfDeathCounts.put(cod, count + 1);
+		}
 		e.dispose();
 	}
 
@@ -275,17 +290,15 @@ public class Environment implements Serializable
 		protozoaBorn++;
 		generation = Math.max(generation, p.getGeneration());
 
-		if (genomeFile != null && Settings.writeGenomes) {
-			String genomeLine = p.getGeneration() + "," + elapsedTime + "," + p.getGenome().toString();
-			genomesToWrite.add(genomeLine);
-		}
+//		if (genomeFile != null && Settings.writeGenomes) {
+//			String genomeLine = p.getGeneration() + "," + elapsedTime + "," + p.getGenome().toString();
+//			genomesToWrite.add(genomeLine);
+//		}
 	}
 
 	public void add(Cell e) {
-		if (cellCounts.getOrDefault(e.getClass(), 0)
-				>= cellCapacities.getOrDefault(e.getClass(), 0)) {
-			e.kill();
-		}
+		if (getCount(e.getClass()) >= getCapacity(e.getClass()))
+			e.kill(CauseOfDeath.ENV_CAPACITY_EXCEEDED);
 
 		if (!cellsToAdd.contains(e)) {
 			totalCellsAdded++;
@@ -305,6 +318,13 @@ public class Environment implements Serializable
 		stats.put("Time Elapsed", elapsedTime);
 		stats.put("Protozoa Born", (float) protozoaBorn);
 		stats.put("Crossover Events", (float) crossoverEvents);
+		for (CauseOfDeath cod : CauseOfDeath.values()) {
+			if (cod.equals(CauseOfDeath.ENV_CAPACITY_EXCEEDED))
+				continue;
+			int count = causeOfDeathCounts.getOrDefault(cod, 0);
+			if (count > 0)
+				stats.put("Died from " + cod.getReason(), (float) count);
+		}
 		if (includeProtozoaStats)
 			stats.putAll(getProtozoaStats());
 		return stats;

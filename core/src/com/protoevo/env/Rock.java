@@ -193,9 +193,13 @@ public class Rock implements Serializable, Collidable {
     }
 
     public static Color randomRockColour() {
+        float darkener = 0.6f;
         int tone = 80 + Simulation.RANDOM.nextInt(20);
         int yellowing = Simulation.RANDOM.nextInt(20);
-        return new Color((tone + yellowing) / 255.f, (tone + yellowing) / 255.f, tone / 255.f, 1);
+        return new Color(
+                darkener * (tone + yellowing) / 255.f,
+                darkener * (tone + yellowing) / 255.f,
+                darkener * tone / 255.f, 1);
     }
 
     public boolean allEdgesAttached() {

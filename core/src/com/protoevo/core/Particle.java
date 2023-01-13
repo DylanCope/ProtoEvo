@@ -4,6 +4,7 @@ import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.*;
 import com.badlogic.gdx.utils.Array;
+import com.protoevo.biology.CauseOfDeath;
 import com.protoevo.core.settings.Settings;
 import com.protoevo.core.settings.SimulationSettings;
 import com.protoevo.env.Environment;
@@ -25,6 +26,7 @@ public class Particle implements Collidable {
     private final TreeMap<String, Float> stats = new TreeMap<>();
     private final Queue<Object> contactObjects = new LinkedList<>();
     private final Queue<Object> interactionQueue = new LinkedList<>();
+    private CauseOfDeath causeOfDeath = null;
 
     public Particle() {}
 
@@ -65,8 +67,8 @@ public class Particle implements Collidable {
         FixtureDef fixtureDef = new FixtureDef();
         fixtureDef.shape = circle;
         fixtureDef.density = 1f;  // will be updated later
-        fixtureDef.friction = 0.8f;
-        fixtureDef.restitution = 0.6f;
+        fixtureDef.friction = 0.9f;
+        fixtureDef.restitution = 0.2f;
 
 //        if (getSensorCategory() != 0x0000)
 //            fixtureDef.filter.categoryBits = getSensorCategory();
@@ -274,12 +276,14 @@ public class Particle implements Collidable {
         return dead;
     }
 
-    public void kill() {
+    public void kill(CauseOfDeath causeOfDeath) {
         dead = true;
+        if (this.causeOfDeath == null)
+            this.causeOfDeath = causeOfDeath;
     }
 
     public void dispose() {
-        kill();
+        kill(CauseOfDeath.DISPOSED);
         environment.getWorld().destroyBody(body);
     }
 
@@ -303,5 +307,9 @@ public class Particle implements Collidable {
 
     public Array<JointEdge> getJoints() {
         return body.getJointList();
+    }
+
+    public CauseOfDeath getCauseOfDeath() {
+        return causeOfDeath;
     }
 }

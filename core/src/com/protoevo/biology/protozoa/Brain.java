@@ -1,5 +1,6 @@
 package com.protoevo.biology.protozoa;
 
+import com.protoevo.core.settings.ProtozoaSettings;
 import com.protoevo.core.settings.Settings;
 import com.protoevo.core.Simulation;
 
@@ -31,7 +32,7 @@ public interface Brain extends Serializable
 
 		@Override
 		public float speed(Protozoan p) {
-			return Simulation.RANDOM.nextFloat() * Settings.maxProtozoaSpeed;
+			return Simulation.RANDOM.nextFloat() * ProtozoaSettings.maxProtozoaSpeed;
 		}
 
 		@Override

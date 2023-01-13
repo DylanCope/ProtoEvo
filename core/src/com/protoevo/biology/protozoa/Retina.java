@@ -9,7 +9,7 @@ import com.protoevo.biology.evolution.Evolvable;
 import com.protoevo.biology.evolution.EvolvableFloat;
 import com.protoevo.biology.evolution.EvolvableInteger;
 import com.protoevo.biology.evolution.GeneRegulator;
-import com.protoevo.core.settings.Settings;
+import com.protoevo.core.settings.ProtozoaSettings;
 import com.protoevo.core.settings.SimulationSettings;
 import com.protoevo.utils.Geometry;
 
@@ -36,8 +36,8 @@ public class Retina implements Evolvable.Component, Iterable<Retina.Cell>, Seria
 			this.constructionProject = constructionProject;
 
 			int nRays = 1;
-			if (cellFov > Settings.minRetinaRayAngle)
-				nRays = (int) (cellFov / Settings.minRetinaRayAngle);
+			if (cellFov > ProtozoaSettings.minRetinaRayAngle)
+				nRays = (int) (cellFov / ProtozoaSettings.minRetinaRayAngle);
 
 			colours = new Color[nRays];
 			weights = new float[nRays];
@@ -171,9 +171,9 @@ public class Retina implements Evolvable.Component, Iterable<Retina.Cell>, Seria
 	}
 
 	@EvolvableInteger(
-			name="Retina Size",
-			max=Settings.maxRetinaSize, randomInitialValue=false,
-			initValue = Settings.defaultRetinaSize,
+			name = "Retina Size",
+			max = ProtozoaSettings.maxRetinaSize, randomInitialValue=false,
+			initValue = ProtozoaSettings.defaultRetinaSize,
 			canDisable = true, disableValue = 0
 	)
 	public void setRetinaSize(int retinaSize) {
@@ -249,10 +249,10 @@ public class Retina implements Evolvable.Component, Iterable<Retina.Cell>, Seria
 	}
 
 	public static float computeWeight(float sqLen) {
-		float dMin = 0.9f * Settings.protozoaInteractRange;
+		float dMin = 0.9f * ProtozoaSettings.protozoaInteractRange;
 		float wD = 0.5f;
 		float x = 1 - wD;
-		float k = (float) (0.5 * Math.log((1 + x) / (1 - x))) / (dMin - Settings.protozoaInteractRange);
+		float k = (float) (0.5 * Math.log((1 + x) / (1 - x))) / (dMin - ProtozoaSettings.protozoaInteractRange);
 		return (float) (1 + Math.tanh(-k*(Math.sqrt(sqLen) - dMin))) / 2f;
 	}
 

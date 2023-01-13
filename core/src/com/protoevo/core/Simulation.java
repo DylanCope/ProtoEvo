@@ -26,7 +26,7 @@ public class Simulation
 	private float timeDilation = 1, timeSinceSave = 0, timeSinceSnapshot = 0;
 	private double updateDelay = Application.refreshDelay / 1000.0, lastUpdateTime = 0;
 	
-	public static Random RANDOM = new Random(Settings.simulationSeed);
+	public static Random RANDOM = new Random(SimulationSettings.simulationSeed);
 	private boolean debug = false, delayUpdate = true;
 
 	private final String name;

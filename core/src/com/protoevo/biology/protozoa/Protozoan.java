@@ -7,6 +7,7 @@ import com.protoevo.biology.evolution.*;
 import com.protoevo.biology.neat.NetworkGenome;
 import com.protoevo.core.Collidable;
 import com.protoevo.core.Particle;
+import com.protoevo.core.settings.ProtozoaSettings;
 import com.protoevo.core.settings.Settings;
 import com.protoevo.core.Simulation;
 import com.protoevo.core.settings.SimulationSettings;
@@ -30,11 +31,10 @@ public class Protozoan extends Cell implements Evolvable
 	private final float attackFactor = 10f;
 	private float damageRate = 0;
 	private final Vector2 dir = new Vector2(0, 0);
-	private ContactSensor[] contactSensors;
 	private Spikes spikes;
 	private Retina retina;
 	private Brain brain;
-	private float herbivoreFactor, splitRadius, maxTurning, growthControlFactor;
+	private float herbivoreFactor, splitRadius, maxTurning, growthControlFactor = 1f;
 	private float timeSinceLastGeneUpdate = 0;
 	private final float geneUpdateTime = Settings.simulationUpdateDelta * 20;
 
@@ -72,19 +72,20 @@ public class Protozoan extends Cell implements Evolvable
 		setDigestionRate(Food.Type.Plant, herbivoreFactor);
 	}
 
-	@EvolvableFloat(name="Split Radius", min=0.015f, max=0.03f)
+	@EvolvableFloat(name="Split Radius",
+			min=ProtozoaSettings.maxProtozoanBirthRadius, max=SimulationSettings.maxParticleRadius)
 	public void setSplitRadius(float splitRadius) {
 		this.splitRadius = splitRadius;
 	}
 
 	@EvolvableFloat(name="Birth Radius",
-			min=Settings.minProtozoanBirthRadius, max=Settings.maxProtozoanBirthRadius)
+			min=ProtozoaSettings.minProtozoanBirthRadius, max=ProtozoaSettings.maxProtozoanBirthRadius)
 	public void setBirthRadius(float birthRadius) {
 		if (getRadius() < birthRadius)
 			setRadius(birthRadius);
 	}
 
-	@EvolvableFloat(name="Max Turn", min=Settings.protozoaMinMaxTurn, max=Settings.protozoaMaxMaxTurn)
+	@EvolvableFloat(name="Max Turn", min=ProtozoaSettings.protozoaMinMaxTurn, max=ProtozoaSettings.protozoaMaxMaxTurn)
 	public void setMaxTurning(float maxTurning) {
 		this.maxTurning = maxTurning;
 	}
@@ -130,7 +131,7 @@ public class Protozoan extends Cell implements Evolvable
 	}
 
 	@Override
-	@GeneRegulator(name="Size", min=Settings.minProtozoanBirthRadius, max=Settings.maxProtozoanSplitRadius)
+	@GeneRegulator(name="Size", min=ProtozoaSettings.minProtozoanBirthRadius, max=ProtozoaSettings.maxProtozoanSplitRadius)
 	public float getRadius() {
 		return super.getRadius();
 	}
@@ -193,7 +194,7 @@ public class Protozoan extends Cell implements Evolvable
 		float extraction = 5f * getRadius() / e.getRadius();
 		if (e instanceof PlantCell) {
 			if (spikes.getNumSpikes() > 0)
-				extraction *= Math.pow(Settings.spikePlantConsumptionPenalty, spikes.getNumSpikes());
+				extraction *= Math.pow(ProtozoaSettings.spikePlantConsumptionPenalty, spikes.getNumSpikes());
 			extraction *= herbivoreFactor;
 		} else if (e instanceof MeatCell) {
 			extraction /= herbivoreFactor;
@@ -206,7 +207,7 @@ public class Protozoan extends Cell implements Evolvable
 	{
 		float myAttack = (float) (
 				2*getHealth() +
-				Settings.spikeDamage * getSpikeLength(spike) +
+				ProtozoaSettings.spikeDamage * getSpikeLength(spike) +
 				2*Simulation.RANDOM.nextDouble()
 		);
 		float theirDefense = (float) (
@@ -216,7 +217,7 @@ public class Protozoan extends Cell implements Evolvable
 		);
 
 		if (myAttack > p.shieldFactor * theirDefense)
-			p.damage(delta * attackFactor * (myAttack - p.shieldFactor * theirDefense));
+			p.damage(delta * attackFactor * (myAttack - p.shieldFactor * theirDefense), CauseOfDeath.MURDER);
 
 	}
 	
@@ -225,7 +226,7 @@ public class Protozoan extends Cell implements Evolvable
 		brain.tick(this);
 		dir.rotateRad(delta * 80 * maxTurning * brain.turn(this));
 //		growthControlFactor = brain.growthControl();
-		float spikeDecay = (float) Math.pow(Settings.spikeMovementPenalty, spikes.getNumSpikes());
+		float spikeDecay = (float) Math.pow(ProtozoaSettings.spikeMovementPenalty, spikes.getNumSpikes());
 		float sizePenalty = getRadius() / SimulationSettings.maxParticleRadius; // smaller flagella generate less impulse
 		float speed = Math.abs(brain.speed(this));
 		Vector2 impulse = dir.cpy().setLength(.05f * sizePenalty * speed);
@@ -240,7 +241,7 @@ public class Protozoan extends Cell implements Evolvable
 	}
 
 	private boolean shouldSplit() {
-		return getRadius() > splitRadius && getHealth() > Settings.minHealthToSplit;
+		return getRadius() > splitRadius && getHealth() > ProtozoaSettings.minHealthToSplit;
 	}
 
 	private Protozoan createSplitChild(float r) {
@@ -316,7 +317,7 @@ public class Protozoan extends Cell implements Evolvable
 				return getRadius() * 1.1f;
 			}
 		}
-		return Settings.protozoaInteractRange;
+		return ProtozoaSettings.protozoaInteractRange;
 	}
 
 	@Override
@@ -336,8 +337,8 @@ public class Protozoan extends Cell implements Evolvable
 	}
 
 	@Override
-	public void kill() {
-		super.kill();
+	public void kill(CauseOfDeath causeOfDeath) {
+		super.kill(causeOfDeath);
 		getEnv().requestBurst(this, MeatCell.class, r -> new MeatCell(r, getEnv()));
 	}
 
@@ -370,21 +371,21 @@ public class Protozoan extends Cell implements Evolvable
 		return stats;
 	}
 
-	@Override
-	public float getGrowthRate() {
-		float growthRate = super.getGrowthRate();
-		if (getRadius() > splitRadius)
-			growthRate *= getHealth() * splitRadius / (5 * getRadius());
-//		for (Spike spike : spikes)
-//			growthRate -= Settings.spikeGrowthPenalty * spike.growthRate;
-//		growthRate -= Settings.retinaCellGrowthCost * retina.numberOfCells();
-		return growthRate * (0.25f + 0.75f * growthControlFactor);
-	}
+//	@Override
+//	public float getGrowthRate() {
+//		float growthRate = super.getGrowthRate();
+//		if (getRadius() > splitRadius)
+//			growthRate *= getHealth() * splitRadius / (5 * getRadius());
+////		for (Spike spike : spikes)
+////			growthRate -= ProtozoaSettings.spikeGrowthPenalty * spike.growthRate;
+////		growthRate -= ProtozoaSettings.retinaCellGrowthCost * retina.numberOfCells();
+//		return growthRate; // * (0.25f + 0.75f * growthControlFactor);
+//	}
 
 	public void age(float delta) {
-		damageRate = getRadius() * Settings.protozoaStarvationFactor;
-		damageRate += Settings.spikeDeathRatePenalty + spikes.getNumSpikes();
-		damage(damageRate * delta);
+		damageRate = getRadius() * ProtozoaSettings.protozoaStarvationFactor;
+		damageRate += ProtozoaSettings.spikeDeathRatePenalty + spikes.getNumSpikes();
+		damage(damageRate * delta, CauseOfDeath.OLD_AGE);
 	}
 
 	@Override
@@ -406,9 +407,9 @@ public class Protozoan extends Cell implements Evolvable
 //
 //		maintainRetina(delta);
 
-//		if (shouldSplit()) {
-//			getEnv().requestBurst(this, Protozoan.class, this::createSplitChild);
-//		}
+		if (shouldSplit()) {
+			getEnv().requestBurst(this, Protozoan.class, this::createSplitChild);
+		}
 	}
 
 	public void handleCollisions(float delta) {
@@ -434,10 +435,6 @@ public class Protozoan extends Cell implements Evolvable
 		return retina;
 	}
 
-	public ProtozoaGenome getGenome() {
-		return null;
-	}
-
 	public float getShieldFactor() {
 		return shieldFactor;
 	}
@@ -460,10 +457,6 @@ public class Protozoan extends Cell implements Evolvable
 
 	public Vector2 getDir() {
 		return dir;
-	}
-
-	public ContactSensor[] getContactSensors() {
-		return contactSensors;
 	}
 
 	public boolean isHarbouringCrossover() {
