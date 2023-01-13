@@ -58,16 +58,22 @@ that allow them to bind to other cells and transmit mass, energy, signals, and c
 
 ## Running the Simulation
 
+**Note:** This project is still in development, and is not yet ready for public consumption. It also requires a
+quite powerful computer to run.
+
 The simulation is written in Java and uses the built-in Java Swing library for the UI.
 I developed this project using the [IntelliJ IDEA](https://www.jetbrains.com/idea/) IDE,
-and I recommend using this IDE to run the simulation. To do so, simply clone the repository,
-open the project in IntelliJ, and run the `protoevo.core.Application` class build adding an
-"Application" build configuration. Be sure to include `-Xmx16G -Dsun.java2d.opengl=true`
-as program arguments.
+and I recommend using this to run the simulation.
+The project is built using LibGDX, which is a cross-platform game development library.
+It relies on OpenGL for rendering, and so you will need to have the appropriate drivers installed,
+as well as CUDA for GPU acceleration (if you have a CUDA-capable GPU). For the time being I have not 
+implemented a CPU-only version of the simulation, so you will need a CUDA-capable GPU to run the simulation.
+Finally, the project is only tested on Windows 11, but it should work on Linux and Mac OS X as well.
 
-![png](/screenshots/build_config.png)
-
-The dependencies should be handled by Maven. You can check that they are properly configured
-by looking at the Modules tab in Project Structure window in IntelliJ.
-
-![png](/screenshots/project_structure.png)
+**Steps**
+- Clone the repository, open the project in IntelliJ.
+For a general guide to running LibGDX projects, see [this article](https://libgdx.com/wiki/start/import-and-running).
+- Compile the CUDA kernels in the `assets/kernels` directory using the `nvcc` compiler. 
+  For example, `nvcc -m64 -ptx diffusion.cu`.
+- Run the Gradle task `desktop:run` to run the simulation. In IntelliJ, this can be done by opening the Gradle
+  tool window and navigating to `ProtoEvo > desktop > other > run`.
