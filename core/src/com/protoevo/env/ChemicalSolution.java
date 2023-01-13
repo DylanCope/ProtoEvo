@@ -205,4 +205,24 @@ public class ChemicalSolution implements Serializable {
     public float getMaxY() {
         return yMax;
     }
+
+    public void drawCircle(Vector2 pos, float r, Color c) {
+        int ic = toChemicalGridX(pos.x);
+        int jc = toChemicalGridY(-pos.y);
+        int r1 = toChemicalGridXDist(r);
+        for (int i = ic - r1; i <= ic + r1; i++) {
+            for (int j = jc - r1; j <= jc + r1; j++) {
+                if (i >= 0 && i < chemicalTextureWidth && j >= 0 && j < chemicalTextureHeight
+                        && (i - ic) * (i - ic) + (j - jc) * (j - jc) < r1 * r1) {
+                    int index = toFloatBufferIndex(i, j);
+                    if (index >= 0 && index < chemicalField.length) {
+                        chemicalField[index] = (int) (255 * c.r);
+                        chemicalField[index + 1] = (int) (255 * c.g);
+                        chemicalField[index + 2] = (int) (255 * c.b);
+                        chemicalField[index + 3] = 255;
+                    }
+                }
+            }
+        }
+    }
 }
