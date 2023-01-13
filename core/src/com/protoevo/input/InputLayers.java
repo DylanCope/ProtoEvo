@@ -1,6 +1,7 @@
 package com.protoevo.input;
 
 import com.badlogic.gdx.InputProcessor;
+import com.badlogic.gdx.math.Vector2;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -9,6 +10,7 @@ import java.util.List;
 public class InputLayers implements InputProcessor {
 
     private final List<InputProcessor> layers;
+    private final Vector2 mousePosition = new Vector2();
 
     public InputLayers(InputProcessor... layers) {
         this.layers = new ArrayList<>();
@@ -55,6 +57,7 @@ public class InputLayers implements InputProcessor {
 
     @Override
     public boolean touchDown(int screenX, int screenY, int pointer, int button) {
+        mousePosition.set(screenX, screenY);
         for (InputProcessor layer : layers) {
             if (layer.touchDown(screenX, screenY, pointer, button)) {
                 return true;
@@ -65,6 +68,7 @@ public class InputLayers implements InputProcessor {
 
     @Override
     public boolean touchUp(int screenX, int screenY, int pointer, int button) {
+        mousePosition.set(screenX, screenY);
         for (InputProcessor layer : layers) {
             if (layer.touchUp(screenX, screenY, pointer, button)) {
                 return true;
@@ -75,6 +79,7 @@ public class InputLayers implements InputProcessor {
 
     @Override
     public boolean touchDragged(int screenX, int screenY, int pointer) {
+        mousePosition.set(screenX, screenY);
         for (InputProcessor layer : layers) {
             if (layer.touchDragged(screenX, screenY, pointer)) {
                 return true;
@@ -85,6 +90,7 @@ public class InputLayers implements InputProcessor {
 
     @Override
     public boolean mouseMoved(int screenX, int screenY) {
+        mousePosition.set(screenX, screenY);
         for (InputProcessor layer : layers) {
             if (layer.mouseMoved(screenX, screenY)) {
                 return true;
@@ -101,5 +107,9 @@ public class InputLayers implements InputProcessor {
             }
         }
         return false;
+    }
+
+    public Vector2 getMousePos() {
+        return mousePosition;
     }
 }

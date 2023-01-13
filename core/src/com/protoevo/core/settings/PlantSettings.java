@@ -6,8 +6,8 @@ public class PlantSettings {
     public static final float minPlantBirthRadius = 2f / 100f;
     public static final float maxPlantBirthRadius = 8f / 100f;
 
-    public static final float minPlantGrowth = 0.02f;
-    public static final float plantGrowthRange = 0.05f;
+    public static final float minPlantGrowth = 0.01f;
+    public static final float maxPlantGrowth = 0.04f;
     public static final float plantCrowdingGrowthDecay = 1.0f;
     public static final float plantCriticalCrowding = 6.0f;
     public static final float plantRegen = .2f;

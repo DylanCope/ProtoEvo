@@ -193,7 +193,7 @@ public class Rock implements Serializable, Collidable {
     }
 
     public static Color randomRockColour() {
-        float darkener = 0.6f;
+        float darkener = 0.75f;
         int tone = 80 + Simulation.RANDOM.nextInt(20);
         int yellowing = Simulation.RANDOM.nextInt(20);
         return new Color(

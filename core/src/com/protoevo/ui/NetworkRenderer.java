@@ -1,33 +1,47 @@
 package com.protoevo.ui;
 
+import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.InputAdapter;
 import com.badlogic.gdx.graphics.Color;
+import com.badlogic.gdx.graphics.g2d.BitmapFont;
+import com.badlogic.gdx.graphics.g2d.GlyphLayout;
+import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
+import com.badlogic.gdx.math.Vector2;
 import com.protoevo.biology.neat.NeuralNetwork;
 import com.protoevo.biology.neat.Neuron;
 import com.protoevo.core.Simulation;
 import com.protoevo.ui.rendering.Renderer;
 import com.protoevo.utils.DebugMode;
+import com.protoevo.utils.Utils;
 
 import java.util.Arrays;
 
 public class NetworkRenderer extends InputAdapter implements Renderer {
 
     private final Simulation simulation;
+    private final SimulationScreen simulationScreen;
     private NeuralNetwork nn;
-    private ShapeRenderer shapeRenderer;
+    private final ShapeRenderer shapeRenderer;
+    private final SpriteBatch batch;
+    private final GlyphLayout layout = new GlyphLayout();
+    private final BitmapFont font;
 
     private float boxXStart, boxYStart, boxWidth, boxHeight, infoTextSize;
 
-    public NetworkRenderer(Simulation simulation,
-                           float x, float y, float width, float height, float infoTextSize) {
+    public NetworkRenderer(Simulation simulation, SimulationScreen simulationScreen,
+                           float x, float y, float width, float height, int infoTextSize) {
         this.simulation = simulation;
+        this.simulationScreen = simulationScreen;
         this.boxXStart = x;
         this.boxYStart = y;
         this.boxWidth = width;
         this.boxHeight = height;
         this.infoTextSize = infoTextSize;
         shapeRenderer = new ShapeRenderer();
+        batch = new SpriteBatch();
+
+        font = SimulationScreen.createFiraCode(infoTextSize);
     }
 
     public void setNeuralNetwork(NeuralNetwork nn) {
@@ -153,14 +167,16 @@ public class NetworkRenderer extends InputAdapter implements Renderer {
 
         shapeRenderer.end();
 
-//        Vector2 mousePos = window.getCurrentMousePosition();
-//        int mouseX = (int) mousePos.getX();
-//        int mouseY = (int) mousePos.getY();
-//        if (boxXStart - 2*r < mouseX && mouseX < boxXStart + boxWidth + 2*r &&
-//                boxYStart - 2*r < mouseY && mouseY < boxYStart + boxHeight + 2*r) {
-//            for (Neuron neuron : nn.getNeurons()) {
-//                int x = neuron.getGraphicsX();
-//                int y = neuron.getGraphicsY();
+        batch.begin();
+        batch.setColor(Color.WHITE.cpy().mul(0.9f));
+        InputManager inputManager = simulationScreen.getInputManager();
+        Vector2 mouse = inputManager.getMousePos();
+
+        if (boxXStart - 2*r < mouse.x && mouse.x < boxXStart + boxWidth + 2*r &&
+                boxYStart - 2*r < mouse.y && mouse.y < boxYStart + boxHeight + 2*r) {
+            for (Neuron neuron : nn.getNeurons()) {
+                float x = neuron.getGraphicsX();
+                float y = neuron.getGraphicsY();
 //                if (simulation.inDebugMode()) {
 //                    shapeRenderer.setColor(Color.YELLOW.darker());
 //                    shapeRenderer.drawRect(x - 2*r, y - 2*r, 4*r, 4*r);
@@ -168,34 +184,36 @@ public class NetworkRenderer extends InputAdapter implements Renderer {
 //                    int r2 = r / 5;
 //                    shapeRenderer.drawOval(mouseX - r2, mouseY - r2, 2*r2, 2*r2);
 //                }
-//                if (x - 2*r <= mouseX && mouseX <= x + 2*r && y - 2*r <= mouseY && mouseY <= y + 2*r) {
-//                    String labelStr;
-//                    if (neuron.getLabel() != null)
-//                        labelStr = neuron.getLabel() + " = " +
-//                                TextStyle.numberToString(neuron.getLastState(), 2);
-//                    else
-//                        labelStr = TextStyle.numberToString(neuron.getLastState(), 2);
-//
+                if (x - 2*r <= mouse.x && mouse.x <= x + 2*r
+                        && y - 2*r <= mouse.y && mouse.y <= y + 2*r) {
+                    String labelStr;
+                    if (neuron.getLabel() != null)
+                        labelStr = neuron.getLabel() + " = " +
+                                Utils.numberToString(neuron.getLastState(), 2);
+                    else
+                        labelStr = Utils.numberToString(neuron.getLastState(), 2);
+
+                    layout.setText(font, labelStr);
 //                    TextObject label = new TextObject(labelStr, infoTextSize);
-//                    label.setColor(Color.WHITE.darker());
-//                    int labelX = x - label.getWidth() / 2;
-//                    int pad = (int) (infoTextSize * 0.3);
-//                    int infoWidth = label.getWidth() + 2*pad;
-//                    if (labelX + infoWidth >= window.getWidth())
-//                        labelX = (int) (window.getWidth() - 1.1 * infoWidth);
-//
-//                    int labelY = (int) (y - 1.1 * r - label.getHeight() / 2);
+                    float labelX = x - layout.width / 2;
+                    float pad = infoTextSize * 0.3f;
+                    float infoWidth = layout.width + 2*pad;
+                    if (labelX + infoWidth >= Gdx.graphics.getWidth())
+                        labelX = (int) (Gdx.graphics.getWidth() - 1.1 * infoWidth);
+
+                    float labelY = Gdx.graphics.getHeight() - (y + 1.1f * r);
 //                    label.setPosition(new Vector2(labelX, labelY));
-//
+
 //                    shapeRenderer.setColor(Color.BLACK);
 //                    shapeRenderer.fillRoundRect(labelX - pad, labelY - 2*pad - label.getHeight() / 2,
 //                            infoWidth, label.getHeight() + pad,
 //                            pad, pad);
 //                    shapeRenderer.setColor(Color.WHITE.darker());
-//                    label.render(g);
-//                }
-//            }
-//        }
+                    font.draw(batch, labelStr, labelX, labelY);
+                }
+            }
+        }
+        batch.end();
     }
 
     private void precomputeGraphicsPositions(NeuralNetwork nn,

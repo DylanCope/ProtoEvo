@@ -1,29 +1,18 @@
 package com.protoevo.env;
 
-import com.badlogic.gdx.Gdx;
-import com.badlogic.gdx.graphics.*;
-import com.badlogic.gdx.graphics.g2d.Sprite;
-import com.badlogic.gdx.graphics.g2d.SpriteBatch;
-import com.badlogic.gdx.graphics.g2d.TextureRegion;
-import com.badlogic.gdx.graphics.glutils.FrameBuffer;
-import com.badlogic.gdx.graphics.glutils.ShaderProgram;
-import com.badlogic.gdx.math.MathUtils;
+import com.badlogic.gdx.graphics.Color;
+import com.badlogic.gdx.graphics.OrthographicCamera;
+import com.badlogic.gdx.graphics.Pixmap;
+import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.math.Vector2;
-import com.badlogic.gdx.math.Vector3;
-import com.badlogic.gdx.utils.ScreenUtils;
-import com.google.common.collect.Streams;
 import com.protoevo.biology.Cell;
 import com.protoevo.biology.PlantCell;
 import com.protoevo.core.settings.Settings;
 import com.protoevo.core.settings.SimulationSettings;
 import com.protoevo.utils.JCudaKernelRunner;
-import com.protoevo.utils.Java2DTexture;
 import com.protoevo.utils.Utils;
 
-import java.awt.image.BufferedImage;
 import java.io.Serializable;
-import java.nio.FloatBuffer;
-import java.util.Arrays;
 import java.util.stream.IntStream;
 
 public class ChemicalSolution implements Serializable {
@@ -181,11 +170,19 @@ public class ChemicalSolution implements Serializable {
         return chemicalTextureWidth;
     }
 
+    public float getPlantPheromoneDensity(float x, float y) {
+        int i = toChemicalGridX(x);
+        int j = toChemicalGridY(y);
+        return getPlantPheromoneDensity(i, j);
+    }
+
     public float getPlantPheromoneDensity(int i, int j) {
 //        Color depositColour = new Color(depositPixmap.getPixel(i, j));
         i = toFloatBufferIndex(i, j);
         if (i >= 0 && i < chemicalField.length) {
-            return chemicalField[i + 3] / 255f;
+            float alpha = chemicalField[i + 3] / 255f;
+            float green = chemicalField[i + 1] / 255f;
+            return green * alpha;
         }
         return 0f;
     }

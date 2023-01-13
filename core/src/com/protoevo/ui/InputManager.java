@@ -18,13 +18,14 @@ public class InputManager {
     private final ParticleTracker particleTracker;
     private final MoveParticleButton moveParticleButton;
     private final LightningButton lightningButton;
+    private final InputLayers inputLayers;
 
 
     public InputManager(SimulationScreen simulationScreen)  {
         OrthographicCamera camera = simulationScreen.getCamera();
         ToggleDebug toggleDebug = new ToggleDebug();
 
-        InputLayers inputLayers = new InputLayers(simulationScreen.getStage(), toggleDebug);
+        inputLayers = new InputLayers(simulationScreen.getStage(), toggleDebug);
         Gdx.input.setInputProcessor(inputLayers);
 
         Collection<? extends Particle> particles = simulationScreen.getEnvironment().getParticles();
@@ -80,5 +81,9 @@ public class InputManager {
 
     public LightningButton getLightningButton() {
         return lightningButton;
+    }
+
+    public Vector2 getMousePos() {
+        return inputLayers.getMousePos();
     }
 }

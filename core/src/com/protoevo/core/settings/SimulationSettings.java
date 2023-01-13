@@ -9,8 +9,8 @@ public class SimulationSettings {
     public static final float voidStartDistance2 = voidStartDistance * voidStartDistance;
     public static final float voidDamagePerSecond = 1f;
 
-    public static final int maxPlants = 7000;
-    public static final int maxProtozoa = 1500;
+    public static final int maxPlants = 5000;
+    public static final int maxProtozoa = 2000;
     public static final int maxMeat = 1000;
 
     public static final float minParticleRadius = 3f / 100f;

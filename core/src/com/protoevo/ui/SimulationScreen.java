@@ -125,7 +125,8 @@ public class SimulationScreen {
         float boxHeight = 3 * graphicsHeight / 4;
         float boxXStart = graphicsWidth - boxWidth * 1.1f;
         float boxYStart = (graphicsHeight - boxHeight) / 2;
-        networkRenderer = new NetworkRenderer(simulation, boxXStart, boxYStart, boxWidth, boxHeight, infoTextSize);
+        networkRenderer = new NetworkRenderer(simulation, this,
+                boxXStart, boxYStart, boxWidth, boxHeight, infoTextSize);
     }
 
     public ImageButton createImageButton(String texturePath, float width, float height, EventListener listener) {

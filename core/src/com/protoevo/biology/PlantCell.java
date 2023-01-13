@@ -1,14 +1,12 @@
 package com.protoevo.biology;
 
 import com.badlogic.gdx.graphics.Color;
-import com.badlogic.gdx.math.Vector2;
 import com.protoevo.core.settings.PlantSettings;
 import com.protoevo.core.settings.Settings;
 import com.protoevo.core.Simulation;
 import com.protoevo.core.settings.SimulationSettings;
 import com.protoevo.env.Environment;
 
-import java.util.List;
 import java.util.Map;
 
 public class PlantCell extends EdibleCell {
@@ -21,17 +19,19 @@ public class PlantCell extends EdibleCell {
 
     public PlantCell(float radius, Environment environment) {
         super(Math.max(radius, PlantSettings.minPlantBirthRadius), Food.Type.Plant, environment);
-        setGrowthRate(PlantSettings.minPlantGrowth + PlantSettings.plantGrowthRange * Simulation.RANDOM.nextFloat());
+        setGrowthRate(Simulation.RANDOM.nextFloat(PlantSettings.minPlantGrowth, PlantSettings.maxPlantGrowth));
 
-        maxRadius = Simulation.RANDOM.nextFloat(2 * SimulationSettings.minParticleRadius, SimulationSettings.maxParticleRadius);
+        maxRadius = Simulation.RANDOM.nextFloat(
+                2 * SimulationSettings.minParticleRadius, SimulationSettings.maxParticleRadius);
 
         setMaxAttachedCells(2);
         setCAMAvailable(plantCAM, 1f);
 
+        float darken = 0.9f;
         setHealthyColour(new Color(
-                (30 + Simulation.RANDOM.nextInt(105)) / 255f,
-                (150  + Simulation.RANDOM.nextInt(100)) / 255f,
-                (10  + Simulation.RANDOM.nextInt(100)) / 255f,
+                darken * (30 + Simulation.RANDOM.nextInt(105)) / 255f,
+                darken * (150  + Simulation.RANDOM.nextInt(100)) / 255f,
+                darken * (10  + Simulation.RANDOM.nextInt(100)) / 255f,
                 1f)
         );
     }
@@ -65,6 +65,7 @@ public class PlantCell extends EdibleCell {
                 }
             }
         }
+        crowdingFactor *= 5;
     }
 
     @Override

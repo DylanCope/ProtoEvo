@@ -58,7 +58,9 @@ public class Environment implements Serializable
 
 		if (Settings.enableChemicalField) {
 			chemicalSolution = new ChemicalSolution(
-				this, SimulationSettings.chemicalFieldResolution, SimulationSettings.chemicalFieldRadius);
+					this,
+					SimulationSettings.chemicalFieldResolution,
+					SimulationSettings.chemicalFieldRadius);
 		} else {
 			chemicalSolution = null;
 		}
@@ -111,12 +113,12 @@ public class Environment implements Serializable
 			Vector2 centre = WorldGeneration.randomPosition(minR, maxR);
 			clusterCentres[i] = centre;
 
-			int nRings = Simulation.RANDOM.nextInt(1, 3);
-			float radiusRange = Simulation.RANDOM.nextFloat(8.f) * WorldGenerationSettings.rockClusterRadius;
+			int nRings = WorldGeneration.RANDOM.nextInt(1, 3);
+			float radiusRange = WorldGeneration.RANDOM.nextFloat(8.f) * WorldGenerationSettings.rockClusterRadius;
 			WorldGeneration.generateClustersOfRocks(this, centre, nRings, radiusRange);
 		}
 
-		WorldGeneration.generateRocks(this, 500);
+		WorldGeneration.generateRocks(this, 200);
 
 		for (Rock rock : this.getRocks()) {
 			BodyDef rockBodyDef = new BodyDef();
@@ -139,7 +141,8 @@ public class Environment implements Serializable
 		populationStartCentres = populationStartCentresList.toArray(new Vector2[0]);
 
 		if (populationStartCentres != null)
-			initialisePopulation(Arrays.copyOfRange(populationStartCentres, 0, WorldGenerationSettings.numPopulationClusters));
+			initialisePopulation(Arrays.copyOfRange(
+					populationStartCentres, 0, WorldGenerationSettings.numPopulationClusters));
 		else
 			initialisePopulation();
 
@@ -321,7 +324,9 @@ public class Environment implements Serializable
 		stats.put("Protozoa Born", (float) protozoaBorn);
 		stats.put("Crossover Events", (float) crossoverEvents);
 		for (CauseOfDeath cod : CauseOfDeath.values()) {
-			if (cod.equals(CauseOfDeath.ENV_CAPACITY_EXCEEDED))
+			if (cod.equals(CauseOfDeath.ENV_CAPACITY_EXCEEDED)
+					|| cod.equals(CauseOfDeath.GREW_TOO_SMALL)
+					|| cod.equals(CauseOfDeath.SUFFOCATION))
 				continue;
 			int count = causeOfDeathCounts.getOrDefault(cod, 0);
 			if (count > 0)

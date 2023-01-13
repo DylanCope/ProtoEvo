@@ -34,17 +34,20 @@ public class NNBrain implements Brain {
 
         if (Settings.enableChemicalField) {
             ChemicalSolution chemicalSolution = p.getEnv().getChemicalSolution();
-            int chemicalX1 = chemicalSolution.toChemicalGridX(p.getPos().x - p.getRadius());
-            int chemicalX2 = chemicalSolution.toChemicalGridX(p.getPos().x + p.getRadius());
-            int chemicalY1 = chemicalSolution.toChemicalGridY(p.getPos().x - p.getRadius());
-            int chemicalY2 = chemicalSolution.toChemicalGridY(p.getPos().x + p.getRadius());
-            inputs[i++] = chemicalSolution.getPlantPheromoneDensity(chemicalX1, chemicalY1) -
-                    chemicalSolution.getPlantPheromoneDensity(chemicalX2, chemicalY2);
-            inputs[i++] = chemicalSolution.getPlantPheromoneDensity(chemicalX1, chemicalY2) -
-                    chemicalSolution.getPlantPheromoneDensity(chemicalX2, chemicalY1);
-            int chemicalX = chemicalSolution.toChemicalGridX(p.getPos().x);
-            int chemicalY = chemicalSolution.toChemicalGridY(p.getPos().y);
-            inputs[i++] = 2 * chemicalSolution.getPlantPheromoneDensity(chemicalX, chemicalY) - 1;
+
+            // horizontal chemical gradient
+            float densityLeft = chemicalSolution.getPlantPheromoneDensity(
+                    p.getPos().x - p.getRadius(), p.getPos().y);
+            float densityRight = chemicalSolution.getPlantPheromoneDensity(
+                    p.getPos().x + p.getRadius(), p.getPos().y);
+            inputs[i++] = densityLeft - densityRight;
+
+            // vertical chemical gradient
+            float densityUp = chemicalSolution.getPlantPheromoneDensity(
+                    p.getPos().x, p.getPos().y + p.getRadius());
+            float densityDown = chemicalSolution.getPlantPheromoneDensity(
+                    p.getPos().x, p.getPos().y - p.getRadius());
+            inputs[i++] = densityUp - densityDown;
         }
 
         float retinaHealth = p.getRetina().getHealth();
