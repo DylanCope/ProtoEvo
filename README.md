@@ -66,7 +66,7 @@ I developed this project using the [IntelliJ IDEA](https://www.jetbrains.com/ide
 and I recommend using this to run the simulation.
 The project is built using LibGDX, which is a cross-platform game development library.
 It relies on OpenGL for rendering, and so you will need to have the appropriate drivers installed,
-as well as CUDA for GPU acceleration (if you have a CUDA-capable GPU). For the time being I have not 
+as well as CUDA for GPU acceleration. For the time being I have not 
 implemented a CPU-only version of the simulation, so you will need a CUDA-capable GPU to run the simulation.
 Finally, the project is only tested on Windows 11, but it should work on Linux and Mac OS X as well.
 
