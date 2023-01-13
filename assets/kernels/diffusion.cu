@@ -5,8 +5,8 @@ __global__ void kernel(
     unsigned int width,
     unsigned int height,
     unsigned int channels,
-    unsigned int *img,
-    unsigned int *result)
+    unsigned char *img,
+    unsigned char *result)
 {
     unsigned int x = blockIdx.x*blockDim.x + threadIdx.x;
     unsigned int y = blockIdx.y*blockDim.y + threadIdx.y;
@@ -46,13 +46,14 @@ __global__ void kernel(
             if (x_ < 0 || x_ >= width || y_ < 0 || y_ >= height) {
                 continue;
             }
-            final_alpha += ((float) img[(y_*width + x_)*channels + alpha_channel]) / 255.0;
+            float val = img[(y_*width + x_)*channels + alpha_channel];
+            final_alpha += val / 255.0f;
         }
     }
     final_alpha = decay * final_alpha / ((float) (FILTER_SIZE*FILTER_SIZE));
-    result[(y*width + x)*channels + alpha_channel] = (int) (255 * final_alpha);
+    result[(y*width + x)*channels + alpha_channel] = (unsigned char) (255 * final_alpha);
 
-    if (final_alpha < 0.01) {
+    if (final_alpha < 5.0 / 255.0) {
         for (int i = 0; i < channels - 1; i++) {
             result[(y*width + x)*channels + i] = 0;
         }
@@ -76,6 +77,7 @@ __global__ void kernel(
         }
         final_value = final_value / ((float) (FILTER_SIZE*FILTER_SIZE));
         final_value = decay * 255 * final_value / final_alpha;
-        result[(y*width + x)*channels + c] = (int) (final_value);
+
+        result[(y*width + x)*channels + c] = (unsigned char) (final_value);
     }
 }

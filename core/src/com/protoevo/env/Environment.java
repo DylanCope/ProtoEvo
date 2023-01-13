@@ -287,7 +287,7 @@ public class Environment implements Serializable
 			causeOfDeathCounts.put(cod, count + 1);
 		}
 		if (Settings.enableChemicalField)
-			chemicalSolution.drawCircle(e.getPos(), e.getRadius() * 1.5f, e.getColor());
+			chemicalSolution.depositCircle(e.getPos(), e.getRadius() * 1.5f, e.getColor());
 		e.dispose();
 	}
 

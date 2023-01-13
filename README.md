@@ -73,7 +73,11 @@ Finally, the project is only tested on Windows 11, but it should work on Linux a
 **Steps**
 - Clone the repository, open the project in IntelliJ.
 For a general guide to running LibGDX projects, see [this article](https://libgdx.com/wiki/start/import-and-running).
-- Compile the CUDA kernels in the `assets/kernels` directory using the `nvcc` compiler. 
-  For example, `nvcc -m64 -ptx diffusion.cu`.
+- Download and install the CUDA toolkit for your GPU. 
+  You can find the latest version [here](https://developer.nvidia.com/cuda-downloads).
+  The current version of the project is tested with CUDA 12.0.
+- To test your installation try to compile the CUDA kernels in the `assets/kernels` directory using the `nvcc` compiler. 
+  For example, `nvcc -m64 -ptx diffusion.cu`. You should see a `diffusion.ptx` file generated in the same directory.
+  The project will automatically compile the CUDA kernels when it is run, but it is useful to test this beforehand.
 - Run the Gradle task `desktop:run` to run the simulation. In IntelliJ, this can be done by opening the Gradle
   tool window and navigating to `ProtoEvo > desktop > other > run`.

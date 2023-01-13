@@ -126,19 +126,22 @@ public class JCudaTest {
         int w = bi.getWidth();
         int h = bi.getHeight();
         int c = bi.getColorModel().getNumComponents();
-        int[] pixels = new int[w * h * c];
-        pixels = bi.getRaster().getPixels(0, 0, w, h, pixels);
-        int[] result = new int[w * h * c];
+        byte[] pixels = new byte[w * h * c];
+        int [] tmp = new int[w * h * c];
+        tmp = bi.getRaster().getPixels(0, 0, w, h, tmp);
+        for (int i = 0; i < tmp.length; i++) {
+            pixels[i] = (byte) tmp[i];
+        }
 
         JCudaKernelRunner kernelRunner = new JCudaKernelRunner("diffusion");
-//        for (int i = 0; i < 1; i++) {
-            kernelRunner.processImage(pixels, result, w, h, c);
-//            int[] tmp = pixels;
-//            pixels = result;
-//            result = tmp;
-//        }
+        for (int i = 0; i < 100; i++) {
+            kernelRunner.processImage(pixels, w, h);
+        }
 
-        bi.getRaster().setPixels(0, 0, w, h, result);
+        for (int i = 0; i < tmp.length; i++) {
+            tmp[i] = pixels[i];
+        }
+        bi.getRaster().setPixels(0, 0, w, h, tmp);
         try {
             ImageIO.write(bi, "PNG", new File("test/cuda-result2.png"));
         } catch (IOException e) {

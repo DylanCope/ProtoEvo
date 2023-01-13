@@ -4,6 +4,8 @@ import jcuda.Pointer;
 import jcuda.Sizeof;
 import jcuda.driver.*;
 
+import java.io.IOException;
+
 import static jcuda.driver.JCudaDriver.*;
 
 public class JCudaKernelRunner {
@@ -28,15 +30,22 @@ public class JCudaKernelRunner {
         cuDeviceGet(device, 0);
         CUcontext context = new CUcontext();
         cuCtxCreate(context, 0, device);
+        try {
+            String ptxFile = JCudaUtils.preparePtxFile("kernels/" + kernelName + ".cu");
 
-        // Load the ptx file. Make sure to have compiled the cu files first.
-        // e.g.: > nvcc -m64 -ptx kernel.cu
-        CUmodule module = new CUmodule();
-        cuModuleLoad(module, "kernels/" + kernelName + ".ptx");
+            // Load the ptx file. Make sure to have compiled the cu files first.
+            // e.g.: > nvcc -m64 -ptx kernel.cu
+            // This step should now be handled by the preparePtxFile
+            CUmodule module = new CUmodule();
+            cuModuleLoad(module,  ptxFile);
 
-        // Obtain a function pointer to the "add" function.
-        function = new CUfunction();
-        cuModuleGetFunction(function, module, functionName);
+            // Obtain a function pointer to the function to run.
+            function = new CUfunction();
+            cuModuleGetFunction(function, module, functionName);
+
+        } catch (IOException e) {
+            throw new RuntimeException("Was unable to compile " + kernelName + ":\n" + e);
+        }
 
     }
 
@@ -44,25 +53,25 @@ public class JCudaKernelRunner {
         return null;
     }
 
-    public int[] processImage(int[] pixels, int w, int h) {
+    public byte[] processImage(byte[] pixels, int w, int h) {
         return processImage(pixels, pixels, w, h, 4);
     }
 
-    public int[] processImage(int[] pixels, int[] result, int w, int h) {
+    public byte[] processImage(byte[] pixels, byte[] result, int w, int h) {
         return processImage(pixels, result, w, h, 4);
     }
 
-    public int[] processImage(int[] pixels, int[] result, int w, int h, int c) {
+    public byte[] processImage(byte[] pixels, byte[] result, int w, int h, int c) {
 
         // Allocate the device input data, and copy the
         // host input data to the device
         CUdeviceptr devicePixels = new CUdeviceptr();
-        cuMemAlloc(devicePixels, (long) pixels.length * Sizeof.INT);
-        cuMemcpyHtoD(devicePixels, Pointer.to(pixels), (long) pixels.length * Sizeof.INT);
+        cuMemAlloc(devicePixels, (long) pixels.length * Sizeof.BYTE);
+        cuMemcpyHtoD(devicePixels, Pointer.to(pixels), (long) pixels.length * Sizeof.BYTE);
 
         // Allocate device output memory
         CUdeviceptr deviceOutput = new CUdeviceptr();
-        cuMemAlloc(deviceOutput, (long) result.length * Sizeof.INT);
+        cuMemAlloc(deviceOutput, (long) result.length * Sizeof.BYTE);
 
 //        CUdeviceptr[] additionalParameters = getAdditionalParameters();
 //        boolean hasAdditionalParameters = additionalParameters != null && additionalParameters.length > 0;
@@ -112,7 +121,7 @@ public class JCudaKernelRunner {
         // Allocate host output memory and copy the device output
         // to the host.
 //        int[] hostOutput = new int[result.length];
-        cuMemcpyDtoH(Pointer.to(result), deviceOutput, (long) result.length * Sizeof.INT);
+        cuMemcpyDtoH(Pointer.to(result), deviceOutput, (long) result.length * Sizeof.BYTE);
         cuMemFree(devicePixels);
         cuMemFree(deviceOutput);
 
