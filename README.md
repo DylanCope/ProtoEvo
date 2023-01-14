@@ -68,6 +68,8 @@ The project is built using LibGDX, which is a cross-platform game development li
 It relies on OpenGL for rendering, and so you will need to have the appropriate drivers installed,
 as well as CUDA for GPU acceleration. For the time being I have not 
 implemented a CPU-only version of the simulation, so you will need a CUDA-capable GPU to run the simulation.
+However, currently the only aspect of the simulation that is accelerated by the GPU is the chemical solution
+that can be disabled in the simulation settings (see the section below).
 Finally, the project is only tested on Windows 11, but it should work on Linux and Mac OS X as well.
 
 **Steps**
@@ -81,3 +83,18 @@ For a general guide to running LibGDX projects, see [this article](https://libgd
   The project will automatically compile the CUDA kernels when it is run, but it is useful to test this beforehand.
 - Run the Gradle task `desktop:run` to run the simulation. In IntelliJ, this can be done by opening the Gradle
   tool window and navigating to `ProtoEvo > desktop > other > run`.
+
+**Options for Improving Performance**
+
+There are a number of parameters that can be changed for improving the performance of the simulation.
+The most taxing part of the simulation is the physics engine, which slows down according to the number of collisions
+that it needs to handle. Therefore, the most important parameter to change is the number of cells in the simulation.
+You can change the `maxProtozoa`, `maxPlants`, and `maxMeat` parameters in the `protoevo.core.settings.SimulationsSettings` file.
+However, you will likely want to change other parameters as well because having fewer cells will likely result in
+a less interesting simulation. If the protozoa are constantly up against the environment capacity then it will
+be difficult for them to evolve as whether an individual dies is more up to chance. 
+In other words, there is less selection pressure on the protozoa to evolve.
+
+The next most important change to make is to turn off the "chemical solution" or at least reduce the resolution
+of the solution cell grid. These parameters can also be found in the `SimulationSettings` as 
+`enableChemicalField` and `chemicalFieldResolution`.

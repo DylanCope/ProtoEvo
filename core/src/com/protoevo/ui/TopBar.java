@@ -12,11 +12,11 @@ import java.util.List;
 
 public class TopBar {
 
-    private SimulationScreen simulationScreen;
+    private final SimulationScreen simulationScreen;
     private final List<Actor> leftActors;
     private final List<Actor> rightActors;
-    private float topBarHeight;
-    private float topBarButtonSize;
+    private final float topBarHeight;
+    private final float topBarButtonSize;
     private final float topBarPadding = 10f;
     private final ShapeRenderer shapeRenderer;
 
@@ -88,7 +88,7 @@ public class TopBar {
         Gdx.gl.glEnable(GL20.GL_BLEND);
         Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
         shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
-        shapeRenderer.setColor(0, 0, 0, 0.5f);
+        shapeRenderer.setColor(0, 0, 0, 0.35f);
         shapeRenderer.box(0, Gdx.graphics.getHeight() - topBarHeight, 0, Gdx.graphics.getWidth(),
                 topBarHeight, 0);
         shapeRenderer.end();

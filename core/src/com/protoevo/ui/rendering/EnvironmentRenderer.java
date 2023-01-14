@@ -1,14 +1,11 @@
 package com.protoevo.ui.rendering;
 
 import com.badlogic.gdx.Gdx;
-import com.badlogic.gdx.files.FileHandle;
 import com.badlogic.gdx.graphics.*;
 import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
-import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.Vector2;
-import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.physics.box2d.Box2DDebugRenderer;
 import com.badlogic.gdx.utils.ScreenUtils;
 import com.protoevo.biology.Cell;
@@ -21,11 +18,8 @@ import com.protoevo.env.JointsManager;
 import com.protoevo.env.Rock;
 import com.protoevo.input.ParticleTracker;
 import com.protoevo.ui.InputManager;
+import com.protoevo.ui.texture.ParticleTexture;
 import com.protoevo.utils.DebugMode;
-
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
-import java.nio.FloatBuffer;
 
 import static com.protoevo.utils.Utils.lerp;
 
@@ -33,7 +27,7 @@ public class EnvironmentRenderer implements Renderer {
 
     private final Box2DDebugRenderer debugRenderer;
     private final SpriteBatch batch, chemicalBatch;
-    private final Texture circleTexture;
+    private final Texture particleTexture;
     private final Sprite jointSprite;
     private final ShapeRenderer shapeRenderer;
 
@@ -58,9 +52,7 @@ public class EnvironmentRenderer implements Renderer {
         batch = new SpriteBatch();
         chemicalBatch = new SpriteBatch();
 
-        FileHandle particleFile = Gdx.files.internal("entity/particle_base_128x128.png");
-        circleTexture = new Texture(particleFile, true);
-        circleTexture.setFilter(Texture.TextureFilter.MipMapLinearNearest, Texture.TextureFilter.Linear);
+        particleTexture = ParticleTexture.getTexture();
 
         jointSprite = loadSprite("entity/binding_base_128x128.png");
 
@@ -196,12 +188,12 @@ public class EnvironmentRenderer implements Renderer {
         float r = p.getRadius() * 2;
 
         batch.setColor(p.getColor());
-        batch.draw(circleTexture, x, y, r, r);
+        batch.draw(particleTexture, x, y, r, r);
     }
 
     public void dispose() {
         batch.dispose();
-        circleTexture.dispose();
+        particleTexture.dispose();
         shapeRenderer.dispose();
     }
 }
