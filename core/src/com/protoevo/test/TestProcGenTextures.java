@@ -5,16 +5,11 @@ import com.protoevo.biology.protozoa.Protozoan;
 import com.protoevo.ui.texture.ProtozoaTexture;
 import com.protoevo.utils.ImageUtils;
 
-import javax.imageio.ImageIO;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
-import java.awt.image.ImageObserver;
-import java.io.File;
-import java.io.IOException;
 
 public class TestProcGenTextures {
 
@@ -55,7 +50,7 @@ public class TestProcGenTextures {
 
             Timer timer = new Timer(40, new ActionListener() {
                 private double angle = 0;
-                private double delta = .1;
+                private final double delta = 0; //.1;
 
                 @Override
                 public void actionPerformed(ActionEvent e) {
@@ -84,7 +79,7 @@ public class TestProcGenTextures {
             g.setColor(new Color(0, 0, 0, 255));
             g.fillRect(0, 0, getWidth(), getHeight());
 
-            rotated = master;
+//            rotated = master;
             if (rotated != null) {
 //                System.out.println("Drawing rotated image");
                 Graphics2D g2d = (Graphics2D) g.create();
