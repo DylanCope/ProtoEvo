@@ -15,7 +15,7 @@ public class ParticleTexture {
     private static Texture particleTexture;
     private static Pixmap particleBasePixmap;
     private static BufferedImage particleImage;
-    private static String pathToFile = "entity/particle_base_128x128.png";
+    private static final String pathToFile = "cell/particle_base_128x128.png";
 
     public static Texture getTexture() {
         if (particleTexture == null) {

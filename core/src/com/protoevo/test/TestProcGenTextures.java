@@ -1,9 +1,6 @@
 package com.protoevo.test;
 
-import com.protoevo.biology.evolution.Evolvable;
-import com.protoevo.biology.protozoa.Protozoan;
-import com.protoevo.ui.texture.ProtozoaTexture;
-import com.protoevo.utils.ImageUtils;
+import com.protoevo.ui.texture.ProtozoaRenderer;
 
 import javax.swing.*;
 import java.awt.*;
@@ -40,37 +37,31 @@ public class TestProcGenTextures {
         private BufferedImage rotated;
 
         public TestPane() {
-//            try {
-//                master = ImageIO.read(new File("assets/entity/spike.png"));
-//            } catch (IOException ex) {
-//                ex.printStackTrace();
-//            }
-            master = ProtozoaTexture.generateCellImage(); // ProtozoaTexture.generateImage(Evolvable.createNew(Protozoan.class));
-            rotated = rotateImageByDegrees(master, 0.0);
+            master = ProtozoaRenderer.generateCellImage();
+//            master = ProtozoaTexture.generateImage(Evolvable.createNew(Protozoan.class));
 
             Timer timer = new Timer(40, new ActionListener() {
-                private double angle = 0;
-                private final double delta = 0; //.1;
+                private double time = 0;
+                private final double delta = 0.05; //.1;
 
                 @Override
                 public void actionPerformed(ActionEvent e) {
-                    angle += delta;
-                    rotated = rotateImageByDegrees(master, angle);
+                    time += delta;
+                    if (time > 1) {
+                        master = ProtozoaRenderer.generateCellImage();
+                        time = 0;
+                    }
                     repaint();
                 }
             });
             timer.start();
         }
 
-        public BufferedImage rotateImageByDegrees(BufferedImage img, double degrees) {
-            return ImageUtils.rotateImageByRadians(img, Math.toRadians(degrees));
-        }
-
         @Override
         public Dimension getPreferredSize() {
             return master == null
                     ? new Dimension(500, 500)
-                    : new Dimension(master.getWidth(), master.getHeight());
+                    : new Dimension((int) (1.5 * master.getWidth()), (int) (1.5 * master.getHeight()));
         }
 
         @Override
@@ -78,16 +69,11 @@ public class TestProcGenTextures {
             super.paintComponent(g);
             g.setColor(new Color(0, 0, 0, 255));
             g.fillRect(0, 0, getWidth(), getHeight());
-
-//            rotated = master;
-            if (rotated != null) {
-//                System.out.println("Drawing rotated image");
-                Graphics2D g2d = (Graphics2D) g.create();
-                int x = (getWidth() - rotated.getWidth()) / 2;
-                int y = (getHeight() - rotated.getHeight()) / 2;
-                g2d.drawImage(rotated, x, y, this);
-                g2d.dispose();
-            }
+            Graphics2D g2d = (Graphics2D) g.create();
+            int x = (getWidth() - master.getWidth()) / 2;
+            int y = (getHeight() - master.getHeight()) / 2;
+            g2d.drawImage(master, x, y, this);
+            g2d.dispose();
         }
     }
 

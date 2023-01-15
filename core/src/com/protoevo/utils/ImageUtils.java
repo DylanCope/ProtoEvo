@@ -1,6 +1,8 @@
 package com.protoevo.utils;
 
 import com.badlogic.gdx.graphics.Pixmap;
+import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.graphics.g2d.Sprite;
 
 import javax.imageio.ImageIO;
 import java.awt.*;
@@ -27,6 +29,20 @@ public class ImageUtils {
         int g = (argb >> 8) & 0xFF;
         int b = (argb) & 0xFF;
         return (r << 24) | (g << 16) | (b << 8) | a;
+    }
+
+    public static Sprite loadSprite(String path) {
+        return new Sprite(new Texture(path));
+    }
+
+    public static Sprite convertToSprite(BufferedImage image) {
+        Sprite sprite = new Sprite(convertToTexture(image));
+        sprite.setOriginCenter();
+        return sprite;
+    }
+
+    public static Texture convertToTexture(BufferedImage image) {
+        return new Texture(convertToPixmap(image));
     }
 
     public static Pixmap convertToPixmap(BufferedImage image) {
@@ -61,7 +77,7 @@ public class ImageUtils {
 
         at.rotate(rads, x, y);
         g2d.setTransform(at);
-        g2d.drawImage(img, 0, 0, canvas);
+        g2d.drawImage(img, null, 0, 0);
         g2d.dispose();
 
         return rotated;
@@ -69,19 +85,25 @@ public class ImageUtils {
 
     public static BufferedImage scaleImage(BufferedImage img, double sx, double sy) {
 
-        BufferedImage flipped = new BufferedImage(img.getWidth(), img.getHeight(), BufferedImage.TYPE_INT_ARGB);
-        Graphics2D g2d = flipped.createGraphics();
+        BufferedImage scaledImg = new BufferedImage(
+                (int) Math.abs(img.getWidth() * sx), (int) Math.abs(img.getHeight() * sx),
+                BufferedImage.TYPE_INT_ARGB);
+        Graphics2D g2d = scaledImg.createGraphics();
         g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
         g2d.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
 
         AffineTransform at = new AffineTransform();
-        at.translate(img.getWidth(), 0);
+//        at.translate(img.getWidth(), 0);
         at.scale(sx, sy);
         g2d.setTransform(at);
         g2d.drawImage(img, 0, 0, canvas);
         g2d.dispose();
 
-        return flipped;
+        return scaledImg;
+    }
+
+    public static BufferedImage scaleImage(BufferedImage img, double s) {
+        return scaleImage(img, s, s);
     }
 
     public static BufferedImage flipImageHorizontally(BufferedImage img) {

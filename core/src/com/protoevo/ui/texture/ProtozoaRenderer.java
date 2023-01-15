@@ -1,7 +1,9 @@
 package com.protoevo.ui.texture;
 
 import com.badlogic.gdx.graphics.Pixmap;
-import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.graphics.g2d.Sprite;
+import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.math.Vector2;
 import com.protoevo.biology.protozoa.Protozoan;
 import com.protoevo.core.Simulation;
 import com.protoevo.utils.ImageUtils;
@@ -12,15 +14,14 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Random;
 
-public class ProtozoaTexture extends Texture {
-
-    private static Canvas canvas;
-    private static BufferedImage nodeEmpty;
+public class ProtozoaRenderer {
 
     enum InteriorTexture {
-        GOLGI(1, 2, "golgi"),
+        GOLGI(0, 2, "golgi", "golgi_2", "golgi_3"),
         NUCLEUS(1, 1, "nucleus_1", "nucleus_2"),
-        RIBOSOMES(0, 2, "ribosomes_1", "ribosomes_2", "ribosomes_3");
+        RIBOSOMES(0, 3, "ribosomes_1", "ribosomes_2", "ribosomes_3"),
+        MITOCHONDRIA(0, 2, "mitochondria_1"),
+        MICROFILAMENT(0, 3, "microfilament_1", "microfilament_2", "microfilament_3");
 
         private final BufferedImage[] textures;
         private final int minCount, maxCount;
@@ -29,7 +30,7 @@ public class ProtozoaTexture extends Texture {
             this.maxCount = maxCount;
             textures = new BufferedImage[textureNames.length];
             for (int i = 0; i < textureNames.length; i++) {
-                textures[i] = ImageUtils.loadImage("entity/cell_interior/" + textureNames[i] + ".png");
+                textures[i] = ImageUtils.loadImage("cell/cell_interior/" + textureNames[i] + ".png");
             }
         }
 
@@ -46,8 +47,48 @@ public class ProtozoaTexture extends Texture {
         }
     }
 
-    public ProtozoaTexture(Protozoan protozoan) {
-        super(generatePixmap(protozoan));
+    private final Protozoan protozoan;
+    private final Sprite cellSprite;
+    private static Sprite nodeEmptySprite;
+
+    public ProtozoaRenderer(Protozoan protozoan) {
+        this.protozoan = protozoan;
+        cellSprite = ImageUtils.convertToSprite(generateCellImage());
+        if (nodeEmptySprite == null) {
+            nodeEmptySprite = ImageUtils.loadSprite("cell/surface_node_empty.png");
+//            nodeEmptySprite = ImageUtils.loadSprite("cell/spike/spike_large.png");
+        }
+    }
+
+    public void render(float delta, SpriteBatch batch) {
+        Vector2 pos = protozoan.getPos();
+        float x = pos.x - protozoan.getRadius();
+        float y = pos.y - protozoan.getRadius();
+        float cellAngle = (float) Math.toDegrees(protozoan.getBody().getAngle());
+        float size = protozoan.getRadius() * 2;
+
+        nodeEmptySprite.setColor(protozoan.getColor());
+        nodeEmptySprite.setPosition(pos.x - size, pos.y - size);
+        nodeEmptySprite.setSize(2*size, 2*size);
+        nodeEmptySprite.setOriginCenter();
+        int n = 8;
+        float dt = 360f / n;
+        for (int i = 0; i < n; i++) {
+            float angle = i * dt;
+            nodeEmptySprite.setRotation(cellAngle + angle);
+            nodeEmptySprite.draw(batch);
+        }
+
+        cellSprite.setColor(protozoan.getColor());
+        cellSprite.setOriginCenter();
+        cellSprite.setRotation(cellAngle);
+        cellSprite.setPosition(x, y);
+        cellSprite.setSize(size, size);
+        cellSprite.draw(batch);
+    }
+
+    public boolean isStale() {
+        return protozoan.isDead();
     }
 
     public static Pixmap generatePixmap(Protozoan protozoan) {
@@ -59,9 +100,9 @@ public class ProtozoaTexture extends Texture {
         BufferedImage base = ParticleTexture.getBufferedImage();
 
         ArrayList<InteriorTexture> types = new ArrayList<>();
-        Simulation.RANDOM = new Random(1);
+        Random random = new Random();
         for (InteriorTexture type : InteriorTexture.values()) {
-            int count = Simulation.RANDOM.nextInt(type.getMinCount(),  type.getMaxCount() + 1);
+            int count = random.nextInt(type.getMinCount(),  type.getMaxCount() + 1);
             for (int i = 0; i < count; i++) {
                 types.add(type);
             }
@@ -74,15 +115,20 @@ public class ProtozoaTexture extends Texture {
         Graphics2D g2d = newImage.createGraphics();
         g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
         g2d.drawImage(base, null, 0, 0);
+        double dt = 2 * Math.PI / types.size();
         for (int i = 0; i < types.size(); i++) {
-            double t = 2*Math.PI * (double) i / types.size();
-            BufferedImage texture = ImageUtils.rotateImageByRadians(types.get(i).randomTexture(), t);
-            if (Simulation.RANDOM.nextBoolean())
-                texture = ImageUtils.flipImageHorizontally(texture);
-            if (Simulation.RANDOM.nextBoolean())
-                texture = ImageUtils.flipImageVertically(texture);
+            double t = i * dt + random.nextDouble(-dt / 3, dt / 3);
+            BufferedImage texture = types.get(i).randomTexture();
+            texture = ImageUtils.scaleImage(texture, random.nextDouble(0.6, 1));
+//            if (random.nextBoolean())
+//                texture = ImageUtils.flipImageHorizontally(texture);
+            texture = ImageUtils.rotateImageByRadians(texture, t);
+//            if (random.nextBoolean())
+//                texture = ImageUtils.flipImageVertically(texture);
 
-            g2d.drawImage(texture, null, 0, 0);
+            g2d.drawImage(texture, null,
+                    (newImage.getWidth() - texture.getWidth()) / 2,
+                    (newImage.getHeight() - texture.getHeight()) / 2);
         }
         return newImage;
     }

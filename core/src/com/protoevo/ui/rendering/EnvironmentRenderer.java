@@ -9,6 +9,7 @@ import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.Box2DDebugRenderer;
 import com.badlogic.gdx.utils.ScreenUtils;
 import com.protoevo.biology.Cell;
+import com.protoevo.biology.protozoa.Protozoan;
 import com.protoevo.core.Particle;
 import com.protoevo.core.Simulation;
 import com.protoevo.core.settings.Settings;
@@ -19,7 +20,12 @@ import com.protoevo.env.Rock;
 import com.protoevo.input.ParticleTracker;
 import com.protoevo.ui.InputManager;
 import com.protoevo.ui.texture.ParticleTexture;
+import com.protoevo.ui.texture.ProtozoaRenderer;
 import com.protoevo.utils.DebugMode;
+
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
 
 import static com.protoevo.utils.Utils.lerp;
 
@@ -28,6 +34,7 @@ public class EnvironmentRenderer implements Renderer {
     private final Box2DDebugRenderer debugRenderer;
     private final SpriteBatch batch, chemicalBatch;
     private final Texture particleTexture;
+    private final HashMap<Protozoan, ProtozoaRenderer> protozoaRenderers = new HashMap<>();
     private final Sprite jointSprite;
     private final ShapeRenderer shapeRenderer;
 
@@ -54,7 +61,7 @@ public class EnvironmentRenderer implements Renderer {
 
         particleTexture = ParticleTexture.getTexture();
 
-        jointSprite = loadSprite("entity/binding_base_128x128.png");
+        jointSprite = loadSprite("cell/binding_base_128x128.png");
 
         shapeRenderer = new ShapeRenderer();
         shapeRenderer.setAutoShapeType(true);
@@ -110,15 +117,18 @@ public class EnvironmentRenderer implements Renderer {
         batch.enableBlending();
         batch.setProjectionMatrix(camera.combined);
 
-        if (Settings.enableChemicalField) {
+        if (Settings.enableChemicalField)
             renderChemicalField();
-        }
 
         // Render Particles
         batch.begin();
-        environment.getJointsManager().getParticleBindings().forEach(this::renderJoinedParticles);
-        environment.getParticles().forEach(this::drawParticle);
+        environment.getJointsManager().getParticleBindings()
+                .forEach(this::renderJoinedParticles);
+        environment.getParticles().forEach(p -> drawParticle(delta, p));
         batch.end();
+
+        protozoaRenderers.entrySet()
+                .removeIf(entry -> entry.getValue().isStale());
 
         // Render rocks
         shapeRenderer.setProjectionMatrix(camera.combined);
@@ -130,9 +140,8 @@ public class EnvironmentRenderer implements Renderer {
         }
         shapeRenderer.end();
 
-        if (DebugMode.isDebugModePhysicsDebug()) {
+        if (DebugMode.isDebugModePhysicsDebug())
             renderPhysicsDebug();
-        }
     }
 
     public void renderPhysicsDebug() {
@@ -147,7 +156,7 @@ public class EnvironmentRenderer implements Renderer {
             shapeRenderer.box(
                     particle.getPos().x - maxDistance,
                     particle.getPos().y - maxDistance, 0,
-                    2 * maxDistance, 2*maxDistance, 0);
+                    2*maxDistance, 2*maxDistance, 0);
 
             for (Object other : particle.getContactObjects()) {
                 if (other instanceof Particle) {
@@ -177,18 +186,29 @@ public class EnvironmentRenderer implements Renderer {
         return !camera.frustum.boundsInFrustum(pos.x, pos.y, 0, r, r, 0);
     }
 
-    public void drawParticle(Particle p) {
+    public void drawParticle(float delta, Particle p) {
 
         if (circleNotVisible(p.getPos(), p.getRadius())) {
             return;
         }
 
-        float x = p.getPos().x - p.getRadius();
-        float y = p.getPos().y - p.getRadius();
-        float r = p.getRadius() * 2;
+        if (p instanceof Protozoan) {
+            if (protozoaRenderers.containsKey(p))
+                protozoaRenderers.get(p).render(delta, batch);
+            else {
+                ProtozoaRenderer protozoanRenderer = new ProtozoaRenderer((Protozoan) p);
+                protozoaRenderers.put((Protozoan) p, protozoanRenderer);
+                protozoanRenderer.render(delta, batch);
+            }
+        }
+        else {
+            float x = p.getPos().x - p.getRadius();
+            float y = p.getPos().y - p.getRadius();
+            float r = p.getRadius() * 2;
 
-        batch.setColor(p.getColor());
-        batch.draw(particleTexture, x, y, r, r);
+            batch.setColor(p.getColor());
+            batch.draw(particleTexture, x, y, r, r);
+        }
     }
 
     public void dispose() {
