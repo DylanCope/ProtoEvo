@@ -45,7 +45,7 @@ public class TestProcGenTextures {
 //            } catch (IOException ex) {
 //                ex.printStackTrace();
 //            }
-            master = ProtozoaTexture.generateImage(Evolvable.createNew(Protozoan.class));
+            master = ProtozoaTexture.generateCellImage(); // ProtozoaTexture.generateImage(Evolvable.createNew(Protozoan.class));
             rotated = rotateImageByDegrees(master, 0.0);
 
             Timer timer = new Timer(40, new ActionListener() {

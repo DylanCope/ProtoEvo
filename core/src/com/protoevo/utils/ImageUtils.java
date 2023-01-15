@@ -66,4 +66,29 @@ public class ImageUtils {
 
         return rotated;
     }
+
+    public static BufferedImage scaleImage(BufferedImage img, double sx, double sy) {
+
+        BufferedImage flipped = new BufferedImage(img.getWidth(), img.getHeight(), BufferedImage.TYPE_INT_ARGB);
+        Graphics2D g2d = flipped.createGraphics();
+        g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+        g2d.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+
+        AffineTransform at = new AffineTransform();
+        at.translate(img.getWidth(), 0);
+        at.scale(sx, sy);
+        g2d.setTransform(at);
+        g2d.drawImage(img, 0, 0, canvas);
+        g2d.dispose();
+
+        return flipped;
+    }
+
+    public static BufferedImage flipImageHorizontally(BufferedImage img) {
+        return scaleImage(img, -1, 1);
+    }
+
+    public static BufferedImage flipImageVertically(BufferedImage img) {
+        return scaleImage(img, 1, -1);
+    }
 }

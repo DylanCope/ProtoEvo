@@ -13,7 +13,7 @@ import java.io.IOException;
 public class ParticleTexture {
 
     private static Texture particleTexture;
-    private static Pixmap particlePixmap;
+    private static Pixmap particleBasePixmap;
     private static BufferedImage particleImage;
     private static String pathToFile = "entity/particle_base_128x128.png";
 
@@ -28,11 +28,11 @@ public class ParticleTexture {
     }
 
     public static Pixmap getPixmap() {
-        if (particlePixmap == null) {
+        if (particleBasePixmap == null) {
             FileHandle particleFile = Gdx.files.internal(pathToFile);
-            particlePixmap = new Pixmap(particleFile);
+            particleBasePixmap = new Pixmap(particleFile);
         }
-        return particlePixmap;
+        return particleBasePixmap;
     }
 
     public static BufferedImage getBufferedImage() {
