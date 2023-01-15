@@ -4,15 +4,16 @@ import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.math.Vector2;
+import com.protoevo.biology.nodes.NodeAttachment;
+import com.protoevo.biology.nodes.SpikeAttachment;
+import com.protoevo.biology.nodes.SurfaceNode;
 import com.protoevo.biology.protozoa.Protozoan;
 import com.protoevo.core.Simulation;
 import com.protoevo.utils.ImageUtils;
 
 import java.awt.*;
 import java.awt.image.BufferedImage;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Random;
+import java.util.*;
 
 public class ProtozoaRenderer {
 
@@ -50,14 +51,26 @@ public class ProtozoaRenderer {
     private final Protozoan protozoan;
     private final Sprite cellSprite;
     private static Sprite nodeEmptySprite;
+    private static Map<Class<? extends NodeAttachment>, Sprite> attachmentSprites;
+
+    public Sprite getAttachmentSprite(Class<? extends NodeAttachment> attachmentClass) {
+        if (attachmentSprites == null) {
+            nodeEmptySprite = ImageUtils.loadSprite("cell/surface_node_empty.png");
+            attachmentSprites = new HashMap<>();
+            attachmentSprites.put(
+                    SpikeAttachment.class,
+                    ImageUtils.loadSprite("cell/spike/spike_large.png"));
+        }
+        return attachmentSprites.getOrDefault(attachmentClass, nodeEmptySprite);
+    }
 
     public ProtozoaRenderer(Protozoan protozoan) {
         this.protozoan = protozoan;
         cellSprite = ImageUtils.convertToSprite(generateCellImage());
-        if (nodeEmptySprite == null) {
-            nodeEmptySprite = ImageUtils.loadSprite("cell/surface_node_empty.png");
+//        if (attachmentSprites == null) {
+//            attachmentSprites = ImageUtils.loadSprite("cell/surface_node_empty.png");
 //            nodeEmptySprite = ImageUtils.loadSprite("cell/spike/spike_large.png");
-        }
+//        }
     }
 
     public void render(float delta, SpriteBatch batch) {
@@ -67,16 +80,19 @@ public class ProtozoaRenderer {
         float cellAngle = (float) Math.toDegrees(protozoan.getBody().getAngle());
         float size = protozoan.getRadius() * 2;
 
-        nodeEmptySprite.setColor(protozoan.getColor());
-        nodeEmptySprite.setPosition(pos.x - size, pos.y - size);
-        nodeEmptySprite.setSize(2*size, 2*size);
-        nodeEmptySprite.setOriginCenter();
-        int n = 8;
-        float dt = 360f / n;
-        for (int i = 0; i < n; i++) {
-            float angle = i * dt;
-            nodeEmptySprite.setRotation(cellAngle + angle);
-            nodeEmptySprite.draw(batch);
+        for (SurfaceNode node : protozoan.getSurfaceNodes()) {
+            Sprite attachmentSprite = getAttachmentSprite(node.getAttachment().getClass());
+            attachmentSprite.setColor(protozoan.getColor());
+            attachmentSprite.setPosition(pos.x - size, pos.y - size);
+            attachmentSprite.setSize(2*size, 2*size);
+            attachmentSprite.setOriginCenter();
+            int n = 8;
+            float dt = 360f / n;
+            for (int i = 0; i < n; i++) {
+                float angle = i * dt;
+                attachmentSprite.setRotation(cellAngle + angle);
+                attachmentSprite.draw(batch);
+            }
         }
 
         cellSprite.setColor(protozoan.getColor());

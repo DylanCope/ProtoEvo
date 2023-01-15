@@ -28,4 +28,6 @@ public class ProtozoaSettings {
     public static final float protozoaMinMaxTurn = 0.0174533f; // (float) Math.toRadians(1);
     public static final float protozoaMaxMaxTurn = 0.10472f; // (float) Math.toRadians(6);
     public static final float maxProtozoaSpeed = .01f;
+    public static final int surfaceNodeActivationSize = 3;
+    public static final int surfaceNodeChemicalSize = 3;
 }

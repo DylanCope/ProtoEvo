@@ -50,19 +50,19 @@ public class NNBrain implements Brain {
             inputs[i++] = densityUp - densityDown;
         }
 
-        float retinaHealth = p.getRetina().getHealth();
-        for (Retina.Cell cell : p.getRetina()) {
-            if (cell.anythingVisible()) {
-                Color colour = cell.getColour();
-                inputs[i++] = retinaHealth * (-1 + 2 * colour.r / 255f);
-                inputs[i++] = retinaHealth * (-1 + 2 * colour.g / 255f);
-                inputs[i++] = retinaHealth * (-1 + 2 * colour.b / 255f);
-            } else {
-                inputs[i++] = 0f;
-                inputs[i++] = 0f;
-                inputs[i++] = 0f;
-            }
-        }
+//        float retinaHealth = p.getRetina().getHealth();
+//        for (Retina.Cell cell : p.getRetina()) {
+//            if (cell.anythingVisible()) {
+//                Color colour = cell.getColour();
+//                inputs[i++] = retinaHealth * (-1 + 2 * colour.r / 255f);
+//                inputs[i++] = retinaHealth * (-1 + 2 * colour.g / 255f);
+//                inputs[i++] = retinaHealth * (-1 + 2 * colour.b / 255f);
+//            } else {
+//                inputs[i++] = 0f;
+//                inputs[i++] = 0f;
+//                inputs[i++] = 0f;
+//            }
+//        }
 
         network.setInput(inputs);
         network.tick();
