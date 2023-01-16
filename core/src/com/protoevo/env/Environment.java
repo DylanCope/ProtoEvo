@@ -6,6 +6,7 @@ import com.google.common.collect.Streams;
 import com.protoevo.biology.*;
 import com.protoevo.biology.evolution.Evolvable;
 import com.protoevo.biology.protozoa.Protozoan;
+import com.protoevo.core.FixtureCategories;
 import com.protoevo.core.Particle;
 import com.protoevo.core.settings.WorldGenerationSettings;
 import com.protoevo.core.settings.Settings;
@@ -123,7 +124,14 @@ public class Environment implements Serializable
 			PolygonShape rockShape = new PolygonShape();
 			rockShape.set(rock.getPoints());
 			rockBody.setUserData(rock);
-			rockBody.createFixture(rockShape, 0.0f);
+
+			FixtureDef rockFixtureDef = new FixtureDef();
+			rockFixtureDef.shape = rockShape;
+			rockFixtureDef.density = 0.0f;
+			rockFixtureDef.friction = 0.7f;
+			rockFixtureDef.filter.categoryBits = ~FixtureCategories.SENSOR;
+
+			rockBody.createFixture(rockFixtureDef);
 		}
 		return clusterCentres;
 	}

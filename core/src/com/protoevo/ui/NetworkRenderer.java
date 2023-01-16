@@ -169,7 +169,7 @@ public class NetworkRenderer extends InputAdapter implements Renderer {
 
         batch.begin();
         batch.setColor(Color.WHITE.cpy().mul(0.9f));
-        InputManager inputManager = simulationScreen.getInputManager();
+        SimulationInputManager inputManager = simulationScreen.getInputManager();
         Vector2 mouse = inputManager.getMousePos();
 
         if (boxXStart - 2*r < mouse.x && mouse.x < boxXStart + boxWidth + 2*r &&

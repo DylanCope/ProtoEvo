@@ -68,12 +68,11 @@ public class ProtozoaRenderer {
         };
 
     private final Protozoan protozoan;
-    private final Sprite cellSprite;
+    private Sprite detailedSprite = null;
     private final Map<SurfaceNode, NodeRenderer> nodeRenderers;
 
     public ProtozoaRenderer(Protozoan protozoan) {
         this.protozoan = protozoan;
-        cellSprite = ImageUtils.convertToSprite(generateCellImage());
         nodeRenderers = new HashMap<>(protozoan.getSurfaceNodes().size());
     }
 
@@ -93,12 +92,20 @@ public class ProtozoaRenderer {
         float cellAngle = (float) Math.toDegrees(protozoan.getBody().getAngle());
         float size = protozoan.getRadius() * 2;
 
+        Sprite cellSprite;
         if (RenderSettings.cameraZoomForCellDetails > camera.zoom) {
+            if (detailedSprite == null) {
+                detailedSprite = ImageUtils.convertToSprite(generateCellImage());
+            }
+            cellSprite = detailedSprite;
             nodeRenderers.entrySet().removeIf(e -> e.getValue().isStale());
             for (SurfaceNode node : protozoan.getSurfaceNodes()) {
                 nodeRenderers.computeIfAbsent(node, this::createNodeRenderer)
                         .render(delta, batch);
             }
+        }
+        else {
+            cellSprite = ParticleTexture.getSprite();
         }
 
         cellSprite.setColor(protozoan.getColor());
@@ -116,7 +123,9 @@ public class ProtozoaRenderer {
         for (Object obj : protozoan.getInteractionQueue()) {
             if (obj instanceof Particle) {
                 Particle particle = (Particle) obj;
-                sr.circle(particle.getPos().x, particle.getPos().y, particle.getRadius() * 1.1f);
+                sr.circle(particle.getPos().x,
+                          particle.getPos().y,
+                          particle.getRadius() * 1.1f, 15);
             } else if (obj instanceof Rock) {
                 Rock rock = (Rock) obj;
                 for (Vector2[] edge : rock.getEdges())
@@ -138,38 +147,8 @@ public class ProtozoaRenderer {
             Vector2 dv = surfaceNode.getRelativePos();
             sr.circle(pos.x + dv.x, pos.y + dv.y, protozoan.getRadius() / 10f, 15);
 
-            Optional<NodeAttachment> maybeAttachment = surfaceNode.getAttachment();
-            if (maybeAttachment.isPresent() && maybeAttachment.get() instanceof FlagellumAttachment) {
-                FlagellumAttachment attachment = (FlagellumAttachment) maybeAttachment.get();
-                float maxThrust = ProtozoaSettings.maxProtozoaThrust;
-                Vector2 thrust = attachment.getThrustVector().cpy().setLength(protozoan.getRadius()*1.5f);
-                float mag = Utils.linearRemap(thrust.len(), 0, maxThrust, 0, 1.5f);
-                sr.setColor(0, 1, 0, 1);
-                Vector2 v = thrust.cpy().setLength(mag * protozoan.getRadius());
-                sr.line(pos.x, pos.y, pos.x + v.x, pos.y + v.y);
-            }
-            if (maybeAttachment.isPresent() && maybeAttachment.get() instanceof LightSensitiveAttachment) {
-                LightSensitiveAttachment attachment = (LightSensitiveAttachment) maybeAttachment.get();
-                sr.setColor(1, 0, 0, 1);
-
-                SurfaceNode node = attachment.getNode();
-                Cell cell = node.getCell();
-                for (int rayIdx = 0; rayIdx < LightSensitiveAttachment.nRays; rayIdx++) {
-                    Vector2[] ray = attachment.nextRay();
-                    sr.line(ray[0], ray[1]);
-                    for (Object o : cell.getInteractionQueue()) {
-                        if (o instanceof Collidable) {
-                            Vector2[] collisions = attachment.handleCollidable((Collidable) o);
-                            if (collisions == null)
-                                continue;
-                            sr.setColor(1, 0, 0, 1);
-                            for (Vector2 collision : collisions)
-                                sr.circle(collision.x, collision.y,
-                                        cell.getRadius() / 15f, 15);
-                        }
-                    }
-                }
-            }
+            nodeRenderers.computeIfAbsent(surfaceNode, this::createNodeRenderer)
+                    .renderDebug(sr);
         }
     }
 

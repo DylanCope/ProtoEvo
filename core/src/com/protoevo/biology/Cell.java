@@ -56,6 +56,7 @@ public abstract class Cell extends Particle implements Serializable
 	
 	public void update(float delta) {
 		super.update(delta);
+
 		timeAlive += delta;
 		voidDamage(delta);
 		digest(delta);

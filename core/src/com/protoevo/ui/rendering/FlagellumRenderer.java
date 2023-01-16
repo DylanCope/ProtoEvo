@@ -1,7 +1,9 @@
 package com.protoevo.ui.rendering;
 
 import com.badlogic.gdx.graphics.g2d.Sprite;
+import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.Vector2;
+import com.protoevo.biology.Cell;
 import com.protoevo.biology.nodes.FlagellumAttachment;
 import com.protoevo.biology.nodes.SurfaceNode;
 import com.protoevo.core.Simulation;
@@ -45,5 +47,21 @@ public class FlagellumRenderer extends NodeRenderer {
         }
 
         return frames[Math.min(idx, frames.length - 1)];
+    }
+
+    @Override
+    public void renderDebug(ShapeRenderer sr) {
+        if (!node.getAttachment().isPresent())
+            return;
+        Cell cell = node.getCell();
+        Vector2 pos = cell.getPos();
+
+        FlagellumAttachment attachment = (FlagellumAttachment) node.getAttachment().get();
+        float maxThrust = ProtozoaSettings.maxProtozoaThrust;
+        Vector2 thrust = attachment.getThrustVector().cpy().setLength(cell.getRadius()*1.5f);
+        float mag = Utils.linearRemap(thrust.len(), 0, maxThrust, 0, 1.5f);
+        sr.setColor(0, 1, 0, 1);
+        Vector2 v = thrust.cpy().setLength(mag * cell.getRadius());
+        sr.line(pos.x, pos.y, pos.x + v.x, pos.y + v.y);
     }
 }

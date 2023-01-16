@@ -205,4 +205,8 @@ public class ChemicalSolution implements Serializable {
         chemicalPixmap.setColor(c);
         chemicalPixmap.fillCircle(i, j, rc);
     }
+
+    public float getCellSize() {
+        return cellSizeX;
+    }
 }

@@ -21,6 +21,8 @@ public class CollisionHandler implements ContactListener, Serializable {
         Fixture fixtureB = contact.getFixtureB();
         Body bodyA = fixtureA.getBody();
         Body bodyB = fixtureB.getBody();
+        bodyA.setAwake(true);
+        bodyB.setAwake(true);
 
         if (fixtureA.isSensor() && bodyA.getUserData() instanceof Particle) {
             Particle particleA = (Particle) bodyA.getUserData();

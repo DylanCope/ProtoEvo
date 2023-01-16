@@ -4,8 +4,10 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.*;
 import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.graphics.glutils.ShaderProgram;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.Vector2;
+import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.physics.box2d.Box2DDebugRenderer;
 import com.badlogic.gdx.utils.ScreenUtils;
 import com.protoevo.biology.Cell;
@@ -18,7 +20,7 @@ import com.protoevo.env.Environment;
 import com.protoevo.env.JointsManager;
 import com.protoevo.env.Rock;
 import com.protoevo.input.ParticleTracker;
-import com.protoevo.ui.InputManager;
+import com.protoevo.ui.SimulationInputManager;
 import com.protoevo.utils.DebugMode;
 
 import java.util.HashMap;
@@ -29,6 +31,7 @@ public class EnvironmentRenderer implements Renderer {
 
     private final Box2DDebugRenderer debugRenderer;
     private final SpriteBatch batch, chemicalBatch;
+    private final ShaderProgram chemicalShader;
     private final Texture particleTexture;
     private final HashMap<Protozoan, ProtozoaRenderer> protozoaRenderers = new HashMap<>();
     private final Sprite jointSprite;
@@ -37,7 +40,7 @@ public class EnvironmentRenderer implements Renderer {
     private final Environment environment;
     private final OrthographicCamera camera;
     private final Simulation simulation;
-    private final InputManager inputManager;
+    private final SimulationInputManager inputManager;
 
     public static Sprite loadSprite(String path) {
         Texture texture = new Texture(Gdx.files.internal(path), true);
@@ -45,7 +48,7 @@ public class EnvironmentRenderer implements Renderer {
         return new Sprite(texture);
     }
 
-    public EnvironmentRenderer(OrthographicCamera camera, Simulation simulation, InputManager inputManager) {
+    public EnvironmentRenderer(OrthographicCamera camera, Simulation simulation, SimulationInputManager inputManager) {
         this.camera = camera;
         this.simulation = simulation;
         this.inputManager = inputManager;
@@ -54,6 +57,12 @@ public class EnvironmentRenderer implements Renderer {
         debugRenderer = new Box2DDebugRenderer();
         batch = new SpriteBatch();
         chemicalBatch = new SpriteBatch();
+        chemicalShader = new ShaderProgram(
+                Gdx.files.internal("shaders/chemical/vertex.glsl"),
+                Gdx.files.internal("shaders/chemical/fragment.glsl"));
+        if (!chemicalShader.isCompiled()) {
+            throw new RuntimeException("Shader compilation failed: " + chemicalShader.getLog());
+        }
 
         particleTexture = ParticleTexture.getTexture();
 
@@ -91,12 +100,18 @@ public class EnvironmentRenderer implements Renderer {
     public void renderChemicalField() {
         ChemicalSolution chemicalSolution = environment.getChemicalSolution();
 
-        if (chemicalSolution == null) {
+        if (chemicalSolution == null)
             return;
-        }
 
         chemicalBatch.enableBlending();
         chemicalBatch.setProjectionMatrix(camera.combined);
+
+        chemicalShader.bind();
+        chemicalShader.setUniformf("u_resolution", Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
+//        float blurRadius = worldDistanceToScreenDistance(3 * chemicalSolution.getCellSize());
+//        chemicalShader.setUniformf("u_blurRadius", blurRadius);
+        chemicalBatch.setShader(chemicalShader);
+
         chemicalBatch.begin();
         Texture chemicalTexture = chemicalSolution.getChemicalTexture(camera);
         float x = -chemicalSolution.getFieldWidth() / 2;
@@ -181,6 +196,13 @@ public class EnvironmentRenderer implements Renderer {
 
             shapeRenderer.end();
         }
+    }
+
+    private final Vector3 tmpWorldCoordinate = new Vector3();
+
+    public float worldDistanceToScreenDistance(float worldDistance) {
+        Vector3 result = camera.project(tmpWorldCoordinate.set(worldDistance, 0, 0));
+        return result.len();
     }
 
     public boolean circleNotVisible(Vector2 pos, float r) {

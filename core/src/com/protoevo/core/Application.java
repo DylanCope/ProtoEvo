@@ -18,7 +18,8 @@ public class Application extends ApplicationAdapter {
 	@Override
 	public void create () {
 		simulation = new Simulation();
-		simulation.getEnv().initialise();
+		simulation.setupEnvironment();
+//		new Thread(simulation).start();
 		simulationScreen = new SimulationScreen(simulation);
 	}
 

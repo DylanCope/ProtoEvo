@@ -13,7 +13,7 @@ import com.protoevo.input.*;
 
 import java.util.Collection;
 
-public class InputManager {
+public class SimulationInputManager {
 
     private final ParticleTracker particleTracker;
     private final MoveParticleButton moveParticleButton;
@@ -21,12 +21,14 @@ public class InputManager {
     private final InputLayers inputLayers;
 
 
-    public InputManager(SimulationScreen simulationScreen)  {
+    public SimulationInputManager(SimulationScreen simulationScreen)  {
         OrthographicCamera camera = simulationScreen.getCamera();
         ToggleDebug toggleDebug = new ToggleDebug();
 
         inputLayers = new InputLayers(simulationScreen.getStage(), toggleDebug);
         Gdx.input.setInputProcessor(inputLayers);
+
+        inputLayers.addLayer(new SimulationKeyboardControls(simulationScreen.getSimulation()));
 
         Collection<? extends Particle> particles = simulationScreen.getEnvironment().getParticles();
         inputLayers.addLayer(new ApplyForcesInput(particles, camera));

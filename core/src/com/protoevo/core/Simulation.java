@@ -19,7 +19,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public class Simulation
+public class Simulation implements Runnable
 {
 	private final Environment environment;
 	private boolean simulate;
@@ -148,7 +148,7 @@ public class Simulation
 		return newDefaultEnv();
 	}
 
-	public void simulate() {
+	public void run() {
 		setupEnvironment();
 		makeHistorySnapshot();
 		while (simulate) {

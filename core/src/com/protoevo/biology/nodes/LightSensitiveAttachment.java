@@ -2,14 +2,22 @@ package com.protoevo.biology.nodes;
 
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.math.Vector2;
+import com.badlogic.gdx.physics.box2d.Fixture;
+import com.badlogic.gdx.utils.Array;
 import com.protoevo.biology.Cell;
 import com.protoevo.core.Collidable;
+import com.protoevo.core.Particle;
 import com.protoevo.core.settings.ProtozoaSettings;
 import com.protoevo.core.settings.SimulationSettings;
 import com.protoevo.utils.Utils;
 
 public class LightSensitiveAttachment extends NodeAttachment {
     private final Vector2[] ray = new Vector2[]{new Vector2(), new Vector2()};
+    private final Collidable.Collision[] collisions =
+            new Collidable.Collision[]{new Collidable.Collision(), new Collidable.Collision()};
+    private final Vector2 tmp = new Vector2(), tmp2 = new Vector2();
+    private final Vector2 attachmentRelPos = new Vector2();
+    private float interactionRange = 0;
     private final Color colour = new Color();
     private float r, g, b;
     private int rayIdx;
@@ -23,8 +31,9 @@ public class LightSensitiveAttachment extends NodeAttachment {
 
     @Override
     public void update(float delta) {
+        interactionRange = getInteractionRange();
+        attachmentRelPos.set(node.getRelativePos());
         castRays();
-//        colour.mul(computeColourFalloffWeight());
     }
 
     public Vector2[] nextRay() {
@@ -39,11 +48,8 @@ public class LightSensitiveAttachment extends NodeAttachment {
 
         minSqLen = Float.MAX_VALUE;
 
-        ray[0].set(node.getRelativePos())
-                .add(node.getCell().getPos());
-
-        ray[1].set(node.getRelativePos())
-                .setLength(getInteractionRange())
+        ray[1].set(attachmentRelPos)
+                .setLength(interactionRange)
                 .rotateRad(t)
                 .add(node.getCell().getPos());
 
@@ -52,10 +58,10 @@ public class LightSensitiveAttachment extends NodeAttachment {
     }
 
     private void castRays() {
-        r = 1; g = 1; b = 1;
+        ray[0].set(attachmentRelPos)
+                .add(node.getCell().getPos());
 
-        for (rayIdx = 0; rayIdx < nRays; nextRay()) {
-
+        for (reset(); rayIdx < nRays; nextRay()) {
             Cell cell = node.getCell();
             for (Object o : cell.getInteractionQueue())
                 if (o instanceof Collidable)
@@ -63,19 +69,31 @@ public class LightSensitiveAttachment extends NodeAttachment {
         }
 
         colour.set(r / (nRays + 1), g / (nRays + 1), b / (nRays + 1), 1);
-        r = 1; g = 1; b = 1;
-        rayIdx = 0;
+        reset();
     }
 
-    public Vector2[] handleCollidable(Collidable o) {
+	public boolean cullFromRayCasting(Collidable o) {
+		if (o instanceof Particle) {
+			Vector2 otherPos = ((Particle) o).getPos();
+            Vector2 myPos = node.getCell().getPos();
+			Vector2 dx = tmp.set(otherPos).sub(myPos).nor();
+            Vector2 dir = tmp2.set(attachmentRelPos).add(myPos).nor();
+			return dx.dot(dir) < Math.cos(fov / 2f);
+		}
+		return false;
+	}
 
-        Vector2[] collisions = o.rayCollisions(ray[0], ray[1]);
-        if (collisions == null || collisions.length == 0)
+    public Collidable.Collision[] handleCollidable(Collidable o) {
+        collisions[0].didCollide = false;
+        collisions[1].didCollide = false;
+        boolean anyCollision = o.rayCollisions(ray, collisions);
+        if (!anyCollision)
             return collisions;
 
         float sqLen = Float.MAX_VALUE;
-        for (Vector2 collisionPoint : collisions)
-            sqLen = Math.min(sqLen, collisionPoint.dst2(ray[0]));
+        for (Collidable.Collision collision : collisions)
+            if (collision.didCollide)
+                sqLen = Math.min(sqLen, collision.point.dst2(ray[0]));
 
         if (sqLen < minSqLen) {
             minSqLen = sqLen;
@@ -89,6 +107,7 @@ public class LightSensitiveAttachment extends NodeAttachment {
     }
 
     public void reset() {
+        r = 1; g = 1; b = 1;
         rayIdx = 0;
     }
 

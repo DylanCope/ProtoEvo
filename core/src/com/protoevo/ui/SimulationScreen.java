@@ -37,7 +37,7 @@ public class SimulationScreen {
 
     private final Simulation simulation;
     private final Environment environment;
-    private final InputManager inputManager;
+    private final SimulationInputManager inputManager;
     private final Renderer renderer;
     private final SpriteBatch uiBatch;
     private final Stage stage;
@@ -116,7 +116,7 @@ public class SimulationScreen {
         });
         topBar.addLeft(homeButton);
 
-        inputManager = new InputManager(this);
+        inputManager = new SimulationInputManager(this);
         renderer = new ShaderLayers(
                 new EnvironmentRenderer(camera, simulation, inputManager),
                 new ShockWaveLayer(camera),
@@ -174,7 +174,13 @@ public class SimulationScreen {
             debugString += separator + "Contacts: " + environment.getWorld().getContactCount();
             debugString += separator + "Joints: " + environment.getWorld().getJointCount();
             debugString += separator + "Fixtures: " + environment.getWorld().getFixtureCount();
-            debugString += separator + "Proxies: " + environment.getWorld().getProxyCount();
+//            debugString += separator + "Proxies: " + environment.getWorld().getProxyCount();
+
+            int totalCells = environment.getCells().size();
+            int sleepCount = totalCells - (int) environment.getCells().stream()
+                    .filter(cell -> cell.getBody().isAwake())
+                    .count();
+            debugString += separator + "Sleeping %: " + (int) (100f * sleepCount / totalCells);
 
             ParticleTracker tracker = inputManager.getParticleTracker();
             if (tracker.isTracking()) {
@@ -205,7 +211,7 @@ public class SimulationScreen {
     }
 
     public float getYPosRHS(int i) {
-        return 1.3f*infoTextSize*i + graphicsHeight / 20f;
+        return graphicsHeight - topBar.getHeight() * 1.5f - 1.3f * infoTextSize * i;
     }
 
     private void renderStats(Map<String, Float> stats) {
@@ -280,7 +286,11 @@ public class SimulationScreen {
         return topBar.pointOnBar(screenX, screenY);
     }
 
-    public InputManager getInputManager() {
+    public SimulationInputManager getInputManager() {
         return inputManager;
+    }
+
+    public Simulation getSimulation() {
+        return simulation;
     }
 }

@@ -2,8 +2,12 @@ package com.protoevo.ui.rendering;
 
 import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
+import com.badlogic.gdx.math.Vector2;
+import com.protoevo.biology.Cell;
 import com.protoevo.biology.nodes.LightSensitiveAttachment;
 import com.protoevo.biology.nodes.SurfaceNode;
+import com.protoevo.core.Collidable;
 import com.protoevo.utils.ImageUtils;
 
 public class LightSensitiveNodeRenderer extends NodeRenderer {
@@ -26,6 +30,37 @@ public class LightSensitiveNodeRenderer extends NodeRenderer {
             LightSensitiveAttachment attachment = (LightSensitiveAttachment) node.getAttachment().get();
             lightSensitiveSprite.setColor(attachment.getColour());
             renderRotatedNode(lightSensitiveSprite, batch);
+        }
+    }
+
+    private void renderDebugRay(ShapeRenderer sr, Vector2[] ray, LightSensitiveAttachment attachment) {
+        Cell cell = node.getCell();
+        sr.line(ray[0], ray[1]);
+        for (Object o : cell.getInteractionQueue()) {
+            if (o instanceof Collidable) {
+                Collidable.Collision[] collisions = attachment.handleCollidable((Collidable) o);
+                for (Collidable.Collision collision : collisions) {
+                    if (collision.didCollide)
+                        sr.circle(collision.point.x, collision.point.y,
+                                cell.getRadius() / 15f, 15);
+                }
+            }
+        }
+    }
+
+    @Override
+    public void renderDebug(ShapeRenderer sr) {
+        if (!node.getAttachment().isPresent())
+            return;
+
+        LightSensitiveAttachment attachment = (LightSensitiveAttachment) node.getAttachment().get();
+        sr.setColor(1, 0, 0, 1);
+
+        SurfaceNode node = attachment.getNode();
+        attachment.reset();
+        for (int rayIdx = 0; rayIdx < LightSensitiveAttachment.nRays; rayIdx++) {
+            Vector2[] ray = attachment.nextRay();
+            renderDebugRay(sr, ray, attachment);
         }
     }
 }

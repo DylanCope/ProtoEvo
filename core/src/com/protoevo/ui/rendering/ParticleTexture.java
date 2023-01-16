@@ -4,6 +4,7 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.files.FileHandle;
 import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.graphics.g2d.Sprite;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
@@ -12,10 +13,18 @@ import java.io.IOException;
 
 public class ParticleTexture {
 
+    private static Sprite particleSprite;
     private static Texture particleTexture;
     private static Pixmap particleBasePixmap;
     private static BufferedImage particleImage;
     private static final String pathToFile = "cell/particle_base_128x128.png";
+
+    public static Sprite getSprite() {
+        if (particleSprite == null) {
+            particleSprite = new Sprite(getTexture());
+        }
+        return particleSprite;
+    }
 
     public static Texture getTexture() {
         if (particleTexture == null) {

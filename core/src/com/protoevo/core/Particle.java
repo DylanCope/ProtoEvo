@@ -41,6 +41,10 @@ public class Particle implements Collidable {
     }
 
     public void update(float delta) {
+        if (getSpeed() < getRadius() / 100f) {
+            body.setLinearVelocity(0, 0);
+            body.setAwake(false);
+        }
         dynamicsFixture.getShape().setRadius(radius);
         float interactionRange = getInteractionRange();
         if (canPossiblyInteract() && interactionRange > getRadius())
@@ -68,15 +72,15 @@ public class Particle implements Collidable {
         fixtureDef.density = 1f;  // will be updated later
         fixtureDef.friction = 0.9f;
         fixtureDef.restitution = 0.2f;
-
-//        if (getSensorCategory() != 0x0000)
-//            fixtureDef.filter.categoryBits = getSensorCategory();
+        fixtureDef.filter.categoryBits = ~FixtureCategories.SENSOR;
 
         dynamicsFixture = body.createFixture(fixtureDef);
         dynamicsFixture.setUserData(this);
+
         body.setUserData(this);
         body.setLinearDamping(5f);
         body.setAngularDamping(5f);
+        body.setSleepingAllowed(true);
 
         circle.dispose();
 
@@ -88,6 +92,8 @@ public class Particle implements Collidable {
             FixtureDef sensorFixtureDef = new FixtureDef();
             sensorFixtureDef.shape = interactionCircle;
             sensorFixtureDef.isSensor = true;
+            sensorFixtureDef.filter.categoryBits = FixtureCategories.SENSOR;
+            sensorFixtureDef.filter.maskBits = ~FixtureCategories.SENSOR;
 
             sensorFixture = body.createFixture(sensorFixtureDef);
             sensorFixture.setUserData(this);
@@ -103,7 +109,7 @@ public class Particle implements Collidable {
      * @return the category bits
      */
     public short getSensorCategory() {
-        return 0x0000;
+        return FixtureCategories.SENSOR;
     }
 
     /**
@@ -112,7 +118,7 @@ public class Particle implements Collidable {
      * @return the mask bits
      */
     public short getSensorMask() {
-        return 0x0000;
+        return ~FixtureCategories.SENSOR;
     }
 
     public Body getBody() {
@@ -234,28 +240,34 @@ public class Particle implements Collidable {
     }
 
     @Override
-    public Vector2[] rayCollisions(Vector2 start, Vector2 end) {
-        Vector2 ray = end.cpy().sub(start).nor();
-        Vector2 p = getPos().cpy().sub(start);
+    public boolean rayCollisions(Vector2[] ray, Collision[] collision) {
+        Vector2 start = ray[0], end = ray[1];
+        float dirX = end.x - start.x, dirY = end.y - start.y;
+        Vector2 p = getPos();
 
-        float a = ray.len2();
-        float b = -2 * ray.dot(p);
-        float c = p.len2() - getRadius() * getRadius();
+        float a = start.dst2(end);
+        float b = 2 * (dirX*(start.x - p.x) + dirY*(start.y - p.y));
+        float c = p.len2() + start.len2() - getRadius() * getRadius() - 2 * p.dot(start);
 
         float d = b*b - 4*a*c;
         if (d == 0)
-            return null;
+            return false;
 
-        float l1 = (float) ((-b + Math.sqrt(d)) / (2*a));
-        float l2 = (float) ((-b - Math.sqrt(d)) / (2*a));
+        float t1 = (float) ((-b + Math.sqrt(d)) / (2*a));
+        float t2 = (float) ((-b - Math.sqrt(d)) / (2*a));
 
-        if (l1 > 0 || l2 > 0) {
-            return new Vector2[]{
-                    start.cpy().add(ray.cpy().scl(l1)),
-                    start.cpy().add(ray.cpy().scl(l2))
-            };
+        boolean anyCollisions = false;
+        if (0 <= t1 && t1 <= 1) {
+            collision[0].point.set(start).lerp(end, t1);
+            collision[0].didCollide = true;
+            anyCollisions = true;
         }
-        return null;
+        if (0 <= t2 && t2 <= 1) {
+            collision[1].point.set(start).lerp(end, t2);
+            collision[1].didCollide = true;
+            anyCollisions = true;
+        }
+        return anyCollisions;
     }
 
     @Override

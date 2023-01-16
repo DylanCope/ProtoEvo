@@ -5,17 +5,17 @@ import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector3;
 import com.protoevo.core.Particle;
-import com.protoevo.ui.InputManager;
+import com.protoevo.ui.SimulationInputManager;
 import com.protoevo.ui.SimulationScreen;
 import com.protoevo.utils.CursorUtils;
 import com.protoevo.utils.Geometry;
 
 public class CursorUpdater extends InputAdapter {
     private final SimulationScreen simulationScreen;
-    private final InputManager inputManager;
+    private final SimulationInputManager inputManager;
     private final Vector2 touchPos = new Vector2(0, 0);
 
-    public CursorUpdater(SimulationScreen simulationScreen, InputManager inputManager) {
+    public CursorUpdater(SimulationScreen simulationScreen, SimulationInputManager inputManager) {
         this.simulationScreen = simulationScreen;
         this.inputManager = inputManager;
     }

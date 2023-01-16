@@ -7,7 +7,7 @@ import com.badlogic.gdx.scenes.scene2d.ui.ImageButton;
 import com.badlogic.gdx.scenes.scene2d.utils.Drawable;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 import com.badlogic.gdx.utils.Null;
-import com.protoevo.ui.InputManager;
+import com.protoevo.ui.SimulationInputManager;
 
 public class LightningButton extends ImageButton {
 
@@ -15,7 +15,7 @@ public class LightningButton extends ImageButton {
 
     private boolean canStrike = false;
 
-    public LightningButton(InputManager inputManager, float size) {
+    public LightningButton(SimulationInputManager inputManager, float size) {
         super(getDrawable(false));
         setTouchable(Touchable.enabled);
 
