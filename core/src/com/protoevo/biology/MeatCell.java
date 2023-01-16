@@ -9,8 +9,6 @@ public class MeatCell extends EdibleCell {
 
     public static final long serialVersionUID = -5549426815144079228L;
 
-    private float rottenness = 0.0f;
-
     public MeatCell(float radius, Environment environment) {
         super(radius, Food.Type.Meat, environment);
 
@@ -18,15 +16,12 @@ public class MeatCell extends EdibleCell {
         float g = (25  + Simulation.RANDOM.nextInt(100)) / 255f;
         float b = (25  + Simulation.RANDOM.nextInt(100)) / 255f;
         setHealthyColour(new Color(r, g, b, 1f));
-        setDegradedColour(new Color(158, 121, 79, 1f));
+//        setDegradedColour(new Color(158 / 255f, 121, 79, 1f));
     }
 
     public void age(float delta) {
-        float deathRate = getRadius() * delta * 100;
+        float deathRate = getRadius() * delta * 50;
         damage(getHealth() * deathRate, CauseOfDeath.OLD_AGE);
-        rottenness = rottenness * (1 - deathRate);
-        if (rottenness > 1)
-            rottenness = 1;
     }
 
     @Override

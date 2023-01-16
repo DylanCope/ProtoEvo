@@ -5,8 +5,8 @@ import com.badlogic.gdx.math.Vector2;
 import com.protoevo.biology.*;
 import com.protoevo.biology.evolution.*;
 import com.protoevo.biology.neat.NetworkGenome;
-import com.protoevo.biology.nodes.SpikeAttachment;
-import com.protoevo.biology.nodes.SurfaceNode;
+import com.protoevo.biology.neat.NeuralNetwork;
+import com.protoevo.biology.nodes.*;
 import com.protoevo.core.settings.ProtozoaSettings;
 import com.protoevo.core.settings.Settings;
 import com.protoevo.core.Simulation;
@@ -49,14 +49,30 @@ public class Protozoan extends Cell implements Evolvable
 		);
 
 		surfaceNodes = new ArrayList<>();
-		int n = 8;
-		float dt = 360f / n;
-		for (int i = 0; i < n; i++) {
-			float angle = i * dt;
-			SurfaceNode node = new SurfaceNode(this, angle);
-			node.setAttachment(new SpikeAttachment(node));
-			surfaceNodes.add(node);
-		}
+		SurfaceNode flagellaNode = new SurfaceNode(this, 0);
+		flagellaNode.setAttachment(new FlagellumAttachment(flagellaNode));
+		surfaceNodes.add(flagellaNode);
+
+		SurfaceNode lightSensitiveNode = new SurfaceNode(this, (float) Math.PI);
+		lightSensitiveNode.setAttachment(new LightSensitiveAttachment(lightSensitiveNode));
+		surfaceNodes.add(lightSensitiveNode);
+
+		SurfaceNode spikeNode1 = new SurfaceNode(this, (float) (3 * Math.PI / 4));
+		spikeNode1.setAttachment(new SpikeAttachment(spikeNode1));
+		surfaceNodes.add(spikeNode1);
+
+		SurfaceNode spikeNode2 = new SurfaceNode(this, (float) (5 * Math.PI / 4));
+		spikeNode2.setAttachment(new SpikeAttachment(spikeNode2));
+		surfaceNodes.add(spikeNode2);
+
+//		int n = 8;
+//		float dt = (float) (2 * Math.PI / n);
+//		for (int i = 1; i < n; i++) {
+//			float angle = i * dt;
+//			SurfaceNode node = new SurfaceNode(this, angle);
+//			node.setAttachment(new SpikeAttachment(node));
+//			surfaceNodes.add(node);
+//		}
 	}
 
 	@Override
@@ -108,15 +124,6 @@ public class Protozoan extends Cell implements Evolvable
 	public void setGrowth(float growthRate) {
 		setGrowthRate(growthRate);
 	}
-
-//	@EvolvableInteger(name="Num Contact Sensors")
-//	public void setNumberOfSensors(int nSensors) {
-//		contactSensors = new ContactSensor[nSensors];
-//		for (int i = 0; i < nSensors; i++) {
-//			contactSensors[i] = new ContactSensor();
-//			contactSensors[i].angle = (float) (2 * Math.PI * i / nSensors);
-//		}
-//	}
 
 	@EvolvableFloat(name="Retinal Production")
 	public void setRetinalProduction(float production) {
@@ -220,13 +227,13 @@ public class Protozoan extends Cell implements Evolvable
 	public void think(float delta)
 	{
 		brain.tick(this);
-		dir.rotateRad(delta * 80 * maxTurning * brain.turn(this));
+//		dir.rotateRad(delta * 80 * maxTurning * brain.turn(this));
 //		growthControlFactor = brain.growthControl();
 //		float spikeDecay = (float) Math.pow(ProtozoaSettings.spikeMovementPenalty, spikes.getNumSpikes());
-		float sizePenalty = getRadius() / SimulationSettings.maxParticleRadius; // smaller flagella generate less impulse
-		float speed = Math.abs(brain.speed(this));
-		Vector2 impulse = dir.cpy().setLength(.05f * sizePenalty * speed);
-		applyImpulse(impulse);
+//		float sizePenalty = getRadius() / SimulationSettings.maxParticleRadius; // smaller flagella generate less impulse
+//		float speed = Math.abs(brain.speed(this));
+//		Vector2 impulse = dir.cpy().setLength(.05f * sizePenalty * speed);
+//		applyImpulse(impulse);
 //		float v1 = getSpeed();
 //		float m = getMass();
 //		float work = .5f * m * (v1*v1 - impulse.len2() / (m * m));  // change in kinetic energy
@@ -300,21 +307,18 @@ public class Protozoan extends Cell implements Evolvable
 		return other.getPos().sub(spikeEndPos).len2() < other.getRadius() * other.getRadius();
 	}
 
-//	@Override
-//	public float getInteractionRange() {
-//		if (retina.numberOfCells() == 0) {
-//			if (spikes.getNumSpikes() > 0) {
-//				float maxSpikeLen = 0;
-//				for (Spikes.Spike spike : spikes.getSpikes())
-//					maxSpikeLen = Math.max(maxSpikeLen, getSpikeLength(spike));
-//				return getRadius() * 1.1f + maxSpikeLen;
-//			}
-//			else {
-//				return getRadius() * 1.1f;
-//			}
-//		}
-//		return ProtozoaSettings.protozoaInteractRange;
-//	}
+	@Override
+	public float getInteractionRange() {
+		return surfaceNodes.stream()
+				.map(SurfaceNode::getInteractionRange)
+				.max(Float::compare)
+				.orElse(0f);
+	}
+
+	@Override
+	public boolean canPossiblyInteract() {
+		return true;
+	}
 
 //	@Override
 //	public boolean doesInteract() {
@@ -328,11 +332,6 @@ public class Protozoan extends Cell implements Evolvable
 //	}
 
 	@Override
-	public void interact(List<Object> toInteract) {
-		this.toInteract = toInteract;
-	}
-
-	@Override
 	public void kill(CauseOfDeath causeOfDeath) {
 		super.kill(causeOfDeath);
 		getEnv().requestBurst(this, MeatCell.class, r -> new MeatCell(r, getEnv()));
@@ -343,6 +342,21 @@ public class Protozoan extends Cell implements Evolvable
 		return "Protozoan";
 	}
 
+	public int getNumOfAttachments(Class<? extends NodeAttachment> type) {
+		return (int) surfaceNodes.stream()
+				.map(SurfaceNode::getAttachment)
+				.filter(type::isInstance)
+				.count();
+	}
+
+	public int getNumSpikes() {
+		return getNumOfAttachments(SpikeAttachment.class);
+	}
+
+	public int getNumLightSensitiveNodes() {
+		return getNumOfAttachments(LightSensitiveAttachment.class);
+	}
+
 	@Override
 	public Map<String, Float> getStats() {
 		Map<String, Float> stats = super.getStats();
@@ -350,18 +364,18 @@ public class Protozoan extends Cell implements Evolvable
 		stats.put("Split Radius", Settings.statsDistanceScalar * splitRadius);
 		stats.put("Max Turning", maxTurning);
 		stats.put("Has Mated", crossOverGenome == null ? 0f : 1f);
-//		if (spikes.getNumSpikes() > 0)
-//			stats.put("Num Spikes", (float) spikes.getNumSpikes());
+		int numSpikes = getNumSpikes();
+		if (numSpikes > 0)
+			stats.put("Num Spikes", (float) numSpikes);
 		if (brain instanceof NNBrain) {
-//			NeuralNetwork nn = ((NNBrain) brain).network;
-//			stats.put("Network Depth", (float) nn.getDepth());
-//			stats.put("Network Size", (float) nn.getSize());
+			NeuralNetwork nn = ((NNBrain) brain).network;
+			stats.put("Network Depth", (float) nn.getDepth());
+			stats.put("Network Size", (float) nn.getSize());
 		}
-//		if (retina.numberOfCells() > 0) {
-//			stats.put("Retina Cells", (float) retina.numberOfCells());
-//			stats.put("Retina FoV", (float) Math.toDegrees(retina.getFov()));
-//			stats.put("Retina Health", retina.getHealth());
-//		}
+		int numLSN = getNumLightSensitiveNodes();
+		if (numLSN > 0) {
+			stats.put("Light Sensitive Nodes", (float) numLSN);
+		}
 		stats.put("Herbivore Factor", herbivoreFactor);
 		stats.put("Mutation Chance", 100 * genome.getMutationRate());
 		return stats;
@@ -397,10 +411,7 @@ public class Protozoan extends Cell implements Evolvable
 		age(delta);
 		think(delta);
 		handleCollisions(delta);
-//		handleInteractions(delta);
-//		spikes.update(delta);
-//
-//		maintainRetina(delta);
+		surfaceNodes.forEach(n -> n.update(delta));
 
 		if (shouldSplit()) {
 			getEnv().requestBurst(this, Protozoan.class, this::createSplitChild);
@@ -426,10 +437,6 @@ public class Protozoan extends Cell implements Evolvable
 		return false;
 	}
 
-//	public Retina getRetina() {
-//		return retina;
-//	}
-
 	public float getShieldFactor() {
 		return shieldFactor;
 	}
@@ -441,10 +448,6 @@ public class Protozoan extends Cell implements Evolvable
 	public Brain getBrain() {
 		return brain;
 	}
-
-//	public Spikes.Spike[] getSpikes() {
-//		return spikes.getSpikes();
-//	}
 
 	public float getSpikeLength(Spikes.Spike spike) {
 		return brain.attack(this) * spike.currentLength * getRadius() / splitRadius;

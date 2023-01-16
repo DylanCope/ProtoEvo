@@ -1,6 +1,6 @@
 package com.protoevo.test;
 
-import com.protoevo.ui.texture.ProtozoaRenderer;
+import com.protoevo.ui.rendering.ProtozoaRenderer;
 
 import javax.swing.*;
 import java.awt.*;

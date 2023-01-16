@@ -1,4 +1,4 @@
-package com.protoevo.ui.rendering;
+package com.protoevo.ui.shaders;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.OrthographicCamera;
@@ -7,6 +7,7 @@ import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.glutils.FrameBuffer;
 import com.badlogic.gdx.graphics.glutils.ShaderProgram;
+import com.protoevo.ui.rendering.Renderer;
 
 import java.util.List;
 

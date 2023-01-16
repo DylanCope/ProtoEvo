@@ -1,6 +1,5 @@
 package com.protoevo.biology.protozoa;
 
-import com.badlogic.gdx.graphics.Color;
 import com.protoevo.biology.neat.NeuralNetwork;
 import com.protoevo.core.settings.ProtozoaSettings;
 import com.protoevo.core.settings.Settings;
@@ -80,8 +79,8 @@ public class NNBrain implements Brain {
     public float speed(Protozoan p)
     {
         return Math.min(
-                ProtozoaSettings.maxProtozoaSpeed * outputs[1],
-                ProtozoaSettings.maxProtozoaSpeed
+                ProtozoaSettings.maxProtozoaThrust * outputs[1],
+                ProtozoaSettings.maxProtozoaThrust
         );
     }
 

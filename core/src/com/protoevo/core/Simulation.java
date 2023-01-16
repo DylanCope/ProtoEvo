@@ -22,7 +22,8 @@ import java.util.stream.Stream;
 public class Simulation
 {
 	private final Environment environment;
-	private boolean simulate, pause = false;
+	private boolean simulate;
+	private static boolean paused = false;
 	private float timeDilation = 1, timeSinceSave = 0, timeSinceSnapshot = 0;
 	private double updateDelay = Application.refreshDelay / 1000.0, lastUpdateTime = 0;
 	
@@ -151,7 +152,7 @@ public class Simulation
 		setupEnvironment();
 		makeHistorySnapshot();
 		while (simulate) {
-			if (pause)
+			if (paused)
 				continue;
 
 			if (delayUpdate && updateDelay > 0) {
@@ -236,7 +237,7 @@ public class Simulation
 	}
 
 	public synchronized void togglePause() {
-		pause = !pause;
+		paused = !paused;
 	}
 
 	public boolean inDebugMode() {
@@ -261,8 +262,8 @@ public class Simulation
 		delayUpdate = !delayUpdate;
 	}
 
-    public synchronized boolean isPaused() {
-		return pause;
+    public static synchronized boolean isPaused() {
+		return paused;
     }
 
 	public void dispose() {

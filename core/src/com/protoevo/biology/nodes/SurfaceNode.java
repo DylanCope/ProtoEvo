@@ -6,42 +6,43 @@ import com.protoevo.core.settings.ProtozoaSettings;
 import com.protoevo.utils.Geometry;
 
 import java.util.Arrays;
+import java.util.Optional;
 
 public class SurfaceNode {
 
     private final Cell cell;
     private final float angle;
-    private final Vector2 position;
-    private NodeAttachment attachment;
+    private final Vector2 position = new Vector2();
+    private Optional<NodeAttachment> attachment = Optional.empty();
     private final float[] inputActivation = new float[ProtozoaSettings.surfaceNodeActivationSize];
     private final float[] outputActivation = new float[ProtozoaSettings.surfaceNodeActivationSize];
 
     public SurfaceNode(Cell cell, float angle) {
         this.cell = cell;
         this.angle = angle;
-        position = Geometry.fromAngle(angle);
     }
 
     public Vector2 getRelativePos() {
+        float t = cell.getAngle() + angle;
+        position.set((float) Math.cos(t), (float) Math.sin(t)).scl(cell.getRadius());
         return position;
     }
 
     public void update(float delta) {
         Arrays.fill(outputActivation, 0);
-        position.setLength(cell.getRadius());
 
-        if (attachment != null) {
-            attachment.update(delta);
-            attachment.handleIO(inputActivation, outputActivation);
-        }
+        attachment.ifPresent(a -> {
+            a.update(delta);
+            a.handleIO(inputActivation, outputActivation);
+        });
         Arrays.fill(inputActivation, 0);
     }
 
     public void setAttachment(NodeAttachment attachment) {
-        this.attachment = attachment;
+        this.attachment = Optional.of(attachment);
     }
 
-    public NodeAttachment getAttachment() {
+    public Optional<NodeAttachment> getAttachment() {
         return attachment;
     }
 
@@ -51,5 +52,17 @@ public class SurfaceNode {
 
     public float[] getOutputActivation() {
         return outputActivation;
+    }
+
+    public float getAngle() {
+        return angle;
+    }
+
+    public Cell getCell() {
+        return cell;
+    }
+
+    public float getInteractionRange() {
+        return attachment.map(NodeAttachment::getInteractionRange).orElse(0f);
     }
 }

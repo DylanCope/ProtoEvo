@@ -121,10 +121,6 @@ public class PlantCell extends EdibleCell {
         return 3;
     }
 
-    public boolean doesInteract() {
-        return false;
-    }
-
 //    @Override
 //    public void interact(List<Object> interactions) {
 //        float maxDist2 = getInteractionRange() * getInteractionRange();

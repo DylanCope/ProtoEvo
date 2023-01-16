@@ -3,6 +3,7 @@ package com.protoevo.utils;
 import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Sprite;
+import com.google.common.collect.Lists;
 
 import javax.imageio.ImageIO;
 import java.awt.*;
@@ -10,6 +11,7 @@ import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
+import java.util.List;
 
 public class ImageUtils {
 
@@ -42,7 +44,10 @@ public class ImageUtils {
     }
 
     public static Texture convertToTexture(BufferedImage image) {
-        return new Texture(convertToPixmap(image));
+        Texture texture = new Texture(convertToPixmap(image));
+//        texture.setFilter(Texture.TextureFilter.MipMapLinearNearest, Texture.TextureFilter.MipMapLinearNearest);
+//        texture.setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Linear);
+        return texture;
     }
 
     public static Pixmap convertToPixmap(BufferedImage image) {
@@ -112,5 +117,20 @@ public class ImageUtils {
 
     public static BufferedImage flipImageVertically(BufferedImage img) {
         return scaleImage(img, 1, -1);
+    }
+
+    public static Sprite[] loadSpriteAnimationFrames(String framesFolder) {
+        int frame = 1;
+        List<Sprite> frames = Lists.newArrayList();
+        while (true) {
+            String framePath = framesFolder + "/" + frame + ".png";
+            File frameFile = new File(framePath);
+            if (!frameFile.exists()) {
+                break;
+            }
+            frames.add(loadSprite(framePath));
+            frame++;
+        }
+        return frames.toArray(new Sprite[0]);
     }
 }

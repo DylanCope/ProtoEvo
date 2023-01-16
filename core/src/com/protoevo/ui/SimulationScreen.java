@@ -24,6 +24,9 @@ import com.protoevo.core.settings.WorldGenerationSettings;
 import com.protoevo.env.Environment;
 import com.protoevo.input.ParticleTracker;
 import com.protoevo.ui.rendering.*;
+import com.protoevo.ui.shaders.ShaderLayers;
+import com.protoevo.ui.shaders.ShockWaveLayer;
+import com.protoevo.ui.shaders.VignetteLayer;
 import com.protoevo.utils.CursorUtils;
 import com.protoevo.utils.DebugMode;
 import com.protoevo.utils.Utils;
@@ -69,7 +72,7 @@ public class SimulationScreen {
                 false, WorldGenerationSettings.environmentRadius,
                 WorldGenerationSettings.environmentRadius * graphicsHeight / graphicsWidth);
         camera.position.set(0, 0, 0);
-        camera.zoom = WorldGenerationSettings.environmentRadius;
+        camera.zoom = 1f; //WorldGenerationSettings.environmentRadius;
 
         this.simulation = simulation;
         this.environment = simulation.getEnv();

@@ -13,4 +13,9 @@ public class SpikeAttachment extends NodeAttachment {
     @Override
     public void handleIO(float[] input, float[] output) {}
 
+    @Override
+    public float energyUsage() {
+        return 0;
+    }
+
 }

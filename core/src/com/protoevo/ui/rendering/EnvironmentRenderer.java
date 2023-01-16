@@ -19,13 +19,9 @@ import com.protoevo.env.JointsManager;
 import com.protoevo.env.Rock;
 import com.protoevo.input.ParticleTracker;
 import com.protoevo.ui.InputManager;
-import com.protoevo.ui.texture.ParticleTexture;
-import com.protoevo.ui.texture.ProtozoaRenderer;
 import com.protoevo.utils.DebugMode;
 
 import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
 
 import static com.protoevo.utils.Utils.lerp;
 
@@ -176,6 +172,11 @@ public class EnvironmentRenderer implements Renderer {
                     shapeRenderer.setColor(Color.ORANGE);
                     shapeRenderer.circle(otherPos.x, otherPos.y, otherR);
                 }
+                if (cell instanceof Protozoan && protozoaRenderers.containsKey((Protozoan) cell)) {
+                    Protozoan protozoan = (Protozoan) cell;
+                    ProtozoaRenderer protozoaRenderer = protozoaRenderers.get(protozoan);
+                    protozoaRenderer.renderDebug(shapeRenderer);
+                }
             }
 
             shapeRenderer.end();
@@ -193,13 +194,9 @@ public class EnvironmentRenderer implements Renderer {
         }
 
         if (p instanceof Protozoan) {
-            if (protozoaRenderers.containsKey(p))
-                protozoaRenderers.get(p).render(delta, batch);
-            else {
-                ProtozoaRenderer protozoanRenderer = new ProtozoaRenderer((Protozoan) p);
-                protozoaRenderers.put((Protozoan) p, protozoanRenderer);
-                protozoanRenderer.render(delta, batch);
-            }
+            ProtozoaRenderer protozoanRenderer = protozoaRenderers
+                    .computeIfAbsent((Protozoan) p, ProtozoaRenderer::new);
+            protozoanRenderer.render(delta, camera, batch);
         }
         else {
             float x = p.getPos().x - p.getRadius();

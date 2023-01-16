@@ -249,10 +249,10 @@ public class Retina implements Evolvable.Component, Iterable<Retina.Cell>, Seria
 	}
 
 	public static float computeWeight(float sqLen) {
-		float dMin = 0.9f * ProtozoaSettings.protozoaInteractRange;
+		float dMin = 0.9f * ProtozoaSettings.protozoaLightRange;
 		float wD = 0.5f;
 		float x = 1 - wD;
-		float k = (float) (0.5 * Math.log((1 + x) / (1 - x))) / (dMin - ProtozoaSettings.protozoaInteractRange);
+		float k = (float) (0.5 * Math.log((1 + x) / (1 - x))) / (dMin - ProtozoaSettings.protozoaLightRange);
 		return (float) (1 + Math.tanh(-k*(Math.sqrt(sqLen) - dMin))) / 2f;
 	}
 

@@ -24,11 +24,11 @@ public class CollisionHandler implements ContactListener, Serializable {
 
         if (fixtureA.isSensor() && bodyA.getUserData() instanceof Particle) {
             Particle particleA = (Particle) bodyA.getUserData();
-            particleA.queueInteraction(bodyB.getUserData());
+            particleA.addInteractingObject(bodyB.getUserData());
         }
-        else if (fixtureB.isSensor() && bodyA.getUserData() instanceof Particle) {
+        else if (fixtureB.isSensor() && bodyB.getUserData() instanceof Particle) {
             Particle particleB = (Particle) bodyB.getUserData();
-            particleB.queueInteraction(bodyA.getUserData());
+            particleB.addInteractingObject(bodyA.getUserData());
         }
         else {
             if (bodyA.getUserData() instanceof Particle)
@@ -50,7 +50,21 @@ public class CollisionHandler implements ContactListener, Serializable {
     }
 
     @Override
-    public void endContact(Contact contact) {}
+    public void endContact(Contact contact) {
+        Fixture fixtureA = contact.getFixtureA();
+        Fixture fixtureB = contact.getFixtureB();
+        Body bodyA = fixtureA.getBody();
+        Body bodyB = fixtureB.getBody();
+
+        if (fixtureA.isSensor() && bodyA.getUserData() instanceof Particle) {
+            Particle particleA = (Particle) bodyA.getUserData();
+            particleA.removeInteractingObject(bodyB.getUserData());
+        }
+        else if (fixtureB.isSensor() && bodyB.getUserData() instanceof Particle) {
+            Particle particleB = (Particle) bodyB.getUserData();
+            particleB.removeInteractingObject(bodyA.getUserData());
+        }
+    }
 
     @Override
     public void preSolve(Contact contact, Manifold oldManifold) {}

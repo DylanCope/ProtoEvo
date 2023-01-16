@@ -1,4 +1,4 @@
-package com.protoevo.ui.texture;
+package com.protoevo.ui.rendering;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.files.FileHandle;

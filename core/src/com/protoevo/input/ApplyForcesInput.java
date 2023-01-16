@@ -7,7 +7,7 @@ import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector3;
 import com.protoevo.core.Particle;
-import com.protoevo.ui.rendering.ShockWaveLayer;
+import com.protoevo.ui.shaders.ShockWaveLayer;
 
 import java.util.Collection;
 

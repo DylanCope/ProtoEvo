@@ -44,7 +44,6 @@ public class Environment implements Serializable
 	private boolean hasInitialised;
 
 	private final JointsManager jointsManager;
-	private final InteractionsManager interactionsManager;
 	private final ConcurrentLinkedQueue<BurstRequest<? extends Cell>> burstRequests = new ConcurrentLinkedQueue<>();
 
 	public Environment()
@@ -52,7 +51,6 @@ public class Environment implements Serializable
 		world = new World(new Vector2(0, 0), true);
 		world.setContinuousPhysics(false);
 
-		interactionsManager = new InteractionsManager(this);
 		jointsManager = new JointsManager(this);
 		world.setContactListener(new CollisionHandler(this));
 
@@ -73,7 +71,7 @@ public class Environment implements Serializable
 
 	public void update(float delta)
 	{
-		flushEntitiesToAdd();
+		cells.forEach(Particle::reset);
 
 		elapsedTime += delta;
 		world.step(
@@ -84,12 +82,11 @@ public class Environment implements Serializable
 		cells.parallelStream().forEach(cell -> cell.update(delta));
 		burstRequests.forEach(BurstRequest::burst);
 		burstRequests.clear();
+		flushEntitiesToAdd();
 
 		cells.forEach(this::handleDeadEntity);
 		cells.removeIf(Cell::isDead);
 		updateCounts(cells);
-
-		cells.forEach(Particle::reset);
 
 		jointsManager.flushJoints();
 
@@ -436,10 +433,6 @@ public class Environment implements Serializable
 
 	public JointsManager getJointsManager() {
 		return jointsManager;
-	}
-
-	public InteractionsManager getForceManager() {
-		return interactionsManager;
 	}
 
 	public <T extends Cell> void requestBurst(Cell parent, Class<T> cellType, Function<Float, T> createChild) {
