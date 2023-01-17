@@ -65,14 +65,6 @@ public class Protozoan extends Cell implements Evolvable
 		spikeNode2.setAttachment(new SpikeAttachment(spikeNode2));
 		surfaceNodes.add(spikeNode2);
 
-//		int n = 8;
-//		float dt = (float) (2 * Math.PI / n);
-//		for (int i = 1; i < n; i++) {
-//			float angle = i * dt;
-//			SurfaceNode node = new SurfaceNode(this, angle);
-//			node.setAttachment(new SpikeAttachment(node));
-//			surfaceNodes.add(node);
-//		}
 	}
 
 	@Override
@@ -159,37 +151,6 @@ public class Protozoan extends Cell implements Evolvable
 	public float getConstructionMass() {
 		return getConstructionMassAvailable();
 	}
-
-//	public boolean cullFromRayCasting(Collidable o) {
-//		if (o instanceof Particle) {
-//			Particle p = (Particle) o;
-//			Vector2 dx = p.getPos().sub(getPos()).nor();
-//			return dx.dot(getDir().nor()) < Math.cos(retina.getFov() / 2f);
-//		}
-//		return false;
-//	}
-
-//	public void see(Collidable o)
-//	{
-//		float interactRange = getInteractionRange();
-//		float dirAngle = getDir().angleRad();
-//		for (Retina.Cell cell : retina.getCells()) {
-//			Vector2[] rays = cell.getRays();
-//			for (int i = 0; i < rays.length; i++) {
-//				Vector2 ray = rays[i].rotateRad(dirAngle).setLength(interactRange);
-//				Vector2[] collisions = o.rayCollisions(getPos(), getPos().add(ray));
-//				if (collisions == null || collisions.length == 0)
-//					continue;
-//
-//				float sqLen = Float.MAX_VALUE;
-//				for (Vector2 collisionPoint : collisions)
-//					sqLen = Math.min(sqLen, collisionPoint.sub(getPos()).len2());
-//
-//				if (sqLen < cell.collisionSqLen(i))
-//					cell.set(i, o.getColor(), sqLen);
-//			}
-//		}
-//	}
 
 	@Override
 	public void eat(EdibleCell e, float delta)

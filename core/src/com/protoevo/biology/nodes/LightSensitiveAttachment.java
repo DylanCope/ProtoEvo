@@ -2,10 +2,8 @@ package com.protoevo.biology.nodes;
 
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.math.Vector2;
-import com.badlogic.gdx.physics.box2d.Fixture;
-import com.badlogic.gdx.utils.Array;
 import com.protoevo.biology.Cell;
-import com.protoevo.core.Collidable;
+import com.protoevo.core.Shape;
 import com.protoevo.core.Particle;
 import com.protoevo.core.settings.ProtozoaSettings;
 import com.protoevo.core.settings.SimulationSettings;
@@ -13,8 +11,8 @@ import com.protoevo.utils.Utils;
 
 public class LightSensitiveAttachment extends NodeAttachment {
     private final Vector2[] ray = new Vector2[]{new Vector2(), new Vector2()};
-    private final Collidable.Collision[] collisions =
-            new Collidable.Collision[]{new Collidable.Collision(), new Collidable.Collision()};
+    private final Shape.Collision[] collisions =
+            new Shape.Collision[]{new Shape.Collision(), new Shape.Collision()};
     private final Vector2 tmp = new Vector2(), tmp2 = new Vector2();
     private final Vector2 attachmentRelPos = new Vector2();
     private float interactionRange = 0;
@@ -64,15 +62,15 @@ public class LightSensitiveAttachment extends NodeAttachment {
         for (reset(); rayIdx < nRays; nextRay()) {
             Cell cell = node.getCell();
             for (Object o : cell.getInteractionQueue())
-                if (o instanceof Collidable)
-                    handleCollidable((Collidable) o);
+                if (o instanceof Shape)
+                    handleCollidable((Shape) o);
         }
 
         colour.set(r / (nRays + 1), g / (nRays + 1), b / (nRays + 1), 1);
         reset();
     }
 
-	public boolean cullFromRayCasting(Collidable o) {
+	public boolean cullFromRayCasting(Shape o) {
 		if (o instanceof Particle) {
 			Vector2 otherPos = ((Particle) o).getPos();
             Vector2 myPos = node.getCell().getPos();
@@ -83,7 +81,7 @@ public class LightSensitiveAttachment extends NodeAttachment {
 		return false;
 	}
 
-    public Collidable.Collision[] handleCollidable(Collidable o) {
+    public Shape.Collision[] handleCollidable(Shape o) {
         collisions[0].didCollide = false;
         collisions[1].didCollide = false;
         boolean anyCollision = o.rayCollisions(ray, collisions);
@@ -91,7 +89,7 @@ public class LightSensitiveAttachment extends NodeAttachment {
             return collisions;
 
         float sqLen = Float.MAX_VALUE;
-        for (Collidable.Collision collision : collisions)
+        for (Shape.Collision collision : collisions)
             if (collision.didCollide)
                 sqLen = Math.min(sqLen, collision.point.dst2(ray[0]));
 

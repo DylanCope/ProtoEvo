@@ -78,9 +78,9 @@ public class Simulation implements Runnable
 	}
 
 	private void loadSettings() {
-		environment.cellCapacities.put(Protozoan.class, SimulationSettings.maxProtozoa);
-		environment.cellCapacities.put(PlantCell.class, SimulationSettings.maxPlants);
-		environment.cellCapacities.put(MeatCell.class, SimulationSettings.maxMeat);
+//		environment.cellCapacities.put(Protozoan.class, SimulationSettings.maxProtozoa);
+//		environment.cellCapacities.put(PlantCell.class, SimulationSettings.maxPlants);
+//		environment.cellCapacities.put(MeatCell.class, SimulationSettings.maxMeat);
 	}
 
 	private void newSaveDir() {

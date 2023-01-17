@@ -4,7 +4,7 @@ package com.protoevo.core;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.math.Vector2;
 
-public interface Collidable {
+public interface Shape {
 
     class Collision {
         public final Vector2 point = new Vector2();
@@ -18,4 +18,6 @@ public interface Collidable {
     Color getColor();
 
     Vector2[] getBoundingBox();
+
+    Vector2 getPos();
 }

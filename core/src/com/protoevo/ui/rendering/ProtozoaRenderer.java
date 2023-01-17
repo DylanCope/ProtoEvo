@@ -1,25 +1,20 @@
 package com.protoevo.ui.rendering;
 
-import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.Vector2;
-import com.protoevo.biology.Cell;
 import com.protoevo.biology.nodes.FlagellumAttachment;
 import com.protoevo.biology.nodes.LightSensitiveAttachment;
 import com.protoevo.biology.nodes.NodeAttachment;
 import com.protoevo.biology.nodes.SurfaceNode;
 import com.protoevo.biology.protozoa.Protozoan;
-import com.protoevo.core.Collidable;
 import com.protoevo.core.Particle;
 import com.protoevo.core.Simulation;
-import com.protoevo.core.settings.ProtozoaSettings;
 import com.protoevo.core.settings.RenderSettings;
 import com.protoevo.env.Rock;
 import com.protoevo.utils.ImageUtils;
-import com.protoevo.utils.Utils;
 
 import java.awt.*;
 import java.awt.image.BufferedImage;

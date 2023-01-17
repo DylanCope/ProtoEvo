@@ -2,14 +2,13 @@ package com.protoevo.env;
 
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.math.Vector2;
-import com.protoevo.core.Collidable;
+import com.protoevo.core.Shape;
 import com.protoevo.core.Simulation;
 import com.protoevo.utils.Geometry;
 
 import java.io.Serializable;
-import java.util.ArrayList;
 
-public class Rock implements Serializable, Collidable {
+public class Rock implements Serializable, Shape {
     public static final long serialVersionUID = 1L;
 
     private final Vector2[] points;
@@ -51,6 +50,11 @@ public class Rock implements Serializable, Collidable {
 
     public Vector2[] getBoundingBox() {
         return boundingBox;
+    }
+
+    @Override
+    public Vector2 getPos() {
+        return centre;
     }
 
     public Vector2[][] getEdges() {
@@ -114,7 +118,7 @@ public class Rock implements Serializable, Collidable {
     }
 
     @Override
-    public boolean rayCollisions(Vector2[] ray, Collidable.Collision[] collisions) {
+    public boolean rayCollisions(Vector2[] ray, Shape.Collision[] collisions) {
         Vector2 dirRay = ray[1].cpy().sub(ray[0]);
         int numCollisions = 0;
         for (int i = 0; i < edges.length; i++) {

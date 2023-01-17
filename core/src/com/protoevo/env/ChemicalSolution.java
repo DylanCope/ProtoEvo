@@ -58,6 +58,7 @@ public class ChemicalSolution implements Serializable {
         chemicalTexture = new Texture(chemicalPixmap);
         chemicalPixmap.setBlending(Pixmap.Blending.None);
 
+        System.out.println("Initialising chemical diffusion CUDA kernel...");
         diffusionKernel = new JCudaKernelRunner("diffusion");
     }
 

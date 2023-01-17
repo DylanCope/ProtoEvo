@@ -40,15 +40,9 @@ public class BurstRequest<T extends Cell> {
                 nChildren = Math.max(nChildren, Simulation.RANDOM.nextInt(2, maxChildren));
         }
 
-        Environment environment = parent.getEnv();
         for (int i = 0; i < nChildren; i++) {
             Vector2 dir = new Vector2((float) Math.cos(angle), (float) Math.sin(angle));
             float p = (float) (0.3 + 0.7 * Simulation.RANDOM.nextDouble() / nChildren);
-
-            int nEntities = environment.cellCounts.getOrDefault(cellType, 0);
-            int maxEntities = environment.cellCapacities.getOrDefault(cellType, 0);
-            if (nEntities > maxEntities)
-                return;
 
             T child = createChild.apply(parent.getRadius() * p);
             child.setPos(parent.getPos().add(dir.scl(2 * child.getRadius())));

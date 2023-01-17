@@ -8,6 +8,7 @@ import com.protoevo.biology.evolution.Evolvable;
 import com.protoevo.biology.protozoa.Protozoan;
 import com.protoevo.core.FixtureCategories;
 import com.protoevo.core.Particle;
+import com.protoevo.core.SpatialHash;
 import com.protoevo.core.settings.WorldGenerationSettings;
 import com.protoevo.core.settings.Settings;
 import com.protoevo.core.Simulation;
@@ -27,12 +28,13 @@ public class Environment implements Serializable
 	private static final long serialVersionUID = 2804817237950199223L;
 	private final World world;
 	private float elapsedTime;
-	public final ConcurrentHashMap<Class<? extends Cell>, Integer> cellCounts =
-			new ConcurrentHashMap<>(3, 1);
-	public final ConcurrentHashMap<Class<? extends Cell>, Integer> cellCapacities =
-			new ConcurrentHashMap<>(3, 1);
+	private final Map<String, Float> stats = new TreeMap<>();
+	private final Map<String, Float> debugStats = new TreeMap<>();
 	public final ConcurrentHashMap<CauseOfDeath, Integer> causeOfDeathCounts =
 			new ConcurrentHashMap<>(CauseOfDeath.values().length, 1);
+	private final ConcurrentHashMap<Class<? extends Cell>, SpatialHash<Cell>> spatialHashes;
+	private final Map<Class<? extends Particle>, Function<Float, Vector2>> spawnPositionFns
+			= new HashMap<>(3, 1);
 	private final ChemicalSolution chemicalSolution;
 	private final List<Rock> rocks;
 	private long generation = 1, protozoaBorn = 0, totalCellsAdded = 0, crossoverEvents = 0;
@@ -54,6 +56,19 @@ public class Environment implements Serializable
 
 		jointsManager = new JointsManager(this);
 		world.setContactListener(new CollisionHandler(this));
+
+		int resolution = SimulationSettings.spatialHashResolution;
+//		int protozoaCap = (int) Math.ceil(SimulationSettings.maxProtozoa / (float) (resolution * resolution));
+//		int plantCap = (int) Math.ceil(SimulationSettings.maxPlants / (float) (resolution * resolution));
+//		int meatCap = (int) Math.ceil(SimulationSettings.maxMeat / (float) (resolution * resolution));
+		int protozoaCap = 20;
+		int plantCap = 50;
+		int meatCap = 50;
+
+		spatialHashes = new ConcurrentHashMap<>(3, 1);
+		spatialHashes.put(Protozoan.class, new SpatialHash<>(resolution, protozoaCap, SimulationSettings.spatialHashRadius));
+		spatialHashes.put(PlantCell.class, new SpatialHash<>(resolution, plantCap, SimulationSettings.spatialHashRadius));
+		spatialHashes.put(MeatCell.class, new SpatialHash<>(resolution, meatCap, SimulationSettings.spatialHashRadius));
 
 		if (Settings.enableChemicalField) {
 			chemicalSolution = new ChemicalSolution(
@@ -87,7 +102,7 @@ public class Environment implements Serializable
 
 		cells.forEach(this::handleDeadEntity);
 		cells.removeIf(Cell::isDead);
-		updateCounts(cells);
+		updateSpatialHashes();
 
 		jointsManager.flushJoints();
 
@@ -137,7 +152,7 @@ public class Environment implements Serializable
 	}
 
 	public Vector2[] initialise() {
-		System.out.print("Initialising environment... ");
+		System.out.println("Commencing world generation... ");
 		Vector2[] populationStartCentres = createRocks();
 
 		// random shuffle population start centres
@@ -157,9 +172,7 @@ public class Environment implements Serializable
 			writeGenomeHeaders();
 
 		hasInitialised = true;
-
-//		for (int i = 0; i < 3; i++)
-//			update(Settings.simulationUpdateDelta);
+		System.out.println("Environment initialisation complete.");
 
 		return populationStartCentres;
 	}
@@ -192,12 +205,13 @@ public class Environment implements Serializable
 			findProtozoaPosition = r -> randomPosition(r, clusterCentres);
 		}
 
+		spawnPositionFns.put(PlantCell.class, findPlantPosition);
+		spawnPositionFns.put(Protozoan.class, findProtozoaPosition);
+
+		System.out.println("Creating initial plant population...");
 		for (int i = 0; i < WorldGenerationSettings.numInitialPlantPellets; i++) {
 			PlantCell cell = new PlantCell(this);
-			Vector2 pos = findPlantPosition.apply(cell.getRadius());
-			if (pos != null)
-				cell.setPos(pos);
-			else {
+			if (cell.isDead()) {
 				System.out.println(
 					"Failed to find position for plant pellet. " +
 					"Try increasing the number of population clusters or reduce the number of initial plants.");
@@ -205,13 +219,11 @@ public class Environment implements Serializable
 			}
 		}
 
+		System.out.println("Creating initial protozoan population...");
 		for (int i = 0; i < WorldGenerationSettings.numInitialProtozoa; i++) {
 			Protozoan p = Evolvable.createNew(Protozoan.class);
 			p.setEnv(this);
-			Vector2 pos = findProtozoaPosition.apply(p.getRadius());
-			if (pos != null)
-				p.setPos(pos);
-			else {
+			if (p.isDead()) {
 				System.out.println(
 					"Failed to find position for protozoan. " +
 					"Try increasing the number of population clusters or reduce the number of initial protozoa.");
@@ -249,12 +261,24 @@ public class Environment implements Serializable
 		return null;
 	}
 
+	public Vector2 getRandomPosition(Particle particle) {
+		return spawnPositionFns.getOrDefault(particle.getClass(), this::randomPosition)
+				.apply(particle.getRadius());
+	}
+
 	public Vector2 randomPosition(float entityRadius) {
 		return randomPosition(entityRadius, Geometry.ZERO, WorldGenerationSettings.rockClusterRadius);
 	}
 
 	private void flushEntitiesToAdd() {
-		cells.addAll(cellsToAdd);
+		for (Cell cell : cellsToAdd) {
+			if (getLocalCount(cell) < getLocalCapacity(cell)) {
+				cells.add(cell);
+			}
+			else {
+				handleDeadEntity(cell);
+			}
+		}
 		cellsToAdd.clear();
 	}
 
@@ -268,19 +292,16 @@ public class Environment implements Serializable
 	}
 
 	public int getCount(Class<? extends Cell> cellClass) {
-		return cellCounts.getOrDefault(cellClass, 0);
+		return spatialHashes.get(cellClass).size();
 	}
 
-	private void updateCounts(Collection<Cell> entities) {
-		cellCounts.clear();
-		for (Cell e : entities)
-			cellCounts.put(
-					e.getClass(),
-					1 + getCount(e.getClass()));
+	private void updateSpatialHashes() {
+		spatialHashes.values().forEach(SpatialHash::clear);
+		cells.forEach(cell -> spatialHashes.get(cell.getClass()).add(cell));
 	}
 
 	public int getCapacity(Class<? extends Cell> cellClass) {
-		return cellCapacities.getOrDefault(cellClass, 0);
+		return spatialHashes.get(cellClass).getTotalCapacity();
 	}
 
 	private void handleDeadEntity(Particle e) {
@@ -306,8 +327,16 @@ public class Environment implements Serializable
 //		}
 	}
 
+	public int getLocalCount(Particle cell) {
+		return spatialHashes.get(cell.getClass()).getCount(cell.getPos());
+	}
+
+	public int getLocalCapacity(Particle cell) {
+		return spatialHashes.get(cell.getClass()).getChunkCapacity();
+	}
+
 	public void add(Cell e) {
-		if (getCount(e.getClass()) >= getCapacity(e.getClass()))
+		if (getLocalCount(e) >= getLocalCapacity(e))
 			e.kill(CauseOfDeath.ENV_CAPACITY_EXCEEDED);
 
 		if (!cellsToAdd.contains(e)) {
@@ -320,18 +349,16 @@ public class Environment implements Serializable
 	}
 
 	public Map<String, Float> getStats(boolean includeProtozoaStats) {
-		Map<String, Float> stats = new TreeMap<>();
+		stats.clear();
 		stats.put("Protozoa", (float) numberOfProtozoa());
-		stats.put("Plants", (float) cellCounts.getOrDefault(PlantCell.class, 0));
-		stats.put("Meat Pellets", (float) cellCounts.getOrDefault(MeatCell.class, 0));
+		stats.put("Plants", (float) getCount(PlantCell.class));
+		stats.put("Meat Pellets", (float) getCount(MeatCell.class));
 		stats.put("Max Generation", (float) generation);
 		stats.put("Time Elapsed", elapsedTime);
 		stats.put("Protozoa Born", (float) protozoaBorn);
 		stats.put("Crossover Events", (float) crossoverEvents);
 		for (CauseOfDeath cod : CauseOfDeath.values()) {
-			if (cod.equals(CauseOfDeath.ENV_CAPACITY_EXCEEDED)
-					|| cod.equals(CauseOfDeath.GREW_TOO_SMALL)
-					|| cod.equals(CauseOfDeath.SUFFOCATION))
+			if (cod.isDebugDeath())
 				continue;
 			int count = causeOfDeathCounts.getOrDefault(cod, 0);
 			if (count > 0)
@@ -340,6 +367,18 @@ public class Environment implements Serializable
 		if (includeProtozoaStats)
 			stats.putAll(getProtozoaStats());
 		return stats;
+	}
+
+	public Map<String, Float> getDebugStats() {
+		debugStats.clear();
+		for (CauseOfDeath cod : CauseOfDeath.values()) {
+			if (!cod.isDebugDeath())
+				continue;
+			int count = causeOfDeathCounts.getOrDefault(cod, 0);
+			if (count > 0)
+				debugStats.put("Died from " + cod.getReason(), (float) count);
+		}
+		return debugStats;
 	}
 
 	public Map<String, Float> getStats() {
@@ -376,13 +415,7 @@ public class Environment implements Serializable
 	}
 	
 	public int numberOfProtozoa() {
-		return cellCounts.getOrDefault(Protozoan.class, 0);
-	}
-	
-	public int numberOfPellets() {
-		int nPellets = cellCounts.getOrDefault(PlantCell.class, 0);
-		nPellets += cellCounts.getOrDefault(MeatCell.class, 0);
-		return nPellets;
+		return getCount(Protozoan.class);
 	}
 
 
@@ -444,18 +477,17 @@ public class Environment implements Serializable
 	}
 
 	public <T extends Cell> void requestBurst(Cell parent, Class<T> cellType, Function<Float, T> createChild) {
-
-		int nEntities = cellCounts.getOrDefault(cellType, 0);
-		int maxEntities = cellCapacities.getOrDefault(cellType, 0);
-		if (nEntities > maxEntities)
+		if (getLocalCount(parent) >= getLocalCapacity(parent))
 			return;
 
 		if (burstRequests.stream().anyMatch(request -> request.parentEquals(parent)))
 			return;
 
 		BurstRequest<T> request = new BurstRequest<>(parent, cellType, createChild);
-		if (!burstRequests.contains(request))
-			burstRequests.add(request);
+		burstRequests.add(request);
 	}
 
+	public SpatialHash<Cell> getSpatialHash(Class<? extends Cell> clazz) {
+		return spatialHashes.get(clazz);
+	}
 }

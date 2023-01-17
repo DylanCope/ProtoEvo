@@ -14,9 +14,9 @@ import com.protoevo.utils.Geometry;
 import java.util.*;
 
 
-public class Particle implements Collidable {
+public class Particle implements Shape {
 
-    private final Vector2[] boundingBox = new Vector2[2];
+    private final Vector2[] boundingBox = new Vector2[]{new Vector2(), new Vector2()};
     private Environment environment;
     private Body body;
     private Fixture dynamicsFixture, sensorFixture;
@@ -36,8 +36,14 @@ public class Particle implements Collidable {
 
     public void setEnv(Environment environment) {
         this.environment = environment;
-        environment.ensureAddedToEnvironment(this);
         createBody();
+        Vector2 pos = environment.getRandomPosition(this);
+        if (pos == null) {
+            kill(CauseOfDeath.FAILED_TO_CONSTRUCT);
+            return;
+        }
+        setPos(pos);
+        environment.ensureAddedToEnvironment(this);
     }
 
     public void update(float delta) {
@@ -201,6 +207,7 @@ public class Particle implements Collidable {
         return body.getAngle();
     }
 
+    @Override
     public Vector2 getPos() {
         return body.getPosition();
     }
@@ -280,8 +287,8 @@ public class Particle implements Collidable {
         float x = getPos().x;
         float y = getPos().y;
         float r = getRadius();
-        boundingBox[0] = new Vector2(x - r, y - r);
-        boundingBox[1] = new Vector2(x + r, y + r);
+        boundingBox[0].set(x - r, y - r);
+        boundingBox[1].set(x + r, y + r);
         return boundingBox;
     }
 
@@ -347,6 +354,8 @@ public class Particle implements Collidable {
         stats.put("Num Interactions", (float) interactionObjects.size());
         stats.put("Is Dead", dead ? 1f : 0f);
         stats.put("Is Sleeping", body.isAwake() ? 0f : 1f);
+        stats.put("Local Count", (float) environment.getLocalCount(this));
+        stats.put("Local Cap", (float) environment.getLocalCapacity(this));
         return stats;
     }
 

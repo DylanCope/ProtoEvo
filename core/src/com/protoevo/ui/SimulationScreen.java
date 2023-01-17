@@ -16,10 +16,12 @@ import com.badlogic.gdx.scenes.scene2d.Touchable;
 import com.badlogic.gdx.scenes.scene2d.ui.ImageButton;
 import com.badlogic.gdx.scenes.scene2d.utils.Drawable;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
+import com.protoevo.biology.Cell;
 import com.protoevo.biology.protozoa.NNBrain;
 import com.protoevo.biology.protozoa.Protozoan;
 import com.protoevo.core.Particle;
 import com.protoevo.core.Simulation;
+import com.protoevo.core.SpatialHash;
 import com.protoevo.core.settings.WorldGenerationSettings;
 import com.protoevo.env.Environment;
 import com.protoevo.input.ParticleTracker;
@@ -164,6 +166,7 @@ public class SimulationScreen {
     }
 
     public void drawDebugInfo() {
+
         String separator = " | ";
         String debugString = "FPS: " + Gdx.graphics.getFramesPerSecond();
         debugString += separator + "Zoom: " + ((int) (100 * camera.zoom)) / 100.f;
@@ -214,20 +217,22 @@ public class SimulationScreen {
         return graphicsHeight - topBar.getHeight() * 1.5f - 1.3f * infoTextSize * i;
     }
 
-    private void renderStats(Map<String, Float> stats) {
-        int lineNumber = 0;
+    private int renderStats(Map<String, Float> stats, int lineNumber, BitmapFont statsFont) {
         for (Map.Entry<String, Float> entityStat : stats.entrySet()) {
             String text = entityStat.getKey() + ": " + Utils.numberToString(entityStat.getValue(), 2);
-            font.draw(uiBatch, text, textAwayFromEdge, getYPosLHS(lineNumber));
+            statsFont.draw(uiBatch, text, textAwayFromEdge, getYPosLHS(lineNumber));
             lineNumber++;
         }
+        return lineNumber;
+    }
+
+    public int renderStats(Map<String, Float> stats) {
+        return renderStats(stats, 0, font);
     }
 
     public void draw(float delta) {
         camera.update();
-//        float factor = 2f;
-//        camera.combined.mul(new Matrix4().setToScaling(2, 2, 0));
-//        camera.invProjectionView.mul(new Matrix4().setToScaling(1 / factor, 1 / factor, 0));
+
         if (inputManager.getParticleTracker().isTracking())
             camera.position.set(inputManager.getParticleTracker().getTrackedParticlePosition());
 
@@ -248,15 +253,12 @@ public class SimulationScreen {
             float titleY = (float) (getYPosLHS(0) + 1.5 * titleFont.getLineHeight());
             titleFont.draw(uiBatch, particle.getPrettyName() + " Stats", textAwayFromEdge, titleY);
             renderStats(particle.getStats());
-//            if (particle instanceof Protozoan) {
-//                NNBrain nnBrain = (NNBrain) ((Protozoan) particle).getBrain();
-//                networkRenderer.setNeuralNetwork(nnBrain.network);
-//                networkRenderer.render(delta);
-//            }
         } else {
             float titleY = (float) (getYPosLHS(0) + 1.5 * titleFont.getLineHeight());
             titleFont.draw(uiBatch, "Simulation Stats", textAwayFromEdge, titleY);
-            renderStats(simulation.getEnv().getStats());
+            int lineNo = renderStats(simulation.getEnv().getStats());
+            if (DebugMode.isDebugMode())
+                renderStats(simulation.getEnv().getDebugStats(), lineNo, debugFont);
         }
 
         if (DebugMode.isDebugMode())

@@ -8,9 +8,10 @@ public class SimulationSettings {
     public static final float voidStartDistance = 3 * WorldGenerationSettings.environmentRadius;
     public static final float voidStartDistance2 = voidStartDistance * voidStartDistance;
     public static final float voidDamagePerSecond = 1f;
+    public static final float spatialHashRadius = voidStartDistance;
 
-    public static final int maxPlants = 5000;
-    public static final int maxProtozoa = 2000;
+    public static final int maxPlants = 8000;
+    public static final int maxProtozoa = 4000;
     public static final int maxMeat = 1000;
 
     public static final float minParticleRadius = 3f / 100f;
@@ -23,4 +24,5 @@ public class SimulationSettings {
     public static final float chemicalDiffusionInterval = simulationUpdateDelta * 10f;
     public static final int chemicalFieldResolution = 1024;
     public static final float chemicalFieldRadius = voidStartDistance;
+    public static int spatialHashResolution = 20;
 }

@@ -7,7 +7,7 @@ import com.badlogic.gdx.math.Vector2;
 import com.protoevo.biology.Cell;
 import com.protoevo.biology.nodes.LightSensitiveAttachment;
 import com.protoevo.biology.nodes.SurfaceNode;
-import com.protoevo.core.Collidable;
+import com.protoevo.core.Shape;
 import com.protoevo.utils.ImageUtils;
 
 public class LightSensitiveNodeRenderer extends NodeRenderer {
@@ -37,9 +37,9 @@ public class LightSensitiveNodeRenderer extends NodeRenderer {
         Cell cell = node.getCell();
         sr.line(ray[0], ray[1]);
         for (Object o : cell.getInteractionQueue()) {
-            if (o instanceof Collidable) {
-                Collidable.Collision[] collisions = attachment.handleCollidable((Collidable) o);
-                for (Collidable.Collision collision : collisions) {
+            if (o instanceof Shape) {
+                Shape.Collision[] collisions = attachment.handleCollidable((Shape) o);
+                for (Shape.Collision collision : collisions) {
                     if (collision.didCollide)
                         sr.circle(collision.point.x, collision.point.y,
                                 cell.getRadius() / 15f, 15);

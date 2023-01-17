@@ -14,6 +14,7 @@ import com.protoevo.biology.Cell;
 import com.protoevo.biology.protozoa.Protozoan;
 import com.protoevo.core.Particle;
 import com.protoevo.core.Simulation;
+import com.protoevo.core.SpatialHash;
 import com.protoevo.core.settings.Settings;
 import com.protoevo.env.ChemicalSolution;
 import com.protoevo.env.Environment;
@@ -159,9 +160,26 @@ public class EnvironmentRenderer implements Renderer {
     public void renderPhysicsDebug() {
         debugRenderer.render(simulation.getEnv().getWorld(), camera.combined);
         ParticleTracker particleTracker = inputManager.getParticleTracker();
+
+
+        shapeRenderer.begin();
+        shapeRenderer.setColor(Color.GOLD);
+        shapeRenderer.set(ShapeRenderer.ShapeType.Line);
+
+        SpatialHash<Cell> spatialHash = simulation.getEnv().getSpatialHash(Protozoan.class);
+        float size = spatialHash.getCellSize();
+        for (int i = 0; i < spatialHash.getResolution(); i++) {
+            float x = spatialHash.getOriginX() + i * size;
+            for (int j = 0; j < spatialHash.getResolution(); j++) {
+                float y = spatialHash.getOriginY() + j * size;
+                if (boxNotVisible(x, y, size, size))
+                    continue;
+                shapeRenderer.box(x, y, 0, size, size, 0);
+            }
+        }
+
         if (particleTracker.isTracking()) {
             Particle particle = particleTracker.getTrackedParticle();
-            shapeRenderer.begin();
             shapeRenderer.setColor(0, 1, 0, 1);
 
             float maxDistance = particle.getInteractionRange();
@@ -194,9 +212,8 @@ public class EnvironmentRenderer implements Renderer {
                     protozoaRenderer.renderDebug(shapeRenderer);
                 }
             }
-
-            shapeRenderer.end();
         }
+        shapeRenderer.end();
     }
 
     private final Vector3 tmpWorldCoordinate = new Vector3();
@@ -208,6 +225,10 @@ public class EnvironmentRenderer implements Renderer {
 
     public boolean circleNotVisible(Vector2 pos, float r) {
         return !camera.frustum.boundsInFrustum(pos.x, pos.y, 0, r, r, 0);
+    }
+
+    public boolean boxNotVisible(float x, float y, float w, float h) {
+        return !camera.frustum.boundsInFrustum(x, y, 0, w, h, 0);
     }
 
     public void drawParticle(float delta, Particle p) {

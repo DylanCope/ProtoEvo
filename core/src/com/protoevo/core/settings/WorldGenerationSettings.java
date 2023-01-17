@@ -2,8 +2,8 @@ package com.protoevo.core.settings;
 
 public class WorldGenerationSettings {
     public static final int worldGenerationSeed = 1;
-    public static final int numInitialProtozoa = SimulationSettings.maxProtozoa;// 500;
-    public static final int numInitialPlantPellets = SimulationSettings.maxPlants; //2000;
+    public static final int numInitialProtozoa = 500;
+    public static final int numInitialPlantPellets = 2000;
     public static final boolean initialPopulationClustering = true;
     public static final int numRingClusters = 6;
     public static final int numPopulationClusters = 3;
