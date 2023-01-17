@@ -20,7 +20,7 @@ public class Particle implements Shape {
     private Environment environment;
     private Body body;
     private Fixture dynamicsFixture, sensorFixture;
-    private boolean dead;
+    private boolean dead, disposed;
     private float radius = SimulationSettings.minParticleRadius;
     private final Vector2 pos = new Vector2(0, 0);
     private final TreeMap<String, Float> stats = new TreeMap<>();
@@ -36,12 +36,12 @@ public class Particle implements Shape {
 
     public void setEnv(Environment environment) {
         this.environment = environment;
-        createBody();
         Vector2 pos = environment.getRandomPosition(this);
         if (pos == null) {
             kill(CauseOfDeath.FAILED_TO_CONSTRUCT);
             return;
         }
+        createBody();
         setPos(pos);
         environment.ensureAddedToEnvironment(this);
     }
@@ -58,7 +58,7 @@ public class Particle implements Shape {
     }
 
     public void createBody() {
-        if (body != null)
+        if (body != null || disposed)
             return;
 
         CircleShape circle = new CircleShape();
@@ -132,11 +132,13 @@ public class Particle implements Shape {
     }
 
     public void applyForce(Vector2 force) {
-        body.applyForceToCenter(force, true);
+        if (body != null && !disposed)
+            body.applyForceToCenter(force, true);
     }
 
     public void applyImpulse(Vector2 impulse) {
-        body.applyLinearImpulse(impulse, body.getWorldCenter(), true);
+        if (body != null && !disposed)
+            body.applyLinearImpulse(impulse, body.getWorldCenter(), true);
     }
 
     public float getInteractionRange() {
@@ -184,7 +186,7 @@ public class Particle implements Shape {
 
     public void setRadius(float radius) {
         this.radius = radius;
-        if (dynamicsFixture != null) {
+        if (dynamicsFixture != null && !disposed) {
             dynamicsFixture.getShape().getRadius();
         }
     }
@@ -196,13 +198,13 @@ public class Particle implements Shape {
 
     public void setPos(Vector2 pos) {
         this.pos.set(pos);
-        if (body != null) {
+        if (body != null && !disposed) {
             body.setTransform(pos, 0);
         }
     }
 
     public float getAngle() {
-        if (body == null)
+        if (body == null || disposed)
             return 0;
         return body.getAngle();
     }
@@ -335,6 +337,9 @@ public class Particle implements Shape {
     }
 
     public void dispose() {
+        if (disposed)
+            return;
+        disposed = true;
         kill(CauseOfDeath.DISPOSED);
         environment.getWorld().destroyBody(body);
     }

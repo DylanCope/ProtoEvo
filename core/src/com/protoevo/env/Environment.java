@@ -274,8 +274,11 @@ public class Environment implements Serializable
 		for (Cell cell : cellsToAdd) {
 			if (getLocalCount(cell) < getLocalCapacity(cell)) {
 				cells.add(cell);
+				// update local counts
+				spatialHashes.get(cell.getClass()).add(cell);
 			}
 			else {
+				cell.kill(CauseOfDeath.ENV_CAPACITY_EXCEEDED);
 				handleDeadEntity(cell);
 			}
 		}
@@ -336,8 +339,10 @@ public class Environment implements Serializable
 	}
 
 	public void add(Cell e) {
-		if (getLocalCount(e) >= getLocalCapacity(e))
+		if (getLocalCount(e) >= getLocalCapacity(e)) {
 			e.kill(CauseOfDeath.ENV_CAPACITY_EXCEEDED);
+			handleDeadEntity(e);
+		}
 
 		if (!cellsToAdd.contains(e)) {
 			totalCellsAdded++;
