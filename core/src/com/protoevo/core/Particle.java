@@ -41,7 +41,7 @@ public class Particle implements Collidable {
     }
 
     public void update(float delta) {
-        if (getSpeed() < getRadius() / 100f) {
+        if (getSpeed() < getRadius() / 50f) {
             body.setLinearVelocity(0, 0);
             body.setAwake(false);
         }

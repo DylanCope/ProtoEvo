@@ -123,7 +123,7 @@ public class EnvironmentRenderer implements Renderer {
 
     public void render(float delta) {
 
-        ScreenUtils.clear(0, 0.1f, 0.2f, 1);
+        ScreenUtils.clear(0, 0.1f, 0.2f, .95f);
 
         batch.enableBlending();
         batch.setProjectionMatrix(camera.combined);
@@ -133,8 +133,9 @@ public class EnvironmentRenderer implements Renderer {
 
         // Render Particles
         batch.begin();
-        environment.getJointsManager().getParticleBindings()
-                .forEach(this::renderJoinedParticles);
+        if (camera.zoom < 3)
+            environment.getJointsManager().getParticleBindings()
+                    .forEach(this::renderJoinedParticles);
         environment.getParticles().forEach(p -> drawParticle(delta, p));
         batch.end();
 

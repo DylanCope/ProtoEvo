@@ -26,7 +26,7 @@ public class Application extends ApplicationAdapter {
 
 	@Override
 	public void render () {
-		ScreenUtils.clear(0, 0f, 0f, 1);
+		ScreenUtils.clear(0, 0f, 0f, .95f);
 
 		Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
 		Gdx.gl.glActiveTexture(GL20.GL_TEXTURE0);
