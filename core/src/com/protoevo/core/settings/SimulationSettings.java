@@ -16,7 +16,7 @@ public class SimulationSettings {
 
     public static final float minParticleRadius = 3f / 100f;
     public static final float maxParticleRadius = 15f / 100f;
-    public static final float startingAvailableCellEnergy = 0.01f;
+    public static final float startingAvailableCellEnergy = 1f;
     public static final float globalMutationChance = 0.05f;
     public static final float minMutationChance = 0.001f;
     public static final float maxMutationChance = 0.1f;

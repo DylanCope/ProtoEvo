@@ -23,8 +23,8 @@ public final class Settings {
 
     public static final float plantEnergyRate = 1f;
     public static final float plantConstructionRate = 10f;
-    public static final float plantEnergyDensity = 1f;
-    public static final float meatEnergyDensity = 10f;
+    public static final float plantEnergyDensity = 100000f;
+    public static final float meatEnergyDensity = 1000f;
 
     // Tank settings
 

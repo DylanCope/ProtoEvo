@@ -28,7 +28,7 @@ public class LightSensitiveAttachment extends NodeAttachment {
     }
 
     @Override
-    public void update(float delta) {
+    public void update(float delta, float[] input, float[] output) {
         interactionRange = getInteractionRange();
         attachmentRelPos.set(node.getRelativePos());
         castRays();
@@ -120,16 +120,6 @@ public class LightSensitiveAttachment extends NodeAttachment {
 
     public Color getColour() {
         return colour;
-    }
-
-    @Override
-    public void handleIO(float[] input, float[] output) {
-
-    }
-
-    @Override
-    public float energyUsage() {
-        return 0;
     }
 
     @Override

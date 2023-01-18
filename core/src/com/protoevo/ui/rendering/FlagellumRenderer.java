@@ -23,7 +23,7 @@ public class FlagellumRenderer extends NodeRenderer {
     }
 
     private float animationTime;
-    private float animationSpeed = 1.5f;
+    private final float animationSpeed = 3f;
 
     public FlagellumRenderer(SurfaceNode node) {
         super(node);
@@ -37,11 +37,13 @@ public class FlagellumRenderer extends NodeRenderer {
         Sprite[] frames = getAnimationFrames();
         int idx = (int) (frames.length * animationTime);
         if (!Simulation.isPaused()) {
-            Vector2 thrust = attachment.getThrustVector();
-            float p = Utils.linearRemap(thrust.len(),
-                    0, ProtozoaSettings.maxProtozoaThrust,
-                    0.5f, 1.5f);
-            animationTime += animationSpeed * delta * p;
+            float thrust = attachment.getThrustVector().len();
+            if (thrust > 0) {
+                float p = Utils.linearRemap(thrust,
+                        0, ProtozoaSettings.maxProtozoaThrust,
+                        0.5f, 1f);
+                animationTime += animationSpeed * delta * p;
+            }
             if (animationTime >= 1)
                 animationTime %= 1;
         }

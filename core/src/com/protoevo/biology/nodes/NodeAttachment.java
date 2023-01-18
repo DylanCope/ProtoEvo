@@ -8,9 +8,7 @@ public abstract class NodeAttachment {
         this.node = node;
     }
 
-    public abstract void update(float delta);
-    public abstract void handleIO(float[] input, float[] output);
-    public abstract float energyUsage();
+    public abstract void update(float delta, float[] input, float[] output);
 
     public float getInteractionRange() {
         return 0;

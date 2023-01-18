@@ -30,10 +30,8 @@ public class SurfaceNode {
 
     public void update(float delta) {
         Arrays.fill(outputActivation, 0);
-
         attachment.ifPresent(a -> {
-            a.update(delta);
-            a.handleIO(inputActivation, outputActivation);
+            a.update(delta, inputActivation, outputActivation);
         });
         Arrays.fill(inputActivation, 0);
     }

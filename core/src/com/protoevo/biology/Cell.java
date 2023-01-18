@@ -637,4 +637,8 @@ public abstract class Cell extends Particle implements Serializable
 	public Collection<Cell> getAttachedCells() {
 		return attachedCells;
 	}
+
+	public float getShieldFactor() {
+		return 1.3f;
+	}
 }

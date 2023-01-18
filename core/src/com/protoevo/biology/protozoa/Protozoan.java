@@ -30,7 +30,6 @@ public class Protozoan extends Cell implements Evolvable
 	private List<SurfaceNode> surfaceNodes;
 	private List<Object> toInteract;
 
-	private float shieldFactor = 1.3f;
 	private final float attackFactor = 10f;
 	private float damageRate = 0;
 	private final Vector2 dir = new Vector2(0, 0);
@@ -167,24 +166,6 @@ public class Protozoan extends Cell implements Evolvable
 		super.eat(e, extraction * delta);
 	}
 	
-	public void attack(Protozoan p, Spikes.Spike spike, float delta)
-	{
-		float myAttack = (float) (
-				2*getHealth() +
-				ProtozoaSettings.spikeDamage * getSpikeLength(spike) +
-				2*Simulation.RANDOM.nextDouble()
-		);
-		float theirDefense = (float) (
-				2*p.getHealth() +
-				0.3*p.getRadius() +
-				2*Simulation.RANDOM.nextDouble()
-		);
-
-		if (myAttack > p.shieldFactor * theirDefense)
-			p.damage(delta * attackFactor * (myAttack - p.shieldFactor * theirDefense), CauseOfDeath.MURDER);
-
-	}
-	
 	public void think(float delta)
 	{
 		brain.tick(this);
@@ -195,13 +176,6 @@ public class Protozoan extends Cell implements Evolvable
 //		float speed = Math.abs(brain.speed(this));
 //		Vector2 impulse = dir.cpy().setLength(.05f * sizePenalty * speed);
 //		applyImpulse(impulse);
-//		float v1 = getSpeed();
-//		float m = getMass();
-//		float work = .5f * m * (v1*v1 - impulse.len2() / (m * m));  // change in kinetic energy
-//		if (enoughEnergyAvailable(work)) {
-//			useEnergy(work);
-//			applyImpulse(impulse);
-//		}
 	}
 
 	private boolean shouldSplit() {
@@ -398,13 +372,9 @@ public class Protozoan extends Cell implements Evolvable
 		return false;
 	}
 
-	public float getShieldFactor() {
-		return shieldFactor;
-	}
-
-	public void setShieldFactor(float shieldFactor) {
-		this.shieldFactor = shieldFactor;
-	}
+//	public void setShieldFactor(float shieldFactor) {
+//		this.shieldFactor = shieldFactor;
+//	}
 
 	public Brain getBrain() {
 		return brain;
