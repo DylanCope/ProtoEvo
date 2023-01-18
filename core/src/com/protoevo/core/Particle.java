@@ -24,7 +24,7 @@ public class Particle implements Shape {
     private float radius = SimulationSettings.minParticleRadius;
     private final Vector2 pos = new Vector2(0, 0);
     private final TreeMap<String, Float> stats = new TreeMap<>();
-    private final Collection<Object> contactObjects = new LinkedList<>();
+    private final Collection<Contact> contacts = new LinkedList<>();
     private final Collection<Object> interactionObjects = new LinkedList<>();
     private CauseOfDeath causeOfDeath = null;
 
@@ -163,21 +163,28 @@ public class Particle implements Shape {
 
     public void interact(List<Object> interactions) {}
 
-    public void onCollision(Particle other) {
-        contactObjects.add(other);
+    public void onCollision(Contact contact, Particle other) {
+        contacts.add(contact);
     }
 
-    public void onCollision(Rock rock) {
-        contactObjects.add(rock);
+    public void onCollision(Contact contact, Rock rock) {
+        contacts.add(contact);
+    }
+
+    public Object getOther(Contact contact) {
+        Object other = contact.getFixtureA().getUserData();
+        if (other == this)
+            other = contact.getFixtureB().getUserData();
+        return other;
     }
 
     public void reset() {
-        contactObjects.clear();
+        contacts.clear();
 //        interactionObjects.clear();
     }
 
-    public Collection<Object> getContactObjects() {
-        return contactObjects;
+    public Collection<Contact> getContacts() {
+        return contacts;
     }
 
     public float getRadius() {
@@ -355,7 +362,7 @@ public class Particle implements Shape {
         stats.put("Inertia", body.getInertia());
         stats.put("Num Joints", (float) body.getJointList().size);
         stats.put("Num Fixtures", (float) body.getFixtureList().size);
-        stats.put("Num Contacts", (float) contactObjects.size());
+        stats.put("Num Contacts", (float) contacts.size());
         stats.put("Num Interactions", (float) interactionObjects.size());
         stats.put("Is Dead", dead ? 1f : 0f);
         stats.put("Is Sleeping", body.isAwake() ? 0f : 1f);

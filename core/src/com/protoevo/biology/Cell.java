@@ -2,6 +2,7 @@ package com.protoevo.biology;
 
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.math.MathUtils;
+import com.badlogic.gdx.physics.box2d.Contact;
 import com.protoevo.core.Particle;
 import com.protoevo.core.settings.Settings;
 import com.protoevo.core.settings.SimulationSettings;
@@ -188,10 +189,10 @@ public abstract class Cell extends Particle implements Serializable
 		if (other.isDead())
 			return true;
 
-		float dist = other.getPos().cpy().sub(getPos()).len();
-		float maxDist = 1.5f * (other.getRadius() + getRadius());
+		float dist2 = other.getPos().cpy().sub(getPos()).len2();
+		float maxDist = (other.getRadius() + getRadius()) + 0.5f * JointsManager.idealJointLength(this, other);
 		float minDist = 0.9f * (other.getRadius() + getRadius());
-		return dist > maxDist || dist < minDist;
+		return dist2 > maxDist*maxDist || dist2 < minDist*minDist;
 	}
 
 	public boolean attachCondition(Cell other) {
@@ -263,31 +264,31 @@ public abstract class Cell extends Particle implements Serializable
 	}
 
 	@Override
-	public void onCollision(Rock rock) {
-		super.onCollision(rock);
+	public void onCollision(Contact contact, Rock rock) {
+		super.onCollision(contact, rock);
 		if (rock.pointInside(getPos())) {
 			kill(CauseOfDeath.SUFFOCATION);
 		}
 	}
 
 	@Override
-	public void onCollision(Particle other) {
-		super.onCollision(other);
+	public void onCollision(Contact contact, Particle other) {
+		super.onCollision(contact, other);
 		if (other.isPointInside(getPos())) {
 			kill(CauseOfDeath.SUFFOCATION);
 		}
 
 		if (canMakeBindings() && other instanceof Cell) {
 			Cell otherCell = (Cell) other;
-			onCollision(otherCell);
+			onCollision(contact, otherCell);
 		}
 	}
 
-	public void onCollision(Cell other) {
+	public void onCollision(Contact contact, Cell other) {
 		if (attachCondition(other)) {
 			if (!isBoundTo(other)) {
 				JointsManager jointsManager = getEnv().getJointsManager();
-				jointsManager.createJoint(getBody(), other.getBody());
+				jointsManager.createJoint(contact, getBody(), other.getBody());
 			}
 			for (CellAdhesion.CAM cam : surfaceCAMs.keySet()) {
 				if (getCAMAvailable(cam) > 0 && other.getCAMAvailable(cam) > 0) {

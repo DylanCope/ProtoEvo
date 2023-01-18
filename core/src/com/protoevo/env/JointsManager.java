@@ -1,5 +1,6 @@
 package com.protoevo.env;
 
+import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.*;
 import com.badlogic.gdx.physics.box2d.joints.RopeJoint;
 import com.badlogic.gdx.physics.box2d.joints.RopeJointDef;
@@ -143,27 +144,38 @@ public class JointsManager implements Serializable {
             RopeJoint ropeJoint = (RopeJoint) joint;
             if (1.05f * ropeJoint.getMaxLength() < idealJointLength) {
                 environment.getWorld().destroyJoint(joint);
-                jointsToAdd.add(makeJointDef(p1, p2));
+                Vector2 anchorA = ropeJoint.getLocalAnchorA();
+                Vector2 anchorB = ropeJoint.getLocalAnchorB();
+                jointsToAdd.add(makeJointDef(p1, p2, anchorA, anchorB));
             }
         }
     }
 
-    public float idealJointLength(Particle p1, Particle p2) {
-        return (p1.getRadius() + p2.getRadius()) * 1.2f;
+    public static float idealJointLength(Particle p1, Particle p2) {
+        return (p1.getRadius() + p2.getRadius()) * .2f;
     }
 
-    private JointDef makeJointDef(Particle particleA, Particle particleB) {
+    private JointDef makeJointDef(Particle particleA, Particle particleB, Vector2 anchorA, Vector2 anchorB) {
         RopeJointDef defJoint = new RopeJointDef();
         defJoint.maxLength = idealJointLength(particleA, particleB);
         defJoint.bodyA = particleA.getBody();
         defJoint.bodyB = particleB.getBody();
-        defJoint.localAnchorA.set(0, 0);
-        defJoint.localAnchorB.set(0, 0);
+        defJoint.localAnchorA.set(anchorA.setLength(particleA.getRadius()));
+        defJoint.localAnchorB.set(anchorB.setLength(particleB.getRadius()));
         defJoint.collideConnected = true;
         return defJoint;
     }
 
-    public void createJoint(Body bodyA, Body bodyB) {
+    private Vector2 getMeanContactPoint(Contact contact) {
+        WorldManifold manifold = contact.getWorldManifold();
+        int nContacts = manifold.getNumberOfContactPoints();
+        Vector2 result = new Vector2(0, 0);
+        for (Vector2 point : manifold.getPoints())
+            result.add(point);
+        return result.scl(1f / nContacts);
+    }
+
+    public void createJoint(Contact contact, Body bodyA, Body bodyB) {
         int maxJoints = 2;
         if (bodyA.getJointList().size >= maxJoints || bodyB.getJointList().size >= maxJoints)
             return;
@@ -172,7 +184,11 @@ public class JointsManager implements Serializable {
                 && bodyB.getUserData() instanceof Particle) {
             Particle particleA = (Particle) bodyA.getUserData();
             Particle particleB = (Particle) bodyB.getUserData();
-            jointsToAdd.add(makeJointDef(particleA, particleB));
+
+            Vector2 contactPoint = getMeanContactPoint(contact);
+            Vector2 anchorA = bodyA.getLocalPoint(contactPoint);
+            Vector2 anchorB = bodyB.getLocalPoint(contactPoint);
+            jointsToAdd.add(makeJointDef(particleA, particleB, anchorA, anchorB));
         }
     }
 

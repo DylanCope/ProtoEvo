@@ -16,7 +16,6 @@ public class CollisionHandler implements ContactListener, Serializable {
 
     @Override
     public void beginContact(Contact contact) {
-
         Fixture fixtureA = contact.getFixtureA();
         Fixture fixtureB = contact.getFixtureB();
         Body bodyA = fixtureA.getBody();
@@ -34,20 +33,20 @@ public class CollisionHandler implements ContactListener, Serializable {
         }
         else {
             if (bodyA.getUserData() instanceof Particle)
-                onContact((Particle) bodyA.getUserData(), bodyB);
+                onContact(contact, (Particle) bodyA.getUserData(), bodyB);
 
             if (bodyB.getUserData() instanceof Particle)
-                onContact((Particle) bodyB.getUserData(), bodyA);
+                onContact(contact, (Particle) bodyB.getUserData(), bodyA);
         }
     }
 
-    private void onContact(Particle particle, Body body) {
+    private void onContact(Contact contact, Particle particle, Body body) {
         if (body.getUserData() instanceof Particle) {
             Particle other = (Particle) body.getUserData();
-            particle.onCollision(other);
+            particle.onCollision(contact, other);
         } else if (body.getUserData() instanceof Rock) {
             Rock rock = (Rock) body.getUserData();
-            particle.onCollision(rock);
+            particle.onCollision(contact, rock);
         }
     }
 

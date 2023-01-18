@@ -2,6 +2,7 @@ package com.protoevo.biology.protozoa;
 
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.math.Vector2;
+import com.badlogic.gdx.physics.box2d.Contact;
 import com.protoevo.biology.*;
 import com.protoevo.biology.evolution.*;
 import com.protoevo.biology.neat.NetworkGenome;
@@ -354,7 +355,8 @@ public class Protozoan extends Cell implements Evolvable
 	}
 
 	public void handleCollisions(float delta) {
-		for (Object collided : getContactObjects()) {
+		for (Contact contact : getContacts()) {
+			Object collided = getOther(contact);
 			if (collided instanceof EdibleCell) {
 				eat((EdibleCell) collided, delta);
 			}

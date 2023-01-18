@@ -9,6 +9,7 @@ import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.physics.box2d.Box2DDebugRenderer;
+import com.badlogic.gdx.physics.box2d.Contact;
 import com.badlogic.gdx.utils.ScreenUtils;
 import com.protoevo.biology.Cell;
 import com.protoevo.biology.protozoa.Protozoan;
@@ -188,7 +189,8 @@ public class EnvironmentRenderer implements Renderer {
                     particle.getPos().y - maxDistance, 0,
                     2*maxDistance, 2*maxDistance, 0);
 
-            for (Object other : particle.getContactObjects()) {
+            for (Contact contact : particle.getContacts()) {
+                Object other = particle.getOther(contact);
                 if (other instanceof Particle) {
                     Vector2 otherPos = ((Particle) other).getPos();
                     float otherR = ((Particle) other).getRadius();

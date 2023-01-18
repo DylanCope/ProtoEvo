@@ -1,6 +1,7 @@
 package com.protoevo.biology;
 
 import com.badlogic.gdx.graphics.Color;
+import com.badlogic.gdx.physics.box2d.Contact;
 import com.protoevo.core.settings.PlantSettings;
 import com.protoevo.core.settings.Settings;
 import com.protoevo.core.Simulation;
@@ -56,7 +57,8 @@ public class PlantCell extends EdibleCell {
 
     public void updateCrowdingFactor() {
         crowdingFactor = 0;
-        for (Object other : getContactObjects()) {
+        for (Contact contact : getContacts()) {
+            Object other = getOther(contact);
             if (other instanceof Cell) {
                 Cell otherCell = (Cell) other;
                 float sqDist = otherCell.getPos().dst2(getPos());

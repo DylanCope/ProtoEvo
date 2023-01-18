@@ -40,18 +40,16 @@ public class FlagellumAttachment extends NodeAttachment {
         // input[0] controls generated thrust
         // input[1] controls generated torque
 
-//        float thrust = MathUtils.clamp(input[0], -1f, 1f);
-//        float torque = MathUtils.clamp(input[1], -1f, 1f);
-
-        thrustVector.set(node.getRelativePos()).scl(-1).nor();
-
-        float thrust = MathUtils.clamp(1, -1f, 1f);
-        torque = MathUtils.clamp(1, -1f, 1f);
-
         Cell cell = node.getCell();
         // smaller flagella generate less thrust and torque
         float sizePenalty = cell.getRadius() / SimulationSettings.maxParticleRadius;
+
+        float thrust = MathUtils.clamp(input[0], -1f, 1f);
+        torque = MathUtils.clamp(input[1], -1f, 1f);
+
+        thrustVector.set(node.getRelativePos()).scl(-1).nor();
         thrustVector.setLength(sizePenalty * thrust * ProtozoaSettings.maxProtozoaThrust);
+
         torque *= sizePenalty * ProtozoaSettings.maxProtozoaTorque;
 
 		float work = getKineticEnergyRequired(thrustVector, torque);
