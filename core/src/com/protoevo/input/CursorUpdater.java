@@ -28,27 +28,31 @@ public class CursorUpdater extends InputAdapter {
             return false;
         }
 
+        if (simulationScreen.hasSimulationNotLoaded())
+            return false;
+
         Vector3 worldSpace = camera.unproject(new Vector3(screenX, screenY, 0));
         touchPos.set(worldSpace.x, worldSpace.y);
 
         float cameraScaling = camera.project(new Vector3(1, 0, 0)).len();
-        for (Particle particle : simulationScreen.getEnvironment().getParticles()) {
-            float screenR = particle.getRadius() * cameraScaling;
-            if (screenR > 30 && Geometry.isPointInsideCircle(particle.getPos(), particle.getRadius(), touchPos)) {
-                if (inputManager.getLightningButton().canStrike()) {
-                    CursorUtils.setLightningCursor();
-                }
-                else if (inputManager.getMoveParticleButton().getState() == MoveParticleButton.State.HOLDING)
-                    CursorUtils.setClosedHandCursor();
-                else if (inputManager.getMoveParticleButton().couldHold())
+        synchronized (simulationScreen.getEnvironment()) {
+            for (Particle particle : simulationScreen.getEnvironment().getParticles()) {
+                float screenR = particle.getRadius() * cameraScaling;
+                if (screenR > 30 && Geometry.isPointInsideCircle(particle.getPos(), particle.getRadius(), touchPos)) {
+                    if (inputManager.getLightningButton().canStrike()) {
+                        CursorUtils.setLightningCursor();
+                    } else if (inputManager.getMoveParticleButton().getState() == MoveParticleButton.State.HOLDING)
+                        CursorUtils.setClosedHandCursor();
+                    else if (inputManager.getMoveParticleButton().couldHold())
                         CursorUtils.setOpenHandCursor();
-                else if (inputManager.getParticleTracker().canTrack() &&
-                        inputManager.getParticleTracker().getTrackedParticle() != particle)
-                    CursorUtils.setMagnifyingGlassCursor();
-                else
-                    CursorUtils.setDefaultCursor();
+                    else if (inputManager.getParticleTracker().canTrack() &&
+                            inputManager.getParticleTracker().getTrackedParticle() != particle)
+                        CursorUtils.setMagnifyingGlassCursor();
+                    else
+                        CursorUtils.setDefaultCursor();
 
-                return true;
+                    return true;
+                }
             }
         }
         CursorUtils.setDefaultCursor();

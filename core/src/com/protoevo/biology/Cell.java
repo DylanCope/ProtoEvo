@@ -226,8 +226,12 @@ public abstract class Cell extends Particle implements Serializable
 			if (massChange > 0)
 				useConstructionMass(massChange);
 		}
-		if (newR < SimulationSettings.minParticleRadius)
+		if (newR < getMinRadius())
 			kill(CauseOfDeath.GREW_TOO_SMALL);
+	}
+
+	public float getMinRadius() {
+		return SimulationSettings.minParticleRadius;
 	}
 
 	public void setGrowthRate(float gr) {

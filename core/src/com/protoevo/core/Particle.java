@@ -12,6 +12,7 @@ import com.protoevo.env.Rock;
 import com.protoevo.utils.Geometry;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 
 public class Particle implements Shape {
@@ -23,7 +24,7 @@ public class Particle implements Shape {
     private boolean dead, disposed;
     private float radius = SimulationSettings.minParticleRadius;
     private final Vector2 pos = new Vector2(0, 0);
-    private final TreeMap<String, Float> stats = new TreeMap<>();
+    private final ConcurrentHashMap<String, Float> stats = new ConcurrentHashMap<>();
     private final Collection<Contact> contacts = new LinkedList<>();
     private final Collection<Object> interactionObjects = new LinkedList<>();
     private CauseOfDeath causeOfDeath = null;

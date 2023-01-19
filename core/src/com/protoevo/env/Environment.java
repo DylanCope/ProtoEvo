@@ -28,15 +28,15 @@ public class Environment implements Serializable
 	private static final long serialVersionUID = 2804817237950199223L;
 	private final World world;
 	private float elapsedTime;
-	private final Map<String, Float> stats = new TreeMap<>();
-	private final Map<String, Float> debugStats = new TreeMap<>();
+	private final ConcurrentHashMap<String, Float> stats = new ConcurrentHashMap<>();
+	private final ConcurrentHashMap<String, Float> debugStats = new ConcurrentHashMap<>();
 	public final ConcurrentHashMap<CauseOfDeath, Integer> causeOfDeathCounts =
 			new ConcurrentHashMap<>(CauseOfDeath.values().length, 1);
 	private final ConcurrentHashMap<Class<? extends Cell>, SpatialHash<Cell>> spatialHashes;
 	private final Map<Class<? extends Particle>, Function<Float, Vector2>> spawnPositionFns
 			= new HashMap<>(3, 1);
-	private final ChemicalSolution chemicalSolution;
-	private final List<Rock> rocks;
+	private ChemicalSolution chemicalSolution;
+	private final List<Rock> rocks = new ArrayList<>();
 	private long generation = 1, protozoaBorn = 0, totalCellsAdded = 0, crossoverEvents = 0;
 
 	private String genomeFile = null;
@@ -69,17 +69,6 @@ public class Environment implements Serializable
 		spatialHashes.put(Protozoan.class, new SpatialHash<>(resolution, protozoaCap, SimulationSettings.spatialHashRadius));
 		spatialHashes.put(PlantCell.class, new SpatialHash<>(resolution, plantCap, SimulationSettings.spatialHashRadius));
 		spatialHashes.put(MeatCell.class, new SpatialHash<>(resolution, meatCap, SimulationSettings.spatialHashRadius));
-
-		if (Settings.enableChemicalField) {
-			chemicalSolution = new ChemicalSolution(
-					this,
-					SimulationSettings.chemicalFieldResolution,
-					SimulationSettings.chemicalFieldRadius);
-		} else {
-			chemicalSolution = null;
-		}
-
-		rocks = new ArrayList<>();
 
 		elapsedTime = 0;
 		hasInitialised = false;
@@ -154,6 +143,14 @@ public class Environment implements Serializable
 	public Vector2[] initialise() {
 		System.out.println("Commencing world generation... ");
 		Vector2[] populationStartCentres = createRocks();
+
+		System.out.println("Distributing chemicals... ");
+		if (Settings.enableChemicalField) {
+			chemicalSolution = new ChemicalSolution(
+					this,
+					SimulationSettings.chemicalFieldResolution,
+					SimulationSettings.chemicalFieldRadius);
+		}
 
 		// random shuffle population start centres
 		List<Vector2> populationStartCentresList = Arrays.asList(populationStartCentres);
@@ -331,11 +328,19 @@ public class Environment implements Serializable
 	}
 
 	public int getLocalCount(Particle cell) {
-		return spatialHashes.get(cell.getClass()).getCount(cell.getPos());
+		return getLocalCount(cell.getClass(), cell.getPos());
+	}
+
+	public int getLocalCount(Class<? extends Particle> cellType, Vector2 pos) {
+		return spatialHashes.get(cellType).getCount(pos);
 	}
 
 	public int getLocalCapacity(Particle cell) {
-		return spatialHashes.get(cell.getClass()).getChunkCapacity();
+		return getLocalCapacity(cell.getClass());
+	}
+
+	public int getLocalCapacity(Class<? extends Particle> cellType) {
+		return spatialHashes.get(cellType).getChunkCapacity();
 	}
 
 	public void add(Cell e) {
@@ -481,15 +486,23 @@ public class Environment implements Serializable
 		return jointsManager;
 	}
 
-	public <T extends Cell> void requestBurst(Cell parent, Class<T> cellType, Function<Float, T> createChild) {
-		if (getLocalCount(parent) >= getLocalCapacity(parent))
+	public <T extends Cell> void requestBurst(Cell parent,
+											  Class<T> cellType,
+											  Function<Float, T> createChild,
+											  boolean overrideMinParticleSize) {
+
+		if (getLocalCount(cellType, parent.getPos()) >= getLocalCapacity(cellType))
 			return;
 
 		if (burstRequests.stream().anyMatch(request -> request.parentEquals(parent)))
 			return;
 
-		BurstRequest<T> request = new BurstRequest<>(parent, cellType, createChild);
+		BurstRequest<T> request = new BurstRequest<>(parent, cellType, createChild, overrideMinParticleSize);
 		burstRequests.add(request);
+	}
+
+	public <T extends Cell> void requestBurst(Cell parent, Class<T> cellType, Function<Float, T> createChild) {
+		requestBurst(parent, cellType, createChild, false);
 	}
 
 	public SpatialHash<Cell> getSpatialHash(Class<? extends Cell> clazz) {

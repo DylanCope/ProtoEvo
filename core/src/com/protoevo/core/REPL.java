@@ -1,6 +1,7 @@
 package com.protoevo.core;
 
 import com.badlogic.gdx.scenes.scene2d.ui.Window;
+import com.protoevo.ui.SimulationScreen;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
@@ -8,13 +9,13 @@ import java.io.InputStreamReader;
 public class REPL implements Runnable
 {
     private final Simulation simulation;
-    private final Window window;
+    private final SimulationScreen screen;
     private boolean running = true;
 
-    public REPL(Simulation simulation, Window window)
+    public REPL(Simulation simulation, SimulationScreen screen)
     {
         this.simulation = simulation;
-        this.window = window;
+        this.screen = screen;
     }
 
     public void setTimeDilation(String[] args) throws Exception
@@ -42,31 +43,40 @@ public class REPL implements Runnable
                 switch (cmd)
                 {
                     case "help":
-                        System.out.println("commands - help, quit, stats, settime, gettime");
+                        System.out.println("commands - help, quit, stats, settime, gettime, toggleui, togglepause");
                         break;
                     case "quit":
-                        simulation.close();
+                        synchronized (simulation) {
+                            simulation.close();
+                        }
 //                        Application.exit();
                         break;
                     case "stats":
-                        simulation.printStats();
+                        synchronized (simulation) {
+                            simulation.printStats();
+                        }
                         break;
                     case "settime":
                         setTimeDilation(args);
                         break;
                     case "gettime":
-                        System.out.println(simulation.getTimeDilation());
-                        break;
-                    case "toggledebug":
-                        System.out.println("Toggling debug mode.");
-                        simulation.toggleDebug();
+                        synchronized (simulation) {
+                            System.out.println(simulation.getTimeDilation());
+                        }
                         break;
                     case "toggleui":
-                        System.out.println("Toggling UI.");
+                        if (screen == null) {
+                            System.out.println("No UI to toggle.");
+                        } else {
+                            System.out.println("Toggling UI.");
 //                        window.getFrame().setVisible(!window.getFrame().isVisible());
-                        simulation.toggleUpdateDelay();
+                            synchronized (simulation) {
+                                simulation.toggleUpdateDelay();
+                                screen.toggleEnvironmentRendering();
+                            }
+                        }
                         break;
-                    case "pause":
+                    case "togglepause":
                         simulation.togglePause();
                         System.out.println("Toggling pause.");
                         break;

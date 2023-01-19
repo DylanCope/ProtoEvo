@@ -270,7 +270,11 @@ public class Protozoan extends Cell implements Evolvable
 	@Override
 	public void kill(CauseOfDeath causeOfDeath) {
 		super.kill(causeOfDeath);
-		getEnv().requestBurst(this, MeatCell.class, r -> new MeatCell(r, getEnv()));
+		getEnv().requestBurst(
+				this,
+				MeatCell.class,
+				r -> new MeatCell(r, getEnv()),
+				true);
 	}
 
 	@Override

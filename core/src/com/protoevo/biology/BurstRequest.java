@@ -13,16 +13,27 @@ public class BurstRequest<T extends Cell> {
     private final Function<Float, T> createChild;
     private final Cell parent;
     private final Class<T> cellType;
+    private final boolean overrideMinRadius;
 
     public BurstRequest(Cell parent, Class<T> cellType, Function<Float, T> createChild) {
         this.createChild = createChild;
         this.parent = parent;
         this.cellType = cellType;
+        this.overrideMinRadius = false;
+    }
+
+    public BurstRequest(Cell parent,
+                        Class<T> cellType,
+                        Function<Float, T> createChild,
+                        boolean overrideMinRadius) {
+        this.createChild = createChild;
+        this.parent = parent;
+        this.cellType = cellType;
+        this.overrideMinRadius = overrideMinRadius;
     }
 
     public void burst() {
-
-        if (parent.getRadius() < parent.getMinBurstRadius())
+        if (parent.getRadius() < parent.getMinBurstRadius() && !overrideMinRadius)
             return;
 
         parent.kill(CauseOfDeath.CYTOKINESIS);
@@ -46,7 +57,7 @@ public class BurstRequest<T extends Cell> {
 
             T child = createChild.apply(parent.getRadius() * p);
             child.setPos(parent.getPos().add(dir.scl(2 * child.getRadius())));
-            child.applyImpulse(dir.scl(.01f));
+            child.applyImpulse(dir.scl(.005f));
 
             child.setGeneration(parent.getGeneration() + 1);
             allocateChildResources(child, p);

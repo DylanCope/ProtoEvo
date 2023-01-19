@@ -16,12 +16,10 @@ import com.badlogic.gdx.scenes.scene2d.Touchable;
 import com.badlogic.gdx.scenes.scene2d.ui.ImageButton;
 import com.badlogic.gdx.scenes.scene2d.utils.Drawable;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
-import com.protoevo.biology.Cell;
 import com.protoevo.biology.protozoa.NNBrain;
 import com.protoevo.biology.protozoa.Protozoan;
 import com.protoevo.core.Particle;
 import com.protoevo.core.Simulation;
-import com.protoevo.core.SpatialHash;
 import com.protoevo.core.settings.WorldGenerationSettings;
 import com.protoevo.env.Environment;
 import com.protoevo.input.ParticleTracker;
@@ -49,9 +47,11 @@ public class SimulationScreen {
     private final TopBar topBar;
     private final int infoTextSize, textAwayFromEdge;
     private final NetworkRenderer networkRenderer;
+    private float elapsedTime = 0;
 
     private float graphicsHeight;
     private float graphicsWidth;
+    private boolean uiHidden = false, renderingEnabled = false, simLoaded = false;
 
     public static BitmapFont createFiraCode(int size) {
         String fontPath = "fonts/FiraCode-Retina.ttf";
@@ -231,15 +231,33 @@ public class SimulationScreen {
     }
 
     public void draw(float delta) {
+        elapsedTime += delta;
+
         camera.update();
 
-        if (inputManager.getParticleTracker().isTracking())
+        if (simLoaded && inputManager.getParticleTracker().isTracking())
             camera.position.set(inputManager.getParticleTracker().getTrackedParticlePosition());
 
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
         Gdx.gl.glActiveTexture(GL20.GL_TEXTURE0);
 
-        renderer.render(delta);
+        if (simLoaded && renderingEnabled)
+            renderer.render(delta);
+
+        if (uiHidden)
+            return;
+
+        if (!simLoaded) {
+            uiBatch.begin();
+            float x = 4 * topBar.getPadding() + topBar.getHeight();
+            StringBuilder loadingStr = new StringBuilder("Loading");
+            for (int i = 0; i < (int) (elapsedTime * 2) % 4; i++) {
+                loadingStr.append(".");
+            }
+            font.draw(uiBatch, loadingStr.toString(), x, x);
+            uiBatch.end();
+            return;
+        }
 
         topBar.draw(delta);
 
@@ -294,5 +312,23 @@ public class SimulationScreen {
 
     public Simulation getSimulation() {
         return simulation;
+    }
+
+    public void toggleUI() {
+        uiHidden = !uiHidden;
+    }
+
+    public void toggleEnvironmentRendering() {
+        renderingEnabled = !renderingEnabled;
+    }
+
+    public boolean hasSimulationNotLoaded() {
+        return !simLoaded;
+    }
+
+    public synchronized void notifySimulationLoaded() {
+        System.out.println("Rendering enabled.");
+        renderingEnabled = true;
+        simLoaded = true;
     }
 }

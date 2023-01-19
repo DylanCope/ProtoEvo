@@ -35,7 +35,6 @@ public class PanZoomCameraInput extends InputAdapter {
 
         if (Gdx.input.isButtonPressed(Input.Buttons.LEFT)) {
             tmp.set(cam.unproject(tmp.set(screenX, screenY, 0)).sub(cam.unproject(lastTouch)));
-//            tmp.set(cam.unproject(tmp.set(screenX, screenY, 0).sub(lastTouch)));
             tmp.scl(-1f, -1f, 0);
             cam.translate(tmp);
             lastTouch.set(screenX, screenY, 0);

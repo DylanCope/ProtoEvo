@@ -38,11 +38,14 @@ public class ParticleTracker extends InputAdapter {
     public boolean track(Vector2 touchPos) {
         if (!canTrack)
             return false;
-        for (Particle particle : entities) {
-            if (Geometry.isPointInsideCircle(particle.getPos(), particle.getRadius(), touchPos)) {
-                trackedParticle = particle;
-                panZoomCameraInput.setPanningDisabled(true);
-                return true;
+
+        synchronized (entities) {
+            for (Particle particle : entities) {
+                if (Geometry.isPointInsideCircle(particle.getPos(), particle.getRadius(), touchPos)) {
+                    trackedParticle = particle;
+                    panZoomCameraInput.setPanningDisabled(true);
+                    return true;
+                }
             }
         }
         return false;

@@ -20,15 +20,24 @@ public class MeatCell extends EdibleCell {
     }
 
     public void age(float delta) {
-        float deathRate = getRadius() * delta * 50;
+        float deathRate = getRadius() * delta * .1f;
         damage(getHealth() * deathRate, CauseOfDeath.OLD_AGE);
     }
 
     @Override
-    public void update(float delta)
-    {
+    public void update(float delta) {
         age(delta);
         super.update(delta);
+    }
+
+    @Override
+    public float getMinRadius() {
+        return super.getMinRadius() / 5f;
+    }
+
+    @Override
+    public void kill(CauseOfDeath causeOfDeath) {
+        super.kill(causeOfDeath);
     }
 
     @Override

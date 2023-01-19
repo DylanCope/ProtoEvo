@@ -23,7 +23,6 @@ public class ChemicalSolution implements Serializable {
     private final float xMin, yMin, xMax, yMax;
     private final int chemicalTextureHeight;
     private final int chemicalTextureWidth;
-    private Texture chemicalTexture;
     private final Pixmap chemicalPixmap;
     private final byte[] swapBuffer;
     private float timeSinceUpdate = 0;
@@ -54,8 +53,6 @@ public class ChemicalSolution implements Serializable {
         chemicalPixmap = new Pixmap(cells, cells, Pixmap.Format.RGBA8888);
 
         swapBuffer = new byte[cells * cells * 4];
-
-        chemicalTexture = new Texture(chemicalPixmap);
         chemicalPixmap.setBlending(Pixmap.Blending.None);
 
         System.out.println("Initialising chemical diffusion CUDA kernel...");
@@ -142,22 +139,17 @@ public class ChemicalSolution implements Serializable {
             });
     }
 
-    public void updateTexture() {
-        chemicalTexture = new Texture(chemicalPixmap, Pixmap.Format.RGBA8888, false);
-    }
-
     public void update(float delta) {
         timeSinceUpdate += delta;
         if (timeSinceUpdate > SimulationSettings.chemicalDiffusionInterval) {
             deposit();
             diffuse();
-            updateTexture();
             timeSinceUpdate = 0;
         }
     }
 
-    public Texture getChemicalTexture(OrthographicCamera camera) {
-        return chemicalTexture;
+    public Pixmap getChemicalTexture() {
+        return chemicalPixmap;
     }
 
     public int getNYChunks() {

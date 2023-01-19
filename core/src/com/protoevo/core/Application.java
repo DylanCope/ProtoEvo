@@ -9,20 +9,19 @@ import com.protoevo.core.settings.SimulationSettings;
 import com.protoevo.ui.SimulationScreen;
 
 public class Application extends ApplicationAdapter {
-	public static final float refreshDelay = 1000 / 120f;
+	public static final float refreshDelay = 1000 / 60f;
 
 	private Simulation simulation;
 	private SimulationScreen simulationScreen;
 
-
 	@Override
 	public void create () {
 		simulation = new Simulation();
-		simulation.setupEnvironment();
-//		new Thread(simulation).start();
 		simulationScreen = new SimulationScreen(simulation);
-	}
+		simulation.setSimulationScreen(simulationScreen);
 
+		new Thread(simulation).start();
+	}
 
 	@Override
 	public void render () {
@@ -30,9 +29,6 @@ public class Application extends ApplicationAdapter {
 
 		Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
 		Gdx.gl.glActiveTexture(GL20.GL_TEXTURE0);
-
-		simulation.update(SimulationSettings.simulationUpdateDelta);
-
 		float deltaTime = Gdx.graphics.getDeltaTime();
 		simulationScreen.draw(deltaTime);
 	}

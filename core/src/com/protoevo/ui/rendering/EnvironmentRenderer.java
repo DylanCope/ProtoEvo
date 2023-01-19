@@ -115,7 +115,7 @@ public class EnvironmentRenderer implements Renderer {
         chemicalBatch.setShader(chemicalShader);
 
         chemicalBatch.begin();
-        Texture chemicalTexture = chemicalSolution.getChemicalTexture(camera);
+        Texture chemicalTexture = new Texture(chemicalSolution.getChemicalTexture());
         float x = -chemicalSolution.getFieldWidth() / 2;
         float y = -chemicalSolution.getFieldHeight() / 2;
         chemicalBatch.draw(chemicalTexture, x, y,
@@ -130,32 +130,34 @@ public class EnvironmentRenderer implements Renderer {
         batch.enableBlending();
         batch.setProjectionMatrix(camera.combined);
 
-        if (Settings.enableChemicalField)
-            renderChemicalField();
+        synchronized (environment) {
+            if (Settings.enableChemicalField)
+                renderChemicalField();
 
-        // Render Particles
-        batch.begin();
-        if (camera.zoom < 3)
-            environment.getJointsManager().getParticleBindings()
-                    .forEach(this::renderJoinedParticles);
-        environment.getParticles().forEach(p -> drawParticle(delta, p));
-        batch.end();
+            // Render Particles
+            batch.begin();
+            if (camera.zoom < 3)
+                environment.getJointsManager().getParticleBindings()
+                        .forEach(this::renderJoinedParticles);
+            environment.getParticles().forEach(p -> drawParticle(delta, p));
+            batch.end();
 
-        protozoaRenderers.entrySet()
-                .removeIf(entry -> entry.getValue().isStale());
+            protozoaRenderers.entrySet()
+                    .removeIf(entry -> entry.getValue().isStale());
 
-        // Render rocks
-        shapeRenderer.setProjectionMatrix(camera.combined);
-        shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
-        for (Rock rock : environment.getRocks()) {
-            shapeRenderer.setColor(rock.getColor());
-            Vector2[] ps = rock.getPoints();
-            shapeRenderer.triangle(ps[0].x, ps[0].y, ps[1].x, ps[1].y, ps[2].x, ps[2].y);
+            // Render rocks
+            shapeRenderer.setProjectionMatrix(camera.combined);
+            shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
+            for (Rock rock : environment.getRocks()) {
+                shapeRenderer.setColor(rock.getColor());
+                Vector2[] ps = rock.getPoints();
+                shapeRenderer.triangle(ps[0].x, ps[0].y, ps[1].x, ps[1].y, ps[2].x, ps[2].y);
+            }
+            shapeRenderer.end();
+
+            if (DebugMode.isDebugModePhysicsDebug())
+                renderPhysicsDebug();
         }
-        shapeRenderer.end();
-
-        if (DebugMode.isDebugModePhysicsDebug())
-            renderPhysicsDebug();
     }
 
     public void renderPhysicsDebug() {

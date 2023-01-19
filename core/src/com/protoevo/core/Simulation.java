@@ -1,12 +1,10 @@
 package com.protoevo.core;
 
 import com.github.javafaker.Faker;
-import com.protoevo.biology.MeatCell;
-import com.protoevo.biology.PlantCell;
-import com.protoevo.biology.protozoa.Protozoan;
 import com.protoevo.core.settings.Settings;
 import com.protoevo.core.settings.SimulationSettings;
 import com.protoevo.env.Environment;
+import com.protoevo.ui.SimulationScreen;
 import com.protoevo.utils.FileIO;
 import com.protoevo.utils.Utils;
 
@@ -22,13 +20,14 @@ import java.util.stream.Stream;
 public class Simulation implements Runnable
 {
 	private final Environment environment;
+	private SimulationScreen simulationScreen;
 	private boolean simulate;
 	private static boolean paused = false;
 	private float timeDilation = 1, timeSinceSave = 0, timeSinceSnapshot = 0;
 	private double updateDelay = Application.refreshDelay / 1000.0, lastUpdateTime = 0;
 	
 	public static Random RANDOM = new Random(SimulationSettings.simulationSeed);
-	private boolean debug = false, delayUpdate = true;
+	private boolean debug = false, delayUpdate = true, initialised = false;
 
 	private final String name;
 	private final String genomeFile, historyFile;
@@ -132,6 +131,10 @@ public class Simulation implements Runnable
 		}
 	}
 
+	public void setSimulationScreen(SimulationScreen screen) {
+		this.simulationScreen = screen;
+	}
+
 	public Environment loadMostRecentEnv() {
 		Path dir = Paths.get("saves/" + name + "/env");
 		if (Files.exists(dir))
@@ -151,6 +154,12 @@ public class Simulation implements Runnable
 	public void run() {
 		setupEnvironment();
 		makeHistorySnapshot();
+		initialised = true;
+		if (simulationScreen != null) {
+			simulationScreen.notifySimulationLoaded();
+		}
+		new Thread(new REPL(this, simulationScreen)).start();
+
 		while (simulate) {
 			if (paused)
 				continue;
@@ -236,7 +245,7 @@ public class Simulation implements Runnable
 		debug = !debug;
 	}
 
-	public synchronized void togglePause() {
+	public void togglePause() {
 		paused = !paused;
 	}
 
@@ -262,7 +271,7 @@ public class Simulation implements Runnable
 		delayUpdate = !delayUpdate;
 	}
 
-    public static synchronized boolean isPaused() {
+    public static boolean isPaused() {
 		return paused;
     }
 

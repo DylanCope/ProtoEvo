@@ -28,10 +28,10 @@ public class SimulationInputManager {
         inputLayers = new InputLayers(simulationScreen.getStage(), toggleDebug);
         Gdx.input.setInputProcessor(inputLayers);
 
-        inputLayers.addLayer(new SimulationKeyboardControls(simulationScreen.getSimulation()));
+        inputLayers.addLayer(new SimulationKeyboardControls(simulationScreen));
 
         Collection<? extends Particle> particles = simulationScreen.getEnvironment().getParticles();
-        inputLayers.addLayer(new ApplyForcesInput(particles, camera));
+        inputLayers.addLayer(new ApplyForcesInput(simulationScreen));
         PanZoomCameraInput panZoomCameraInput = new PanZoomCameraInput(camera);
 
         TopBar topBar = simulationScreen.getTopBar();
@@ -45,8 +45,8 @@ public class SimulationInputManager {
         Vector2 pos = topBar.nextLeftButtonPosition();
         moveParticleButton.setPosition(pos.x, pos.y);
 
-        SpawnParticleInput spawnParticleInput = new SpawnParticleInput(camera, simulationScreen.getEnvironment());
-        MoveParticle moveParticle = new MoveParticle(camera, particles, moveParticleButton, particleTracker);
+        SpawnParticleInput spawnParticleInput = new SpawnParticleInput(simulationScreen);
+        MoveParticle moveParticle = new MoveParticle(simulationScreen, moveParticleButton, particleTracker);
         CursorUpdater cursorUpdater = new CursorUpdater(simulationScreen, this);
 
         ImageButton jediButton = simulationScreen.createBarImageButton("icons/jedi_on.png", event -> {

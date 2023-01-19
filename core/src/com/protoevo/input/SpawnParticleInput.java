@@ -9,6 +9,7 @@ import com.badlogic.gdx.math.Vector3;
 import com.protoevo.biology.PlantCell;
 import com.protoevo.core.Particle;
 import com.protoevo.env.Environment;
+import com.protoevo.ui.SimulationScreen;
 import com.protoevo.utils.Geometry;
 import com.protoevo.utils.Utils;
 
@@ -16,21 +17,25 @@ public class SpawnParticleInput extends InputAdapter {
 
     private final OrthographicCamera camera;
     private final Environment environment;
+    private final SimulationScreen simulationScreen;
 
     private final float rate = 0.1f;
     private float timeSinceSpawn = 0;
     private final Vector3 lastMousePos = new Vector3(), mousePos = new Vector3();
 
-    public SpawnParticleInput(OrthographicCamera camera, Environment environment) {
-        this.camera = camera;
-        this.environment = environment;
+    public SpawnParticleInput(SimulationScreen simulationScreen) {
+        this.simulationScreen = simulationScreen;
+        this.camera = simulationScreen.getCamera();
+        this.environment = simulationScreen.getEnvironment();
     }
 
     public void addParticle(float x, float y) {
-        Particle particle = new PlantCell(environment);
-        particle.setPos(new Vector2(x, y));
-        Vector2 impulse = Geometry.fromAngle((float) (Math.random() * Math.PI * 2)).scl(.01f);
-        particle.getBody().applyLinearImpulse(impulse, particle.getPos(), true);
+        synchronized (environment) {
+            Particle particle = new PlantCell(environment);
+            particle.setPos(new Vector2(x, y));
+            Vector2 impulse = Geometry.fromAngle((float) (Math.random() * Math.PI * 2)).scl(.01f);
+            particle.getBody().applyLinearImpulse(impulse, particle.getPos(), true);
+        }
     }
 
     @Override
@@ -41,6 +46,10 @@ public class SpawnParticleInput extends InputAdapter {
 
     @Override
     public boolean touchDown(int screenX, int screenY, int pointer, int button) {
+
+        if (simulationScreen.hasSimulationNotLoaded())
+            return false;
+
         if (Gdx.input.isButtonPressed(Input.Buttons.MIDDLE)) {
             lastMousePos.set(screenX, screenY, 0);
             Vector3 worldSpace = camera.unproject(new Vector3(screenX, screenY, 0));
@@ -53,6 +62,10 @@ public class SpawnParticleInput extends InputAdapter {
     @Override
     public boolean touchDragged(int screenX, int screenY, int pointer) {
         mousePos.set(screenX, screenY, 0);
+
+        if (simulationScreen.hasSimulationNotLoaded())
+            return false;
+
         if (Gdx.input.isButtonPressed(Input.Buttons.MIDDLE)) {
             timeSinceSpawn += Gdx.graphics.getDeltaTime();
             float speed = mousePos.dst(lastMousePos);
