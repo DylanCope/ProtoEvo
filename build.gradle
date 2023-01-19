@@ -199,6 +199,11 @@ project(":core") {
         api "com.badlogicgames.gdx:gdx-freetype-platform:$gdxVersion:natives-x86"
         api "com.badlogicgames.gdx:gdx-freetype-platform:$gdxVersion:natives-x86_64"
 
+        api "com.badlogicgames.gdx:gdx-backend-lwjgl3:$gdxVersion"
+        api "com.badlogicgames.gdx:gdx-platform:$gdxVersion:natives-desktop"
+        api "com.badlogicgames.gdx:gdx-box2d-platform:$gdxVersion:natives-desktop"
+        api "com.badlogicgames.gdx:gdx-freetype-platform:$gdxVersion:natives-desktop"
+
 //        api group: 'org.jcuda', name: 'jcuda-natives', version: '11.8.0'
 
         api group: 'org.lwjgl', name: 'lwjgl-opencl', version: '3.3.1'

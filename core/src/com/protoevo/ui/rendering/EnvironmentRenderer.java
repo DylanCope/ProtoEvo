@@ -4,6 +4,7 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.*;
 import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.graphics.glutils.PixmapTextureData;
 import com.badlogic.gdx.graphics.glutils.ShaderProgram;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.Vector2;
@@ -35,6 +36,7 @@ public class EnvironmentRenderer implements Renderer {
     private final SpriteBatch batch, chemicalBatch;
     private final ShaderProgram chemicalShader;
     private final Texture particleTexture;
+    private Texture chemicalTexture;
     private final HashMap<Protozoan, ProtozoaRenderer> protozoaRenderers = new HashMap<>();
     private final Sprite jointSprite;
     private final ShapeRenderer shapeRenderer;
@@ -55,6 +57,10 @@ public class EnvironmentRenderer implements Renderer {
         this.simulation = simulation;
         this.inputManager = inputManager;
         environment = simulation.getEnv();
+
+        ChemicalSolution chemicalSolution = environment.getChemicalSolution();
+        if (chemicalSolution != null)
+            chemicalSolution.setUpdateCallback(this::updateChemicalsTexture);
 
         debugRenderer = new Box2DDebugRenderer();
         batch = new SpriteBatch();
@@ -99,10 +105,14 @@ public class EnvironmentRenderer implements Renderer {
         jointSprite.draw(batch);
     }
 
+    public void updateChemicalsTexture(Pixmap pixmap) {
+        chemicalTexture = new Texture(pixmap);
+    }
+
     public void renderChemicalField() {
         ChemicalSolution chemicalSolution = environment.getChemicalSolution();
 
-        if (chemicalSolution == null)
+        if (chemicalSolution == null || chemicalTexture == null)
             return;
 
         chemicalBatch.enableBlending();
@@ -110,12 +120,9 @@ public class EnvironmentRenderer implements Renderer {
 
         chemicalShader.bind();
         chemicalShader.setUniformf("u_resolution", Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
-//        float blurRadius = worldDistanceToScreenDistance(3 * chemicalSolution.getCellSize());
-//        chemicalShader.setUniformf("u_blurRadius", blurRadius);
         chemicalBatch.setShader(chemicalShader);
 
         chemicalBatch.begin();
-        Texture chemicalTexture = new Texture(chemicalSolution.getChemicalTexture());
         float x = -chemicalSolution.getFieldWidth() / 2;
         float y = -chemicalSolution.getFieldHeight() / 2;
         chemicalBatch.draw(chemicalTexture, x, y,

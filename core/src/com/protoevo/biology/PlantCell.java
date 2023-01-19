@@ -37,6 +37,11 @@ public class PlantCell extends EdibleCell {
         );
     }
 
+    @Override
+    public float getMaxRadius() {
+        return maxRadius;
+    }
+
     private static float randomPlantRadius() {
         float range = PlantSettings.maxPlantBirthRadius * .5f - PlantSettings.minPlantBirthRadius;
         return PlantSettings.minPlantBirthRadius + range * Simulation.RANDOM.nextFloat();
@@ -47,7 +52,7 @@ public class PlantCell extends EdibleCell {
     }
 
     private boolean shouldSplit() {
-        return getRadius() > maxRadius &&
+        return getRadius() >= maxRadius &&
                 getHealth() > Settings.minHealthToSplit;
     }
 

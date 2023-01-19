@@ -28,8 +28,8 @@ public class Environment implements Serializable
 	private static final long serialVersionUID = 2804817237950199223L;
 	private final World world;
 	private float elapsedTime;
-	private final ConcurrentHashMap<String, Float> stats = new ConcurrentHashMap<>();
-	private final ConcurrentHashMap<String, Float> debugStats = new ConcurrentHashMap<>();
+	private volatile ConcurrentHashMap<String, Float> stats = new ConcurrentHashMap<>();
+	private volatile ConcurrentHashMap<String, Float> debugStats = new ConcurrentHashMap<>();
 	public final ConcurrentHashMap<CauseOfDeath, Integer> causeOfDeathCounts =
 			new ConcurrentHashMap<>(CauseOfDeath.values().length, 1);
 	private final ConcurrentHashMap<Class<? extends Cell>, SpatialHash<Cell>> spatialHashes;

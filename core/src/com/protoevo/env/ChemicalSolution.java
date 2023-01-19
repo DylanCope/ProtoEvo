@@ -13,6 +13,7 @@ import com.protoevo.utils.JCudaKernelRunner;
 import com.protoevo.utils.Utils;
 
 import java.io.Serializable;
+import java.util.function.Consumer;
 import java.util.stream.IntStream;
 
 public class ChemicalSolution implements Serializable {
@@ -27,6 +28,7 @@ public class ChemicalSolution implements Serializable {
     private final byte[] swapBuffer;
     private float timeSinceUpdate = 0;
     private final JCudaKernelRunner diffusionKernel;
+    private Consumer<Pixmap> updateChemicalsTextureCallback;
     private final transient Color tmpColour = new Color();
 
     public ChemicalSolution(Environment environment, int cells, float mapRadius) {
@@ -145,6 +147,8 @@ public class ChemicalSolution implements Serializable {
             deposit();
             diffuse();
             timeSinceUpdate = 0;
+            if (updateChemicalsTextureCallback != null)
+                updateChemicalsTextureCallback.accept(chemicalPixmap);
         }
     }
 
@@ -201,5 +205,9 @@ public class ChemicalSolution implements Serializable {
 
     public float getCellSize() {
         return cellSizeX;
+    }
+
+    public void setUpdateCallback(Consumer<Pixmap> updateChemicalsTextureCallback) {
+        this.updateChemicalsTextureCallback = updateChemicalsTextureCallback;
     }
 }

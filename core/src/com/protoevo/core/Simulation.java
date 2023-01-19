@@ -32,6 +32,8 @@ public class Simulation implements Runnable
 	private final String name;
 	private final String genomeFile, historyFile;
 	private List<String> statsNames;
+	private REPL repl;
+	private Thread replThread;
 
 	public Simulation() {
 		this(Settings.simulationSeed);
@@ -115,10 +117,6 @@ public class Simulation implements Runnable
 		return environment;
 	}
 
-	public void setupEnvironment() {
-		environment.initialise();
-	}
-
 	public Environment loadEnv(String filename)
 	{
 		try {
@@ -151,15 +149,23 @@ public class Simulation implements Runnable
 		return newDefaultEnv();
 	}
 
-	public void run() {
-		setupEnvironment();
-		makeHistorySnapshot();
-		initialised = true;
-		if (simulationScreen != null) {
-			simulationScreen.notifySimulationLoaded();
+	public void prepare()
+	{
+		if (!initialised) {
+			environment.initialise();
+			makeHistorySnapshot();
+			initialised = true;
+			if (simulationScreen != null) {
+				simulationScreen.notifySimulationLoaded();
+			}
+			repl = new REPL(this, simulationScreen);
+			replThread = new Thread(repl);
+			replThread.start();
 		}
-		new Thread(new REPL(this, simulationScreen)).start();
+	}
 
+	public void run() {
+		prepare();
 		while (simulate) {
 			if (paused)
 				continue;
@@ -278,5 +284,8 @@ public class Simulation implements Runnable
 	public void dispose() {
 		close();
 		environment.getWorld().dispose();
+		repl.close();
+		replThread.interrupt();
+		System.exit(0);
 	}
 }

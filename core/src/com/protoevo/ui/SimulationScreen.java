@@ -109,6 +109,15 @@ public class SimulationScreen {
         });
         topBar.addLeft(pauseButton);
 
+        ImageButton toggleRenderingButton = createBarImageButton("icons/terminal.png", event -> {
+            if (event.toString().equals("touchDown")) {
+                simulation.toggleUpdateDelay();
+                toggleEnvironmentRendering();
+            }
+            return true;
+        });
+        topBar.addLeft(toggleRenderingButton);
+
         ImageButton homeButton = createBarImageButton("icons/home_icon.png", event -> {
             if (event.toString().equals("touchDown")) {
                 camera.position.set(0, 0, 0);
@@ -238,9 +247,6 @@ public class SimulationScreen {
         if (simLoaded && inputManager.getParticleTracker().isTracking())
             camera.position.set(inputManager.getParticleTracker().getTrackedParticlePosition());
 
-        Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
-        Gdx.gl.glActiveTexture(GL20.GL_TEXTURE0);
-
         if (simLoaded && renderingEnabled)
             renderer.render(delta);
 
@@ -266,7 +272,7 @@ public class SimulationScreen {
         stage.draw();
 
         ParticleTracker particleTracker = inputManager.getParticleTracker();
-        if (particleTracker.isTracking()) {
+        if (renderingEnabled && particleTracker.isTracking()) {
             Particle particle = particleTracker.getTrackedParticle();
             float titleY = (float) (getYPosLHS(0) + 1.5 * titleFont.getLineHeight());
             titleFont.draw(uiBatch, particle.getPrettyName() + " Stats", textAwayFromEdge, titleY);
