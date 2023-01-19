@@ -32,6 +32,7 @@ import com.protoevo.utils.DebugMode;
 import com.protoevo.utils.Utils;
 
 import java.util.Map;
+import java.util.TreeMap;
 
 public class SimulationScreen {
 
@@ -47,7 +48,10 @@ public class SimulationScreen {
     private final TopBar topBar;
     private final int infoTextSize, textAwayFromEdge;
     private final NetworkRenderer networkRenderer;
-    private float elapsedTime = 0;
+    private final float pollStatsTime = .25f;
+    private float elapsedTime = 0, pollStatsCounter = 0;
+    private TreeMap<String, Float> stats = new TreeMap<>();
+    private TreeMap<String, Float> debugStats = new TreeMap<>();
 
     private float graphicsHeight;
     private float graphicsWidth;
@@ -239,6 +243,21 @@ public class SimulationScreen {
         return renderStats(stats, 0, font);
     }
 
+    public void renderStats() {
+        ParticleTracker particleTracker = inputManager.getParticleTracker();
+        if (renderingEnabled && particleTracker.isTracking()) {
+            Particle particle = particleTracker.getTrackedParticle();
+            float titleY = (float) (getYPosLHS(0) + 1.5 * titleFont.getLineHeight());
+            titleFont.draw(uiBatch, particle.getPrettyName() + " Stats", textAwayFromEdge, titleY);
+        } else {
+            float titleY = (float) (getYPosLHS(0) + 1.5 * titleFont.getLineHeight());
+            titleFont.draw(uiBatch, "Simulation Stats", textAwayFromEdge, titleY);
+        }
+        int lineNo = renderStats(stats);
+        if (renderingEnabled && DebugMode.isDebugMode())
+            renderStats(debugStats, lineNo, debugFont);
+    }
+
     public void draw(float delta) {
         elapsedTime += delta;
 
@@ -271,31 +290,46 @@ public class SimulationScreen {
         stage.act(delta);
         stage.draw();
 
-        ParticleTracker particleTracker = inputManager.getParticleTracker();
-        if (renderingEnabled && particleTracker.isTracking()) {
-            Particle particle = particleTracker.getTrackedParticle();
-            float titleY = (float) (getYPosLHS(0) + 1.5 * titleFont.getLineHeight());
-            titleFont.draw(uiBatch, particle.getPrettyName() + " Stats", textAwayFromEdge, titleY);
-            renderStats(particle.getStats());
-        } else {
-            float titleY = (float) (getYPosLHS(0) + 1.5 * titleFont.getLineHeight());
-            titleFont.draw(uiBatch, "Simulation Stats", textAwayFromEdge, titleY);
-            int lineNo = renderStats(simulation.getEnv().getStats());
-            if (DebugMode.isDebugMode())
-                renderStats(simulation.getEnv().getDebugStats(), lineNo, debugFont);
+        pollStatsCounter += delta;
+        if (pollStatsCounter > pollStatsTime) {
+            pollStatsCounter = 0;
+            pollStats();
         }
 
-        if (DebugMode.isDebugMode())
+        renderStats();
+
+        if (renderingEnabled && DebugMode.isDebugMode())
             drawDebugInfo();
 
         uiBatch.end();
 
-        if (particleTracker.isTracking()) {
+        ParticleTracker particleTracker = inputManager.getParticleTracker();
+        if (renderingEnabled && particleTracker.isTracking()) {
             Particle particle = particleTracker.getTrackedParticle();
             if (particle instanceof Protozoan) {
                 NNBrain nnBrain = (NNBrain) ((Protozoan) particle).getBrain();
                 networkRenderer.setNeuralNetwork(nnBrain.network);
                 networkRenderer.render(delta);
+            }
+        }
+    }
+
+    public void pollStats() {
+        stats.clear();
+        ParticleTracker particleTracker = inputManager.getParticleTracker();
+        if (renderingEnabled && particleTracker.isTracking()) {
+            Particle particle = particleTracker.getTrackedParticle();
+            stats.putAll(particle.getStats());
+            if (DebugMode.isDebugModePhysicsDebug()) {
+                debugStats.clear();
+                debugStats.putAll(particle.getDebugStats());
+            }
+
+        } else {
+            stats.putAll(simulation.getEnv().getStats());
+            if (DebugMode.isDebugModePhysicsDebug()) {
+                debugStats.clear();
+                debugStats.putAll(simulation.getEnv().getDebugStats());
             }
         }
     }

@@ -39,7 +39,7 @@ public class SimulationInputManager {
         lightningButton = new LightningButton(this, topBar.getButtonSize());
         inputLayers.addLayer(new LightningStrikeInput(simulationScreen, lightningButton));
 
-        particleTracker = new ParticleTracker(particles, camera, panZoomCameraInput);
+        particleTracker = new ParticleTracker(simulationScreen, panZoomCameraInput);
 
         moveParticleButton = new MoveParticleButton(topBar.getButtonSize());
         Vector2 pos = topBar.nextLeftButtonPosition();

@@ -7,23 +7,25 @@ import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector3;
 import com.protoevo.core.Particle;
+import com.protoevo.ui.SimulationScreen;
 import com.protoevo.utils.Geometry;
 
 import java.util.Collection;
 
 public class ParticleTracker extends InputAdapter {
 
+    private final SimulationScreen simulationScreen;
     private final Collection<? extends Particle> entities;
     private final OrthographicCamera camera;
     private final PanZoomCameraInput panZoomCameraInput;
     private Particle trackedParticle;
     private boolean canTrack = true;
 
-    public ParticleTracker(Collection<? extends Particle> entities,
-                           OrthographicCamera camera,
+    public ParticleTracker(SimulationScreen screen,
                            PanZoomCameraInput panZoomCameraInput) {
-        this.entities = entities;
-        this.camera = camera;
+        this.simulationScreen = screen;
+        this.entities = screen.getEnvironment().getParticles();
+        this.camera = screen.getCamera();
         this.panZoomCameraInput = panZoomCameraInput;
     }
 
@@ -44,6 +46,7 @@ public class ParticleTracker extends InputAdapter {
                 if (Geometry.isPointInsideCircle(particle.getPos(), particle.getRadius(), touchPos)) {
                     trackedParticle = particle;
                     panZoomCameraInput.setPanningDisabled(true);
+                    simulationScreen.pollStats();
                     return true;
                 }
             }
@@ -54,13 +57,12 @@ public class ParticleTracker extends InputAdapter {
     public void untrack() {
         trackedParticle = null;
         panZoomCameraInput.setPanningDisabled(false);
+        simulationScreen.pollStats();
     }
 
     private boolean untrack(Vector2 touchPos) {
-        if (!Geometry.isPointInsideCircle(trackedParticle.getPos(), trackedParticle.getRadius(), touchPos)) {
-            trackedParticle = null;
-            panZoomCameraInput.setPanningDisabled(false);
-        }
+        if (!Geometry.isPointInsideCircle(trackedParticle.getPos(), trackedParticle.getRadius(), touchPos))
+            untrack();
 
         return track(touchPos);
     }
