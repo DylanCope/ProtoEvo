@@ -41,7 +41,7 @@ public class FloatGene implements Gene<Float>, Serializable {
 
     @Override
     public Float newRandomValue() {
-        return Simulation.RANDOM.nextFloat() * (maxValue - minValue) + minValue;
+        return Simulation.RANDOM.nextFloat(minValue, maxValue);
     }
 
     @Override

@@ -16,6 +16,7 @@ import com.badlogic.gdx.scenes.scene2d.Touchable;
 import com.badlogic.gdx.scenes.scene2d.ui.ImageButton;
 import com.badlogic.gdx.scenes.scene2d.utils.Drawable;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
+import com.protoevo.biology.neat.NeuralNetwork;
 import com.protoevo.biology.protozoa.NNBrain;
 import com.protoevo.biology.protozoa.Protozoan;
 import com.protoevo.core.Particle;
@@ -307,8 +308,8 @@ public class SimulationScreen {
         if (renderingEnabled && particleTracker.isTracking()) {
             Particle particle = particleTracker.getTrackedParticle();
             if (particle instanceof Protozoan) {
-                NNBrain nnBrain = (NNBrain) ((Protozoan) particle).getBrain();
-                networkRenderer.setNeuralNetwork(nnBrain.network);
+                NeuralNetwork grn = ((Protozoan) particle).getGeneExpressionFunction().getRegulatoryNetwork();
+                networkRenderer.setNeuralNetwork(grn);
                 networkRenderer.render(delta);
             }
         }

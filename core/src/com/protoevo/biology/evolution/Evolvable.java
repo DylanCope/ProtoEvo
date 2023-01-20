@@ -16,6 +16,10 @@ public interface Evolvable extends Serializable {
     void setGeneExpressionFunction(GeneExpressionFunction fn);
     GeneExpressionFunction getGeneExpressionFunction();
 
+    static String name() {
+        return Evolvable.class.toString();
+    }
+
     interface Component extends Evolvable {
         default void setGeneExpressionFunction(GeneExpressionFunction fn) {}
         default GeneExpressionFunction getGeneExpressionFunction() {
@@ -119,6 +123,9 @@ public interface Evolvable extends Serializable {
                         componentClass, geneExpressionFunction);
 
                 Evolvable component = createNew(componentConstr, geneExpressionFunction);
+                if (component.getGeneExpressionFunction() != null)
+                    geneExpressionFunction.merge(component.getGeneExpressionFunction());
+
                 if (component instanceof GeneExpressionFunction) {
                     ((GeneExpressionFunction) component).merge(geneExpressionFunction);
                     geneExpressionFunction = (GeneExpressionFunction) component;
@@ -164,6 +171,11 @@ public interface Evolvable extends Serializable {
             else if (method.isAnnotationPresent(EvolvableObject.class)) {
                 EvolvableObject evolvable = method.getAnnotation(EvolvableObject.class);
                 geneExpressionFunction.addEvolvableObject(evolvable, method);
+            }
+
+            else if (method.isAnnotationPresent(EvolvableCollection.class)) {
+                EvolvableCollection evolvable = method.getAnnotation(EvolvableCollection.class);
+                geneExpressionFunction.addEvolvableCollection(geneExpressionFunction, evolvable, method);
             }
 
             else if (method.isAnnotationPresent(EvolvableComponent.class)) {

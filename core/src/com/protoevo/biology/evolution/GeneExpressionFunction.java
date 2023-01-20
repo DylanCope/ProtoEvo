@@ -2,6 +2,7 @@ package com.protoevo.biology.evolution;
 
 import com.protoevo.biology.neat.NetworkGenome;
 import com.protoevo.biology.neat.NeuralNetwork;
+import com.protoevo.biology.neat.Neuron;
 import com.protoevo.core.settings.Settings;
 import com.protoevo.core.Simulation;
 import com.protoevo.core.settings.SimulationSettings;
@@ -20,7 +21,7 @@ public class GeneExpressionFunction implements Evolvable.Component, Serializable
 
     public static class GeneExpressionNode implements Serializable {
         public static final long serialVersionUID = 1L;
-        private final String geneName;
+        private String geneName;
         private final Gene<?> gene;
         private final Method traitSetter;
         private final Map<String, Object> dependencies;
@@ -99,6 +100,10 @@ public class GeneExpressionFunction implements Evolvable.Component, Serializable
         public Method getTraitSetter() {
             return traitSetter;
         }
+
+        public void prependName(String name) {
+            geneName = name + "/" + geneName;
+        }
     }
 
     public static final long serialVersionUID = 1L;
@@ -124,21 +129,26 @@ public class GeneExpressionFunction implements Evolvable.Component, Serializable
         this.mutationChance = mutationChance;
     }
 
+    public static final String GENES_GENE_NAME = "GeneExpressionFunction/Genes";
+    public static final String GRN_GENE_NAME = "GeneExpressionFunction/Gene Regulatory Network";
+
     @EvolvableObject(
             name="Gene Regulatory Network",
             geneClassName="com.protoevo.biology.evolution.GeneRegulatoryNetworkGene",
-            geneDependencies="Genes")
+            geneDependencies=GENES_GENE_NAME)
     public void setGeneRegulatoryNetwork(NetworkGenome grnGenome) {
         for (String regulator : geneRegulators.keySet())
             if (!grnGenome.hasSensor(regulator))
                 grnGenome.addSensor(regulator);
 
         regulatedGenes = new ArrayList<>();
-        for (String geneName : getGeneNames())
+        for (String geneName : getGeneNames()) {
             if (grnGenome.hasSensor(geneName + " Input"))
                 regulatedGenes.add(geneName);
+        }
 
         geneRegulatoryNetwork = grnGenome.phenotype();
+
         for (int i = 0; i < geneRegulatoryNetwork.getDepth() + 1; i++)
             tick();
     }
@@ -214,7 +224,7 @@ public class GeneExpressionFunction implements Evolvable.Component, Serializable
     }
 
     public void addEvolvableFloat(EvolvableFloat evolvableFloat, Method method) {
-        String name = evolvableFloat.name();
+        String name = method.getDeclaringClass().getSimpleName() + "/" + evolvableFloat.name();
         float minValue = evolvableFloat.min();
         float maxValue = evolvableFloat.max();
         FloatGene gene;
@@ -224,12 +234,12 @@ public class GeneExpressionFunction implements Evolvable.Component, Serializable
             gene = new FloatGene(name, minValue, maxValue, evolvableFloat.initValue());
 
         GeneExpressionNode node = new GeneExpressionNode(name, gene, method, evolvableFloat.geneDependencies());
-        node.addDependency("Gene Regulatory Network");
+        node.addDependency("GeneExpressionFunction/Gene Regulatory Network");
         addNode(name, node);
     }
 
     public void addEvolvableInteger(EvolvableInteger evolvableInteger, Method method) {
-        String name = evolvableInteger.name();
+        String name = method.getDeclaringClass().getSimpleName() + "/" + evolvableInteger.name();
         int minValue = evolvableInteger.min();
         int maxValue = evolvableInteger.max();
         EvolvableInteger.MutationMethod mutMethod = evolvableInteger.mutateMethod();
@@ -274,14 +284,35 @@ public class GeneExpressionFunction implements Evolvable.Component, Serializable
     }
 
     public void addEvolvableObject(EvolvableObject evolvable, Method method) {
-        String name = evolvable.name();
+        String name = method.getDeclaringClass().getSimpleName() + "/" + evolvable.name();
         String geneClassName = evolvable.geneClassName();
         Gene<?> gene = constructGene(geneClassName, name);
-        if (name.equals("Genes")) {
+        if (name.equals(GENES_GENE_NAME)) {
             Genes genesGenes = (Genes) gene.getValue();
             genesGenes.putAll(genes);
             genes = genesGenes;
         }
+        addNode(name, new GeneExpressionNode(name, gene, method, evolvable.geneDependencies()));
+    }
+
+    public void addEvolvableCollection(GeneExpressionFunction geneExpressionFunction, EvolvableCollection evolvable, Method method) {
+        String name = method.getDeclaringClass().getSimpleName() + "/" + evolvable.name();
+        int minSize = evolvable.minSize();
+        int maxSize = evolvable.maxSize();
+        int initialSize = evolvable.initialSize();
+
+        Class<Evolvable> componentClass;
+        try {
+            componentClass = (Class<Evolvable>) Class.forName(evolvable.elementClassPath());
+        } catch (ClassNotFoundException e) {
+            throw new RuntimeException("Failed to find class for evolvable collection: " + e);
+        } catch (ClassCastException e) {
+            throw new RuntimeException("EvolvableCollection element class path " + evolvable.elementClassPath() +
+                    " did not refer to a class that implements Evolvable: " + e);
+        }
+
+        EvolvableCollectionGene gene = new EvolvableCollectionGene(
+                geneExpressionFunction, componentClass, name, minSize, maxSize, initialSize);
         addNode(name, new GeneExpressionNode(name, gene, method, evolvable.geneDependencies()));
     }
 
@@ -306,7 +337,7 @@ public class GeneExpressionFunction implements Evolvable.Component, Serializable
         return geneRegulators;
     }
 
-    public Collection<String> geRegulatedGenes() {
+    public Collection<String> getRegulatedGenes() {
         return regulatedGenes;
     }
 
@@ -376,6 +407,34 @@ public class GeneExpressionFunction implements Evolvable.Component, Serializable
             disableNode.addDependent(geneName);
             genes.put(disableName, disableNode);
         }
+    }
+
+    public void prependGeneNames(String name) {
+        ((GeneRegulatoryNetworkGene) getTraitGene(GRN_GENE_NAME)).prependGeneNames(name);
+
+        for (GeneExpressionNode node : genes.values()) {
+            node.prependName(name);
+            for (String dependent : node.getDependents()) {
+                Map<String, Object> dependentsDependencies = getNode(dependent).getDependencies();
+                dependentsDependencies.put(
+                        name + "/" + node.geneName, dependentsDependencies.get(node.geneName)
+                );
+            }
+        }
+        for (int i = 0; i < genes.entrySet().size(); i++) {
+            Map.Entry<String, GeneExpressionNode> entry = genes.entrySet().iterator().next();
+            genes.put(name + "/" + entry.getKey(), entry.getValue());
+            genes.remove(entry.getKey());
+        }
+
+        Iterator<String> regulatedGenesIterator = regulatedGenes.iterator();
+        for (int i = 0; i < regulatedGenes.size(); i++) {
+            String regulatedGene = regulatedGenesIterator.next();
+            regulatedGenes.remove(regulatedGene);
+            regulatedGenes.add(name + "/" + regulatedGene);
+        }
+
+
     }
 
     @Override

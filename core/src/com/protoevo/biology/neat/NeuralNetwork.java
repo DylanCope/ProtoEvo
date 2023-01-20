@@ -136,6 +136,14 @@ public class NeuralNetwork implements Serializable
         return neurons;
     }
 
+    public Neuron[] getInputNeurons() {
+        return inputNeurons;
+    }
+
+    public Neuron[] getOutputNeurons() {
+        return outputNeurons;
+    }
+
     public boolean hasComputedGraphicsPositions() {
         return computedGraphics;
     }

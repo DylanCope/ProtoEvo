@@ -35,14 +35,28 @@ public class GeneRegulatoryNetworkGene implements Gene<NetworkGenome>, Serializa
         float min = gene.getMinValue();
         float max = gene.getMaxValue();
         NeuronGene sensor = networkGenome.addSensor(
-                trait + " Input",
+                trait + ":Input",
                 z -> 2 * (z - min) / (max - min) - 1
         );
         NeuronGene output = networkGenome.addOutput(
-                trait + " Output",
+                trait + ":Output",
                 z -> min + (max - min) * Neuron.Activation.SIGMOID.apply(z)
         );
         networkGenome.addSynapse(sensor, output, 1);
+    }
+
+    public String getInputName(String geneName) {
+        return geneName + ":Input";
+    }
+
+    public String getOutputName(String geneName) {
+        return geneName + ":Output";
+    }
+
+    public void prependGeneNames(String prefix) {
+        networkGenome.iterateNeuronGenes().forEachRemaining(
+                neuronGene -> neuronGene.setLabel(prefix + "/" + neuronGene.getLabel())
+        );
     }
 
     private float getMinValueGiven(int currentValue, int maxIncrement, int absMin) {
@@ -57,11 +71,11 @@ public class GeneRegulatoryNetworkGene implements Gene<NetworkGenome>, Serializa
 
     private void addIntegerSynapse(String trait, Supplier<Float> getMin, Supplier<Float> getMax) {
         NeuronGene sensor = networkGenome.addSensor(
-                trait + " Input",
+                getInputName(trait),
                 z -> 2 * (z - getMin.get()) / (getMax.get() - getMin.get()) - 1
         );
         NeuronGene output = networkGenome.addOutput(
-                trait + " Output",
+                getOutputName(trait),
                 z -> (float) Math.round(getMin.get() + (getMax.get() - getMin.get()) * Neuron.Activation.SIGMOID.apply(z))
         );
         networkGenome.addSynapse(sensor, output, 1);
@@ -84,9 +98,9 @@ public class GeneRegulatoryNetworkGene implements Gene<NetworkGenome>, Serializa
     }
 
     private void addBooleanGeneIO(String trait, BooleanGene gene) {
-        NeuronGene sensor = networkGenome.addSensor(trait + " Input");
+        NeuronGene sensor = networkGenome.addSensor(getInputName(trait));
         NeuronGene output = networkGenome.addOutput(
-                trait + " Output",
+                trait + ":Output",
                 z -> (z < 0) ? -1f : 1f
         );
         networkGenome.addSynapse(sensor, output, 1);
@@ -94,16 +108,17 @@ public class GeneRegulatoryNetworkGene implements Gene<NetworkGenome>, Serializa
 
     @Override
     public NetworkGenome getValue(Map<String, Object> dependencies) {
-        if (dependencies != null && dependencies.containsKey("Genes")) {
-            GeneExpressionFunction.Genes genes = (GeneExpressionFunction.Genes) dependencies.get("Genes");
+        if (dependencies != null && dependencies.containsKey(GeneExpressionFunction.GENES_GENE_NAME)) {
+            GeneExpressionFunction.Genes genes =
+                    (GeneExpressionFunction.Genes) dependencies.get(GeneExpressionFunction.GENES_GENE_NAME);
             for (GeneExpressionFunction.GeneExpressionNode node : genes.values()) {
                 Gene<?> gene = node.getGene();
                 String trait = gene.getTraitName();
-                if (gene instanceof FloatGene && !networkGenome.hasSensor(trait + " Input"))
+                if (gene instanceof FloatGene && !networkGenome.hasSensor(getInputName(trait)))
                     addFloatGeneIO(trait, (FloatGene) gene);
-                else if (gene instanceof IntegerGene && !networkGenome.hasSensor(trait + " Input"))
+                else if (gene instanceof IntegerGene && !networkGenome.hasSensor(getInputName(trait)))
                     addIntegerGeneIO(trait, (IntegerGene) gene);
-                else if (gene instanceof BooleanGene && !networkGenome.hasSensor(trait + " Input"))
+                else if (gene instanceof BooleanGene && !networkGenome.hasSensor(getInputName(trait)))
                     addBooleanGeneIO(trait, (BooleanGene) gene);
             }
         }

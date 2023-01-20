@@ -2,23 +2,33 @@ package com.protoevo.biology.nodes;
 
 import com.badlogic.gdx.math.Vector2;
 import com.protoevo.biology.Cell;
+import com.protoevo.biology.evolution.Evolvable;
+import com.protoevo.biology.evolution.EvolvableComponent;
+import com.protoevo.biology.evolution.EvolvableFloat;
+import com.protoevo.biology.evolution.GeneExpressionFunction;
 import com.protoevo.core.settings.ProtozoaSettings;
 import com.protoevo.utils.Geometry;
 
 import java.util.Arrays;
 import java.util.Optional;
 
-public class SurfaceNode {
+public class SurfaceNode implements Evolvable {
 
-    private final Cell cell;
-    private final float angle;
+    private Cell cell;
+    private float angle;
     private final Vector2 position = new Vector2();
     private Optional<NodeAttachment> attachment = Optional.empty();
     private final float[] inputActivation = new float[ProtozoaSettings.surfaceNodeActivationSize];
     private final float[] outputActivation = new float[ProtozoaSettings.surfaceNodeActivationSize];
 
-    public SurfaceNode(Cell cell, float angle) {
+    public SurfaceNode() {}
+
+    public void setCell(Cell cell) {
         this.cell = cell;
+    }
+
+    @EvolvableFloat(name = "Node Angle", max = 2 * (float) Math.PI)
+    public void setAngle(float angle) {
         this.angle = angle;
     }
 
@@ -62,5 +72,17 @@ public class SurfaceNode {
 
     public float getInteractionRange() {
         return attachment.map(NodeAttachment::getInteractionRange).orElse(0f);
+    }
+
+    private GeneExpressionFunction fn;
+    @Override
+    @EvolvableComponent
+    public void setGeneExpressionFunction(GeneExpressionFunction fn) {
+        this.fn = fn;
+    }
+
+    @Override
+    public GeneExpressionFunction getGeneExpressionFunction() {
+        return fn;
     }
 }

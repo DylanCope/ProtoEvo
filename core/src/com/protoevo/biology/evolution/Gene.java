@@ -57,5 +57,4 @@ public interface Gene<T> extends Evolvable.Component, Serializable {
     default Gene<?> copy() {
         return createNew(getValue());
     }
-
 }

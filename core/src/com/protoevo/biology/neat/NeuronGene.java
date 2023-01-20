@@ -10,7 +10,7 @@ public class NeuronGene implements Comparable<NeuronGene>, Serializable
     private final Neuron.Type type;
     private final Neuron.Activation activation;
 
-    private final String label;
+    private String label;
 
     public NeuronGene(int id, Neuron.Type type, Neuron.Activation activation)
     {
@@ -56,5 +56,9 @@ public class NeuronGene implements Comparable<NeuronGene>, Serializable
 
     public String getLabel() {
         return label;
+    }
+
+    public void setLabel(String label) {
+        this.label = label;
     }
 }
