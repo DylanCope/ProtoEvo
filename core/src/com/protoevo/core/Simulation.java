@@ -3,6 +3,7 @@ package com.protoevo.core;
 import com.github.javafaker.Faker;
 import com.protoevo.core.settings.Settings;
 import com.protoevo.core.settings.SimulationSettings;
+import com.protoevo.env.ChemicalSolution;
 import com.protoevo.env.Environment;
 import com.protoevo.ui.SimulationScreen;
 import com.protoevo.utils.FileIO;
@@ -165,28 +166,15 @@ public class Simulation implements Runnable
 	}
 
 	public void run() {
-		prepare();
+
+		ChemicalSolution chemicalSolution = environment.getChemicalSolution();
+		if (chemicalSolution != null)
+			chemicalSolution.initialise();
+
 		while (simulate) {
 			if (paused)
 				continue;
 
-//			if (delayUpdate && updateDelay > 0) {
-//				double currTime = Utils.getTimeSeconds();
-//				if ((currTime - lastUpdateTime) > updateDelay) {
-//					update(Settings.simulationUpdateDelta);
-//					lastUpdateTime = currTime;
-//				}
-//			} else {
-//				update(Settings.simulationUpdateDelta);
-//			}
-
-			if (delayUpdate && updateDelay > 0) {
-				try {
-					Thread.sleep((long) (1000 * updateDelay));
-				} catch (InterruptedException e) {
-					throw new RuntimeException(e);
-				}
-			}
 			update(Settings.simulationUpdateDelta);
 
 			if (environment.numberOfProtozoa() <= 0 && Settings.finishOnProtozoaExtinction) {
@@ -225,6 +213,10 @@ public class Simulation implements Runnable
 			timeSinceSnapshot = 0;
 			makeHistorySnapshot();
 		}
+	}
+
+	public void interruptSimulationLoop() {
+		simulate = false;
 	}
 
 	public void close() {
@@ -296,5 +288,9 @@ public class Simulation implements Runnable
 		repl.close();
 		replThread.interrupt();
 		System.exit(0);
+	}
+
+	public boolean isReady() {
+		return initialised;
 	}
 }

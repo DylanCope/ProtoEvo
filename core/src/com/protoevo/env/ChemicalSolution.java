@@ -4,6 +4,7 @@ import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.math.Vector2;
 import com.protoevo.biology.Cell;
+import com.protoevo.biology.EdibleCell;
 import com.protoevo.biology.PlantCell;
 import com.protoevo.core.settings.Settings;
 import com.protoevo.core.settings.SimulationSettings;
@@ -93,10 +94,9 @@ public class ChemicalSolution implements Serializable {
     }
 
     public void depositChemicals(float delta, Cell e) {
-        if (e instanceof PlantCell && !e.isDead()) {
+        if (e instanceof EdibleCell && !e.isDead()) {
             float k = Settings.plantPheromoneDeposit;
-            float deposit = .5f; // Math.min(1f, delta * k * e.getRadius() * e.getHealth());
-            // float deposit = delta * 1000f;
+            float deposit = 500f * delta;
             Color cellColour = e.getColor();
 
             int fieldX = toChemicalGridX(e.getPos().x);
@@ -125,8 +125,19 @@ public class ChemicalSolution implements Serializable {
                 swapBuffer[4*i + 3] = (byte) ((colourRGBA8888 & 0x000000ff));
             });
 
-        diffusionKernel.processImage(
-                swapBuffer, chemicalTextureWidth, chemicalTextureHeight);
+        try {
+            diffusionKernel.processImage(
+                    swapBuffer, chemicalTextureWidth, chemicalTextureHeight);
+        }
+        catch (Exception e) {
+            if (e.getMessage().contains("CUDA_ERROR_INVALID_CONTEXT") ||
+                    e.getMessage().contains("CUDA_ERROR_INVALID_HANDLE")) {
+                System.out.println("CUDA context lost, reinitialising...");
+                initialise();
+            } else {
+                throw e;
+            }
+        }
 
         IntStream.range(0, chemicalTextureWidth * chemicalTextureHeight).parallel()
             .forEach(i -> {

@@ -11,8 +11,9 @@ import static jcuda.driver.JCudaDriver.*;
 
 public class JCudaKernelRunner {
 
-    private final CUfunction function;
+    private CUfunction function;
     private final int blockSizeX, blockSizeY;
+    private final String kernelName, functionName;
 
     public JCudaKernelRunner(String kernelName) {
         this(kernelName, "kernel", 32, 32);
@@ -21,16 +22,22 @@ public class JCudaKernelRunner {
     public JCudaKernelRunner(String kernelName, String functionName, int blockSizeX, int blockSizeY) {
         this.blockSizeX = blockSizeX;
         this.blockSizeY = blockSizeY;
+        this.kernelName = kernelName;
+        this.functionName = functionName;
 
         // Enable exceptions and omit all subsequent error checks
         JCudaDriver.setExceptionsEnabled(true);
+        initialise();
+    }
 
+    private void initialise() {
         // Initialize the driver and create a context for the first device.
         cuInit(0);
         CUdevice device = new CUdevice();
         cuDeviceGet(device, 0);
         CUcontext context = new CUcontext();
         cuCtxCreate(context, 0, device);
+
         String kernelPath = Gdx.files.external("kernels/" + kernelName + ".cu").path();
         try {
             String ptxFile = JCudaUtils.preparePtxFile(kernelPath);
@@ -48,7 +55,6 @@ public class JCudaKernelRunner {
         } catch (IOException e) {
             throw new RuntimeException("Was unable to compile " + kernelName + ":\n" + e);
         }
-
     }
 
     public CUdeviceptr[] getAdditionalParameters() {
@@ -75,17 +81,6 @@ public class JCudaKernelRunner {
         CUdeviceptr deviceOutput = new CUdeviceptr();
         cuMemAlloc(deviceOutput, (long) result.length * Sizeof.BYTE);
 
-//        CUdeviceptr[] additionalParameters = getAdditionalParameters();
-//        boolean hasAdditionalParameters = additionalParameters != null && additionalParameters.length > 0;
-
-        int nBaseParams = 5;
-//        int nParams = hasAdditionalParameters ? nBaseParams + additionalParameters.length : nBaseParams;
-//        Pointer[] parameters = new Pointer[5];
-//        parameters[0] = Pointer.to(Pointer.to(new int[]{w}));
-//        parameters[1] = Pointer.to(Pointer.to(new int[]{h}));
-//        parameters[2] = Pointer.to(Pointer.to(new int[]{c}));
-//        parameters[3] = Pointer.to(devicePixels);
-//        parameters[4] = Pointer.to(deviceOutput);
         Pointer kernelParameters = Pointer.to(
                 Pointer.to(new int[]{w}),
                 Pointer.to(new int[]{h}),
@@ -95,18 +90,8 @@ public class JCudaKernelRunner {
         );
 
 
-//        if (hasAdditionalParameters) {
-//            for (CUdeviceptr additionalParameter : additionalParameters) {
-//                cuMemAlloc(additionalParameter, (long) pixels.length * Sizeof.INT);
-//            }
-//            for (int i = 0; i < additionalParameters.length; i++) {
-//                parameters[i + nBaseParams] = Pointer.to(additionalParameters[i]);
-//            }
-//        }
-
         // Set up the kernel parameters: A pointer to an array
         // of pointers which point to the actual values.
-//        Pointer kernelParameters = Pointer.to(parameters);
 
         // Call the kernel function.
         int gridSizeX = (int) Math.ceil((double) w / blockSizeX);
@@ -122,7 +107,6 @@ public class JCudaKernelRunner {
 
         // Allocate host output memory and copy the device output
         // to the host.
-//        int[] hostOutput = new int[result.length];
         cuMemcpyDtoH(Pointer.to(result), deviceOutput, (long) result.length * Sizeof.BYTE);
         cuMemFree(devicePixels);
         cuMemFree(deviceOutput);

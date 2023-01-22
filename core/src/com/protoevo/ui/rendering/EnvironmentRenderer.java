@@ -32,19 +32,16 @@ import static com.protoevo.utils.Utils.lerp;
 public class EnvironmentRenderer implements Renderer {
 
     private final Box2DDebugRenderer debugRenderer;
-    private final SpriteBatch batch, chemicalBatch;
-    private final ShaderProgram chemicalShader;
+    private final SpriteBatch batch;
     private final Texture particleTexture;
-    private Texture chemicalTexture;
-    private Pixmap chemicalPixmap;
     private final HashMap<Protozoan, ProtozoaRenderer> protozoaRenderers = new HashMap<>();
     private final Sprite jointSprite;
     private final ShapeRenderer shapeRenderer;
-
     private final Environment environment;
     private final OrthographicCamera camera;
     private final Simulation simulation;
     private final SimulationInputManager inputManager;
+    private final ChemicalsRenderer chemicalsRenderer;
 
     public static Sprite loadSprite(String path) {
         Texture texture = new Texture(Gdx.files.internal(path), true);
@@ -58,27 +55,19 @@ public class EnvironmentRenderer implements Renderer {
         this.inputManager = inputManager;
         environment = simulation.getEnv();
 
-        ChemicalSolution chemicalSolution = environment.getChemicalSolution();
-        if (chemicalSolution != null) {
-            chemicalSolution.setUpdateCallback(this::updateChemicalsTexture);
-            chemicalTexture = new Texture(chemicalSolution.getChemicalPixmap());
-        }
         debugRenderer = new Box2DDebugRenderer();
         batch = new SpriteBatch();
-        chemicalBatch = new SpriteBatch();
-        chemicalShader = new ShaderProgram(
-                Gdx.files.internal("shaders/chemical/vertex.glsl"),
-                Gdx.files.internal("shaders/chemical/fragment.glsl"));
-        if (!chemicalShader.isCompiled()) {
-            throw new RuntimeException("Shader compilation failed: " + chemicalShader.getLog());
-        }
-
         particleTexture = ParticleTexture.getTexture();
 
         jointSprite = loadSprite("cell/binding_base_128x128.png");
 
         shapeRenderer = new ShapeRenderer();
         shapeRenderer.setAutoShapeType(true);
+
+        if (environment.getChemicalSolution() != null)
+            chemicalsRenderer = new ChemicalsRenderer(environment);
+        else
+            chemicalsRenderer = null;
     }
 
     public void renderJoinedParticles(JointsManager.JoinedParticles joinedParticles) {
@@ -106,37 +95,6 @@ public class EnvironmentRenderer implements Renderer {
         jointSprite.draw(batch);
     }
 
-    public void updateChemicalsTexture(Pixmap pixmap) {
-        chemicalPixmap = pixmap;
-    }
-
-    public void renderChemicalField() {
-        ChemicalSolution chemicalSolution = environment.getChemicalSolution();
-
-        if (chemicalSolution == null || chemicalTexture == null)
-            return;
-
-        chemicalPixmap = chemicalSolution.getChemicalPixmap();
-        if (chemicalPixmap != null) {
-            chemicalTexture.draw(chemicalPixmap, 0, 0);
-            chemicalPixmap = null;
-        }
-
-        chemicalBatch.enableBlending();
-        chemicalBatch.setProjectionMatrix(camera.combined);
-
-        chemicalShader.bind();
-        chemicalShader.setUniformf("u_resolution", Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
-        chemicalBatch.setShader(chemicalShader);
-
-        chemicalBatch.begin();
-        float x = -chemicalSolution.getFieldWidth() / 2;
-        float y = -chemicalSolution.getFieldHeight() / 2;
-        chemicalBatch.draw(chemicalTexture, x, y,
-                chemicalSolution.getFieldWidth(), chemicalSolution.getFieldWidth());
-        chemicalBatch.end();
-    }
-
     public void render(float delta) {
 
         ScreenUtils.clear(0, 0.1f, 0.2f, .95f);
@@ -145,15 +103,19 @@ public class EnvironmentRenderer implements Renderer {
         batch.setProjectionMatrix(camera.combined);
 
         synchronized (environment) {
-            if (Settings.enableChemicalField)
-                renderChemicalField();
+            if (chemicalsRenderer != null)
+                chemicalsRenderer.render(camera);
 
             // Render Particles
             batch.begin();
             if (camera.zoom < 3)
                 environment.getJointsManager().getParticleBindings()
                         .forEach(this::renderJoinedParticles);
-            environment.getParticles().forEach(p -> drawParticle(delta, p));
+            environment.getParticles().stream()
+                    .parallel()
+                    .filter(p -> !circleNotVisible(p.getPos(), p.getRadius()))
+                    .iterator()
+                    .forEachRemaining(p -> drawParticle(delta, p));
             batch.end();
 
             protozoaRenderers.entrySet()
@@ -250,10 +212,6 @@ public class EnvironmentRenderer implements Renderer {
     }
 
     public void drawParticle(float delta, Particle p) {
-
-        if (circleNotVisible(p.getPos(), p.getRadius())) {
-            return;
-        }
 
         if (p instanceof Protozoan) {
             ProtozoaRenderer protozoanRenderer = protozoaRenderers

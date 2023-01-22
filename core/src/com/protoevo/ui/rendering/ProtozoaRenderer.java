@@ -93,6 +93,9 @@ public class ProtozoaRenderer {
                 detailedSprite = ImageUtils.convertToSprite(generateCellImage());
             }
             cellSprite = detailedSprite;
+            cellSprite.setOriginCenter();
+            cellSprite.setRotation(cellAngle);
+
             nodeRenderers.entrySet().removeIf(e -> e.getValue().isStale());
             for (SurfaceNode node : protozoan.getSurfaceNodes()) {
                 nodeRenderers.computeIfAbsent(node, this::createNodeRenderer)
@@ -104,8 +107,6 @@ public class ProtozoaRenderer {
         }
 
         cellSprite.setColor(protozoan.getColor());
-        cellSprite.setOriginCenter();
-        cellSprite.setRotation(cellAngle);
         cellSprite.setPosition(x, y);
         cellSprite.setSize(size, size);
         cellSprite.draw(batch);

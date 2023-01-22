@@ -17,6 +17,7 @@ import com.badlogic.gdx.scenes.scene2d.utils.Drawable;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 import com.protoevo.biology.neat.NeuralNetwork;
 import com.protoevo.biology.protozoa.Protozoan;
+import com.protoevo.core.Application;
 import com.protoevo.core.Particle;
 import com.protoevo.core.Simulation;
 import com.protoevo.core.settings.WorldGenerationSettings;
@@ -48,7 +49,7 @@ public class SimulationScreen {
     private final int infoTextSize, textAwayFromEdge;
     private final NetworkRenderer networkRenderer;
     private final float noRenderPollStatsTime = 2f;
-    private float elapsedTime = 0, pollStatsCounter = 0;
+    private float elapsedTime = 0, pollStatsCounter = 0, countDownToRender = 0;
     private TreeMap<String, Float> stats = new TreeMap<>();
     private TreeMap<String, Float> debugStats = new TreeMap<>();
 
@@ -66,7 +67,7 @@ public class SimulationScreen {
         return generator.generateFont(parameter);
     }
 
-    public SimulationScreen(Simulation simulation) {
+    public SimulationScreen(Application app, Simulation simulation) {
         CursorUtils.setDefaultCursor();
 
         graphicsHeight = Gdx.graphics.getHeight();
@@ -114,8 +115,8 @@ public class SimulationScreen {
 
         ImageButton toggleRenderingButton = createBarImageButton("icons/terminal.png", event -> {
             if (event.toString().equals("touchDown")) {
-                simulation.toggleUpdateDelay();
                 toggleEnvironmentRendering();
+                app.toggleSeparateThread();
             }
             return true;
         });
@@ -260,6 +261,14 @@ public class SimulationScreen {
     public void draw(float delta) {
         elapsedTime += delta;
 
+        if (countDownToRender > 0) {
+            countDownToRender -= delta;
+            if (countDownToRender <= 0) {
+                renderingEnabled = true;
+                simLoaded = true;
+            }
+        }
+
         camera.update();
 
         if (simLoaded && inputManager.getParticleTracker().isTracking())
@@ -376,7 +385,6 @@ public class SimulationScreen {
 
     public synchronized void notifySimulationLoaded() {
         System.out.println("Rendering enabled.");
-        renderingEnabled = true;
-        simLoaded = true;
+        countDownToRender = 3;
     }
 }
