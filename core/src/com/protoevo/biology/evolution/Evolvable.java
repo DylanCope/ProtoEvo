@@ -9,6 +9,7 @@ import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 public interface Evolvable extends Serializable {
@@ -16,8 +17,10 @@ public interface Evolvable extends Serializable {
     void setGeneExpressionFunction(GeneExpressionFunction fn);
     GeneExpressionFunction getGeneExpressionFunction();
 
-    static String name() {
-        return Evolvable.class.toString();
+    default void build() {}
+
+    default String name() {
+        return this.getClass().toString();
     }
 
     interface Component extends Evolvable {
@@ -25,6 +28,16 @@ public interface Evolvable extends Serializable {
         default GeneExpressionFunction getGeneExpressionFunction() {
             return null;
         };
+    }
+
+    interface Element extends Component {
+        void setIndex(int index);
+        int getIndex();
+
+        @Override
+        default String name() {
+            return this.getClass().toString() + "/" + getIndex();
+        }
     }
 
     static <T extends Evolvable> T asexualClone(T evolvable) {
@@ -140,12 +153,19 @@ public interface Evolvable extends Serializable {
             Method setter = geneExpressionFunction.getTraitSetter(geneName);
 
             if (setter != null && setter.getDeclaringClass().equals(newEvolvable.getClass())) {
-                geneExpressionFunction.setTargetEvolvable(newEvolvable, geneName);
+                geneExpressionFunction.registerTargetEvolvable(newEvolvable, geneName);
             }
         }
 
-        newEvolvable.setGeneExpressionFunction(geneExpressionFunction);
-        geneExpressionFunction.setTargetEvolvable(newEvolvable);
+        if (newEvolvable instanceof GeneExpressionFunction)
+            ((GeneExpressionFunction) newEvolvable).merge(geneExpressionFunction);
+        else {
+            geneExpressionFunction.build();
+            newEvolvable.setGeneExpressionFunction(geneExpressionFunction);
+            geneExpressionFunction.registerTargetEvolvable(newEvolvable.name(), newEvolvable);
+        }
+        geneExpressionFunction.build();
+        newEvolvable.build();
         return newEvolvable;
     }
 
@@ -210,14 +230,19 @@ public interface Evolvable extends Serializable {
                 String regulatorName = method.getAnnotation(GeneRegulator.class).name();
                 float max = method.getAnnotation(GeneRegulator.class).max();
                 float min = method.getAnnotation(GeneRegulator.class).min();
-                regulators.put(regulatorName, evolvable -> {
+
+                Function<Evolvable, Float> getter = evolvable -> {
                     try {
                         return 2f * ((Float) method.invoke(evolvable) - min) / (max - min) - 1f;
-                    } catch (IllegalAccessException | InvocationTargetException e) {
+                    } catch (IllegalAccessException | InvocationTargetException | IllegalArgumentException e) {
                         throw new RuntimeException(
                                 "Failed to get value for gene regulator " + regulatorName + ": " + e);
                     }
-                });
+                };
+
+                GeneExpressionFunction.RegulationNode regulator =
+                        new GeneExpressionFunction.RegulationNode(regulatorName, getter);
+                regulators.put(regulatorName, regulator);
             }
         }
         return regulators;

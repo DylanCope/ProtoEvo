@@ -200,13 +200,21 @@ public class NetworkGenome implements Serializable
 	
 	public void mutate()
 	{
-		int i = random.nextInt(sensorNeuronGenes.length + hiddenNeuronGenes.length);
+		int iMax = sensorNeuronGenes.length + hiddenNeuronGenes.length;
+		if (iMax == 0)
+			return;
+
+		int i = random.nextInt(iMax);
 		NeuronGene in, out;
 		if (i < sensorNeuronGenes.length)
 			in = sensorNeuronGenes[i];
 		else in = hiddenNeuronGenes[i - sensorNeuronGenes.length];
 
-		int j = random.nextInt(hiddenNeuronGenes.length + outputNeuronGenes.length);
+		int jMax = hiddenNeuronGenes.length + outputNeuronGenes.length;
+		if (jMax == 0)
+			return;
+
+		int j = random.nextInt(jMax);
 		if (j < hiddenNeuronGenes.length)
 			out = hiddenNeuronGenes[j];
 		else out = outputNeuronGenes[j - hiddenNeuronGenes.length];

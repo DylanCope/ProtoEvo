@@ -32,6 +32,7 @@ public class LightSensitiveAttachment extends NodeAttachment {
         interactionRange = getInteractionRange();
         attachmentRelPos.set(node.getRelativePos());
         castRays();
+        output[0] = colour.r * 2 - 1f;
     }
 
     public Vector2[] nextRay() {

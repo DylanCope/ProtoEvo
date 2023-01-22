@@ -9,7 +9,7 @@ import com.protoevo.utils.Geometry;
 import java.util.Arrays;
 import java.util.Optional;
 
-public class SurfaceNode implements Evolvable.Component {
+public class SurfaceNode implements Evolvable.Element {
 
     private Cell cell;
     private float angle;
@@ -17,6 +17,7 @@ public class SurfaceNode implements Evolvable.Component {
     private Optional<NodeAttachment> attachment = Optional.empty();
     private final float[] inputActivation = new float[ProtozoaSettings.surfaceNodeActivationSize];
     private final float[] outputActivation = new float[ProtozoaSettings.surfaceNodeActivationSize];
+    private int nodeIdx;
 
     public SurfaceNode() {
 
@@ -88,5 +89,15 @@ public class SurfaceNode implements Evolvable.Component {
 
     public float getInteractionRange() {
         return attachment.map(NodeAttachment::getInteractionRange).orElse(0f);
+    }
+
+    @Override
+    public void setIndex(int index) {
+        this.nodeIdx = index;
+    }
+
+    @Override
+    public int getIndex() {
+        return nodeIdx;
     }
 }

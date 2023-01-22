@@ -15,7 +15,27 @@ import java.util.function.Function;
 public class GeneExpressionFunction implements Evolvable.Component, Serializable {
 
     public static class Genes extends HashMap<String, ExpressionNode> {}
-    public static class GeneRegulators extends HashMap<String, Function<Evolvable, Float>> {}
+    public static class GeneRegulators extends HashMap<String, RegulationNode> {}
+
+    public static class RegulationNode implements Serializable {
+        public static final long serialVersionUID = 1L;
+        public final String name;
+        private final Function<Evolvable, Float> regulatorGetter;
+        private String targetID;
+
+        public RegulationNode(String name, Function<Evolvable, Float> regulatorGetter) {
+            this.name = name;
+            this.regulatorGetter = regulatorGetter;
+        }
+
+        public void setTargetID(Evolvable target) {
+            this.targetID = target.name();
+        }
+
+        public float getValue(Evolvable evolvable) {
+            return regulatorGetter.apply(evolvable);
+        }
+    }
 
     public static class ExpressionNode implements Serializable {
         public static final long serialVersionUID = 1L;
@@ -109,10 +129,11 @@ public class GeneExpressionFunction implements Evolvable.Component, Serializable
     public static final long serialVersionUID = 1L;
     private Genes genes;
     private float mutationChance = SimulationSettings.globalMutationChance;
+    private NetworkGenome grnGenome;
     private NeuralNetwork geneRegulatoryNetwork;
     private GeneRegulators geneRegulators;
-    private Collection<String> regulatedGenes = new ArrayList<>();
-    private Evolvable targetEvolvable;
+    private final Collection<String> regulatedTraits = new ArrayList<>();
+    private final Map<String, Evolvable> targetMap = new HashMap<>();
 
     public GeneExpressionFunction(Genes genes, GeneRegulators geneRegulators) {
         this.genes = genes;
@@ -129,36 +150,21 @@ public class GeneExpressionFunction implements Evolvable.Component, Serializable
         this.mutationChance = mutationChance;
     }
 
-    public static final String GENES_TRAIT_NAME = "GeneExpressionFunction/Genes";
-    public static final String GRN_TRAIT_NAME = "GeneExpressionFunction/Gene Regulatory Network";
 
-    @EvolvableObject(
-            name="Gene Regulatory Network",
-            traitClass = "com.protoevo.biology.evolution.GeneRegulatoryNetworkTrait",
-            dependencies = GENES_TRAIT_NAME)
-    public void setGeneRegulatoryNetwork(NetworkGenome grnGenome) {
-//        for (String regulator : geneRegulators.keySet())
-//            if (!grnGenome.hasSensor(regulator))
-//                grnGenome.addSensor(regulator);
-
-        regulatedGenes.clear();
-        for (String traitName : getTraitNames()) {
-            if (grnGenome.hasSensor(GeneRegulatoryNetworkTrait.getInputName(traitName)))
-                regulatedGenes.add(traitName);
+    public void buildGeneRegulatoryNetwork() {
+        if (grnGenome == null) {
+            grnGenome = GeneRegulatoryNetworkFactory.createNetworkGenome(this);
         }
-
         geneRegulatoryNetwork = grnGenome.phenotype();
 
         for (int i = 0; i < geneRegulatoryNetwork.getDepth() + 1; i++)
             tick();
     }
 
-    @EvolvableObject(
-            name="Genes",
-            traitClass ="com.protoevo.biology.evolution.GenesTrait"
-    )
-    public void setGenes(Genes genes) {
-        this.genes = genes;
+    @Override
+    public void build() {
+        Component.super.build();
+        buildGeneRegulatoryNetwork();
     }
 
     public NeuralNetwork getRegulatoryNetwork() {
@@ -188,25 +194,28 @@ public class GeneExpressionFunction implements Evolvable.Component, Serializable
             }
         }
 
-        if (targetEvolvable == null)
-            return;
+        for (String regulatorName : geneRegulators.keySet()) {
+            RegulationNode node = geneRegulators.get(regulatorName);
+            if (!targetMap.containsKey(node.targetID))
+                throw new RuntimeException(
+                        "Could not find target " + node.targetID + " for regulator " + regulatorName);
 
-        for (String regulatorName : geneRegulators.keySet())
+            Evolvable target = targetMap.get(node.targetID);
             if (geneRegulatoryNetwork.hasSensor(regulatorName))
-                geneRegulatoryNetwork.setInput(regulatorName,
-                        geneRegulators.get(regulatorName).apply(targetEvolvable));
+                geneRegulatoryNetwork.setInput(regulatorName, node.getValue(target));
+        }
     }
 
     public void setGeneRegulators(GeneRegulators geneRegulators) {
         this.geneRegulators = geneRegulators;
     }
 
-    public void setTargetEvolvable(Evolvable evolvable, String geneName) {
+    public void registerTargetEvolvable(Evolvable evolvable, String geneName) {
         genes.get(geneName).setEvolvable(evolvable, getTraitValue(geneName));
     }
 
-    public void setTargetEvolvable(Evolvable evolvable) {
-        targetEvolvable = evolvable;
+    public void registerTargetEvolvable(String id, Evolvable evolvable) {
+        targetMap.put(id, evolvable);
     }
 
     public void tick() {
@@ -298,11 +307,11 @@ public class GeneExpressionFunction implements Evolvable.Component, Serializable
         String name = method.getDeclaringClass().getSimpleName() + "/" + evolvable.name();
         String geneClassName = evolvable.traitClass();
         Trait<?> trait = constructTrait(geneClassName, name);
-        if (name.equals(GENES_TRAIT_NAME)) {
-            Genes genesGenes = (Genes) trait.getValue();
-            genesGenes.putAll(genes);
-            genes = genesGenes;
-        }
+//        if (name.equals(GENES_TRAIT_NAME)) {
+//            Genes genesGenes = (Genes) trait.getValue();
+//            genesGenes.putAll(genes);
+//            genes = genesGenes;
+//        }
         addNode(name, new ExpressionNode(name, trait, method, evolvable.dependencies()));
     }
 
@@ -341,17 +350,18 @@ public class GeneExpressionFunction implements Evolvable.Component, Serializable
         return genes.keySet();
     }
 
-    public void merge(GeneExpressionFunction geneMapping) {
-        genes.putAll(geneMapping.genes);
-        geneRegulators.putAll(geneMapping.geneRegulators);
+    public void merge(GeneExpressionFunction other) {
+        genes.putAll(other.genes);
+        geneRegulators.putAll(other.geneRegulators);
+        targetMap.putAll(other.targetMap);
     }
 
     public GeneRegulators getGeneRegulators() {
         return geneRegulators;
     }
 
-    public Collection<String> getRegulatedGenes() {
-        return regulatedGenes;
+    public Collection<String> getRegulatedTraits() {
+        return regulatedTraits;
     }
 
     public Object getGeneValue(String name) {
@@ -399,7 +409,11 @@ public class GeneExpressionFunction implements Evolvable.Component, Serializable
             newNodes.put(entry.getKey(), newNode);
         }
 
-        return new GeneExpressionFunction(newNodes, geneRegulators);
+        GeneExpressionFunction newFn = new GeneExpressionFunction(newNodes, geneRegulators);
+        newFn.grnGenome = new NetworkGenome(grnGenome);
+        if (Math.random() < mutationChance)
+            newFn.grnGenome.mutate();
+        return newFn;
     }
 
     public float getMutationRate() {
@@ -442,14 +456,16 @@ public class GeneExpressionFunction implements Evolvable.Component, Serializable
             genes.remove(entry.getKey());
         }
 
-        Iterator<String> regulatedGenesIterator = regulatedGenes.iterator();
-        for (int i = 0; i < regulatedGenes.size(); i++) {
+        Iterator<String> regulatedGenesIterator = regulatedTraits.iterator();
+        for (int i = 0; i < regulatedTraits.size(); i++) {
             String regulatedGene = regulatedGenesIterator.next();
-            regulatedGenes.remove(regulatedGene);
-            regulatedGenes.add(name + "/" + regulatedGene);
+            regulatedTraits.remove(regulatedGene);
+            regulatedTraits.add(name + "/" + regulatedGene);
         }
+    }
 
-
+    public Genes getGenes() {
+        return genes;
     }
 
     @Override
