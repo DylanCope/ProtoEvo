@@ -95,8 +95,7 @@ public class ChemicalSolution implements Serializable {
 
     public void depositChemicals(float delta, Cell e) {
         if (e instanceof EdibleCell && !e.isDead()) {
-            float k = Settings.plantPheromoneDeposit;
-            float deposit = 500f * delta;
+            float deposit = Settings.plantPheromoneDeposit * delta;
             Color cellColour = e.getColor();
 
             int fieldX = toChemicalGridX(e.getPos().x);
@@ -107,9 +106,9 @@ public class ChemicalSolution implements Serializable {
         }
     }
 
-    public void deposit() {
+    public void deposit(float delta) {
         environment.getCells().parallelStream()
-                .forEach(e -> depositChemicals(timeSinceUpdate, e));
+                .forEach(e -> depositChemicals(delta, e));
     }
 
     public void diffuse() {
@@ -155,7 +154,7 @@ public class ChemicalSolution implements Serializable {
 
     public void update(float delta) {
         timeSinceUpdate += delta;
-        deposit();
+        deposit(delta);
         if (timeSinceUpdate > SimulationSettings.chemicalDiffusionInterval) {
             diffuse();
             timeSinceUpdate = 0;
