@@ -8,48 +8,48 @@ import java.io.Serializable;
 import java.util.Map;
 import java.util.function.Supplier;
 
-public class GeneRegulatoryNetworkGene implements Gene<NetworkGenome>, Serializable {
+public class GeneRegulatoryNetworkTrait implements Trait<NetworkGenome>, Serializable {
     public static final long serialVersionUID = -1259753801126730417L;
 
     private final NetworkGenome networkGenome;
     private final String geneName;
 
-    public GeneRegulatoryNetworkGene(String geneName) {
+    public GeneRegulatoryNetworkTrait(String geneName) {
         this.geneName = geneName;
         networkGenome = newRandomValue();
     }
 
-    public GeneRegulatoryNetworkGene(String geneName, NetworkGenome networkGenome) {
+    public GeneRegulatoryNetworkTrait(String geneName, NetworkGenome networkGenome) {
         this.geneName = geneName;
         this.networkGenome = networkGenome;
     }
 
     @Override
-    public Gene<NetworkGenome> mutate() {
+    public Trait<NetworkGenome> mutate() {
         NetworkGenome mutated = new NetworkGenome(networkGenome);
         mutated.mutate();
         return createNew(mutated);
     }
 
-    private void addFloatGeneIO(String trait, FloatGene gene) {
+    private void addFloatGeneIO(String trait, FloatTrait gene) {
         float min = gene.getMinValue();
         float max = gene.getMaxValue();
         NeuronGene sensor = networkGenome.addSensor(
-                trait + ":Input",
+                getInputName(trait),
                 z -> 2 * (z - min) / (max - min) - 1
         );
         NeuronGene output = networkGenome.addOutput(
-                trait + ":Output",
+                getOutputName(trait),
                 z -> min + (max - min) * Neuron.Activation.SIGMOID.apply(z)
         );
         networkGenome.addSynapse(sensor, output, 1);
     }
 
-    public String getInputName(String geneName) {
+    public static String getInputName(String geneName) {
         return geneName + ":Input";
     }
 
-    public String getOutputName(String geneName) {
+    public static String getOutputName(String geneName) {
         return geneName + ":Output";
     }
 
@@ -81,7 +81,7 @@ public class GeneRegulatoryNetworkGene implements Gene<NetworkGenome>, Serializa
         networkGenome.addSynapse(sensor, output, 1);
     }
 
-    private void addIntegerGeneIO(String trait, IntegerGene gene) {
+    private void addIntegerGeneIO(String trait, IntegerTrait gene) {
         if (gene.getMutationMethod().equals(EvolvableInteger.MutationMethod.RANDOM_SAMPLE)) {
             int min = gene.getMinValue();
             int max = gene.getMaxValue();
@@ -97,7 +97,7 @@ public class GeneRegulatoryNetworkGene implements Gene<NetworkGenome>, Serializa
         }
     }
 
-    private void addBooleanGeneIO(String trait, BooleanGene gene) {
+    private void addBooleanGeneIO(String trait, BooleanTrait gene) {
         NeuronGene sensor = networkGenome.addSensor(getInputName(trait));
         NeuronGene output = networkGenome.addOutput(
                 trait + ":Output",
@@ -106,22 +106,48 @@ public class GeneRegulatoryNetworkGene implements Gene<NetworkGenome>, Serializa
         networkGenome.addSynapse(sensor, output, 1);
     }
 
+    private void createInitialNetworkGenome(Map<String, Object> dependencies) {
+        GeneExpressionFunction.Genes genes =
+                (GeneExpressionFunction.Genes) dependencies.get(GeneExpressionFunction.GENES_TRAIT_NAME);
+
+        for (GeneExpressionFunction.ExpressionNode node : genes.values()) {
+            Trait<?> trait = node.getTrait();
+            String name = node.getName();
+            if (trait instanceof RegulatedFloatTrait && !networkGenome.hasSensor(getInputName(name))) {
+                RegulatedFloatTrait regulatedFloatTrait = (RegulatedFloatTrait) trait;
+                float min = regulatedFloatTrait.getMinValue();
+                float max = regulatedFloatTrait.getMaxValue();
+                networkGenome.addOutput(
+                        getOutputName(name),
+                        z -> min + (max - min) * Neuron.Activation.SIGMOID.apply(z)
+                );
+            } else if (trait instanceof FloatTrait && !networkGenome.hasSensor(getInputName(name)))
+                addFloatGeneIO(name, (FloatTrait) trait);
+            else if (trait instanceof IntegerTrait && !networkGenome.hasSensor(getInputName(name)))
+                addIntegerGeneIO(name, (IntegerTrait) trait);
+            else if (trait instanceof BooleanTrait && !networkGenome.hasSensor(getInputName(name)))
+                addBooleanGeneIO(name, (BooleanTrait) trait);
+        }
+
+        if (dependencies.containsKey("Gene Regulators")) {
+            GeneExpressionFunction.GeneRegulators geneRegulators =
+                    (GeneExpressionFunction.GeneRegulators) dependencies.get("Gene Regulators");
+            for (String regulator : geneRegulators.keySet())
+                if (!networkGenome.hasSensor(regulator))
+                    networkGenome.addSensor(regulator);
+        }
+
+        for (int i = 0; i < 100; i++) {
+            networkGenome.mutate();
+        }
+    }
+
     @Override
     public NetworkGenome getValue(Map<String, Object> dependencies) {
-        if (dependencies != null && dependencies.containsKey(GeneExpressionFunction.GENES_GENE_NAME)) {
-            GeneExpressionFunction.Genes genes =
-                    (GeneExpressionFunction.Genes) dependencies.get(GeneExpressionFunction.GENES_GENE_NAME);
-            for (GeneExpressionFunction.GeneExpressionNode node : genes.values()) {
-                Gene<?> gene = node.getGene();
-                String trait = gene.getTraitName();
-                if (gene instanceof FloatGene && !networkGenome.hasSensor(getInputName(trait)))
-                    addFloatGeneIO(trait, (FloatGene) gene);
-                else if (gene instanceof IntegerGene && !networkGenome.hasSensor(getInputName(trait)))
-                    addIntegerGeneIO(trait, (IntegerGene) gene);
-                else if (gene instanceof BooleanGene && !networkGenome.hasSensor(getInputName(trait)))
-                    addBooleanGeneIO(trait, (BooleanGene) gene);
-            }
-        }
+        if (networkGenome == null && dependencies != null
+                && dependencies.containsKey(GeneExpressionFunction.GENES_TRAIT_NAME))
+            createInitialNetworkGenome(dependencies);
+
         return networkGenome;
     }
 
@@ -138,8 +164,8 @@ public class GeneRegulatoryNetworkGene implements Gene<NetworkGenome>, Serializa
     }
 
     @Override
-    public Gene<NetworkGenome> createNew(NetworkGenome value) {
-        return new GeneRegulatoryNetworkGene(geneName, value);
+    public Trait<NetworkGenome> createNew(NetworkGenome value) {
+        return new GeneRegulatoryNetworkTrait(geneName, value);
     }
 
     @Override

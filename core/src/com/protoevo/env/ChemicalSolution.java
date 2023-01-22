@@ -1,9 +1,7 @@
 package com.protoevo.env;
 
 import com.badlogic.gdx.graphics.Color;
-import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Pixmap;
-import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.math.Vector2;
 import com.protoevo.biology.Cell;
 import com.protoevo.biology.PlantCell;
@@ -27,7 +25,7 @@ public class ChemicalSolution implements Serializable {
     private final Pixmap chemicalPixmap;
     private final byte[] swapBuffer;
     private float timeSinceUpdate = 0;
-    private final JCudaKernelRunner diffusionKernel;
+    private JCudaKernelRunner diffusionKernel;
     private Consumer<Pixmap> updateChemicalsTextureCallback;
     private final transient Color tmpColour = new Color();
 
@@ -56,7 +54,10 @@ public class ChemicalSolution implements Serializable {
 
         swapBuffer = new byte[cells * cells * 4];
         chemicalPixmap.setBlending(Pixmap.Blending.None);
+    }
 
+    public void initialise() {
+        // has to be called on the same thread running the simulation
         System.out.println("Initialising chemical diffusion CUDA kernel...");
         diffusionKernel = new JCudaKernelRunner("diffusion");
     }
@@ -143,8 +144,8 @@ public class ChemicalSolution implements Serializable {
 
     public void update(float delta) {
         timeSinceUpdate += delta;
+        deposit();
         if (timeSinceUpdate > SimulationSettings.chemicalDiffusionInterval) {
-            deposit();
             diffuse();
             timeSinceUpdate = 0;
             if (updateChemicalsTextureCallback != null)
@@ -152,7 +153,7 @@ public class ChemicalSolution implements Serializable {
         }
     }
 
-    public Pixmap getChemicalTexture() {
+    public Pixmap getChemicalPixmap() {
         return chemicalPixmap;
     }
 

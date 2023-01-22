@@ -1,5 +1,6 @@
 package com.protoevo.utils;
 
+import com.badlogic.gdx.Gdx;
 import jcuda.Pointer;
 import jcuda.Sizeof;
 import jcuda.driver.*;
@@ -30,8 +31,9 @@ public class JCudaKernelRunner {
         cuDeviceGet(device, 0);
         CUcontext context = new CUcontext();
         cuCtxCreate(context, 0, device);
+        String kernelPath = Gdx.files.external("kernels/" + kernelName + ".cu").path();
         try {
-            String ptxFile = JCudaUtils.preparePtxFile("kernels/" + kernelName + ".cu");
+            String ptxFile = JCudaUtils.preparePtxFile(kernelPath);
 
             // Load the ptx file. Make sure to have compiled the cu files first.
             // e.g.: > nvcc -m64 -ptx kernel.cu

@@ -4,17 +4,17 @@ import com.protoevo.core.Simulation;
 
 import java.util.Map;
 
-public class BooleanGene implements Gene<Boolean> {
+public class BooleanTrait implements Trait<Boolean> {
 
     private final boolean value;
     private final String geneName;
 
-    public BooleanGene(String geneName) {
+    public BooleanTrait(String geneName) {
         this.geneName = geneName;
         this.value = false;
     }
 
-    public BooleanGene(String geneName, boolean value) {
+    public BooleanTrait(String geneName, boolean value) {
         this.geneName = geneName;
         this.value = value;
     }
@@ -34,8 +34,8 @@ public class BooleanGene implements Gene<Boolean> {
     }
 
     @Override
-    public Gene<Boolean> createNew(Boolean value) {
-        return new BooleanGene(geneName, value);
+    public Trait<Boolean> createNew(Boolean value) {
+        return new BooleanTrait(geneName, value);
     }
 
     @Override

@@ -1,13 +1,13 @@
 package com.protoevo.biology.protozoa;
 
 import com.protoevo.biology.CellAdhesion;
-import com.protoevo.biology.evolution.Gene;
+import com.protoevo.biology.evolution.Trait;
 import com.protoevo.core.Simulation;
 
 import java.util.HashMap;
 import java.util.Map;
 
-public class CAMProductionGene implements Gene<Map<CellAdhesion.CAM, Float>> {
+public class CAMProductionTrait implements Trait<Map<CellAdhesion.CAM, Float>> {
     public static final long serialVersionUID = 1L;
 
     private static Map<CellAdhesion.CAM, Float> disabledValue = new HashMap<>();
@@ -15,13 +15,13 @@ public class CAMProductionGene implements Gene<Map<CellAdhesion.CAM, Float>> {
     private final String geneName;
     private boolean disabled;
 
-    public CAMProductionGene(String geneName) {
+    public CAMProductionTrait(String geneName) {
         this.geneName = geneName;
         this.camMap = newRandomValue();
         disabled = false;
     }
 
-    public CAMProductionGene(String geneName, Map<CellAdhesion.CAM, Float> camMap, boolean disabled) {
+    public CAMProductionTrait(String geneName, Map<CellAdhesion.CAM, Float> camMap, boolean disabled) {
         this.geneName = geneName;
         this.camMap = camMap;
         this.disabled = disabled;
@@ -64,8 +64,8 @@ public class CAMProductionGene implements Gene<Map<CellAdhesion.CAM, Float>> {
     }
 
     @Override
-    public Gene<Map<CellAdhesion.CAM, Float>> createNew(Map<CellAdhesion.CAM, Float> value) {
-        return new CAMProductionGene(geneName, value, disabled);
+    public Trait<Map<CellAdhesion.CAM, Float>> createNew(Map<CellAdhesion.CAM, Float> value) {
+        return new CAMProductionTrait(geneName, value, disabled);
     }
 
     @Override

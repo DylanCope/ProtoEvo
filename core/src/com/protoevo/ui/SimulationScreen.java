@@ -2,7 +2,6 @@ package com.protoevo.ui;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Color;
-import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
@@ -17,7 +16,6 @@ import com.badlogic.gdx.scenes.scene2d.ui.ImageButton;
 import com.badlogic.gdx.scenes.scene2d.utils.Drawable;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 import com.protoevo.biology.neat.NeuralNetwork;
-import com.protoevo.biology.protozoa.NNBrain;
 import com.protoevo.biology.protozoa.Protozoan;
 import com.protoevo.core.Particle;
 import com.protoevo.core.Simulation;
@@ -49,7 +47,7 @@ public class SimulationScreen {
     private final TopBar topBar;
     private final int infoTextSize, textAwayFromEdge;
     private final NetworkRenderer networkRenderer;
-    private final float pollStatsTime = .25f;
+    private final float noRenderPollStatsTime = 2f;
     private float elapsedTime = 0, pollStatsCounter = 0;
     private TreeMap<String, Float> stats = new TreeMap<>();
     private TreeMap<String, Float> debugStats = new TreeMap<>();
@@ -291,9 +289,13 @@ public class SimulationScreen {
         stage.act(delta);
         stage.draw();
 
-        pollStatsCounter += delta;
-        if (pollStatsCounter > pollStatsTime) {
-            pollStatsCounter = 0;
+        if (!renderingEnabled) {
+            pollStatsCounter += delta;
+            if (pollStatsCounter > noRenderPollStatsTime) {
+                pollStatsCounter = 0;
+                pollStats();
+            }
+        } else {
             pollStats();
         }
 
@@ -361,6 +363,11 @@ public class SimulationScreen {
 
     public void toggleEnvironmentRendering() {
         renderingEnabled = !renderingEnabled;
+        if (renderingEnabled) {
+            Gdx.graphics.setForegroundFPS(60);
+        } else {
+            Gdx.graphics.setForegroundFPS(1);
+        }
     }
 
     public boolean hasSimulationNotLoaded() {

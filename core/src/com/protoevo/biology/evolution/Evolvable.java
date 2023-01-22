@@ -38,8 +38,8 @@ public interface Evolvable extends Serializable {
             GeneExpressionFunction parent2Genome
     ) {
         Set<String> allGeneNames = new HashSet<>();
-        allGeneNames.addAll(parent1Genome.getGeneNames());
-        allGeneNames.addAll(parent2Genome.getGeneNames());
+        allGeneNames.addAll(parent1Genome.getTraitNames());
+        allGeneNames.addAll(parent2Genome.getTraitNames());
 
         GeneExpressionFunction.GeneRegulators regulators = new GeneExpressionFunction.GeneRegulators();
         regulators.putAll(parent1Genome.getGeneRegulators());
@@ -136,7 +136,7 @@ public interface Evolvable extends Serializable {
             }
         }
 
-        for (String geneName : geneExpressionFunction.getGeneNames()) {
+        for (String geneName : geneExpressionFunction.getTraitNames()) {
             Method setter = geneExpressionFunction.getTraitSetter(geneName);
 
             if (setter != null && setter.getDeclaringClass().equals(newEvolvable.getClass())) {
@@ -161,6 +161,11 @@ public interface Evolvable extends Serializable {
             if (method.isAnnotationPresent(EvolvableFloat.class)) {
                 EvolvableFloat evolvable = method.getAnnotation(EvolvableFloat.class);
                 geneExpressionFunction.addEvolvableFloat(evolvable, method);
+            }
+
+            else if (method.isAnnotationPresent(RegulatedFloat.class)) {
+                RegulatedFloat regulatedFloat = method.getAnnotation(RegulatedFloat.class);
+                geneExpressionFunction.addRegulatedFloat(regulatedFloat, method);
             }
 
             else if (method.isAnnotationPresent(EvolvableInteger.class)) {

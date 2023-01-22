@@ -4,7 +4,6 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.*;
 import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
-import com.badlogic.gdx.graphics.glutils.PixmapTextureData;
 import com.badlogic.gdx.graphics.glutils.ShaderProgram;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.Vector2;
@@ -37,6 +36,7 @@ public class EnvironmentRenderer implements Renderer {
     private final ShaderProgram chemicalShader;
     private final Texture particleTexture;
     private Texture chemicalTexture;
+    private Pixmap chemicalPixmap;
     private final HashMap<Protozoan, ProtozoaRenderer> protozoaRenderers = new HashMap<>();
     private final Sprite jointSprite;
     private final ShapeRenderer shapeRenderer;
@@ -59,9 +59,10 @@ public class EnvironmentRenderer implements Renderer {
         environment = simulation.getEnv();
 
         ChemicalSolution chemicalSolution = environment.getChemicalSolution();
-        if (chemicalSolution != null)
+        if (chemicalSolution != null) {
             chemicalSolution.setUpdateCallback(this::updateChemicalsTexture);
-
+            chemicalTexture = new Texture(chemicalSolution.getChemicalPixmap());
+        }
         debugRenderer = new Box2DDebugRenderer();
         batch = new SpriteBatch();
         chemicalBatch = new SpriteBatch();
@@ -106,7 +107,7 @@ public class EnvironmentRenderer implements Renderer {
     }
 
     public void updateChemicalsTexture(Pixmap pixmap) {
-        chemicalTexture = new Texture(pixmap);
+        chemicalPixmap = pixmap;
     }
 
     public void renderChemicalField() {
@@ -114,6 +115,12 @@ public class EnvironmentRenderer implements Renderer {
 
         if (chemicalSolution == null || chemicalTexture == null)
             return;
+
+        chemicalPixmap = chemicalSolution.getChemicalPixmap();
+        if (chemicalPixmap != null) {
+            chemicalTexture.draw(chemicalPixmap, 0, 0);
+            chemicalPixmap = null;
+        }
 
         chemicalBatch.enableBlending();
         chemicalBatch.setProjectionMatrix(camera.combined);

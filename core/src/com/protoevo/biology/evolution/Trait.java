@@ -6,27 +6,27 @@ import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 
-public interface Gene<T> extends Evolvable.Component, Serializable {
+public interface Trait<T> extends Evolvable.Component, Serializable {
 
     HashMap<String, Object> NO_DEPS = new HashMap<>();
 
     default T getValue() {
-        return getValue(Gene.NO_DEPS);
+        return getValue(Trait.NO_DEPS);
     }
 
     T getValue(Map<String, Object> dependencies);
     T newRandomValue();
 
-    Gene<T> createNew(T value);
+    Trait<T> createNew(T value);
 
-    default Gene<T> mutate() {
-        Gene<T> newGene = createNew(newRandomValue());
-        if (newGene == null)
+    default Trait<T> mutate() {
+        Trait<T> newTrait = createNew(newRandomValue());
+        if (newTrait == null)
             throw new RuntimeException(
                 "Failed to mutate " + getTraitName() + ": received null. "  +
                 "Ensure that createNew and newRandomValue are implemented for " + this.getClass()
             );
-        return newGene;
+        return newTrait;
     }
 
     default boolean canDisable() {
@@ -43,18 +43,18 @@ public interface Gene<T> extends Evolvable.Component, Serializable {
         return getValue().toString();
     }
 
-    default String geneString() {
+    default String string() {
         return valueString() + ":" + (isDisabled() ? "0" : "1");
     }
 
-    default Gene<?> crossover(Gene<?> other) {
+    default Trait<?> crossover(Trait<?> other) {
         if (Simulation.RANDOM.nextBoolean())
             return this;
         else
             return other;
     }
 
-    default Gene<?> copy() {
+    default Trait<?> copy() {
         return createNew(getValue());
     }
 }

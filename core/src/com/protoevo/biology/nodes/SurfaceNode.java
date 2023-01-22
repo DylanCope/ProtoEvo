@@ -2,17 +2,14 @@ package com.protoevo.biology.nodes;
 
 import com.badlogic.gdx.math.Vector2;
 import com.protoevo.biology.Cell;
-import com.protoevo.biology.evolution.Evolvable;
-import com.protoevo.biology.evolution.EvolvableComponent;
-import com.protoevo.biology.evolution.EvolvableFloat;
-import com.protoevo.biology.evolution.GeneExpressionFunction;
+import com.protoevo.biology.evolution.*;
 import com.protoevo.core.settings.ProtozoaSettings;
 import com.protoevo.utils.Geometry;
 
 import java.util.Arrays;
 import java.util.Optional;
 
-public class SurfaceNode implements Evolvable {
+public class SurfaceNode implements Evolvable.Component {
 
     private Cell cell;
     private float angle;
@@ -21,7 +18,18 @@ public class SurfaceNode implements Evolvable {
     private final float[] inputActivation = new float[ProtozoaSettings.surfaceNodeActivationSize];
     private final float[] outputActivation = new float[ProtozoaSettings.surfaceNodeActivationSize];
 
-    public SurfaceNode() {}
+    public SurfaceNode() {
+
+        float p = (float) Math.random();
+        if (p < 0.1) {
+            attachment = Optional.of(new FlagellumAttachment(this));
+        } else if (p < 0.3) {
+            attachment = Optional.of(new SpikeAttachment(this));
+        } else if (p < 0.7) {
+            attachment = Optional.of(new LightSensitiveAttachment(this));
+        }
+
+    }
 
     public void setCell(Cell cell) {
         this.cell = cell;
@@ -39,11 +47,9 @@ public class SurfaceNode implements Evolvable {
     }
 
     public void update(float delta) {
-        Arrays.fill(outputActivation, 0);
         attachment.ifPresent(a -> {
             a.update(delta, inputActivation, outputActivation);
         });
-        Arrays.fill(inputActivation, 0);
     }
 
     public void setAttachment(NodeAttachment attachment) {
@@ -62,6 +68,16 @@ public class SurfaceNode implements Evolvable {
         return outputActivation;
     }
 
+    @RegulatedFloat(name="Activation/0", min=-1, max=1)
+    public void setActivation0(float value) {
+        inputActivation[0] = value;
+    }
+
+    @GeneRegulator(name="Activation/0")
+    public float getActivation0() {
+        return outputActivation[0];
+    }
+
     public float getAngle() {
         return angle;
     }
@@ -72,17 +88,5 @@ public class SurfaceNode implements Evolvable {
 
     public float getInteractionRange() {
         return attachment.map(NodeAttachment::getInteractionRange).orElse(0f);
-    }
-
-    private GeneExpressionFunction fn;
-    @Override
-    @EvolvableComponent
-    public void setGeneExpressionFunction(GeneExpressionFunction fn) {
-        this.fn = fn;
-    }
-
-    @Override
-    public GeneExpressionFunction getGeneExpressionFunction() {
-        return fn;
     }
 }

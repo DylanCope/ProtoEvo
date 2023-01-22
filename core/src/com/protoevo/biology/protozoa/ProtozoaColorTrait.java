@@ -3,13 +3,13 @@ package com.protoevo.biology.protozoa;
 
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.math.MathUtils;
-import com.protoevo.biology.evolution.Gene;
+import com.protoevo.biology.evolution.Trait;
 import com.protoevo.core.Simulation;
 
 import java.io.Serializable;
 import java.util.Map;
 
-public class ProtozoaColorGene implements Gene<Color>, Serializable {
+public class ProtozoaColorTrait implements Trait<Color>, Serializable {
     public static final long serialVersionUID = -1821863048303900554L;
 
     private final Color value;
@@ -18,12 +18,12 @@ public class ProtozoaColorGene implements Gene<Color>, Serializable {
     private final int minVal = 80;
     private final int maxVal = 150;
 
-    public ProtozoaColorGene(String geneName) {
+    public ProtozoaColorTrait(String geneName) {
         this.geneName = geneName;
         value = newRandomValue();
     }
 
-    public ProtozoaColorGene(String geneName, Color value) {
+    public ProtozoaColorTrait(String geneName, Color value) {
         this.geneName = geneName;
         this.value = value;
     }
@@ -60,8 +60,8 @@ public class ProtozoaColorGene implements Gene<Color>, Serializable {
     }
 
     @Override
-    public Gene<Color> createNew(Color value) {
-        return new ProtozoaColorGene(geneName, value);
+    public Trait<Color> createNew(Color value) {
+        return new ProtozoaColorTrait(geneName, value);
     }
 
     @Override

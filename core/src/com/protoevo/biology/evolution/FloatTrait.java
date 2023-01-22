@@ -5,22 +5,22 @@ import com.protoevo.core.Simulation;
 import java.io.Serializable;
 import java.util.Map;
 
-public class FloatGene implements Gene<Float>, Serializable {
+public class FloatTrait implements Trait<Float>, Serializable {
 
     public static final long serialVersionUID = 1L;
 
     private final float value, minValue, maxValue;
-    private final String geneName;
+    private final String traitName;
 
-    public FloatGene(String geneName, float minValue, float maxValue, float value) {
-        this.geneName = geneName;
+    public FloatTrait(String traitName, float minValue, float maxValue, float value) {
+        this.traitName = traitName;
         this.minValue = minValue;
         this.maxValue = maxValue;
         this.value = value;
     }
 
-    public FloatGene(String geneName, float minValue, float maxValue) {
-        this.geneName = geneName;
+    public FloatTrait(String traitName, float minValue, float maxValue) {
+        this.traitName = traitName;
         this.minValue = minValue;
         this.maxValue = maxValue;
         value = newRandomValue();
@@ -45,12 +45,12 @@ public class FloatGene implements Gene<Float>, Serializable {
     }
 
     @Override
-    public Gene<Float> createNew(Float value) {
-        return new FloatGene(geneName, minValue, maxValue, value);
+    public Trait<Float> createNew(Float value) {
+        return new FloatTrait(traitName, minValue, maxValue, value);
     }
 
     @Override
     public String getTraitName() {
-        return geneName;
+        return traitName;
     }
 }

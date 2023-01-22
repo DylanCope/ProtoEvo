@@ -1,7 +1,6 @@
 package com.protoevo.biology.protozoa;
 
 import com.badlogic.gdx.graphics.Color;
-import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.Contact;
 import com.protoevo.biology.*;
 import com.protoevo.biology.evolution.*;
@@ -44,7 +43,7 @@ public class Protozoan extends Cell implements Evolvable
 		timeSinceLastGeneUpdate += delta;
 		if (timeSinceLastGeneUpdate >= geneUpdateTime) {
 			geneExpressionFunction.update();
-			timeSinceLastGeneUpdate %= geneUpdateTime;
+			timeSinceLastGeneUpdate = 0;
 		}
 		age(delta);
 		handleCollisions(delta);
@@ -66,7 +65,7 @@ public class Protozoan extends Cell implements Evolvable
 			elementClassPath = "com.protoevo.biology.nodes.SurfaceNode",
 			minSize = 1,
 			maxSize = 10,
-			initialSize = 3
+			initialSize = 5
 	)
 	public void setSurfaceNodes(ArrayList<SurfaceNode> surfaceNodes) {
 		this.surfaceNodes = surfaceNodes;
@@ -109,7 +108,7 @@ public class Protozoan extends Cell implements Evolvable
 
 	@EvolvableObject(
 			name="Cell Colour",
-			geneClassName="com.protoevo.biology.protozoa.ProtozoaColorGene")
+			traitClass ="com.protoevo.biology.protozoa.ProtozoaColorTrait")
 	public void setColour(Color colour) {
 		setHealthyColour(colour);
 	}
@@ -126,7 +125,7 @@ public class Protozoan extends Cell implements Evolvable
 
 	@EvolvableObject(
 			name="CAM Production",
-			geneClassName="com.protoevo.biology.protozoa.CAMProductionGene")
+			traitClass ="com.protoevo.biology.protozoa.CAMProductionTrait")
 	public void setCAMProduction(Map<CellAdhesion.CAM, Float> camProduction) {
 		for (CellAdhesion.CAM cam : camProduction.keySet())
 			setCAMProductionRate(cam, camProduction.get(cam));

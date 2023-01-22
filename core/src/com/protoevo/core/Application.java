@@ -20,7 +20,10 @@ public class Application extends ApplicationAdapter {
 		simulation = new Simulation();
 		simulationScreen = new SimulationScreen(simulation);
 		simulation.setSimulationScreen(simulationScreen);
-		new Thread(simulation).start();
+		if (SimulationSettings.simulationOnSeparateThread)
+			new Thread(simulation).start();
+		else
+			simulation.prepare();
 	}
 
 	@Override
@@ -28,6 +31,10 @@ public class Application extends ApplicationAdapter {
 		ScreenUtils.clear(0, 0.1f, 0.2f, 1f);
 		Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
 		Gdx.gl.glActiveTexture(GL20.GL_TEXTURE0);
+
+		if (!SimulationSettings.simulationOnSeparateThread)
+			simulation.update(SimulationSettings.simulationUpdateDelta);
+
 		float deltaTime = Gdx.graphics.getDeltaTime();
 		simulationScreen.draw(deltaTime);
 	}

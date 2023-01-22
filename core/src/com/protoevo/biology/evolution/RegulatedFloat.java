@@ -7,8 +7,8 @@ import java.lang.annotation.Target;
 
 @Target(ElementType.METHOD)
 @Retention(RetentionPolicy.RUNTIME)
-public @interface EvolvableObject {
+public @interface RegulatedFloat {
     String name();
-    String traitClass();
-    String[] dependencies() default "";
+    float min() default -1;
+    float max() default 1;
 }

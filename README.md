@@ -18,7 +18,7 @@ The primary research objective of this project is to investigate the emergence o
 i.e. the development of coordinated groups of attached cells that incur a survival benefit by being attached.
 So far, by implementing cell-adhesion and allowing protozoa to share resources I have seen the
 emergence of some quite cool multi-cell behaviour. However, the next step is to achieve cell differentiation
-via the evolution of gene-regulatory networks.
+via the evolution of trait-regulatory networks.
 
 ![png](/screenshots/full_env_view.png "Full view of the environment")
 
@@ -48,8 +48,8 @@ that allow them to bind to other cells and transmit mass, energy, signals, and c
 
 ## Next Steps
 
-* Evolvable gene regulation to promote cell differentiation.
-* Temporal control of gene expression ([regulation of transcription](https://en.wikipedia.org/wiki/Transcriptional_regulation)).
+* Evolvable trait regulation to promote cell differentiation.
+* Temporal control of trait expression ([regulation of transcription](https://en.wikipedia.org/wiki/Transcriptional_regulation)).
 * Environmental and internal temperature to add ecological variety and new cell interaction dynamics.
 * Signal relaying channels for cells bound together.
 * Improved visualisations of protozoa genes.

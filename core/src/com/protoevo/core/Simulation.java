@@ -170,15 +170,24 @@ public class Simulation implements Runnable
 			if (paused)
 				continue;
 
+//			if (delayUpdate && updateDelay > 0) {
+//				double currTime = Utils.getTimeSeconds();
+//				if ((currTime - lastUpdateTime) > updateDelay) {
+//					update(Settings.simulationUpdateDelta);
+//					lastUpdateTime = currTime;
+//				}
+//			} else {
+//				update(Settings.simulationUpdateDelta);
+//			}
+
 			if (delayUpdate && updateDelay > 0) {
-				double currTime = Utils.getTimeSeconds();
-				if ((currTime - lastUpdateTime) > updateDelay) {
-					update(Settings.simulationUpdateDelta);
-					lastUpdateTime = currTime;
+				try {
+					Thread.sleep((long) (1000 * updateDelay));
+				} catch (InterruptedException e) {
+					throw new RuntimeException(e);
 				}
-			} else {
-				update(Settings.simulationUpdateDelta);
 			}
+			update(Settings.simulationUpdateDelta);
 
 			if (environment.numberOfProtozoa() <= 0 && Settings.finishOnProtozoaExtinction) {
 				simulate = false;

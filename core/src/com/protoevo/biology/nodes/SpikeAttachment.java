@@ -11,12 +11,11 @@ import com.protoevo.utils.Utils;
 public class SpikeAttachment extends NodeAttachment {
 
     private final Vector2 spikePoint = new Vector2();
-    private final Cell cell;
+    private Cell cell;
     private final float attackFactor = 10f;
 
     public SpikeAttachment(SurfaceNode node) {
         super(node);
-        cell = getNode().getCell();
     }
 
     public float getSpikeScalar() {
@@ -27,6 +26,7 @@ public class SpikeAttachment extends NodeAttachment {
 
     @Override
     public void update(float delta, float[] input, float[] output) {
+        cell = getNode().getCell();
         spikePoint.set(node.getRelativePos()).scl(getSpikeScalar());
         spikePoint.add(cell.getPos());
 

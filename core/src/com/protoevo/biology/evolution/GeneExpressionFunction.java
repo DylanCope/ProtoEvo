@@ -2,8 +2,6 @@ package com.protoevo.biology.evolution;
 
 import com.protoevo.biology.neat.NetworkGenome;
 import com.protoevo.biology.neat.NeuralNetwork;
-import com.protoevo.biology.neat.Neuron;
-import com.protoevo.core.settings.Settings;
 import com.protoevo.core.Simulation;
 import com.protoevo.core.settings.SimulationSettings;
 
@@ -16,22 +14,22 @@ import java.util.function.Function;
 
 public class GeneExpressionFunction implements Evolvable.Component, Serializable {
 
-    public static class Genes extends HashMap<String, GeneExpressionNode> {}
+    public static class Genes extends HashMap<String, ExpressionNode> {}
     public static class GeneRegulators extends HashMap<String, Function<Evolvable, Float>> {}
 
-    public static class GeneExpressionNode implements Serializable {
+    public static class ExpressionNode implements Serializable {
         public static final long serialVersionUID = 1L;
-        private String geneName;
-        private final Gene<?> gene;
+        private String name;
+        private final Trait<?> trait;
         private final Method traitSetter;
         private final Map<String, Object> dependencies;
         private String[] dependents;
         private Object lastTraitValue;
         private Evolvable target;
 
-        public GeneExpressionNode(String name, Gene<?> gene, Method traitSetter, String[] dependencies) {
-            this.geneName = name;
-            this.gene = gene;
+        public ExpressionNode(String name, Trait<?> trait, Method traitSetter, String[] dependencies) {
+            this.name = name;
+            this.trait = trait;
             this.traitSetter = traitSetter;
             this.dependencies = new HashMap<>();
             for (String str : dependencies)
@@ -40,17 +38,17 @@ public class GeneExpressionFunction implements Evolvable.Component, Serializable
             dependents = new String[]{};
         }
 
-        public GeneExpressionNode(String name, Gene<?> gene, Method traitSetter,
-                                  Map<String, Object> dependencies, String[] dependents) {
-            this.geneName = name;
-            this.gene = gene;
+        public ExpressionNode(String name, Trait<?> trait, Method traitSetter,
+                              Map<String, Object> dependencies, String[] dependents) {
+            this.name = name;
+            this.trait = trait;
             this.traitSetter = traitSetter;
             this.dependencies = dependencies;
             this.dependents = dependents;
         }
 
-        public GeneExpressionNode(String name, Gene<?> gene, Method traitSetter) {
-            this(name, gene, traitSetter, new String[]{});
+        public ExpressionNode(String name, Trait<?> trait, Method traitSetter) {
+            this(name, trait, traitSetter, new String[]{});
         }
 
         public void addDependency(String geneName) {
@@ -66,13 +64,13 @@ public class GeneExpressionFunction implements Evolvable.Component, Serializable
             return dependents;
         }
 
-        public GeneExpressionNode copy(float mutationChance) {
-            Gene<?> newGene = Simulation.RANDOM.nextFloat() < mutationChance ? gene.mutate() : gene.copy();
-            return new GeneExpressionNode(geneName, newGene, traitSetter, dependencies, dependents);
+        public ExpressionNode copy(float mutationChance) {
+            Trait<?> newTrait = Simulation.RANDOM.nextFloat() < mutationChance ? trait.mutate() : trait.copy();
+            return new ExpressionNode(name, newTrait, traitSetter, dependencies, dependents);
         }
 
-        public Gene<?> getGene() {
-            return gene;
+        public Trait<?> getTrait() {
+            return trait;
         }
 
         public void setEvolvable(Evolvable evolvable, Object traitValue) {
@@ -80,13 +78,15 @@ public class GeneExpressionFunction implements Evolvable.Component, Serializable
             setTraitValue(traitValue);
         }
 
-        public boolean setTraitValue(Object traitValue) {
+        public void setTraitValue(Object traitValue) {
             if (!traitValue.equals(lastTraitValue)) {
                 Evolvable.setTraitValue(target, traitSetter, traitValue);
                 lastTraitValue = traitValue;
-                return true;
             }
-            return false;
+        }
+
+        public String getName() {
+            return name;
         }
 
         public Map<String, Object> getDependencies() {
@@ -102,7 +102,7 @@ public class GeneExpressionFunction implements Evolvable.Component, Serializable
         }
 
         public void prependName(String name) {
-            geneName = name + "/" + geneName;
+            this.name = name + "/" + this.name;
         }
     }
 
@@ -111,7 +111,7 @@ public class GeneExpressionFunction implements Evolvable.Component, Serializable
     private float mutationChance = SimulationSettings.globalMutationChance;
     private NeuralNetwork geneRegulatoryNetwork;
     private GeneRegulators geneRegulators;
-    private Collection<String> regulatedGenes;
+    private Collection<String> regulatedGenes = new ArrayList<>();
     private Evolvable targetEvolvable;
 
     public GeneExpressionFunction(Genes genes, GeneRegulators geneRegulators) {
@@ -129,22 +129,22 @@ public class GeneExpressionFunction implements Evolvable.Component, Serializable
         this.mutationChance = mutationChance;
     }
 
-    public static final String GENES_GENE_NAME = "GeneExpressionFunction/Genes";
-    public static final String GRN_GENE_NAME = "GeneExpressionFunction/Gene Regulatory Network";
+    public static final String GENES_TRAIT_NAME = "GeneExpressionFunction/Genes";
+    public static final String GRN_TRAIT_NAME = "GeneExpressionFunction/Gene Regulatory Network";
 
     @EvolvableObject(
             name="Gene Regulatory Network",
-            geneClassName="com.protoevo.biology.evolution.GeneRegulatoryNetworkGene",
-            geneDependencies=GENES_GENE_NAME)
+            traitClass = "com.protoevo.biology.evolution.GeneRegulatoryNetworkTrait",
+            dependencies = GENES_TRAIT_NAME)
     public void setGeneRegulatoryNetwork(NetworkGenome grnGenome) {
-        for (String regulator : geneRegulators.keySet())
-            if (!grnGenome.hasSensor(regulator))
-                grnGenome.addSensor(regulator);
+//        for (String regulator : geneRegulators.keySet())
+//            if (!grnGenome.hasSensor(regulator))
+//                grnGenome.addSensor(regulator);
 
-        regulatedGenes = new ArrayList<>();
-        for (String geneName : getGeneNames()) {
-            if (grnGenome.hasSensor(geneName + " Input"))
-                regulatedGenes.add(geneName);
+        regulatedGenes.clear();
+        for (String traitName : getTraitNames()) {
+            if (grnGenome.hasSensor(GeneRegulatoryNetworkTrait.getInputName(traitName)))
+                regulatedGenes.add(traitName);
         }
 
         geneRegulatoryNetwork = grnGenome.phenotype();
@@ -155,7 +155,7 @@ public class GeneExpressionFunction implements Evolvable.Component, Serializable
 
     @EvolvableObject(
             name="Genes",
-            geneClassName="com.protoevo.biology.evolution.GenesGene"
+            traitClass ="com.protoevo.biology.evolution.GenesTrait"
     )
     public void setGenes(Genes genes) {
         this.genes = genes;
@@ -167,7 +167,7 @@ public class GeneExpressionFunction implements Evolvable.Component, Serializable
 
     private void setGRNInputs() {
         geneRegulatoryNetwork.setInput("Bias", 1f);
-        for (String geneName : getGeneNames()) {
+        for (String geneName : getTraitNames()) {
             if (geneRegulatoryNetwork.hasSensor(geneName + " Input")) {
                 if (notDisabled(geneName)) {
                     Object geneValue = getGeneValue(geneName);
@@ -204,6 +204,7 @@ public class GeneExpressionFunction implements Evolvable.Component, Serializable
     public void setTargetEvolvable(Evolvable evolvable, String geneName) {
         genes.get(geneName).setEvolvable(evolvable, getTraitValue(geneName));
     }
+
     public void setTargetEvolvable(Evolvable evolvable) {
         targetEvolvable = evolvable;
     }
@@ -216,25 +217,33 @@ public class GeneExpressionFunction implements Evolvable.Component, Serializable
 
     public void update() {
         tick();
-        for (String geneName : getGeneNames()) {
-            GeneExpressionNode gene = genes.get(geneName);
+        for (String geneName : getTraitNames()) {
+            ExpressionNode gene = genes.get(geneName);
             if (gene.mapsToTrait())
                 gene.setTraitValue(getTraitValue(geneName));
         }
+    }
+
+    public void addRegulatedFloat(RegulatedFloat regulatedFloat, Method method) {
+        String name = method.getDeclaringClass().getSimpleName() + "/" + regulatedFloat.name();
+        float minValue = regulatedFloat.min();
+        float maxValue = regulatedFloat.max();
+        RegulatedFloatTrait trait = new RegulatedFloatTrait(name, minValue, maxValue);
+        ExpressionNode node = new ExpressionNode(name, trait, method);
+        addNode(name, node);
     }
 
     public void addEvolvableFloat(EvolvableFloat evolvableFloat, Method method) {
         String name = method.getDeclaringClass().getSimpleName() + "/" + evolvableFloat.name();
         float minValue = evolvableFloat.min();
         float maxValue = evolvableFloat.max();
-        FloatGene gene;
+        FloatTrait trait;
         if (evolvableFloat.randomInitialValue())
-            gene = new FloatGene(name, minValue, maxValue);
+            trait = new FloatTrait(name, minValue, maxValue);
         else
-            gene = new FloatGene(name, minValue, maxValue, evolvableFloat.initValue());
+            trait = new FloatTrait(name, minValue, maxValue, evolvableFloat.initValue());
 
-        GeneExpressionNode node = new GeneExpressionNode(name, gene, method, evolvableFloat.geneDependencies());
-        node.addDependency("GeneExpressionFunction/Gene Regulatory Network");
+        ExpressionNode node = new ExpressionNode(name, trait, method, evolvableFloat.geneDependencies());
         addNode(name, node);
     }
 
@@ -247,63 +256,67 @@ public class GeneExpressionFunction implements Evolvable.Component, Serializable
         boolean canDisable = evolvableInteger.canDisable();
         int disableValue = evolvableInteger.disableValue();
 
-        IntegerGene gene;
+        IntegerTrait gene;
         if (evolvableInteger.randomInitialValue())
-            gene = new IntegerGene(
+            gene = new IntegerTrait(
                     name, minValue, maxValue, mutMethod, maxInc, canDisable, disableValue, false);
         else
-            gene = new IntegerGene(
+            gene = new IntegerTrait(
                     name, minValue, maxValue, mutMethod, maxInc, canDisable, disableValue, false,
                     evolvableInteger.initValue());
 
-        addNode(name, new GeneExpressionNode(name, gene, method, evolvableInteger.geneDependencies()));
+        addNode(name, new ExpressionNode(name, gene, method, evolvableInteger.geneDependencies()));
     }
 
-    private Gene<?> constructGene(String geneClassName, String geneName) {
-        Class<Gene<?>> geneClass;
+    private Trait<?> constructTrait(String className, String traitName) {
+        Class<Trait<?>> traitClass;
         try {
-            geneClass = (Class<Gene<?>>) Class.forName(geneClassName);
+            traitClass = (Class<Trait<?>>) Class.forName(className);
         } catch (ClassNotFoundException e) {
-            throw new RuntimeException("Failed to find gene class: " + e);
+            throw new RuntimeException("Failed to find trait class: " + e);
+        } catch (ClassCastException e) {
+            throw new RuntimeException("Class is not a trait: " + e);
         }
 
-        Constructor geneConstructor;
+        Constructor<Trait<?>> traitConstructor;
         try {
-            geneConstructor = geneClass.getConstructor(String.class);
+            traitConstructor = traitClass.getConstructor(String.class);
         } catch (NoSuchMethodException e) {
             throw new RuntimeException(
-                    "EvolvableObject gene class " + geneClassName + " did not have " +
+                    "EvolvableObject gene class " + className + " did not have " +
                     "a constructor that takes a single string (the name): " + e);
         }
 
         try {
-            return (Gene<?>) geneConstructor.newInstance(geneName);
+            return traitConstructor.newInstance(traitName);
         } catch (InstantiationException | IllegalAccessException | InvocationTargetException e) {
-            throw new RuntimeException("Failed to construct gene from " + geneClassName + ": " + e);
+            throw new RuntimeException("Failed to construct trait from " + className + ": " + e);
         }
     }
 
     public void addEvolvableObject(EvolvableObject evolvable, Method method) {
         String name = method.getDeclaringClass().getSimpleName() + "/" + evolvable.name();
-        String geneClassName = evolvable.geneClassName();
-        Gene<?> gene = constructGene(geneClassName, name);
-        if (name.equals(GENES_GENE_NAME)) {
-            Genes genesGenes = (Genes) gene.getValue();
+        String geneClassName = evolvable.traitClass();
+        Trait<?> trait = constructTrait(geneClassName, name);
+        if (name.equals(GENES_TRAIT_NAME)) {
+            Genes genesGenes = (Genes) trait.getValue();
             genesGenes.putAll(genes);
             genes = genesGenes;
         }
-        addNode(name, new GeneExpressionNode(name, gene, method, evolvable.geneDependencies()));
+        addNode(name, new ExpressionNode(name, trait, method, evolvable.dependencies()));
     }
 
-    public void addEvolvableCollection(GeneExpressionFunction geneExpressionFunction, EvolvableCollection evolvable, Method method) {
+    public void addEvolvableCollection(GeneExpressionFunction geneExpressionFunction,
+                                       EvolvableCollection evolvable,
+                                       Method method) {
         String name = method.getDeclaringClass().getSimpleName() + "/" + evolvable.name();
         int minSize = evolvable.minSize();
         int maxSize = evolvable.maxSize();
         int initialSize = evolvable.initialSize();
 
-        Class<Evolvable> componentClass;
+        Class<Evolvable> elementClass;
         try {
-            componentClass = (Class<Evolvable>) Class.forName(evolvable.elementClassPath());
+            elementClass = (Class<Evolvable>) Class.forName(evolvable.elementClassPath());
         } catch (ClassNotFoundException e) {
             throw new RuntimeException("Failed to find class for evolvable collection: " + e);
         } catch (ClassCastException e) {
@@ -311,20 +324,20 @@ public class GeneExpressionFunction implements Evolvable.Component, Serializable
                     " did not refer to a class that implements Evolvable: " + e);
         }
 
-        EvolvableCollectionGene gene = new EvolvableCollectionGene(
-                geneExpressionFunction, componentClass, name, minSize, maxSize, initialSize);
-        addNode(name, new GeneExpressionNode(name, gene, method, evolvable.geneDependencies()));
+        CollectionTrait trait = new CollectionTrait(
+                geneExpressionFunction, elementClass, name, minSize, maxSize, initialSize);
+        addNode(name, new ExpressionNode(name, trait, method, evolvable.geneDependencies()));
     }
 
     public Method getTraitSetter(String geneName) {
         return genes.get(geneName).getTraitSetter();
     }
 
-    public Gene<?> getTraitGene(String geneName) {
-        return genes.get(geneName).getGene();
+    public Trait<?> getTraitGene(String geneName) {
+        return genes.get(geneName).getTrait();
     }
 
-    public Collection<String> getGeneNames() {
+    public Collection<String> getTraitNames() {
         return genes.keySet();
     }
 
@@ -344,16 +357,20 @@ public class GeneExpressionFunction implements Evolvable.Component, Serializable
     public Object getGeneValue(String name) {
         Map<String, Object> deps = genes.get(name).getDependencies();
         deps.replaceAll((d, v) -> getTraitValue(d));
+        deps.put("Gene Regulators", geneRegulators);
         return getTraitGene(name).getValue(deps);
     }
 
     public Object getTraitValue(String name) {
+        if (name.equals("Gene Regulators"))
+            return geneRegulators;
+
         if (hasGene(name)) {
             if (notDisabled(name) && geneRegulatoryNetwork != null
                     && geneRegulatoryNetwork.hasSensor(name + " Input")) {
                 float grnOutput = geneRegulatoryNetwork.getOutput(name + " Output");
-                Gene<?> gene = getTraitGene(name);
-                return parseGRNOutput(gene, grnOutput);
+                Trait<?> trait = getTraitGene(name);
+                return parseGRNOutput(trait, grnOutput);
             } else
                 return getGeneValue(name);
         }
@@ -364,21 +381,21 @@ public class GeneExpressionFunction implements Evolvable.Component, Serializable
         return !getTraitGene(name).isDisabled();
     }
 
-    private Object parseGRNOutput(Gene<?> gene, float grnOutput) {
-        if (gene instanceof FloatGene)
+    private Object parseGRNOutput(Trait<?> trait, float grnOutput) {
+        if (trait instanceof FloatTrait)
             return grnOutput;
-        if (gene instanceof IntegerGene)
-            return IntegerGene.fromFloat(grnOutput);
-        if (gene instanceof BooleanGene)
-            return BooleanGene.fromFloat(grnOutput);
-        throw new RuntimeException("Could not parse GRN output: gene=" + gene + ", output=" + grnOutput);
+        if (trait instanceof IntegerTrait)
+            return IntegerTrait.fromFloat(grnOutput);
+        if (trait instanceof BooleanTrait)
+            return BooleanTrait.fromFloat(grnOutput);
+        throw new RuntimeException("Could not parse GRN output: gene=" + trait + ", output=" + grnOutput);
     }
 
     public GeneExpressionFunction cloneWithMutation() {
         Genes newNodes = new Genes();
 
-        for (Map.Entry<String, GeneExpressionNode> entry : genes.entrySet()) {
-            GeneExpressionNode newNode = entry.getValue().copy(mutationChance);
+        for (Map.Entry<String, ExpressionNode> entry : genes.entrySet()) {
+            ExpressionNode newNode = entry.getValue().copy(mutationChance);
             newNodes.put(entry.getKey(), newNode);
         }
 
@@ -393,36 +410,34 @@ public class GeneExpressionFunction implements Evolvable.Component, Serializable
         return genes.containsKey(geneName);
     }
 
-    public GeneExpressionNode getNode(String geneName) {
+    public ExpressionNode getNode(String geneName) {
         return genes.get(geneName);
     }
 
-    public void addNode(String geneName, GeneExpressionNode node) {
+    public void addNode(String geneName, ExpressionNode node) {
         genes.put(geneName, node);
-        if (node.getGene().canDisable()) {
+        if (node.getTrait().canDisable()) {
             String disableName = "Disable " + geneName;
             node.addDependency(disableName);
-            BooleanGene disableGene = new BooleanGene(disableName, false);
-            GeneExpressionNode disableNode = new GeneExpressionNode(disableName, disableGene, null);
+            BooleanTrait disableGene = new BooleanTrait(disableName, false);
+            ExpressionNode disableNode = new ExpressionNode(disableName, disableGene, null);
             disableNode.addDependent(geneName);
             genes.put(disableName, disableNode);
         }
     }
 
     public void prependGeneNames(String name) {
-        ((GeneRegulatoryNetworkGene) getTraitGene(GRN_GENE_NAME)).prependGeneNames(name);
-
-        for (GeneExpressionNode node : genes.values()) {
+        for (ExpressionNode node : genes.values()) {
             node.prependName(name);
             for (String dependent : node.getDependents()) {
                 Map<String, Object> dependentsDependencies = getNode(dependent).getDependencies();
                 dependentsDependencies.put(
-                        name + "/" + node.geneName, dependentsDependencies.get(node.geneName)
+                        name + "/" + node.name, dependentsDependencies.get(node.name)
                 );
             }
         }
         for (int i = 0; i < genes.entrySet().size(); i++) {
-            Map.Entry<String, GeneExpressionNode> entry = genes.entrySet().iterator().next();
+            Map.Entry<String, ExpressionNode> entry = genes.entrySet().iterator().next();
             genes.put(name + "/" + entry.getKey(), entry.getValue());
             genes.remove(entry.getKey());
         }

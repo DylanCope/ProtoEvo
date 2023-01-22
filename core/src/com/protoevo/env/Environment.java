@@ -45,6 +45,7 @@ public class Environment implements Serializable
 	private final Set<Cell> cellsToAdd = new HashSet<>();
 	private final Set<Cell> cells = new HashSet<>();
 	private boolean hasInitialised;
+	private Vector2[] populationStartCentres;
 
 	private final JointsManager jointsManager;
 	private final ConcurrentLinkedQueue<BurstRequest<? extends Cell>> burstRequests = new ConcurrentLinkedQueue<>();
@@ -56,6 +57,14 @@ public class Environment implements Serializable
 
 		jointsManager = new JointsManager(this);
 		world.setContactListener(new CollisionHandler(this));
+
+		System.out.println("Creating chemicals solution... ");
+		if (Settings.enableChemicalField) {
+			chemicalSolution = new ChemicalSolution(
+					this,
+					SimulationSettings.chemicalFieldResolution,
+					SimulationSettings.chemicalFieldRadius);
+		}
 
 		int resolution = SimulationSettings.spatialHashResolution;
 //		int protozoaCap = (int) Math.ceil(SimulationSettings.maxProtozoa / (float) (resolution * resolution));
@@ -76,7 +85,7 @@ public class Environment implements Serializable
 
 	public void update(float delta)
 	{
-		cells.forEach(Particle::reset);
+		cells.parallelStream().forEach(Particle::reset);
 
 		elapsedTime += delta;
 		world.step(
@@ -84,13 +93,8 @@ public class Environment implements Serializable
 				SimulationSettings.physicsVelocityIterations,
 				SimulationSettings.physicsPositionIterations);
 
-		cells.parallelStream().forEach(cell -> cell.update(delta));
-		burstRequests.forEach(BurstRequest::burst);
-		burstRequests.clear();
-		flushEntitiesToAdd();
-
-		cells.forEach(this::handleDeadEntity);
-		cells.removeIf(Cell::isDead);
+		handleCellUpdates(delta);
+		handleBirthsAndDeaths();
 		updateSpatialHashes();
 
 		jointsManager.flushJoints();
@@ -98,6 +102,20 @@ public class Environment implements Serializable
 		if (Settings.enableChemicalField) {
 			chemicalSolution.update(delta);
 		}
+	}
+
+	private void handleCellUpdates(float delta) {
+
+		cells.parallelStream().forEach(cell -> cell.update(delta));
+	}
+
+	private void handleBirthsAndDeaths() {
+		burstRequests.forEach(BurstRequest::burst);
+		burstRequests.clear();
+		flushEntitiesToAdd();
+
+		cells.forEach(this::handleDeadEntity);
+		cells.removeIf(Cell::isDead);
 	}
 
 	public Vector2[] createRocks() {
@@ -140,24 +158,16 @@ public class Environment implements Serializable
 		return clusterCentres;
 	}
 
-	public Vector2[] initialise() {
+	public void initialise() {
 		System.out.println("Commencing world generation... ");
-		Vector2[] populationStartCentres = createRocks();
-
-		System.out.println("Distributing chemicals... ");
-		if (Settings.enableChemicalField) {
-			chemicalSolution = new ChemicalSolution(
-					this,
-					SimulationSettings.chemicalFieldResolution,
-					SimulationSettings.chemicalFieldRadius);
-		}
+		populationStartCentres = createRocks();
 
 		// random shuffle population start centres
 		List<Vector2> populationStartCentresList = Arrays.asList(populationStartCentres);
 		Collections.shuffle(populationStartCentresList);
 		populationStartCentres = populationStartCentresList.toArray(new Vector2[0]);
 
-		if (populationStartCentres != null)
+		if (populationStartCentres.length > 0)
 			initialisePopulation(Arrays.copyOfRange(
 					populationStartCentres, 0, WorldGenerationSettings.numPopulationClusters));
 		else
@@ -168,10 +178,11 @@ public class Environment implements Serializable
 		if (Settings.writeGenomes && genomeFile != null)
 			writeGenomeHeaders();
 
+		if (chemicalSolution != null)
+			chemicalSolution.initialise();
+
 		hasInitialised = true;
 		System.out.println("Environment initialisation complete.");
-
-		return populationStartCentres;
 	}
 
 	public void writeGenomeHeaders() {

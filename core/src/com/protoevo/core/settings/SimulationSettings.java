@@ -21,8 +21,9 @@ public class SimulationSettings {
     public static final float minMutationChance = 0.001f;
     public static final float maxMutationChance = 0.1f;
 
-    public static final float chemicalDiffusionInterval = simulationUpdateDelta * 10f;
+    public static final float chemicalDiffusionInterval = simulationUpdateDelta * 20f;
     public static final int chemicalFieldResolution = 1024;
     public static final float chemicalFieldRadius = voidStartDistance;
     public static int spatialHashResolution = 20;
+    public static final boolean simulationOnSeparateThread = false;
 }

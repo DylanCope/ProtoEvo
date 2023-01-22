@@ -5,9 +5,10 @@ import com.protoevo.core.Simulation;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Supplier;
 
 
-public class EvolvableCollectionGene implements Gene<List<Evolvable>> {
+public class CollectionTrait implements Trait<List<Evolvable>> {
 
     private final String name;
     private final List<Evolvable> collection;
@@ -16,7 +17,7 @@ public class EvolvableCollectionGene implements Gene<List<Evolvable>> {
     private final int minSize, maxSize;
     private final static int nMutationTypes = 3;
 
-    public EvolvableCollectionGene(
+    public CollectionTrait(
             GeneExpressionFunction geneExpressionFunction,
             Class<Evolvable> collectionType, List<Evolvable> collection,
             String name, int minSize, int maxSize) {
@@ -28,7 +29,7 @@ public class EvolvableCollectionGene implements Gene<List<Evolvable>> {
         this.name = name;
     }
 
-    public EvolvableCollectionGene(
+    public CollectionTrait(
             GeneExpressionFunction geneExpressionFunction,
             Class<Evolvable> collectionType, String name,
             int minSize, int maxSize, int size) {
@@ -37,10 +38,13 @@ public class EvolvableCollectionGene implements Gene<List<Evolvable>> {
         this.maxSize = maxSize;
         this.collection = new ArrayList<>(size);
         for (int i = 0; i < size; i++) {
-            Evolvable newEvolvable = Evolvable.createNew(collectionType);
-            newEvolvable.getGeneExpressionFunction().prependGeneNames(name + "/" + i);
-            geneExpressionFunction.merge(newEvolvable.getGeneExpressionFunction());
-            this.collection.add(newEvolvable);
+            GeneExpressionFunction componentFn = Evolvable.createGeneMapping(
+                    collectionType,
+                    geneExpressionFunction.getGeneRegulators());
+            componentFn.prependGeneNames(name + "/" + i);
+            Evolvable component = Evolvable.createNew(collectionType, componentFn);
+            geneExpressionFunction.merge(componentFn);
+            collection.add(component);
         }
         this.collectionType = collectionType;
         this.name = name;
@@ -75,8 +79,8 @@ public class EvolvableCollectionGene implements Gene<List<Evolvable>> {
     }
 
     @Override
-    public Gene<List<Evolvable>> createNew(List<Evolvable> value) {
-        return new EvolvableCollectionGene(
+    public Trait<List<Evolvable>> createNew(List<Evolvable> value) {
+        return new CollectionTrait(
                 geneExpressionFunction, collectionType, value, name, minSize, maxSize);
     }
 

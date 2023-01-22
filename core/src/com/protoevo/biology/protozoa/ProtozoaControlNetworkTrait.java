@@ -1,30 +1,30 @@
 package com.protoevo.biology.protozoa;
 
-import com.protoevo.biology.evolution.Gene;
+import com.protoevo.biology.evolution.Trait;
 import com.protoevo.biology.neat.NetworkGenome;
 import com.protoevo.core.settings.Settings;
 
 import java.io.Serializable;
 import java.util.Map;
 
-public class ProtozoaControlNetworkGene implements Gene<NetworkGenome>, Serializable {
+public class ProtozoaControlNetworkTrait implements Trait<NetworkGenome>, Serializable {
     public static final long serialVersionUID = -1259753801126730417L;
 
     private final NetworkGenome networkGenome;
     private final String geneName;
 
-    public ProtozoaControlNetworkGene(String geneName) {
+    public ProtozoaControlNetworkTrait(String geneName) {
         this.geneName = geneName;
         networkGenome = newRandomValue();
     }
 
-    public ProtozoaControlNetworkGene(String geneName, NetworkGenome networkGenome) {
+    public ProtozoaControlNetworkTrait(String geneName, NetworkGenome networkGenome) {
         this.geneName = geneName;
         this.networkGenome = networkGenome;
     }
 
     @Override
-    public Gene<NetworkGenome> mutate() {
+    public Trait<NetworkGenome> mutate() {
         NetworkGenome mutated = new NetworkGenome(networkGenome);
         mutated.mutate();
         return createNew(mutated);
@@ -64,8 +64,8 @@ public class ProtozoaControlNetworkGene implements Gene<NetworkGenome>, Serializ
     }
 
     @Override
-    public Gene<NetworkGenome> createNew(NetworkGenome value) {
-        return new ProtozoaControlNetworkGene(geneName, value);
+    public Trait<NetworkGenome> createNew(NetworkGenome value) {
+        return new ProtozoaControlNetworkTrait(geneName, value);
     }
 
     @Override

@@ -4,7 +4,7 @@ import com.protoevo.core.Simulation;
 
 import java.util.Map;
 
-public class IntegerGene implements Gene<Integer> {
+public class IntegerTrait implements Trait<Integer> {
 
     public static final long serialVersionUID = 1L;
 
@@ -14,9 +14,9 @@ public class IntegerGene implements Gene<Integer> {
     private final String geneName;
     private final EvolvableInteger.MutationMethod mutationMethod;
 
-    public IntegerGene(String geneName, int minValue, int maxValue,
-                       EvolvableInteger.MutationMethod mutationMethod, int maxIncrement,
-                       boolean canDisable, int disableValue, boolean disabled, int value) {
+    public IntegerTrait(String geneName, int minValue, int maxValue,
+                        EvolvableInteger.MutationMethod mutationMethod, int maxIncrement,
+                        boolean canDisable, int disableValue, boolean disabled, int value) {
         this.geneName = geneName;
         this.minValue = minValue;
         this.maxValue = maxValue;
@@ -29,9 +29,9 @@ public class IntegerGene implements Gene<Integer> {
         this.value = value;
     }
 
-    public IntegerGene(String geneName, int minValue, int maxValue,
-                       EvolvableInteger.MutationMethod mutationMethod, int maxIncrement,
-                       boolean canDisable, int disableValue, boolean disabled) {
+    public IntegerTrait(String geneName, int minValue, int maxValue,
+                        EvolvableInteger.MutationMethod mutationMethod, int maxIncrement,
+                        boolean canDisable, int disableValue, boolean disabled) {
         this.geneName = geneName;
         this.minValue = minValue;
         this.maxValue = maxValue;
@@ -91,8 +91,8 @@ public class IntegerGene implements Gene<Integer> {
     }
 
     @Override
-    public Gene<Integer> createNew(Integer value) {
-        return new IntegerGene(geneName, minValue, maxValue, mutationMethod,
+    public Trait<Integer> createNew(Integer value) {
+        return new IntegerTrait(geneName, minValue, maxValue, mutationMethod,
                 maxIncrement, canDisable, disableValue, disabled, value);
     }
 

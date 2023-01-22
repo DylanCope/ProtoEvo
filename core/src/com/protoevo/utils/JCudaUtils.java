@@ -17,7 +17,7 @@ public class JCudaUtils {    /**
      */
     public static String preparePtxFile(String cuFileName) throws IOException
     {
-        System.out.print("Compiling CUDA kernel " + cuFileName + "...");
+        System.out.println("Compiling CUDA kernel...");
         int endIndex = cuFileName.lastIndexOf('.');
         if (endIndex == -1) {
             endIndex = cuFileName.length()-1;
