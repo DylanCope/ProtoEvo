@@ -5,7 +5,6 @@ import com.protoevo.core.Simulation;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Supplier;
 
 
 public class CollectionTrait implements Trait<List<Evolvable>> {
@@ -38,13 +37,10 @@ public class CollectionTrait implements Trait<List<Evolvable>> {
         this.maxSize = maxSize;
         this.collection = new ArrayList<>(size);
         for (int i = 0; i < size; i++) {
-//            GeneExpressionFunction componentFn = Evolvable.createGeneMapping(
-//                    collectionType,
-//                    geneExpressionFunction.getGeneRegulators());
             GeneExpressionFunction componentFn = Evolvable.createGeneMapping(collectionType);
-            Evolvable.Element component = (Evolvable.Element) Evolvable.createNew(collectionType, componentFn);
+            Evolvable.Element component = (Evolvable.Element) Evolvable.createNewComponent(collectionType, componentFn);
             component.setIndex(i);
-            componentFn.prependGeneNames(name + "/" + i);
+            componentFn.prependNames(name + "/" + i);
             componentFn.registerTargetEvolvable(name + "/" + i, component);
             geneExpressionFunction.merge(componentFn);
             collection.add(component);

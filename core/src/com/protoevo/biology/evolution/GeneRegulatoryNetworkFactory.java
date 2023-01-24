@@ -106,9 +106,9 @@ public class GeneRegulatoryNetworkFactory {
         for (String regulator : regulators.keySet())
             networkGenome.addSensor(regulator);
 
-        for (int i = 0; i < 100; i++) {
-            networkGenome.mutate();
-        }
+//        for (int i = 0; i < 10; i++) {
+//            networkGenome.mutate();
+//        }
 
         return networkGenome;
     }

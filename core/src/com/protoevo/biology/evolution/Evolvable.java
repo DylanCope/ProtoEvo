@@ -20,7 +20,7 @@ public interface Evolvable extends Serializable {
     default void build() {}
 
     default String name() {
-        return this.getClass().toString();
+        return this.getClass().getSimpleName();
     }
 
     interface Component extends Evolvable {
@@ -36,7 +36,7 @@ public interface Evolvable extends Serializable {
 
         @Override
         default String name() {
-            return this.getClass().toString() + "/" + getIndex();
+            return this.getClass().getSimpleName() + "/" + getIndex();
         }
     }
 
@@ -80,7 +80,8 @@ public interface Evolvable extends Serializable {
         try {
             setter.invoke(e, value);
         }
-        catch (IllegalArgumentException | IllegalAccessException | InvocationTargetException ex) {
+        catch (IllegalArgumentException | IllegalAccessException
+               | InvocationTargetException | NullPointerException ex) {
             throw new RuntimeException(
                     "Could not map value " + value + " to the trait. Check the signature of "
                     + setter.getName() + " on " + e + ": " + ex
@@ -119,7 +120,19 @@ public interface Evolvable extends Serializable {
 
     static <T extends Evolvable> T createNew(Class<T> clazz, GeneExpressionFunction fn) {
         Supplier<T> constructor = createEvolvableConstructor(clazz, fn);
-        return createNew(constructor, fn);
+        T newEvolvable = createNew(constructor, fn);
+        fn = newEvolvable.getGeneExpressionFunction();
+        fn.registerTargetEvolvable(newEvolvable.name(), newEvolvable);
+        fn.build();
+        newEvolvable.build();
+        return newEvolvable;
+    }
+
+    static <T extends Evolvable> T createNewComponent(Class<T> componentClass, GeneExpressionFunction fn) {
+        Supplier<T> constructor = createEvolvableConstructor(componentClass, fn);
+        T newEvolvable = createNew(constructor, fn);
+        newEvolvable.build();
+        return newEvolvable;
     }
 
     static <T extends Evolvable> T createNew(Supplier<T> constructor,
@@ -132,18 +145,20 @@ public interface Evolvable extends Serializable {
 
                 Class<Evolvable> componentClass = (Class<Evolvable>) method.getParameterTypes()[0];
 
-                Supplier<Evolvable> componentConstr = createEvolvableConstructor(
-                        componentClass, geneExpressionFunction);
-
-                Evolvable component = createNew(componentConstr, geneExpressionFunction);
-                if (component.getGeneExpressionFunction() != null)
-                    geneExpressionFunction.merge(component.getGeneExpressionFunction());
+                GeneExpressionFunction componentFn = createGeneMapping(componentClass);
+                Evolvable component = createNewComponent(componentClass, componentFn);
+                componentFn.registerTargetEvolvable(component.name(), component);
+//                if (component.getGeneExpressionFunction() != null)
+//                    geneExpressionFunction.merge(component.getGeneExpressionFunction());
 
                 if (component instanceof GeneExpressionFunction) {
-                    ((GeneExpressionFunction) component).merge(geneExpressionFunction);
-                    geneExpressionFunction = (GeneExpressionFunction) component;
+                    GeneExpressionFunction newFn = (GeneExpressionFunction) component;
+                    newFn.registerTargetEvolvable(newFn.name(), newFn);
+                    newFn.merge(geneExpressionFunction);
+                    geneExpressionFunction = newFn;
                 }
                 else {
+                    geneExpressionFunction.merge(componentFn);
                     setTraitValue(newEvolvable, method, component);
                 }
             }
@@ -151,13 +166,9 @@ public interface Evolvable extends Serializable {
 
         if (newEvolvable instanceof GeneExpressionFunction)
             ((GeneExpressionFunction) newEvolvable).merge(geneExpressionFunction);
-        else {
-            geneExpressionFunction.build();
+        else
             newEvolvable.setGeneExpressionFunction(geneExpressionFunction);
-            geneExpressionFunction.registerTargetEvolvable(newEvolvable.name(), newEvolvable);
-        }
-        geneExpressionFunction.build();
-        newEvolvable.build();
+
         return newEvolvable;
     }
 
