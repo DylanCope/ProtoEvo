@@ -17,4 +17,6 @@ public abstract class NodeAttachment {
     public SurfaceNode getNode() {
         return node;
     }
+
+    public abstract String getName();
 }

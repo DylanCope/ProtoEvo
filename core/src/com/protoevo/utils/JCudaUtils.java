@@ -17,7 +17,8 @@ public class JCudaUtils {    /**
      */
     public static String preparePtxFile(String cuFileName) throws IOException
     {
-        System.out.println("Compiling CUDA kernel...");
+        if (DebugMode.isDebugMode())
+            System.out.println("Compiling CUDA kernel...");
         int endIndex = cuFileName.lastIndexOf('.');
         if (endIndex == -1) {
             endIndex = cuFileName.length()-1;
@@ -26,7 +27,8 @@ public class JCudaUtils {    /**
         String ptxFileName = cuFileName.substring(0, endIndex+1) + "ptx";
 
         File cuFile = new File(cuFileName);
-        System.out.println(cuFile.getCanonicalPath());
+        if (DebugMode.isDebugMode())
+            System.out.println(cuFile.getCanonicalPath());
         if (!cuFile.exists()) {
             throw new IOException("Input file not found: " + cuFileName);
         }
@@ -35,7 +37,8 @@ public class JCudaUtils {    /**
                 "nvcc " + modelString + " -ptx "+
                         cuFile.getPath() + " -o " + ptxFileName;
 
-        System.out.println(command);
+        if (DebugMode.isDebugMode())
+            System.out.println(command);
         Process process = Runtime.getRuntime().exec(command);
 
         String errorMessage =
@@ -65,7 +68,8 @@ public class JCudaUtils {    /**
                     "Could not create .ptx file: " + message);
         }
 
-        System.out.println("Success.");
+        if (DebugMode.isDebugMode())
+            System.out.println("Success.");
         return ptxFileName;
     }
 

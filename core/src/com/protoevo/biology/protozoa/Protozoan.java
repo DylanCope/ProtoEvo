@@ -4,6 +4,7 @@ import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.physics.box2d.Contact;
 import com.protoevo.biology.*;
 import com.protoevo.biology.evolution.*;
+import com.protoevo.biology.neat.NeuralNetwork;
 import com.protoevo.biology.nodes.LightSensitiveAttachment;
 import com.protoevo.biology.nodes.NodeAttachment;
 import com.protoevo.biology.nodes.SpikeAttachment;
@@ -12,6 +13,7 @@ import com.protoevo.core.Simulation;
 import com.protoevo.core.settings.ProtozoaSettings;
 import com.protoevo.core.settings.Settings;
 import com.protoevo.core.settings.SimulationSettings;
+import com.protoevo.env.CollisionHandler;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -73,13 +75,6 @@ public class Protozoan extends Cell implements Evolvable
 			node.setCell(this);
 		}
 	}
-
-//	@EvolvableObject(
-//			name="Brain",
-//			geneClassName="com.protoevo.biology.protozoa.ProtozoaControlNetworkGene")
-//	public void setBrain(NetworkGenome networkGenome) {
-//		this.brain = new NNBrain(networkGenome.phenotype());
-//	}
 
 	@EvolvableFloat(name="Herbivore Factor", min=0.5f, max=2f)
 	public void setHerbivoreFactor(float herbivoreFactor) {
@@ -158,8 +153,6 @@ public class Protozoan extends Cell implements Evolvable
 	{
 		float extraction = 5f * getRadius() / e.getRadius();
 		if (e instanceof PlantCell) {
-//			if (spikes.getNumSpikes() > 0)
-//				extraction *= Math.pow(ProtozoaSettings.spikePlantConsumptionPenalty, spikes.getNumSpikes());
 			extraction *= herbivoreFactor;
 		} else if (e instanceof MeatCell) {
 			extraction /= herbivoreFactor;
@@ -237,15 +230,14 @@ public class Protozoan extends Cell implements Evolvable
 		int numSpikes = getNumSpikes();
 		if (numSpikes > 0)
 			stats.put("Num Spikes", (float) numSpikes);
-//		if (brain instanceof NNBrain) {
-//			NeuralNetwork nn = ((NNBrain) brain).network;
-//			stats.put("Network Depth", (float) nn.getDepth());
-//			stats.put("Network Size", (float) nn.getSize());
-//		}
+		NeuralNetwork grn = geneExpressionFunction.getRegulatoryNetwork();
+		stats.put("GRN Depth", (float) grn.getDepth());
+		stats.put("GRN Size", (float) grn.getSize());
 		int numLSN = getNumLightSensitiveNodes();
 		if (numLSN > 0) {
 			stats.put("Light Sensitive Nodes", (float) numLSN);
 		}
+
 		stats.put("Herbivore Factor", herbivoreFactor);
 		stats.put("Mutation Chance", 100 * geneExpressionFunction.getMutationRate());
 		return stats;
@@ -265,7 +257,7 @@ public class Protozoan extends Cell implements Evolvable
 	}
 
 	public void handleCollisions(float delta) {
-		for (Contact contact : getContacts()) {
+		for (CollisionHandler.FixtureCollision contact : getContacts()) {
 			Object collided = getOther(contact);
 			if (collided instanceof EdibleCell) {
 				eat((EdibleCell) collided, delta);
@@ -273,21 +265,10 @@ public class Protozoan extends Cell implements Evolvable
 		}
 	}
 
-//	private void maintainRetina(float delta) {
-//		float availableRetinal = getComplexMoleculeAvailable(Food.ComplexMolecule.Retinal);
-//		float usedRetinal = retina.updateHealth(delta, availableRetinal);
-//		depleteComplexMolecule(Food.ComplexMolecule.Retinal, usedRetinal);
-//	}
-
 	@Override
 	public boolean isEdible() {
 		return false;
 	}
-
-
-//	public Brain getBrain() {
-//		return brain;
-//	}
 
 
 	public boolean isHarbouringCrossover() {

@@ -64,6 +64,11 @@ public class FlagellumAttachment extends NodeAttachment {
         }
     }
 
+    @Override
+    public String getName() {
+        return "Flagellum";
+    }
+
     public Vector2 getThrustVector() {
         return thrustVector;
     }

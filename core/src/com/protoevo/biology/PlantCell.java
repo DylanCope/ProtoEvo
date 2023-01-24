@@ -6,6 +6,7 @@ import com.protoevo.core.settings.PlantSettings;
 import com.protoevo.core.settings.Settings;
 import com.protoevo.core.Simulation;
 import com.protoevo.core.settings.SimulationSettings;
+import com.protoevo.env.CollisionHandler;
 import com.protoevo.env.Environment;
 
 import java.util.Map;
@@ -62,7 +63,7 @@ public class PlantCell extends EdibleCell {
 
     public void updateCrowdingFactor() {
         crowdingFactor = 0;
-        for (Contact contact : getContacts()) {
+        for (CollisionHandler.FixtureCollision contact : getContacts()) {
             Object other = getOther(contact);
             if (other instanceof Cell) {
                 Cell otherCell = (Cell) other;

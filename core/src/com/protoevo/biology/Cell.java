@@ -2,10 +2,11 @@ package com.protoevo.biology;
 
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.math.MathUtils;
-import com.badlogic.gdx.physics.box2d.Contact;
+import com.google.common.collect.ConcurrentHashMultiset;
 import com.protoevo.core.Particle;
 import com.protoevo.core.settings.Settings;
 import com.protoevo.core.settings.SimulationSettings;
+import com.protoevo.env.CollisionHandler;
 import com.protoevo.env.JointsManager;
 import com.protoevo.env.Rock;
 import com.protoevo.utils.Geometry;
@@ -20,7 +21,7 @@ public abstract class Cell extends Particle implements Serializable
 {
 	private static final long serialVersionUID = -4333766895269415282L;
 
-	private Color healthyColour, fullyDegradedColour;
+	private Color healthyColour = new Color(Color.WHITE), fullyDegradedColour = new Color(Color.WHITE);
 	private int generation = 1;
 	protected boolean hasHandledDeath = false;
 	private float timeAlive = 0f;
@@ -28,32 +29,18 @@ public abstract class Cell extends Particle implements Serializable
 	private float growthRate = 0.0f;
 	private float energyAvailable = SimulationSettings.startingAvailableCellEnergy;
 	private float constructionMassAvailable, wasteMass;
-	private final Map<Food.ComplexMolecule, Float> availableComplexMolecules;
+	private final Map<Food.ComplexMolecule, Float> availableComplexMolecules = new HashMap<>(0);
 	private int maxAttachedCells = 0;
 	private final ConcurrentLinkedQueue<Cell> attachedCells = new ConcurrentLinkedQueue<>();
 	private final ConcurrentLinkedQueue<Cell> cellsToDetach = new ConcurrentLinkedQueue<>();
-	private final Set<CellAdhesion.Binding> cellBindings;
-	private final Map<CellAdhesion.CAM, Float> surfaceCAMs;
-	private final Map<Food.Type, Float> foodDigestionRates;
-	private final Map<Food.Type, Food> foodToDigest;
-	private final Set<ConstructionProject> constructionProjects;
-	private final Map<Food.ComplexMolecule, Float> complexMoleculeProductionRates;
-	private final Map<CellAdhesion.CAM, Float> camProductionRates;
+	private final ConcurrentLinkedQueue<CellAdhesion.Binding> cellBindings = new ConcurrentLinkedQueue<>();
+	private final Map<CellAdhesion.CAM, Float> surfaceCAMs = new HashMap<>(0);
+	private final Map<Food.Type, Float> foodDigestionRates = new HashMap<>(0);
+	private final Map<Food.Type, Food> foodToDigest = new HashMap<>(0);
+	private final Set<ConstructionProject> constructionProjects = new HashSet<>(0);
+	private final Map<Food.ComplexMolecule, Float> complexMoleculeProductionRates = new HashMap<>(0);
+	private final Map<CellAdhesion.CAM, Float> camProductionRates = new HashMap<>(0);
 	private final ArrayList<Cell> children = new ArrayList<>();
-
-	public Cell()
-	{
-		super();
-		healthyColour = new Color(1f, 1f, 1f, 1f);
-		foodDigestionRates = new HashMap<>(0);
-		foodToDigest = new HashMap<>(0);
-		cellBindings = new HashSet<>(0);
-		surfaceCAMs = new HashMap<>(0);
-		constructionProjects = new HashSet<>(0);
-		complexMoleculeProductionRates = new HashMap<>(0);
-		camProductionRates = new HashMap<>(0);
-		availableComplexMolecules = new HashMap<>(0);
-	}
 	
 	public void update(float delta) {
 		super.update(delta);
@@ -248,9 +235,14 @@ public abstract class Cell extends Particle implements Serializable
 		return growthRate;
 	}
 
-	public void createCellBinding(Cell other, CellAdhesion.CAM cam) {
+	public void createCellBinding(CollisionHandler.FixtureCollision collision, Cell other, CellAdhesion.CAM cam) {
 		CellAdhesion.Binding binding = new CellAdhesion.Binding(this, other, cam);
 		cellBindings.add(binding);
+		if (!isBoundTo(other)) {
+			attachedCells.add(other);
+			JointsManager jointsManager = getEnv().getJointsManager();
+			jointsManager.createJoint(collision, getBody(), other.getBody());
+		}
 	}
 
 	public int getMaxAttachedCells() {
@@ -261,7 +253,7 @@ public abstract class Cell extends Particle implements Serializable
 		this.maxAttachedCells = maxAttachedCells;
 	}
 
-	public Set<CellAdhesion.Binding> getCellBindings() {
+	public Collection<CellAdhesion.Binding> getCellBindings() {
 		return cellBindings;
 	}
 
@@ -274,7 +266,7 @@ public abstract class Cell extends Particle implements Serializable
 	}
 
 	@Override
-	public void onCollision(Contact contact, Rock rock) {
+	public void onCollision(CollisionHandler.FixtureCollision contact, Rock rock) {
 		super.onCollision(contact, rock);
 		if (rock.pointInside(getPos())) {
 			kill(CauseOfDeath.SUFFOCATION);
@@ -282,7 +274,7 @@ public abstract class Cell extends Particle implements Serializable
 	}
 
 	@Override
-	public void onCollision(Contact contact, Particle other) {
+	public void onCollision(CollisionHandler.FixtureCollision contact, Particle other) {
 		super.onCollision(contact, other);
 		if (other.isPointInside(getPos())) {
 			kill(CauseOfDeath.SUFFOCATION);
@@ -294,27 +286,19 @@ public abstract class Cell extends Particle implements Serializable
 		}
 	}
 
-	public void onCollision(Contact contact, Cell other) {
+	public void onCollision(CollisionHandler.FixtureCollision contact, Cell other) {
 		if (attachCondition(other)) {
-			if (!isBoundTo(other)) {
-				JointsManager jointsManager = getEnv().getJointsManager();
-				jointsManager.createJoint(contact, getBody(), other.getBody());
-			}
 			for (CellAdhesion.CAM cam : surfaceCAMs.keySet()) {
 				if (getCAMAvailable(cam) > 0 && other.getCAMAvailable(cam) > 0) {
-					createCellBinding(other, cam);
-					other.createCellBinding(this, cam);
+					createCellBinding(contact, other, cam);
+					other.createCellBinding(contact, this, cam);
 				}
 			}
-			if (!attachedCells.contains(other))
-				attachedCells.add(other);
-			if (!other.attachedCells.contains(this))
-				other.attachedCells.add(this);
 		}
 	}
 
 	private boolean isBoundTo(Cell otherCell) {
-		return attachedCells.contains(otherCell) || otherCell.attachedCells.contains(this);
+		return attachedCells.contains(otherCell);
 	}
 
 	public void handleBindingInteraction(CellAdhesion.Binding binding, float delta) {
@@ -483,11 +467,11 @@ public abstract class Cell extends Particle implements Serializable
 	}
 
 	public void setHealthyColour(Color healthyColour) {
-		this.healthyColour = healthyColour;
+		this.healthyColour.set(healthyColour);
 	}
 
 	public void setDegradedColour(Color fullyDegradedColour) {
-		this.fullyDegradedColour = fullyDegradedColour;
+		this.fullyDegradedColour.set(fullyDegradedColour);
 	}
 
 	public Color getFullyDegradedColour() {

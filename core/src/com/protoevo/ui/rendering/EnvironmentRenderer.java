@@ -17,10 +17,7 @@ import com.protoevo.core.Particle;
 import com.protoevo.core.Simulation;
 import com.protoevo.core.SpatialHash;
 import com.protoevo.core.settings.Settings;
-import com.protoevo.env.ChemicalSolution;
-import com.protoevo.env.Environment;
-import com.protoevo.env.JointsManager;
-import com.protoevo.env.Rock;
+import com.protoevo.env.*;
 import com.protoevo.input.ParticleTracker;
 import com.protoevo.ui.SimulationInputManager;
 import com.protoevo.utils.DebugMode;
@@ -81,7 +78,8 @@ public class EnvironmentRenderer implements Renderer {
 
         Vector2 particle1Position = p1.getBody().getPosition();
         Vector2 particle2Position = p2.getBody().getPosition();
-        float r = 1.5f * Math.min(p1.getRadius(), p2.getRadius());
+        float scale = 1.5f;
+        float r = scale * Math.min(p1.getRadius(), p2.getRadius());
         float d = particle1Position.dst(particle2Position) + r / 2;
 
         jointSprite.setPosition(particle1Position.x - r / 2, particle1Position.y - r / 2);
@@ -167,7 +165,7 @@ public class EnvironmentRenderer implements Renderer {
                     particle.getPos().y - maxDistance, 0,
                     2*maxDistance, 2*maxDistance, 0);
 
-            for (Contact contact : particle.getContacts()) {
+            for (CollisionHandler.FixtureCollision contact : particle.getContacts()) {
                 Object other = particle.getOther(contact);
                 if (other instanceof Particle) {
                     Vector2 otherPos = ((Particle) other).getPos();

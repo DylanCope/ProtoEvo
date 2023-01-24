@@ -61,4 +61,9 @@ public class SpikeAttachment extends NodeAttachment {
         return 1.1f * node.getCell().getRadius() * getSpikeScalar();
     }
 
+    @Override
+    public String getName() {
+        return "Spike";
+    }
+
 }

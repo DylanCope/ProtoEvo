@@ -16,6 +16,7 @@ import com.badlogic.gdx.scenes.scene2d.ui.ImageButton;
 import com.badlogic.gdx.scenes.scene2d.utils.Drawable;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 import com.protoevo.biology.neat.NeuralNetwork;
+import com.protoevo.biology.nodes.SurfaceNode;
 import com.protoevo.biology.protozoa.Protozoan;
 import com.protoevo.core.Application;
 import com.protoevo.core.Particle;
@@ -50,8 +51,8 @@ public class SimulationScreen {
     private final NetworkRenderer networkRenderer;
     private final float noRenderPollStatsTime = 2f;
     private float elapsedTime = 0, pollStatsCounter = 0, countDownToRender = 0;
-    private TreeMap<String, Float> stats = new TreeMap<>();
-    private TreeMap<String, Float> debugStats = new TreeMap<>();
+    private final TreeMap<String, Float> stats = new TreeMap<>();
+    private final TreeMap<String, Float> debugStats = new TreeMap<>();
 
     private float graphicsHeight;
     private float graphicsWidth;
@@ -254,8 +255,33 @@ public class SimulationScreen {
             titleFont.draw(uiBatch, "Simulation Stats", textAwayFromEdge, titleY);
         }
         int lineNo = renderStats(stats);
+
+
+        if (renderingEnabled && particleTracker.isTracking() &&
+                particleTracker.getTrackedParticle() instanceof Protozoan) {
+            Protozoan protozoan = (Protozoan) particleTracker.getTrackedParticle();
+            int i = 0;
+            for (SurfaceNode node : protozoan.getSurfaceNodes()) {
+                if (node.getAttachment().isPresent()) {
+                    float y = getYPosLHS(lineNo);
+                    String text = "Node " + i + ": " + node.getAttachment().get().getName();
+                    font.draw(uiBatch, text, textAwayFromEdge, y);
+                    lineNo++;
+                }
+                i++;
+            }
+        }
+
         if (renderingEnabled && DebugMode.isDebugMode())
             renderStats(debugStats, lineNo, debugFont);
+    }
+
+    public void loadingString(String text) {
+        uiBatch.begin();
+        float x = 4 * topBar.getPadding() + topBar.getHeight();
+        String textWithDots = text + ".".repeat(Math.max(0, (int) (elapsedTime * 2) % 4));
+        font.draw(uiBatch, textWithDots, x, x);
+        uiBatch.end();
     }
 
     public void draw(float delta) {
@@ -281,15 +307,11 @@ public class SimulationScreen {
             return;
 
         if (!simLoaded) {
-            uiBatch.begin();
-            float x = 4 * topBar.getPadding() + topBar.getHeight();
-            StringBuilder loadingStr = new StringBuilder("Loading");
-            for (int i = 0; i < (int) (elapsedTime * 2) % 4; i++) {
-                loadingStr.append(".");
-            }
-            font.draw(uiBatch, loadingStr.toString(), x, x);
-            uiBatch.end();
+            loadingString("Loading Simulation");
             return;
+        }
+        else if (!renderingEnabled) {
+            loadingString("Accelerating Simulation");
         }
 
         topBar.draw(delta);

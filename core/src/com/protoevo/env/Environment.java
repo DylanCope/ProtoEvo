@@ -105,7 +105,6 @@ public class Environment implements Serializable
 	}
 
 	private void handleCellUpdates(float delta) {
-
 		cells.parallelStream().forEach(cell -> cell.update(delta));
 	}
 

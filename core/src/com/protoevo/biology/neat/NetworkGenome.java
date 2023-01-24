@@ -1,8 +1,6 @@
 package com.protoevo.biology.neat;
 
 import com.google.common.collect.Iterators;
-import com.protoevo.biology.protozoa.Retina;
-import com.protoevo.core.settings.Settings;
 import com.protoevo.core.Simulation;
 import com.protoevo.core.settings.SimulationSettings;
 
@@ -382,18 +380,6 @@ public class NetworkGenome implements Serializable
 			if (gene.getLabel().equals(label))
 				return true;
 		return false;
-	}
-
-	public void ensureRetinaSensorsExist(int retinaSize) {
-		for (int i = 0; i < retinaSize; i++) {
-			String label = Retina.retinaCellLabel(i);
-			if (!hasSensor(label + " R"))
-				addFullyConnectedSensor(label + " R");
-			if (!hasSensor(label + " G"))
-				addFullyConnectedSensor(label + " G");
-			if (!hasSensor(label + " B"))
-				addFullyConnectedSensor(label + " B");
-		}
 	}
 
 	public Iterator<NeuronGene> iterateNeuronGenes() {

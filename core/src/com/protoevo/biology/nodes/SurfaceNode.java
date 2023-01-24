@@ -4,29 +4,32 @@ import com.badlogic.gdx.math.Vector2;
 import com.protoevo.biology.Cell;
 import com.protoevo.biology.evolution.*;
 import com.protoevo.core.settings.ProtozoaSettings;
-import com.protoevo.utils.Geometry;
 
-import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 
 public class SurfaceNode implements Evolvable.Element {
 
     private Cell cell;
     private float angle;
-    private final Vector2 position = new Vector2();
+    private final Vector2 relativePosition = new Vector2(), worldPosition = new Vector2();
     private Optional<NodeAttachment> attachment = Optional.empty();
     private final float[] inputActivation = new float[ProtozoaSettings.surfaceNodeActivationSize];
     private final float[] outputActivation = new float[ProtozoaSettings.surfaceNodeActivationSize];
     private int nodeIdx;
+    private final Map<String, Float> stats = new HashMap<>();
 
     public SurfaceNode() {
 
         float p = (float) Math.random();
         if (p < 0.1) {
             attachment = Optional.of(new FlagellumAttachment(this));
-        } else if (p < 0.3) {
-            attachment = Optional.of(new SpikeAttachment(this));
-        } else if (p < 0.7) {
+        } else if (p < 0.4) {
+            attachment = Optional.of(new BindingAttachment(this));
+//        } else if (p < 0.6) {
+//            attachment = Optional.of(new SpikeAttachment(this));
+        } else if (p < 0.9) {
             attachment = Optional.of(new LightSensitiveAttachment(this));
         }
 
@@ -43,8 +46,13 @@ public class SurfaceNode implements Evolvable.Element {
 
     public Vector2 getRelativePos() {
         float t = cell.getAngle() + angle;
-        position.set((float) Math.cos(t), (float) Math.sin(t)).scl(cell.getRadius());
-        return position;
+        relativePosition.set((float) Math.cos(t), (float) Math.sin(t)).scl(cell.getRadius());
+        return relativePosition;
+    }
+
+    public Vector2 getWorldPosition() {
+        worldPosition.set(getRelativePos()).add(cell.getPos());
+        return worldPosition;
     }
 
     public void update(float delta) {
@@ -77,6 +85,26 @@ public class SurfaceNode implements Evolvable.Element {
     @GeneRegulator(name="OutputActivation/0")
     public float getActivation0() {
         return outputActivation[0];
+    }
+
+    @RegulatedFloat(name="InputActivation/1", min=-1, max=1)
+    public void setActivation1(float value) {
+        inputActivation[1] = value;
+    }
+
+    @GeneRegulator(name="OutputActivation/1")
+    public float getActivation1() {
+        return outputActivation[1];
+    }
+
+    @RegulatedFloat(name="InputActivation/2", min=-1, max=1)
+    public void setActivation2(float value) {
+        inputActivation[2] = value;
+    }
+
+    @GeneRegulator(name="OutputActivation/3")
+    public float getActivation2() {
+        return outputActivation[2];
     }
 
     public float getAngle() {

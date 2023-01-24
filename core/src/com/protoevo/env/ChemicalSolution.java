@@ -8,6 +8,7 @@ import com.protoevo.biology.EdibleCell;
 import com.protoevo.biology.PlantCell;
 import com.protoevo.core.settings.Settings;
 import com.protoevo.core.settings.SimulationSettings;
+import com.protoevo.utils.DebugMode;
 import com.protoevo.utils.JCudaKernelRunner;
 import com.protoevo.utils.Utils;
 
@@ -59,7 +60,8 @@ public class ChemicalSolution implements Serializable {
 
     public void initialise() {
         // has to be called on the same thread running the simulation
-        System.out.println("Initialising chemical diffusion CUDA kernel...");
+        if (DebugMode.isDebugMode())
+            System.out.println("Initialising chemical diffusion CUDA kernel...");
         diffusionKernel = new JCudaKernelRunner("diffusion");
     }
 
@@ -131,7 +133,8 @@ public class ChemicalSolution implements Serializable {
         catch (Exception e) {
             if (e.getMessage().contains("CUDA_ERROR_INVALID_CONTEXT") ||
                     e.getMessage().contains("CUDA_ERROR_INVALID_HANDLE")) {
-                System.out.println("CUDA context lost, reinitialising...");
+                if (DebugMode.isDebugMode())
+                    System.out.println("CUDA context lost, reinitialising...");
                 initialise();
             } else {
                 throw e;

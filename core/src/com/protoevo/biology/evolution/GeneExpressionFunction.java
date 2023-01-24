@@ -161,7 +161,6 @@ public class GeneExpressionFunction implements Evolvable.Component, Serializable
         this.mutationChance = mutationChance;
     }
 
-
     public void buildGeneRegulatoryNetwork() {
         grnGenome = GeneRegulatoryNetworkFactory.createNetworkGenome(this);
         geneRegulatoryNetwork = grnGenome.phenotype();
@@ -328,11 +327,6 @@ public class GeneExpressionFunction implements Evolvable.Component, Serializable
         String name = method.getDeclaringClass().getSimpleName() + "/" + evolvable.name();
         String geneClassName = evolvable.traitClass();
         Trait<?> trait = constructTrait(geneClassName, name);
-//        if (name.equals(GENES_TRAIT_NAME)) {
-//            Genes genesGenes = (Genes) trait.getValue();
-//            genesGenes.putAll(genes);
-//            genes = genesGenes;
-//        }
         addNode(name, new ExpressionNode(name, trait, method, evolvable.dependencies()));
     }
 
@@ -372,13 +366,9 @@ public class GeneExpressionFunction implements Evolvable.Component, Serializable
     }
 
     public void merge(GeneExpressionFunction other) {
-//        other.expressionNodes.forEach((name, node) -> expressionNodes.putIfAbsent(name, node));
         other.expressionNodes.forEach(expressionNodes::putIfAbsent);
         other.regulators.forEach(regulators::putIfAbsent);
         other.targetMap.forEach(targetMap::putIfAbsent);
-//        expressionNodes.putIfAbsent();
-//        regulators.putAll(other.regulators);
-//        targetMap.putAll(other.targetMap);
     }
 
     public Regulators getGeneRegulators() {

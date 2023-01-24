@@ -166,16 +166,7 @@ public class JointsManager implements Serializable {
         return defJoint;
     }
 
-    private Vector2 getMeanContactPoint(Contact contact) {
-        WorldManifold manifold = contact.getWorldManifold();
-        int nContacts = manifold.getNumberOfContactPoints();
-        Vector2 result = new Vector2(0, 0);
-        for (Vector2 point : manifold.getPoints())
-            result.add(point);
-        return result.scl(1f / nContacts);
-    }
-
-    public void createJoint(Contact contact, Body bodyA, Body bodyB) {
+    public void createJoint(CollisionHandler.FixtureCollision contact, Body bodyA, Body bodyB) {
         int maxJoints = 2;
         if (bodyA.getJointList().size >= maxJoints || bodyB.getJointList().size >= maxJoints)
             return;
@@ -185,9 +176,8 @@ public class JointsManager implements Serializable {
             Particle particleA = (Particle) bodyA.getUserData();
             Particle particleB = (Particle) bodyB.getUserData();
 
-            Vector2 contactPoint = getMeanContactPoint(contact);
-            Vector2 anchorA = bodyA.getLocalPoint(contactPoint);
-            Vector2 anchorB = bodyB.getLocalPoint(contactPoint);
+            Vector2 anchorA = bodyA.getLocalPoint(contact.point);
+            Vector2 anchorB = bodyB.getLocalPoint(contact.point);
             jointsToAdd.add(makeJointDef(particleA, particleB, anchorA, anchorB));
         }
     }

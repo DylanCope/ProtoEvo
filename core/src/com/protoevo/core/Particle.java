@@ -7,6 +7,7 @@ import com.badlogic.gdx.utils.Array;
 import com.protoevo.biology.CauseOfDeath;
 import com.protoevo.core.settings.Settings;
 import com.protoevo.core.settings.SimulationSettings;
+import com.protoevo.env.CollisionHandler;
 import com.protoevo.env.Environment;
 import com.protoevo.env.Rock;
 import com.protoevo.utils.Geometry;
@@ -25,7 +26,7 @@ public class Particle implements Shape {
     private float radius = SimulationSettings.minParticleRadius;
     private final Vector2 pos = new Vector2(0, 0);
     private final ConcurrentHashMap<String, Float> stats = new ConcurrentHashMap<>();
-    private final Collection<Contact> contacts = new LinkedList<>();
+    private final Collection<CollisionHandler.FixtureCollision> contacts = new LinkedList<>();
     private final Collection<Object> interactionObjects = new LinkedList<>();
     private CauseOfDeath causeOfDeath = null;
 
@@ -164,27 +165,29 @@ public class Particle implements Shape {
 
     public void interact(List<Object> interactions) {}
 
-    public void onCollision(Contact contact, Particle other) {
-        contacts.add(contact);
+    public void onCollision(CollisionHandler.FixtureCollision collision, Particle other) {
+        if (getOther(collision) != null)
+            contacts.add(collision);
     }
 
-    public void onCollision(Contact contact, Rock rock) {
-        contacts.add(contact);
+    public void onCollision(CollisionHandler.FixtureCollision collision, Rock rock) {
+        if (getOther(collision) != null)
+            contacts.add(collision);
     }
 
-    public Object getOther(Contact contact) {
-        Object other = contact.getFixtureA().getUserData();
-        if (other == this)
-            other = contact.getFixtureB().getUserData();
-        return other;
+    public Object getOther(CollisionHandler.FixtureCollision collision) {
+//        Object objectA = contact.getFixtureA().getUserData();
+//        if (this.equals(objectA))
+//            return contact.getFixtureB().getUserData();
+//        return objectA;
+        return collision.objB;
     }
 
     public void reset() {
         contacts.clear();
-//        interactionObjects.clear();
     }
 
-    public Collection<Contact> getContacts() {
+    public Collection<CollisionHandler.FixtureCollision> getContacts() {
         return contacts;
     }
 
@@ -387,4 +390,5 @@ public class Particle implements Shape {
     public void applyTorque(float v) {
         body.applyTorque(v, true);
     }
+
 }

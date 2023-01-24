@@ -1,5 +1,6 @@
 package com.protoevo.env;
 
+import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.*;
 import com.protoevo.core.Particle;
 
@@ -7,6 +8,18 @@ import java.io.Serializable;
 
 public class CollisionHandler implements ContactListener, Serializable {
     public static long serialVersionUID = 1L;
+
+    public static class FixtureCollision {
+
+        public Object objA, objB;
+        public Vector2 point;
+
+        public FixtureCollision(Object objA, Object objB, Vector2 point) {
+            this.objA = objA;
+            this.objB = objB;
+            this.point = point;
+        }
+    }
 
     private final Environment environment;
 
@@ -16,6 +29,9 @@ public class CollisionHandler implements ContactListener, Serializable {
 
     @Override
     public void beginContact(Contact contact) {
+        if (contact.getWorldManifold().getPoints().length == 0)
+            return;
+
         Fixture fixtureA = contact.getFixtureA();
         Fixture fixtureB = contact.getFixtureB();
         Body bodyA = fixtureA.getBody();
@@ -41,12 +57,16 @@ public class CollisionHandler implements ContactListener, Serializable {
     }
 
     private void onContact(Contact contact, Particle particle, Body body) {
+        FixtureCollision collision = new FixtureCollision(
+                particle,
+                body.getUserData(),
+                contact.getWorldManifold().getPoints()[0]);
         if (body.getUserData() instanceof Particle) {
             Particle other = (Particle) body.getUserData();
-            particle.onCollision(contact, other);
+            particle.onCollision(collision, other);
         } else if (body.getUserData() instanceof Rock) {
             Rock rock = (Rock) body.getUserData();
-            particle.onCollision(contact, rock);
+            particle.onCollision(collision, rock);
         }
     }
 

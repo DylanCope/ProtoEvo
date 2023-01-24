@@ -15,12 +15,13 @@ import java.util.Optional;
 public class NodeRenderer {
     protected static final Sprite nodeEmptySprite = ImageUtils.loadSprite("cell/surface_node_empty.png");
     private static final Map<Class<? extends NodeAttachment>, Sprite> attachmentSprites =
-            new HashMap<Class<? extends NodeAttachment>, Sprite>(){
-        {
-            put(SpikeAttachment.class, ImageUtils.loadSprite("cell/spike/spike_large.png"));
-            put(LightSensitiveAttachment.class, ImageUtils.loadSprite("cell/light_sensitive_node.png"));
-        }
-    };
+            new HashMap<Class<? extends NodeAttachment>, Sprite>() {
+                {
+                    put(SpikeAttachment.class, ImageUtils.loadSprite("cell/spike/spike_large.png"));
+                    put(LightSensitiveAttachment.class, ImageUtils.loadSprite("cell/light_sensitive_node.png"));
+                    put(BindingAttachment.class, ImageUtils.loadSprite("cell/surface_node_binder.png"));
+                }
+            };
 
     protected SurfaceNode node;
     private final Optional<Class<? extends NodeAttachment>> attachmentClass;

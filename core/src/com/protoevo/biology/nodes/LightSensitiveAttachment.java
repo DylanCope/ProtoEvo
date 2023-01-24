@@ -33,6 +33,8 @@ public class LightSensitiveAttachment extends NodeAttachment {
         attachmentRelPos.set(node.getRelativePos());
         castRays();
         output[0] = colour.r * 2 - 1f;
+        output[1] = colour.g * 2 - 1f;
+        output[2] = colour.b * 2 - 1f;
     }
 
     public Vector2[] nextRay() {
@@ -129,5 +131,10 @@ public class LightSensitiveAttachment extends NodeAttachment {
                 node.getCell().getRadius(),
                 ProtozoaSettings.minProtozoanBirthRadius, SimulationSettings.maxParticleRadius,
                 node.getCell().getRadius() * 3f, ProtozoaSettings.protozoaLightRange);
+    }
+
+    @Override
+    public String getName() {
+        return "Light Sensitive Node";
     }
 }
