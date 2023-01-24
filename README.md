@@ -52,7 +52,7 @@ that allow them to bind to other cells and transmit mass, energy, signals, and c
 * Temporal control of trait expression ([regulation of transcription](https://en.wikipedia.org/wiki/Transcriptional_regulation)).
 * Environmental and internal temperature to add ecological variety and new cell interaction dynamics.
 * Signal relaying channels for cells bound together.
-* Improved visualisations of protozoa genes.
+* Improved visualisations of protozoa expressionNodes.
 * Lineage tracking UI tools.
 
 

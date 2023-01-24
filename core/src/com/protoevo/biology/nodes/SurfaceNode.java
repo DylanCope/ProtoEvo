@@ -69,12 +69,12 @@ public class SurfaceNode implements Evolvable.Element {
         return outputActivation;
     }
 
-    @RegulatedFloat(name="Activation/0", min=-1, max=1)
+    @RegulatedFloat(name="InputActivation/0", min=-1, max=1)
     public void setActivation0(float value) {
         inputActivation[0] = value;
     }
 
-    @GeneRegulator(name="Activation/0")
+    @GeneRegulator(name="OutputActivation/0")
     public float getActivation0() {
         return outputActivation[0];
     }

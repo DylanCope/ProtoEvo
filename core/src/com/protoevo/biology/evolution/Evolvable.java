@@ -54,7 +54,7 @@ public interface Evolvable extends Serializable {
         allGeneNames.addAll(parent1Genome.getTraitNames());
         allGeneNames.addAll(parent2Genome.getTraitNames());
 
-        GeneExpressionFunction.GeneRegulators regulators = new GeneExpressionFunction.GeneRegulators();
+        GeneExpressionFunction.Regulators regulators = new GeneExpressionFunction.Regulators();
         regulators.putAll(parent1Genome.getGeneRegulators());
         regulators.putAll(parent2Genome.getGeneRegulators());
         GeneExpressionFunction childGenome = new GeneExpressionFunction(regulators);
@@ -104,8 +104,8 @@ public interface Evolvable extends Serializable {
             try {
                 for (Constructor<?> c : clazz.getConstructors())
                     if (c.getParameterCount() > 0
-                            && c.getParameterTypes()[0].equals(GeneExpressionFunction.GeneRegulators.class))
-                        return clazz.getConstructor(GeneExpressionFunction.GeneRegulators.class)
+                            && c.getParameterTypes()[0].equals(GeneExpressionFunction.Regulators.class))
+                        return clazz.getConstructor(GeneExpressionFunction.Regulators.class)
                                 .newInstance(fn.getGeneRegulators());
 
                 return clazz.getConstructor().newInstance();
@@ -149,14 +149,6 @@ public interface Evolvable extends Serializable {
             }
         }
 
-        for (String geneName : geneExpressionFunction.getTraitNames()) {
-            Method setter = geneExpressionFunction.getTraitSetter(geneName);
-
-            if (setter != null && setter.getDeclaringClass().equals(newEvolvable.getClass())) {
-                geneExpressionFunction.registerTargetEvolvable(newEvolvable, geneName);
-            }
-        }
-
         if (newEvolvable instanceof GeneExpressionFunction)
             ((GeneExpressionFunction) newEvolvable).merge(geneExpressionFunction);
         else {
@@ -174,9 +166,9 @@ public interface Evolvable extends Serializable {
     }
 
     static <T extends Evolvable> GeneExpressionFunction createGeneMapping(
-            Class<T> clazz, GeneExpressionFunction.GeneRegulators geneRegulators
+            Class<T> clazz, GeneExpressionFunction.Regulators regulators
     ) {
-        GeneExpressionFunction geneExpressionFunction = new GeneExpressionFunction(geneRegulators);
+        GeneExpressionFunction geneExpressionFunction = new GeneExpressionFunction(regulators);
         for (Method method : clazz.getMethods()) {
             if (method.isAnnotationPresent(EvolvableFloat.class)) {
                 EvolvableFloat evolvable = method.getAnnotation(EvolvableFloat.class);
@@ -211,11 +203,11 @@ public interface Evolvable extends Serializable {
                     throw new RuntimeException("Method is not a setter for an evolvable: " + method);
 
                 if (componentClass.equals(GeneExpressionFunction.class)) {
-                    GeneExpressionFunction newFn = createGeneMapping(componentClass, geneRegulators);
+                    GeneExpressionFunction newFn = createGeneMapping(componentClass, regulators);
                     newFn.merge(geneExpressionFunction);
                     geneExpressionFunction = newFn;
                 } else {
-                    geneExpressionFunction.merge(createGeneMapping(componentClass, geneRegulators));
+                    geneExpressionFunction.merge(createGeneMapping(componentClass, regulators));
                 }
             }
         }
@@ -223,8 +215,8 @@ public interface Evolvable extends Serializable {
         return geneExpressionFunction;
     }
 
-    static <T extends Evolvable> GeneExpressionFunction.GeneRegulators extractRegulators(Class<T> clazz) {
-        GeneExpressionFunction.GeneRegulators regulators = new GeneExpressionFunction.GeneRegulators();
+    static <T extends Evolvable> GeneExpressionFunction.Regulators extractRegulators(Class<T> clazz) {
+        GeneExpressionFunction.Regulators regulators = new GeneExpressionFunction.Regulators();
         for (Method method : clazz.getMethods()) {
             if (method.isAnnotationPresent(GeneRegulator.class)) {
                 String regulatorName = method.getAnnotation(GeneRegulator.class).name();

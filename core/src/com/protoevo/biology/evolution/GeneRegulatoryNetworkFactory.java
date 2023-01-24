@@ -78,12 +78,12 @@ public class GeneRegulatoryNetworkFactory {
     }
 
     public static NetworkGenome createNetworkGenome(GeneExpressionFunction geneExpressionFunction) {
-        GeneExpressionFunction.Genes genes = geneExpressionFunction.getGenes();
+        GeneExpressionFunction.ExpressionNodes expressionNodes = geneExpressionFunction.getGenes();
 
         NetworkGenome networkGenome = new NetworkGenome();
         networkGenome.addSensor("Bias");
 
-        for (GeneExpressionFunction.ExpressionNode node : genes.values()) {
+        for (GeneExpressionFunction.ExpressionNode node : expressionNodes.values()) {
             Trait<?> trait = node.getTrait();
             String name = node.getName();
             if (trait instanceof RegulatedFloatTrait && !networkGenome.hasSensor(getInputName(name))) {
@@ -102,8 +102,8 @@ public class GeneRegulatoryNetworkFactory {
                 addBooleanGeneIO(networkGenome, name, (BooleanTrait) trait);
         }
 
-        GeneExpressionFunction.GeneRegulators geneRegulators = geneExpressionFunction.getGeneRegulators();
-        for (String regulator : geneRegulators.keySet())
+        GeneExpressionFunction.Regulators regulators = geneExpressionFunction.getGeneRegulators();
+        for (String regulator : regulators.keySet())
             networkGenome.addSensor(regulator);
 
         for (int i = 0; i < 100; i++) {
