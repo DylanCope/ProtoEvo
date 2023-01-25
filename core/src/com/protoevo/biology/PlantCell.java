@@ -53,7 +53,7 @@ public class PlantCell extends EdibleCell {
     }
 
     private boolean shouldSplit() {
-        return getRadius() >= maxRadius &&
+        return !hasBurst() && getRadius() >= maxRadius &&
                 getHealth() > Settings.minHealthToSplit;
     }
 

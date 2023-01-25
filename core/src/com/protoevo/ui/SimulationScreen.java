@@ -114,7 +114,7 @@ public class SimulationScreen {
         });
         topBar.addLeft(pauseButton);
 
-        ImageButton toggleRenderingButton = createBarImageButton("icons/terminal.png", event -> {
+        ImageButton toggleRenderingButton = createBarImageButton("icons/fast_forward.png", event -> {
             if (event.toString().equals("touchDown")) {
                 toggleEnvironmentRendering();
                 app.toggleSeparateThread();
@@ -288,6 +288,7 @@ public class SimulationScreen {
         elapsedTime += delta;
 
         if (countDownToRender > 0) {
+            loadingString("Enabling Renderer");
             countDownToRender -= delta;
             if (countDownToRender <= 0) {
                 renderingEnabled = true;
@@ -297,8 +298,13 @@ public class SimulationScreen {
 
         camera.update();
 
-        if (simLoaded && inputManager.getParticleTracker().isTracking())
-            camera.position.set(inputManager.getParticleTracker().getTrackedParticlePosition());
+        ParticleTracker particleTracker = inputManager.getParticleTracker();
+        if (simLoaded && particleTracker.isTracking()) {
+            if (particleTracker.getTrackedParticle().isDead())
+                particleTracker.untrack();
+            else
+                camera.position.set(particleTracker.getTrackedParticlePosition());
+        }
 
         if (simLoaded && renderingEnabled)
             renderer.render(delta);
@@ -306,11 +312,11 @@ public class SimulationScreen {
         if (uiHidden)
             return;
 
-        if (!simLoaded) {
+        if (!simLoaded && countDownToRender <= 0) {
             loadingString("Loading Simulation");
             return;
         }
-        else if (!renderingEnabled) {
+        else if (!renderingEnabled && countDownToRender <= 0) {
             loadingString("Accelerating Simulation");
         }
 
@@ -337,7 +343,6 @@ public class SimulationScreen {
 
         uiBatch.end();
 
-        ParticleTracker particleTracker = inputManager.getParticleTracker();
         if (renderingEnabled && particleTracker.isTracking()) {
             Particle particle = particleTracker.getTrackedParticle();
             if (particle instanceof Protozoan) {
@@ -393,11 +398,12 @@ public class SimulationScreen {
     }
 
     public void toggleEnvironmentRendering() {
-        renderingEnabled = !renderingEnabled;
-        if (renderingEnabled) {
+        if (!renderingEnabled) {
+            countDownToRender = 3;
             Gdx.graphics.setForegroundFPS(60);
         } else {
-            Gdx.graphics.setForegroundFPS(1);
+            renderingEnabled = false;
+            Gdx.graphics.setForegroundFPS(5);
         }
     }
 
@@ -406,7 +412,6 @@ public class SimulationScreen {
     }
 
     public synchronized void notifySimulationLoaded() {
-        System.out.println("Rendering enabled.");
         countDownToRender = 3;
     }
 }

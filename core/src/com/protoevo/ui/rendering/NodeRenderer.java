@@ -63,10 +63,14 @@ public class NodeRenderer {
     }
 
     public boolean isStale() {
-        return !node.getAttachment()
+        return node.getCell().isDead() || !node.getAttachment()
                 .map(NodeAttachment::getClass)
                 .equals(attachmentClass);
     }
 
     public void renderDebug(ShapeRenderer sr) {}
+
+    public void dispose() {
+
+    }
 }

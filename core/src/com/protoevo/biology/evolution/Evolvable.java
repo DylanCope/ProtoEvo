@@ -30,9 +30,15 @@ public interface Evolvable extends Serializable {
         };
     }
 
-    interface Element extends Component {
+    interface Element extends Evolvable {
         void setIndex(int index);
         int getIndex();
+
+        default String getCollectionName() {
+            // Collection name has been prepended to element gene expression function names
+            return this.getGeneExpressionFunction().getGenes().keySet().stream()
+                    .findAny().map(s -> s.split("/")[0]).orElse("");
+        }
 
         @Override
         default String name() {
@@ -42,6 +48,12 @@ public interface Evolvable extends Serializable {
 
     static <T extends Evolvable> T asexualClone(T evolvable) {
         GeneExpressionFunction geneExpressionFunction = evolvable.getGeneExpressionFunction();
+        if (evolvable instanceof Evolvable.Element) {
+            Evolvable.Element element = (Evolvable.Element) evolvable;
+            return (T) Evolvable.createNewElement(
+                    element.getCollectionName(), element.getIndex(),
+                    element.getClass(), geneExpressionFunction.cloneWithMutation());
+        }
         return (T) Evolvable.createNew(evolvable.getClass(), geneExpressionFunction.cloneWithMutation());
     }
 
@@ -125,6 +137,21 @@ public interface Evolvable extends Serializable {
         fn.registerTargetEvolvable(newEvolvable.name(), newEvolvable);
         fn.build();
         newEvolvable.build();
+        fn.update();
+        return newEvolvable;
+    }
+
+    static <T extends Evolvable.Element> T createNewElement(
+            String collectionName, int i, Class<T> clazz, GeneExpressionFunction fn) {
+        Supplier<T> constructor = createEvolvableConstructor(clazz, fn);
+        T newEvolvable = createNew(constructor, fn);
+        newEvolvable.setIndex(i);
+        fn = newEvolvable.getGeneExpressionFunction();
+        fn.prependNames(collectionName + "/" + newEvolvable.name());
+        fn.registerTargetEvolvable(newEvolvable.name(), newEvolvable);
+        fn.build();
+        newEvolvable.build();
+        fn.update();
         return newEvolvable;
     }
 

@@ -32,11 +32,13 @@ public class BurstRequest<T extends Cell> {
         this.overrideMinRadius = overrideMinRadius;
     }
 
-    public void burst() {
-        if (parent.getRadius() < parent.getMinBurstRadius() && !overrideMinRadius)
-            return;
+    public boolean canBurst() {
+        return parent.getRadius() > parent.getMinBurstRadius() || overrideMinRadius;
+    }
 
+    public void burst() {
         parent.kill(CauseOfDeath.CYTOKINESIS);
+        parent.setHasBurst(true);
 
         float angle = (float) (2 * Math.PI * Simulation.RANDOM.nextDouble());
 
@@ -56,7 +58,7 @@ public class BurstRequest<T extends Cell> {
             float p = (float) (0.3 + 0.7 * Simulation.RANDOM.nextDouble() / nChildren);
 
             T child = createChild.apply(parent.getRadius() * p);
-            child.setPos(parent.getPos().add(dir.scl(2 * child.getRadius())));
+            child.setPos(parent.getPos().cpy().add(dir.scl(2 * child.getRadius())));
             child.applyImpulse(dir.scl(.005f));
 
             child.setGeneration(parent.getGeneration() + 1);

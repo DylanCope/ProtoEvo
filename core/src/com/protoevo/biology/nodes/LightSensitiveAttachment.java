@@ -127,6 +127,8 @@ public class LightSensitiveAttachment extends NodeAttachment {
 
     @Override
     public float getInteractionRange() {
+        if (node.getCell() == null)
+            return 0;
         return Utils.linearRemap(
                 node.getCell().getRadius(),
                 ProtozoaSettings.minProtozoanBirthRadius, SimulationSettings.maxParticleRadius,

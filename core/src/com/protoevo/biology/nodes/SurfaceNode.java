@@ -19,6 +19,7 @@ public class SurfaceNode implements Evolvable.Element {
     private final float[] outputActivation = new float[ProtozoaSettings.surfaceNodeActivationSize];
     private int nodeIdx;
     private final Map<String, Float> stats = new HashMap<>();
+    private GeneExpressionFunction geneExpressionFunction;
 
     public SurfaceNode() {
 
@@ -127,5 +128,15 @@ public class SurfaceNode implements Evolvable.Element {
     @Override
     public int getIndex() {
         return nodeIdx;
+    }
+
+    @Override
+    public void setGeneExpressionFunction(GeneExpressionFunction fn) {
+        geneExpressionFunction = fn;
+    }
+
+    @Override
+    public GeneExpressionFunction getGeneExpressionFunction() {
+        return geneExpressionFunction;
     }
 }

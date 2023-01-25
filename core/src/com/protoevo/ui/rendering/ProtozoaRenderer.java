@@ -149,7 +149,21 @@ public class ProtozoaRenderer {
     }
 
     public boolean isStale() {
-        return protozoan.isDead();
+        boolean stale = protozoan.isDead();
+        if (stale)
+            dispose();
+        return stale;
+    }
+
+    public void dispose() {
+        if (detailedSprite != null) {
+            detailedSprite.getTexture().dispose();
+            detailedSprite = null;
+        }
+        for (NodeRenderer nodeRenderer : nodeRenderers.values()) {
+            nodeRenderer.dispose();
+        }
+        nodeRenderers.clear();
     }
 
     public static BufferedImage generateCellImage() {

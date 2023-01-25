@@ -51,7 +51,7 @@ public class Protozoan extends Cell implements Evolvable
 		handleCollisions(delta);
 		surfaceNodes.forEach(n -> n.update(delta));
 
-		if (shouldSplit()) {
+		if (shouldSplit() && !hasBurst()) {
 			getEnv().requestBurst(this, Protozoan.class, this::createSplitChild);
 		}
 	}
@@ -71,9 +71,8 @@ public class Protozoan extends Cell implements Evolvable
 	)
 	public void setSurfaceNodes(ArrayList<SurfaceNode> surfaceNodes) {
 		this.surfaceNodes = surfaceNodes;
-		for (SurfaceNode node : surfaceNodes) {
+		for (SurfaceNode node : surfaceNodes)
 			node.setCell(this);
-		}
 	}
 
 	@EvolvableFloat(name="Herbivore Factor", min=0.5f, max=2f)
@@ -101,14 +100,15 @@ public class Protozoan extends Cell implements Evolvable
 		this.maxTurning = maxTurning;
 	}
 
-	@EvolvableObject(
-			name="Cell Colour",
-			traitClass ="com.protoevo.biology.protozoa.ProtozoaColorTrait")
+	@EvolvableObject(name="Cell Colour",
+					 traitClass ="com.protoevo.biology.protozoa.ProtozoaColorTrait")
 	public void setColour(Color colour) {
 		setHealthyColour(colour);
 	}
 
-	@EvolvableFloat(name="Growth Rate", min=.05f, max=.1f)
+	@EvolvableFloat(name="Growth Rate",
+					min=ProtozoaSettings.minProtozoanGrowthRate,
+					max=ProtozoaSettings.maxProtozoanGrowthRate)
 	public void setGrowth(float growthRate) {
 		setGrowthRate(growthRate);
 	}
@@ -118,9 +118,8 @@ public class Protozoan extends Cell implements Evolvable
 		setComplexMoleculeProductionRate(Food.ComplexMolecule.Retinal, production);
 	}
 
-	@EvolvableObject(
-			name="CAM Production",
-			traitClass ="com.protoevo.biology.protozoa.CAMProductionTrait")
+	@EvolvableObject(name="CAM Production",
+					 traitClass ="com.protoevo.biology.protozoa.CAMProductionTrait")
 	public void setCAMProduction(Map<CellAdhesion.CAM, Float> camProduction) {
 		for (CellAdhesion.CAM cam : camProduction.keySet())
 			setCAMProductionRate(cam, camProduction.get(cam));
@@ -192,12 +191,13 @@ public class Protozoan extends Cell implements Evolvable
 
 	@Override
 	public void kill(CauseOfDeath causeOfDeath) {
+		if (!super.isDead() && !hasBurst())
+			getEnv().requestBurst(
+					this,
+					MeatCell.class,
+					r -> new MeatCell(r, getEnv()),
+					true);
 		super.kill(causeOfDeath);
-		getEnv().requestBurst(
-				this,
-				MeatCell.class,
-				r -> new MeatCell(r, getEnv()),
-				true);
 	}
 
 	@Override

@@ -41,6 +41,7 @@ public abstract class Cell extends Particle implements Serializable
 	private final Map<Food.ComplexMolecule, Float> complexMoleculeProductionRates = new HashMap<>(0);
 	private final Map<CellAdhesion.CAM, Float> camProductionRates = new HashMap<>(0);
 	private final ArrayList<Cell> children = new ArrayList<>();
+	private boolean hasBurst= false;
 	
 	public void update(float delta) {
 		super.update(delta);
@@ -53,6 +54,7 @@ public abstract class Cell extends Particle implements Serializable
 		resourceProduction(delta);
 		progressConstructionProjects(delta);
 
+		cellsToDetach.clear();
 		attachedCells.stream()
 				.filter(this::detachCellCondition)
 				.forEach(this::requestJointRemoval);
@@ -201,16 +203,26 @@ public abstract class Cell extends Particle implements Serializable
 	public void handleInteractions(float delta) {}
 
 	public void grow(float delta) {
-		float gr = getGrowthRate();
-		float newR = getRadius() * (1 + 5f * gr * delta);
-		if (newR > getMaxRadius())
-			newR = getMaxRadius();
-		if (newR == getRadius())
+		if (constructionMassAvailable <= 0)
 			return;
 
+		float gr = getGrowthRate();
+		float newR = getRadius() * (1 + 5f * gr * delta);
+
+		if (newR == getRadius() || gr == 0)
+			return;
+
+		if (newR > getMaxRadius())
+			newR = getMaxRadius();
+
 		float massChange = getMass(newR) - getMass(super.getRadius());
-		if (massChange < constructionMassAvailable &&
-				(newR > SimulationSettings.minParticleRadius || gr > 0)) {
+
+		if (massChange < constructionMassAvailable) {
+			newR = (newR - getRadius()) * constructionMassAvailable / massChange + getRadius();
+			massChange = constructionMassAvailable;
+		}
+
+		if (newR > SimulationSettings.minParticleRadius || gr > 0) {
 			setRadius(newR);
 			if (massChange > 0)
 				useConstructionMass(massChange);
@@ -291,7 +303,7 @@ public abstract class Cell extends Particle implements Serializable
 			for (CellAdhesion.CAM cam : surfaceCAMs.keySet()) {
 				if (getCAMAvailable(cam) > 0 && other.getCAMAvailable(cam) > 0) {
 					createCellBinding(contact, other, cam);
-					other.createCellBinding(contact, this, cam);
+//					other.createCellBinding(contact, this, cam);
 				}
 			}
 		}
@@ -395,8 +407,7 @@ public abstract class Cell extends Particle implements Serializable
 		if (wasteMass > 0)
 			stats.put("Waste Mass", Settings.statsDistanceScalar * wasteMass);
 
-		float gr = getGrowthRate();
-		stats.put("Growth Rate", Settings.statsDistanceScalar * gr);
+		stats.put("Growth Rate", 10000 * Settings.statsDistanceScalar * getGrowthRate());
 
 		for (Food.ComplexMolecule molecule : availableComplexMolecules.keySet())
 			if (availableComplexMolecules.get(molecule) > 0)
@@ -445,7 +456,7 @@ public abstract class Cell extends Particle implements Serializable
 	}
 
 	public boolean isDead() {
-		if (health <= 0.05f)
+		if (health <= 0.05f && !super.isDead())
 			kill(CauseOfDeath.HEALTH_TOO_LOW);
 		return super.isDead();
 	}
@@ -635,5 +646,13 @@ public abstract class Cell extends Particle implements Serializable
 
 	public float getShieldFactor() {
 		return 1.3f;
+	}
+
+	public void setHasBurst(boolean hasBurst) {
+		this.hasBurst = hasBurst;
+	}
+
+	public boolean hasBurst() {
+		return hasBurst;
 	}
 }

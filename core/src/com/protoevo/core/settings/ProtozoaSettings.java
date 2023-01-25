@@ -12,8 +12,8 @@ public class ProtozoaSettings {
     public static final float minHealthToSplit = 0.5f;
     public static final float maxProtozoanSplitRadius = 0.03f;
     public static final float minProtozoanSplitRadius = 0.015f;
-    public static final float minProtozoanGrowthRate = .05f;
-    public static final float maxProtozoanGrowthRate = .1f;
+    public static final float minProtozoanGrowthRate = .005f;
+    public static final float maxProtozoanGrowthRate = .01f;
     public static final int maxTurnAngle = 25;
     public static final float spikeGrowthPenalty = .08f;
     public static final float spikeMovementPenalty = 0.97f;

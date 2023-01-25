@@ -70,8 +70,8 @@ public class Environment implements Serializable
 //		int protozoaCap = (int) Math.ceil(SimulationSettings.maxProtozoa / (float) (resolution * resolution));
 //		int plantCap = (int) Math.ceil(SimulationSettings.maxPlants / (float) (resolution * resolution));
 //		int meatCap = (int) Math.ceil(SimulationSettings.maxMeat / (float) (resolution * resolution));
-		int protozoaCap = 20;
-		int plantCap = 50;
+		int protozoaCap = 100;
+		int plantCap = 100;
 		int meatCap = 50;
 
 		spatialHashes = new ConcurrentHashMap<>(3, 1);
@@ -109,7 +109,9 @@ public class Environment implements Serializable
 	}
 
 	private void handleBirthsAndDeaths() {
-		burstRequests.forEach(BurstRequest::burst);
+		burstRequests.stream()
+				.filter(BurstRequest::canBurst)
+				.forEach(BurstRequest::burst);
 		burstRequests.clear();
 		flushEntitiesToAdd();
 

@@ -14,6 +14,7 @@ import com.protoevo.utils.Geometry;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 
 public class Particle implements Shape {
@@ -22,12 +23,12 @@ public class Particle implements Shape {
     private Environment environment;
     private Body body;
     private Fixture dynamicsFixture, sensorFixture;
-    private boolean dead, disposed;
+    private boolean dead = false, disposed = false;
     private float radius = SimulationSettings.minParticleRadius;
     private final Vector2 pos = new Vector2(0, 0);
     private final ConcurrentHashMap<String, Float> stats = new ConcurrentHashMap<>();
-    private final Collection<CollisionHandler.FixtureCollision> contacts = new LinkedList<>();
-    private final Collection<Object> interactionObjects = new LinkedList<>();
+    private final Collection<CollisionHandler.FixtureCollision> contacts = new ConcurrentLinkedQueue<>();
+    private final Collection<Object> interactionObjects = new ConcurrentLinkedQueue<>();
     private CauseOfDeath causeOfDeath = null;
 
     public Particle() {}
@@ -49,6 +50,9 @@ public class Particle implements Shape {
     }
 
     public void update(float delta) {
+        if (body != null)
+            pos.set(body.getPosition());
+
         if (getSpeed() < getRadius() / 50f) {
             body.setLinearVelocity(0, 0);
             body.setAwake(false);
@@ -57,6 +61,9 @@ public class Particle implements Shape {
         float interactionRange = getInteractionRange();
         if (canPossiblyInteract() && interactionRange > getRadius())
             sensorFixture.getShape().setRadius(interactionRange);
+
+        interactionObjects.removeIf(o -> (o instanceof Particle) && ((Particle) o).isDead());
+        contacts.removeIf(c -> (getOther(c) instanceof Particle) && ((Particle) getOther(c)).isDead());
     }
 
     public void createBody() {
@@ -176,10 +183,6 @@ public class Particle implements Shape {
     }
 
     public Object getOther(CollisionHandler.FixtureCollision collision) {
-//        Object objectA = contact.getFixtureA().getUserData();
-//        if (this.equals(objectA))
-//            return contact.getFixtureB().getUserData();
-//        return objectA;
         return collision.objB;
     }
 
@@ -196,7 +199,8 @@ public class Particle implements Shape {
     }
 
     public void setRadius(float radius) {
-        this.radius = radius;
+        this.radius = Math.max(SimulationSettings.minParticleRadius, radius);
+        this.radius = Math.min(SimulationSettings.maxParticleRadius, this.radius);
         if (dynamicsFixture != null && !disposed) {
             dynamicsFixture.getShape().getRadius();
         }
@@ -222,7 +226,7 @@ public class Particle implements Shape {
 
     @Override
     public Vector2 getPos() {
-        return body.getPosition();
+        return pos;
     }
 
     public Vector2 getVel() {
