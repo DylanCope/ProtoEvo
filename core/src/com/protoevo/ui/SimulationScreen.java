@@ -24,6 +24,7 @@ import com.protoevo.core.Simulation;
 import com.protoevo.core.settings.WorldGenerationSettings;
 import com.protoevo.env.Environment;
 import com.protoevo.input.ParticleTracker;
+import com.protoevo.ui.nn.NetworkRenderer;
 import com.protoevo.ui.rendering.*;
 import com.protoevo.ui.shaders.ShaderLayers;
 import com.protoevo.ui.shaders.ShockWaveLayer;

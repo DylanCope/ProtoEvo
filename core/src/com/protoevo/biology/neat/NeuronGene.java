@@ -1,5 +1,7 @@
 package com.protoevo.biology.neat;
 
+import com.protoevo.core.Simulation;
+
 import java.io.Serializable;
 import java.util.Objects;
 
@@ -11,6 +13,7 @@ public class NeuronGene implements Comparable<NeuronGene>, Serializable
     private final Neuron.Activation activation;
 
     private String label;
+    private Object[] tags;
 
     public NeuronGene(int id, Neuron.Type type, Neuron.Activation activation)
     {
@@ -23,6 +26,12 @@ public class NeuronGene implements Comparable<NeuronGene>, Serializable
         this.type = type;
         this.activation = activation;
         this.label = label;
+    }
+
+    public NeuronGene mutate() {
+        int randomChoiceIdx = Simulation.RANDOM.nextInt(Neuron.Activation.activationFunctions.length);
+        Neuron.Activation newActivation = Neuron.Activation.activationFunctions[randomChoiceIdx];
+        return new NeuronGene(id, type, newActivation, label);
     }
 
     @Override
@@ -60,5 +69,13 @@ public class NeuronGene implements Comparable<NeuronGene>, Serializable
 
     public void setLabel(String label) {
         this.label = label;
+    }
+
+    public void setTags(Object...tags) {
+        this.tags = tags;
+    }
+
+    public Object[] getTags() {
+        return tags;
     }
 }

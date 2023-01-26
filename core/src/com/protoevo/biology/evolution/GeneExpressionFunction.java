@@ -22,6 +22,7 @@ public class GeneExpressionFunction implements Evolvable.Component, Serializable
         public String name;
         private final Function<Evolvable, Float> regulatorGetter;
         private String targetID;
+        private Object lastTarget;
 
         public RegulationNode(String name, Function<Evolvable, Float> regulatorGetter) {
             this.name = name;
@@ -39,7 +40,12 @@ public class GeneExpressionFunction implements Evolvable.Component, Serializable
         }
 
         public float getValue(Evolvable evolvable) {
+            lastTarget = evolvable;
             return regulatorGetter.apply(evolvable);
+        }
+
+        public Object getLastTarget() {
+            return lastTarget;
         }
 
         public Function<Evolvable, Float> getGetter() {
@@ -48,6 +54,10 @@ public class GeneExpressionFunction implements Evolvable.Component, Serializable
 
         public RegulationNode copy() {
             return new RegulationNode(name, regulatorGetter, targetID);
+        }
+
+        public String getName() {
+            return name;
         }
     }
 
@@ -60,6 +70,7 @@ public class GeneExpressionFunction implements Evolvable.Component, Serializable
         private String[] dependents;
         private Object lastTraitValue;
         private String targetID;
+        private Object lastTarget;
 
         public ExpressionNode(String name, Trait<?> trait, Method traitSetter, String[] dependencies) {
             this.name = name;
@@ -124,7 +135,12 @@ public class GeneExpressionFunction implements Evolvable.Component, Serializable
             if (!traitValue.equals(lastTraitValue)) {
                 Evolvable.setTraitValue(target, traitSetter, traitValue);
                 lastTraitValue = traitValue;
+                lastTarget = target;
             }
+        }
+
+        public Object getLastTarget() {
+            return lastTarget;
         }
 
         public String getName() {
@@ -249,6 +265,8 @@ public class GeneExpressionFunction implements Evolvable.Component, Serializable
     }
 
     public void tick() {
+        if (geneRegulatoryNetwork == null)
+            return;
         setGRNInputs();
         geneRegulatoryNetwork.tick();
         setGRNInputs();
@@ -283,6 +301,7 @@ public class GeneExpressionFunction implements Evolvable.Component, Serializable
         else
             trait = new FloatTrait(name, minValue, maxValue, evolvableFloat.initValue());
 
+        trait.setRegulated(evolvableFloat.regulated());
         trait.setGeneExpressionFunction(this);
         ExpressionNode node = new ExpressionNode(name, trait, method, evolvableFloat.geneDependencies());
         addNode(name, node);
@@ -403,7 +422,7 @@ public class GeneExpressionFunction implements Evolvable.Component, Serializable
     public Object getTraitValue(String name) {
         if (hasGene(name)) {
             if (notDisabled(name) && geneRegulatoryNetwork != null
-                    && geneRegulatoryNetwork.hasSensor(GeneRegulatoryNetworkFactory.getInputName(name))) {
+                    && geneRegulatoryNetwork.hasOutput(GeneRegulatoryNetworkFactory.getOutputName(name))) {
                 float grnOutput = geneRegulatoryNetwork.getOutput(GeneRegulatoryNetworkFactory.getOutputName(name));
                 Trait<?> trait = getTraitGene(name);
                 return parseGRNOutput(trait, grnOutput);

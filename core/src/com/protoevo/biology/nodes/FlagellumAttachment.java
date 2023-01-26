@@ -69,6 +69,20 @@ public class FlagellumAttachment extends NodeAttachment {
         return "Flagellum";
     }
 
+    @Override
+    public String getInputMeaning(int index) {
+        if (index == 0)
+            return "Thrust";
+        if (index == 1)
+            return "Torque";
+        return null;   // no other inputs
+    }
+
+    @Override
+    public String getOutputMeaning(int index) {
+        return null;  // no attachment output
+    }
+
     public Vector2 getThrustVector() {
         return thrustVector;
     }

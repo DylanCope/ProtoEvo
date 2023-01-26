@@ -40,7 +40,7 @@ public class SurfaceNode implements Evolvable.Element {
         this.cell = cell;
     }
 
-    @EvolvableFloat(name = "Node Angle", max = 2 * (float) Math.PI)
+    @EvolvableFloat(name = "Angle", max = 2 * (float) Math.PI, regulated = false)
     public void setAngle(float angle) {
         this.angle = angle;
     }
@@ -103,7 +103,7 @@ public class SurfaceNode implements Evolvable.Element {
         inputActivation[2] = value;
     }
 
-    @GeneRegulator(name="OutputActivation/3")
+    @GeneRegulator(name="OutputActivation/2")
     public float getActivation2() {
         return outputActivation[2];
     }

@@ -15,5 +15,5 @@ public @interface EvolvableFloat {
     float min() default 0;
     float max() default 1;
     String[] geneDependencies() default "";
-    boolean canBeRegulated() default true;
+    boolean regulated() default true;
 }

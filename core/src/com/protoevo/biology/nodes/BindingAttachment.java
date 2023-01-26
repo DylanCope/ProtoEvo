@@ -56,4 +56,14 @@ public class BindingAttachment extends NodeAttachment {
     public String getName() {
         return "Binding";
     }
+
+    @Override
+    public String getInputMeaning(int index) {
+        return "Input: " + index;
+    }
+
+    @Override
+    public String getOutputMeaning(int index) {
+        return "Output: " + index;
+    }
 }

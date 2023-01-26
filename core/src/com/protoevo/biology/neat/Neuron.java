@@ -16,6 +16,10 @@ public class Neuron implements Comparable<Neuron>, Serializable {
         Activation STEP = z -> z > 0 ? 1f : 0f;
         Activation RELU = z -> z > 0 ? z : 0f;
 
+        Activation[] activationFunctions = new Activation[] {
+                SIGMOID, LINEAR, TANH, STEP, RELU
+        };
+
         static String toString(Activation activation) {
             if (activation.equals(SIGMOID))
                 return "Sigmoid";
@@ -55,6 +59,7 @@ public class Neuron implements Comparable<Neuron>, Serializable {
     private float graphicsY = -1;
     private boolean connectedToOutput = true;
     private final String label;
+    private Object[] tags;
 
     public Neuron(int id, Neuron[] inputs, float[] weights, Type type, Activation activation, String label)
     {
@@ -186,5 +191,13 @@ public class Neuron implements Comparable<Neuron>, Serializable {
 
     public String getLabel() {
         return label;
+    }
+
+    public void setTags(Object[] tags) {
+        this.tags = tags;
+    }
+
+    public Object[] getTags() {
+        return tags;
     }
 }

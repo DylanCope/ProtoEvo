@@ -9,6 +9,7 @@ public class FloatTrait implements Trait<Float>, Serializable {
 
     public static final long serialVersionUID = 1L;
 
+    private boolean regulated;
     private final float value, minValue, maxValue;
     private final String traitName;
 
@@ -52,5 +53,13 @@ public class FloatTrait implements Trait<Float>, Serializable {
     @Override
     public String getTraitName() {
         return traitName;
+    }
+
+    public void setRegulated(boolean regulated) {
+        this.regulated = regulated;
+    }
+
+    public boolean isRegulated() {
+        return regulated;
     }
 }

@@ -66,4 +66,13 @@ public class SpikeAttachment extends NodeAttachment {
         return "Spike";
     }
 
+    @Override
+    public String getInputMeaning(int index) {
+        return null;
+    }
+
+    @Override
+    public String getOutputMeaning(int index) {
+        return null;
+    }
 }

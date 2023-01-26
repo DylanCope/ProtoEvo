@@ -19,4 +19,7 @@ public abstract class NodeAttachment {
     }
 
     public abstract String getName();
+
+    public abstract String getInputMeaning(int index);
+    public abstract String getOutputMeaning(int index);
 }

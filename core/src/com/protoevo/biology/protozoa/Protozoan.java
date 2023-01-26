@@ -67,7 +67,7 @@ public class Protozoan extends Cell implements Evolvable
 			elementClassPath = "com.protoevo.biology.nodes.SurfaceNode",
 			minSize = 1,
 			maxSize = 10,
-			initialSize = 5
+			initialSize = 3
 	)
 	public void setSurfaceNodes(ArrayList<SurfaceNode> surfaceNodes) {
 		this.surfaceNodes = surfaceNodes;
@@ -132,7 +132,9 @@ public class Protozoan extends Cell implements Evolvable
 	}
 
 	@Override
-	@GeneRegulator(name="Size", min=ProtozoaSettings.minProtozoanBirthRadius, max=ProtozoaSettings.maxProtozoanSplitRadius)
+	@GeneRegulator(name="Size",
+			       min=ProtozoaSettings.minProtozoanBirthRadius,
+			       max=ProtozoaSettings.maxProtozoanSplitRadius)
 	public float getRadius() {
 		return super.getRadius();
 	}

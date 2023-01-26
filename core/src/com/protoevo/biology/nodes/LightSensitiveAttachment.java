@@ -139,4 +139,20 @@ public class LightSensitiveAttachment extends NodeAttachment {
     public String getName() {
         return "Light Sensitive Node";
     }
+
+    @Override
+    public String getInputMeaning(int index) {
+        return null;  // no inputs
+    }
+
+    @Override
+    public String getOutputMeaning(int index) {
+        if (index == 0)
+            return "R";
+        else if (index == 1)
+            return "G";
+        else if (index == 2)
+            return "B";
+        return null;
+    }
 }

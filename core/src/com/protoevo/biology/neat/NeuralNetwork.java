@@ -209,4 +209,11 @@ public class NeuralNetwork implements Serializable
                 return n.getState();
         throw new RuntimeException("Asked for value of neuron that does not exist: " + label);
     }
+
+    public boolean hasOutput(String outputName) {
+        for (Neuron n : neurons)
+            if (n.getLabel() != null && n.getLabel().equals(outputName))
+                return true;
+        return false;
+    }
 }

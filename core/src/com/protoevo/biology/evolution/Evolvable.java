@@ -51,7 +51,7 @@ public interface Evolvable extends Serializable {
         if (evolvable instanceof Evolvable.Element) {
             Evolvable.Element element = (Evolvable.Element) evolvable;
             return (T) Evolvable.createNewElement(
-                    element.getCollectionName(), element.getIndex(),
+                    null, element.getIndex(),
                     element.getClass(), geneExpressionFunction.cloneWithMutation());
         }
         return (T) Evolvable.createNew(evolvable.getClass(), geneExpressionFunction.cloneWithMutation());
@@ -147,7 +147,8 @@ public interface Evolvable extends Serializable {
         T newEvolvable = createNew(constructor, fn);
         newEvolvable.setIndex(i);
         fn = newEvolvable.getGeneExpressionFunction();
-        fn.prependNames(collectionName + "/" + newEvolvable.name());
+        if (collectionName != null)
+            fn.prependNames(collectionName + "/" + newEvolvable.name());
         fn.registerTargetEvolvable(newEvolvable.name(), newEvolvable);
         fn.build();
         newEvolvable.build();
