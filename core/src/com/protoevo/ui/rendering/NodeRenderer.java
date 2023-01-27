@@ -18,7 +18,7 @@ public class NodeRenderer {
             new HashMap<Class<? extends NodeAttachment>, Sprite>() {
                 {
                     put(Spike.class, ImageUtils.loadSprite("cell/spike/spike_large.png"));
-                    put(LightSensitiveNode.class, ImageUtils.loadSprite("cell/light_sensitive_node.png"));
+                    put(Photoreceptor.class, ImageUtils.loadSprite("cell/light_sensitive_node.png"));
                     put(BindingNode.class, ImageUtils.loadSprite("cell/surface_node_binder.png"));
                 }
             };

@@ -5,15 +5,15 @@ import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.Vector2;
 import com.protoevo.biology.Cell;
-import com.protoevo.biology.nodes.LightSensitiveNode;
+import com.protoevo.biology.nodes.Photoreceptor;
 import com.protoevo.biology.nodes.SurfaceNode;
 import com.protoevo.core.Shape;
 import com.protoevo.utils.ImageUtils;
 
-public class LightSensitiveNodeRenderer extends NodeRenderer {
+public class PhotoreceptorRenderer extends NodeRenderer {
     protected static final Sprite lightSensitiveSprite = ImageUtils.loadSprite("cell/light_sensitive_node.png");
 
-    public LightSensitiveNodeRenderer(SurfaceNode node) {
+    public PhotoreceptorRenderer(SurfaceNode node) {
         super(node);
     }
 
@@ -26,14 +26,14 @@ public class LightSensitiveNodeRenderer extends NodeRenderer {
     public void render(float delta, SpriteBatch batch) {
         super.render(delta, batch);
         if (node.getAttachment().isPresent() &&
-                node.getAttachment().get() instanceof LightSensitiveNode) {
-            LightSensitiveNode attachment = (LightSensitiveNode) node.getAttachment().get();
+                node.getAttachment().get() instanceof Photoreceptor) {
+            Photoreceptor attachment = (Photoreceptor) node.getAttachment().get();
             lightSensitiveSprite.setColor(attachment.getColour());
             renderRotatedNode(lightSensitiveSprite, batch);
         }
     }
 
-    private void renderDebugRay(ShapeRenderer sr, Vector2[] ray, LightSensitiveNode attachment) {
+    private void renderDebugRay(ShapeRenderer sr, Vector2[] ray, Photoreceptor attachment) {
         Cell cell = node.getCell();
         sr.line(ray[0], ray[1]);
         for (Object o : cell.getInteractionQueue()) {
@@ -53,12 +53,12 @@ public class LightSensitiveNodeRenderer extends NodeRenderer {
         if (!node.getAttachment().isPresent())
             return;
 
-        LightSensitiveNode attachment = (LightSensitiveNode) node.getAttachment().get();
+        Photoreceptor attachment = (Photoreceptor) node.getAttachment().get();
         sr.setColor(1, 0, 0, 1);
 
         SurfaceNode node = attachment.getNode();
         attachment.reset();
-        for (int rayIdx = 0; rayIdx < LightSensitiveNode.nRays; rayIdx++) {
+        for (int rayIdx = 0; rayIdx < Photoreceptor.nRays; rayIdx++) {
             Vector2[] ray = attachment.nextRay();
             renderDebugRay(sr, ray, attachment);
         }

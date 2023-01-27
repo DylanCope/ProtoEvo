@@ -31,7 +31,7 @@ public class SurfaceNode implements Evolvable.Element {
 //        } else if (p < 0.6) {
 //            attachment = Optional.of(new SpikeAttachment(this));
         } else if (p < 0.9) {
-            attachment = Optional.of(new LightSensitiveNode(this));
+            attachment = Optional.of(new Photoreceptor(this));
         }
 
     }

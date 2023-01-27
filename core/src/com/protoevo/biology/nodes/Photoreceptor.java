@@ -9,7 +9,7 @@ import com.protoevo.core.settings.ProtozoaSettings;
 import com.protoevo.core.settings.SimulationSettings;
 import com.protoevo.utils.Utils;
 
-public class LightSensitiveNode extends NodeAttachment {
+public class Photoreceptor extends NodeAttachment {
     private final Vector2[] ray = new Vector2[]{new Vector2(), new Vector2()};
     private final Shape.Collision[] collisions =
             new Shape.Collision[]{new Shape.Collision(), new Shape.Collision()};
@@ -23,7 +23,7 @@ public class LightSensitiveNode extends NodeAttachment {
     public static final int nRays = 8;
     public static final float fov = (float) (Math.PI / 2.);
 
-    public LightSensitiveNode(SurfaceNode node) {
+    public Photoreceptor(SurfaceNode node) {
         super(node);
     }
 
@@ -137,7 +137,7 @@ public class LightSensitiveNode extends NodeAttachment {
 
     @Override
     public String getName() {
-        return "Light Sensitive Node";
+        return "Photoreceptor";
     }
 
     @Override

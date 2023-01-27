@@ -5,7 +5,7 @@ import com.badlogic.gdx.math.Vector2;
 import com.protoevo.biology.*;
 import com.protoevo.biology.evolution.*;
 import com.protoevo.biology.neat.NeuralNetwork;
-import com.protoevo.biology.nodes.LightSensitiveNode;
+import com.protoevo.biology.nodes.Photoreceptor;
 import com.protoevo.biology.nodes.NodeAttachment;
 import com.protoevo.biology.nodes.Spike;
 import com.protoevo.biology.nodes.SurfaceNode;
@@ -243,7 +243,7 @@ public class Protozoan extends Cell implements Evolvable
 	}
 
 	public int getNumLightSensitiveNodes() {
-		return getNumOfAttachments(LightSensitiveNode.class);
+		return getNumOfAttachments(Photoreceptor.class);
 	}
 
 	@Override

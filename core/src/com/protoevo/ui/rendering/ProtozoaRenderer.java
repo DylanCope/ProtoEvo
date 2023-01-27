@@ -6,7 +6,7 @@ import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.Vector2;
 import com.protoevo.biology.nodes.Flagellum;
-import com.protoevo.biology.nodes.LightSensitiveNode;
+import com.protoevo.biology.nodes.Photoreceptor;
 import com.protoevo.biology.nodes.NodeAttachment;
 import com.protoevo.biology.nodes.SurfaceNode;
 import com.protoevo.biology.protozoa.Protozoan;
@@ -58,7 +58,7 @@ public class ProtozoaRenderer {
         new HashMap<Class<? extends NodeAttachment>, Function<SurfaceNode, NodeRenderer>>(){
             {
                 put(Flagellum.class, FlagellumRenderer::new);
-                put(LightSensitiveNode.class, LightSensitiveNodeRenderer::new);
+                put(Photoreceptor.class, PhotoreceptorRenderer::new);
             }
         };
 
