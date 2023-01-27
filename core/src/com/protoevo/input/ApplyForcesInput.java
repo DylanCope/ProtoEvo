@@ -35,7 +35,7 @@ public class ApplyForcesInput extends InputAdapter {
             if (power / dist2 > 1) {
                 float explosionFallout = 10f;
                 tmp.setLength((float) (power * Math.exp(-explosionFallout * dist2)));
-                particle.getBody().applyLinearImpulse(tmp,  bodyPos, true);
+                particle.applyImpulse(tmp);
             }
         }
     }

@@ -196,7 +196,7 @@ public class SimulationScreen {
 
             int totalCells = environment.getCells().size();
             int sleepCount = totalCells - (int) environment.getCells().stream()
-                    .filter(cell -> cell.getBody().isAwake())
+                    .filter(cell -> cell.getBody() != null && cell.getBody().isAwake())
                     .count();
             debugString += separator + "Sleeping %: " + (int) (100f * sleepCount / totalCells);
 
@@ -272,9 +272,6 @@ public class SimulationScreen {
                 i++;
             }
         }
-
-        if (renderingEnabled && DebugMode.isDebugMode())
-            renderStats(debugStats, lineNo, debugFont);
     }
 
     public void loadingString(String text) {
@@ -348,8 +345,10 @@ public class SimulationScreen {
             Particle particle = particleTracker.getTrackedParticle();
             if (particle instanceof Protozoan) {
                 NeuralNetwork grn = ((Protozoan) particle).getGeneExpressionFunction().getRegulatoryNetwork();
-                networkRenderer.setNeuralNetwork(grn);
-                networkRenderer.render(delta);
+                if (grn != null) {
+                    networkRenderer.setNeuralNetwork(grn);
+                    networkRenderer.render(delta);
+                }
             }
         }
     }

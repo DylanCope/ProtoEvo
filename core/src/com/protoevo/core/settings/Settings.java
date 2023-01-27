@@ -13,7 +13,7 @@ public final class Settings {
     public static final int numPossibleCAMs = 64;
     public static final float camProductionEnergyCost = 0.05f;
     public static final float foodExtractionWasteMultiplier = 1.5f;
-    public static final float cellRepairRate = 0.5f;
+    public static final float cellRepairRate = 5e-3f;
     public static final float occludingBindingEnergyTransport = 0.5f;
     public static final float channelBindingEnergyTransport = 0.5f;
     public static final boolean enableAnchoringBinding = false;

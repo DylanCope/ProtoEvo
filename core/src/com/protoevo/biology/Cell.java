@@ -2,7 +2,6 @@ package com.protoevo.biology;
 
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.math.MathUtils;
-import com.google.common.collect.ConcurrentHashMultiset;
 import com.protoevo.core.Particle;
 import com.protoevo.core.settings.Settings;
 import com.protoevo.core.settings.SimulationSettings;
@@ -42,11 +41,15 @@ public abstract class Cell extends Particle implements Serializable
 	private final Map<CellAdhesion.CAM, Float> camProductionRates = new HashMap<>(0);
 	private final ArrayList<Cell> children = new ArrayList<>();
 	private boolean hasBurst= false;
-	
+	private float repairRate = 1f;
+
+	private Cell engulfer = null;
+	private boolean fullyEngulfed = false;
+
 	public void update(float delta) {
 		super.update(delta);
-
 		timeAlive += delta;
+
 		voidDamage(delta);
 		digest(delta);
 		repair(delta);
@@ -125,6 +128,7 @@ public abstract class Cell extends Particle implements Serializable
 	}
 
 	public void eat(EdibleCell cell, float extraction) {
+
 		Food.Type foodType = cell.getFoodType();
 		float extractedMass = cell.getMass() * extraction;
 		cell.removeMass(Settings.foodExtractionWasteMultiplier * extractedMass, CauseOfDeath.EATEN);
@@ -163,15 +167,19 @@ public abstract class Cell extends Particle implements Serializable
 	}
 
 	public void repair(float delta) {
-		if (!isDead() && getHealth() < 1f && getGrowthRate() > 0) {
+		if (!isDead() && getHealth() < 1f && getRepairRate() > 0) {
 			float massRequired = getMass() * 0.01f * delta;
 			float energyRequired = massRequired * 3f;
 			if (massRequired < constructionMassAvailable && energyRequired < energyAvailable) {
 				useEnergy(energyRequired);
 				useConstructionMass(massRequired);
-				heal(delta * Settings.cellRepairRate * getGrowthRate());
+				heal(delta * Settings.cellRepairRate * getRepairRate());
 			}
 		}
+	}
+
+	private float getRepairRate() {
+		return repairRate;
 	}
 
 	public boolean detachCellCondition(Cell other) {
@@ -408,6 +416,7 @@ public abstract class Cell extends Particle implements Serializable
 			stats.put("Waste Mass", Settings.statsDistanceScalar * wasteMass);
 
 		stats.put("Growth Rate", 10000 * Settings.statsDistanceScalar * getGrowthRate());
+		stats.put("Repair Rate", Settings.statsDistanceScalar * getRepairRate());
 
 		for (Food.ComplexMolecule molecule : availableComplexMolecules.keySet())
 			if (availableComplexMolecules.get(molecule) > 0)
@@ -424,6 +433,9 @@ public abstract class Cell extends Particle implements Serializable
 			if (camMass > 0)
 				stats.put(junctionType + " CAM Mass", camMass);
 		}
+
+		if (engulfer != null)
+			stats.put("Being Engulfed", 1f);
 
 		float massTimeScalar = Settings.statsMassScalar / Settings.statsTimeScalar;
 		for (Food.ComplexMolecule molecule : complexMoleculeProductionRates.keySet())
@@ -463,7 +475,6 @@ public abstract class Cell extends Particle implements Serializable
 
 	public void kill(CauseOfDeath causeOfDeath) {
 		super.kill(causeOfDeath);
-		health = 0;
 	}
 
 	@Override
@@ -652,7 +663,27 @@ public abstract class Cell extends Particle implements Serializable
 		this.hasBurst = hasBurst;
 	}
 
-	public boolean hasBurst() {
-		return hasBurst;
+	public boolean hasNotBurst() {
+		return !hasBurst;
+	}
+
+	public void setRepairRate(float repairRate) {
+		this.repairRate = repairRate;
+	}
+
+	public void setEngulfer(Cell engulfer) {
+		this.engulfer = engulfer;
+	}
+
+	public boolean isEngulfed() {
+		return engulfer != null;
+	}
+
+	public boolean isFullyEngulfed() {
+		return fullyEngulfed;
+	}
+
+	public void setFullyEngulfed() {
+		this.fullyEngulfed = true;
 	}
 }

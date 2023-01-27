@@ -10,8 +10,8 @@ public class SimulationSettings {
     public static final float voidDamagePerSecond = 1f;
     public static final float spatialHashRadius = voidStartDistance;
 
-    public static final int maxPlants = 8000;
-    public static final int maxProtozoa = 4000;
+    public static final int maxPlants = 10000;
+    public static final int maxProtozoa = 5000;
     public static final int maxMeat = 1000;
 
     public static final float minParticleRadius = 3f / 100f;

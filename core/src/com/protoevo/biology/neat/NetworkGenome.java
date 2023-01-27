@@ -200,6 +200,19 @@ public class NetworkGenome implements Serializable
 				return i;
 		return -1;
 	}
+
+	public NeuronGene getNeuronGene(String name) {
+		for (NeuronGene n : sensorNeuronGenes)
+			if (n.getLabel().equals(name))
+				return n;
+		for (NeuronGene n : outputNeuronGenes)
+			if (n.getLabel().equals(name))
+				return n;
+		for (NeuronGene n : hiddenNeuronGenes)
+			if (n.getLabel().equals(name))
+				return n;
+		return null;
+	}
 	
 	private void mutateConnection(NeuronGene in, NeuronGene out) {
 		numMutations++;
@@ -395,6 +408,7 @@ public class NetworkGenome implements Serializable
 			neurons[g.getId()] = new Neuron(
 					g.getId(), inputs, weights, g.getType(), g.getActivation(), g.getLabel()
 			);
+			neurons[g.getId()].setTags(g.getTags());
 		}
 
 		Arrays.fill(inputCounts, 0);

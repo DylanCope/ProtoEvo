@@ -28,11 +28,11 @@ public class MouseOverNeuronCallback {
             String[] parts = geneNode.getTrait().getTraitName().split("Activation/");
             int idx = Integer.parseInt(parts[1]);
             if (parts[0].equals("Input")) {
-                label += surfaceNode.getAttachment()
+                label += " " + surfaceNode.getAttachment()
                         .map(attachment -> attachment.getInputMeaning(idx))
                         .orElse("Input " + idx);
             } else {
-                label += surfaceNode.getAttachment()
+                label += " " + surfaceNode.getAttachment()
                         .map(attachment -> attachment.getOutputMeaning(idx))
                         .orElse("Output " + idx);
             }
@@ -105,7 +105,7 @@ public class MouseOverNeuronCallback {
         if (labelX + infoWidth >= Gdx.graphics.getWidth())
             labelX = (int) (Gdx.graphics.getWidth() - 1.1 * infoWidth);
 
-        float labelY = Gdx.graphics.getHeight() - (y + 1.1f * graphicsRadius);
+        float labelY = Gdx.graphics.getHeight() - (y + 1.1f * graphicsRadius) + font.getLineHeight();
         font.draw(batch, labelStr, labelX, labelY);
     }
 }

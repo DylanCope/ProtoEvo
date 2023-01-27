@@ -11,7 +11,4 @@ public class PlantSettings {
     public static final float plantCrowdingGrowthDecay = 1.0f;
     public static final float plantCriticalCrowding = 6.0f;
     public static final float plantRegen = .2f;
-
-    public static final float protozoaMinMaxTurn = 0.0174533f; // (float) Math.toRadians(1);
-    public static final float protozoaMaxMaxTurn = 0.10472f; // (float) Math.toRadians(6);
 }

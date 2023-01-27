@@ -106,6 +106,30 @@ public class ChemicalSolution implements Serializable {
             chemicalPixmap.setColor(cellColour.r, cellColour.g, cellColour.b, deposit);
             chemicalPixmap.fillCircle(fieldX, fieldY, toChemicalGridXDist(e.getRadius()));
         }
+        else {
+            int size = toChemicalGridXDist(e.getRadius());
+            int x = toChemicalGridX(e.getPos().x);
+            int y = toChemicalGridY(-e.getPos().y);
+            for (int i = -size; i <= size; i++) {
+                for (int j = -size; j <= size; j++) {
+                    if (i*i + j*j <= size*size) {
+                        int fieldX = x + i;
+                        int fieldY = y + j;
+
+                        if (fieldX >= 0 && fieldX < chemicalTextureWidth &&
+                                fieldY >= 0 && fieldY < chemicalTextureHeight) {
+                            int colourRGBA8888 = chemicalPixmap.getPixel(fieldX, fieldY);
+                            tmpColour.set(colourRGBA8888);
+                            float amount = Utils.linearRemap(
+                                    i*i + j*j, size*size / 4f, size*size,
+                                    1, 0.1f);
+                            tmpColour.a *= amount;
+                            chemicalPixmap.drawPixel(x, y, tmpColour.toIntBits());
+                        }
+                    }
+                }
+            }
+        }
     }
 
     public void deposit(float delta) {
@@ -157,13 +181,13 @@ public class ChemicalSolution implements Serializable {
 
     public void update(float delta) {
         timeSinceUpdate += delta;
-        deposit(delta);
         if (timeSinceUpdate > SimulationSettings.chemicalDiffusionInterval) {
             diffuse();
             timeSinceUpdate = 0;
             if (updateChemicalsTextureCallback != null)
                 updateChemicalsTextureCallback.accept(chemicalPixmap);
         }
+        deposit(delta);
     }
 
     public Pixmap getChemicalPixmap() {

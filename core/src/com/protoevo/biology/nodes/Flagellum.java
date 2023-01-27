@@ -6,12 +6,12 @@ import com.protoevo.biology.Cell;
 import com.protoevo.core.settings.ProtozoaSettings;
 import com.protoevo.core.settings.SimulationSettings;
 
-public class FlagellumAttachment extends NodeAttachment {
+public class Flagellum extends NodeAttachment {
 
     private final Vector2 thrustVector = new Vector2();
     private float torque;
 
-    public FlagellumAttachment(SurfaceNode node) {
+    public Flagellum(SurfaceNode node) {
         super(node);
     }
 
@@ -58,9 +58,11 @@ public class FlagellumAttachment extends NodeAttachment {
 			cell.applyImpulse(thrustVector);
             cell.applyTorque(torque);
 		}
-        else {
-            thrustVector.setLength(0);
-            torque = 0;
+        else if (cell.getEnergyAvailable() > 0) {
+            thrustVector.scl(cell.getEnergyAvailable() / work);
+            torque = torque * cell.getEnergyAvailable() / work;
+            cell.applyImpulse(thrustVector);
+            cell.applyTorque(torque);
         }
     }
 

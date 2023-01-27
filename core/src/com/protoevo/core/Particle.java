@@ -24,12 +24,13 @@ public class Particle implements Shape {
     private Body body;
     private Fixture dynamicsFixture, sensorFixture;
     private boolean dead = false, disposed = false;
-    private float radius = SimulationSettings.minParticleRadius;
+    private float radius = SimulationSettings.minParticleRadius * (1 + 2 * (float) Math.random());
     private final Vector2 pos = new Vector2(0, 0);
     private final ConcurrentHashMap<String, Float> stats = new ConcurrentHashMap<>();
     private final Collection<CollisionHandler.FixtureCollision> contacts = new ConcurrentLinkedQueue<>();
     private final Collection<Object> interactionObjects = new ConcurrentLinkedQueue<>();
     private CauseOfDeath causeOfDeath = null;
+    private boolean requestedDestroyBody = false;
 
     public Particle() {}
 
@@ -50,17 +51,18 @@ public class Particle implements Shape {
     }
 
     public void update(float delta) {
-        if (body != null)
+        if (body != null) {
             pos.set(body.getPosition());
 
-        if (getSpeed() < getRadius() / 50f) {
-            body.setLinearVelocity(0, 0);
-            body.setAwake(false);
+            if (getSpeed() < getRadius() / 50f) {
+                body.setLinearVelocity(0, 0);
+                body.setAwake(false);
+            }
+            dynamicsFixture.getShape().setRadius(radius);
+            float interactionRange = getInteractionRange();
+            if (canPossiblyInteract() && interactionRange > getRadius())
+                sensorFixture.getShape().setRadius(interactionRange);
         }
-        dynamicsFixture.getShape().setRadius(radius);
-        float interactionRange = getInteractionRange();
-        if (canPossiblyInteract() && interactionRange > getRadius())
-            sensorFixture.getShape().setRadius(interactionRange);
 
         interactionObjects.removeIf(o -> (o instanceof Particle) && ((Particle) o).isDead());
         contacts.removeIf(c -> (getOther(c) instanceof Particle) && ((Particle) getOther(c)).isDead());
@@ -201,7 +203,7 @@ public class Particle implements Shape {
     public void setRadius(float radius) {
         this.radius = Math.max(SimulationSettings.minParticleRadius, radius);
         this.radius = Math.min(SimulationSettings.maxParticleRadius, this.radius);
-        if (dynamicsFixture != null && !disposed) {
+        if (body != null && dynamicsFixture != null && !disposed) {
             dynamicsFixture.getShape().getRadius();
         }
     }
@@ -214,7 +216,7 @@ public class Particle implements Shape {
     public void setPos(Vector2 pos) {
         this.pos.set(pos);
         if (body != null && !disposed) {
-            body.setTransform(pos, 0);
+            body.setTransform(pos, body.getAngle());
         }
     }
 
@@ -230,6 +232,8 @@ public class Particle implements Shape {
     }
 
     public Vector2 getVel() {
+        if (body == null)
+            return Geometry.ZERO;
         return body.getLinearVelocity();
     }
 
@@ -356,7 +360,15 @@ public class Particle implements Shape {
             return;
         disposed = true;
         kill(CauseOfDeath.DISPOSED);
-        environment.getWorld().destroyBody(body);
+        destroyBody();
+    }
+
+    public void destroyBody() {
+        if (body != null) {
+            environment.getWorld().destroyBody(body);
+            body = null;
+        }
+        requestedDestroyBody = false;
     }
 
     public String getPrettyName() {
@@ -367,20 +379,24 @@ public class Particle implements Shape {
         Map<String, Float> stats = new TreeMap<>();
         stats.put("Position X", Settings.statsDistanceScalar * getPos().x);
         stats.put("Position Y", Settings.statsDistanceScalar * getPos().y);
-        stats.put("Inertia", body.getInertia());
-        stats.put("Num Joints", (float) body.getJointList().size);
-        stats.put("Num Fixtures", (float) body.getFixtureList().size);
+        if (body != null) {
+            stats.put("Inertia", body.getInertia());
+            stats.put("Num Joints", (float) body.getJointList().size);
+            stats.put("Num Fixtures", (float) body.getFixtureList().size);
+            stats.put("Is Sleeping", body.isAwake() ? 0f : 1f);
+        }
         stats.put("Num Contacts", (float) contacts.size());
         stats.put("Num Interactions", (float) interactionObjects.size());
         stats.put("Is Dead", dead ? 1f : 0f);
-        stats.put("Is Sleeping", body.isAwake() ? 0f : 1f);
         stats.put("Local Count", (float) environment.getLocalCount(this));
         stats.put("Local Cap", (float) environment.getLocalCapacity(this));
         return stats;
     }
 
     public Array<JointEdge> getJoints() {
-        return body.getJointList();
+        if (body != null)
+            return body.getJointList();
+        return null;
     }
 
     public CauseOfDeath getCauseOfDeath() {
@@ -392,7 +408,15 @@ public class Particle implements Shape {
     }
 
     public void applyTorque(float v) {
-        body.applyTorque(v, true);
+        if (body != null)
+            body.applyTorque(v, true);
     }
 
+    public void requestDestroyBody() {
+        this.requestedDestroyBody = true;
+    }
+
+    public boolean didRequestDestroyBody() {
+        return requestedDestroyBody;
+    }
 }

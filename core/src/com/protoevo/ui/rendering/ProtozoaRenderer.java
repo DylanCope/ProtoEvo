@@ -5,8 +5,8 @@ import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.Vector2;
-import com.protoevo.biology.nodes.FlagellumAttachment;
-import com.protoevo.biology.nodes.LightSensitiveAttachment;
+import com.protoevo.biology.nodes.Flagellum;
+import com.protoevo.biology.nodes.LightSensitiveNode;
 import com.protoevo.biology.nodes.NodeAttachment;
 import com.protoevo.biology.nodes.SurfaceNode;
 import com.protoevo.biology.protozoa.Protozoan;
@@ -57,8 +57,8 @@ public class ProtozoaRenderer {
     private static final Map<Class<? extends NodeAttachment>, Function<SurfaceNode, NodeRenderer>> nodeRendererMap =
         new HashMap<Class<? extends NodeAttachment>, Function<SurfaceNode, NodeRenderer>>(){
             {
-                put(FlagellumAttachment.class, FlagellumRenderer::new);
-                put(LightSensitiveAttachment.class, LightSensitiveNodeRenderer::new);
+                put(Flagellum.class, FlagellumRenderer::new);
+                put(LightSensitiveNode.class, LightSensitiveNodeRenderer::new);
             }
         };
 
@@ -84,7 +84,7 @@ public class ProtozoaRenderer {
         Vector2 pos = protozoan.getPos();
         float x = pos.x - protozoan.getRadius();
         float y = pos.y - protozoan.getRadius();
-        float cellAngle = (float) Math.toDegrees(protozoan.getBody().getAngle());
+        float cellAngle = (float) Math.toDegrees(protozoan.getAngle());
         float size = protozoan.getRadius() * 2;
 
         Sprite cellSprite;

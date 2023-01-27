@@ -102,12 +102,13 @@ public class MoveParticle extends InputAdapter {
 
             if (jediMode) {
                 Vector2 impulse = new Vector2(mouseVel).scl(.001f);
-                grabbedParticle.getBody().applyLinearImpulse(
-                        impulse, grabbedParticle.getBody().getWorldCenter(), true);
+                grabbedParticle.applyImpulse(impulse);
             } else {
                 grabbedParticle.setPos(lastMousePos);
-                grabbedParticle.getBody().setLinearVelocity(0, 0);
-                grabbedParticle.getBody().setAngularVelocity(0);
+                if (grabbedParticle.getBody() != null) {
+                    grabbedParticle.getBody().setLinearVelocity(0, 0);
+                    grabbedParticle.getBody().setAngularVelocity(0);
+                }
             }
             return true;
 

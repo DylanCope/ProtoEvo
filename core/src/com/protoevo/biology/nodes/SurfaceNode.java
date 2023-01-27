@@ -25,13 +25,13 @@ public class SurfaceNode implements Evolvable.Element {
 
         float p = (float) Math.random();
         if (p < 0.1) {
-            attachment = Optional.of(new FlagellumAttachment(this));
+            attachment = Optional.of(new Flagellum(this));
         } else if (p < 0.4) {
-            attachment = Optional.of(new BindingAttachment(this));
+            attachment = Optional.of(new BindingNode(this));
 //        } else if (p < 0.6) {
 //            attachment = Optional.of(new SpikeAttachment(this));
         } else if (p < 0.9) {
-            attachment = Optional.of(new LightSensitiveAttachment(this));
+            attachment = Optional.of(new LightSensitiveNode(this));
         }
 
     }

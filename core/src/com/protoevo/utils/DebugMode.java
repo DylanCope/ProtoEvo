@@ -3,12 +3,17 @@ package com.protoevo.utils;
 public enum DebugMode {
     OFF,
     SIMPLE_INFO,
+    INTERACTION_INFO,
     PHYSICS_DEBUG;
 
     public static DebugMode DEBUG_MODE = OFF;
 
     public static boolean isDebugMode() {
         return DEBUG_MODE != OFF;
+    }
+
+    public static boolean isInteractionInfo() {
+        return DEBUG_MODE == INTERACTION_INFO;
     }
 
     public static boolean isDebugModePhysicsDebug() {
@@ -21,6 +26,9 @@ public enum DebugMode {
                 DEBUG_MODE = SIMPLE_INFO;
                 break;
             case SIMPLE_INFO:
+                DEBUG_MODE = INTERACTION_INFO;
+                break;
+            case INTERACTION_INFO:
                 DEBUG_MODE = PHYSICS_DEBUG;
                 break;
             case PHYSICS_DEBUG:

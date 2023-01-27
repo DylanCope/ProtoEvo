@@ -1,7 +1,6 @@
 package com.protoevo.biology;
 
 import com.badlogic.gdx.graphics.Color;
-import com.badlogic.gdx.physics.box2d.Contact;
 import com.protoevo.core.settings.PlantSettings;
 import com.protoevo.core.settings.Settings;
 import com.protoevo.core.Simulation;
@@ -53,7 +52,7 @@ public class PlantCell extends EdibleCell {
     }
 
     private boolean shouldSplit() {
-        return !hasBurst() && getRadius() >= maxRadius &&
+        return hasNotBurst() && getRadius() >= maxRadius &&
                 getHealth() > Settings.minHealthToSplit;
     }
 

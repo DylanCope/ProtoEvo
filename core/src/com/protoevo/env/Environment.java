@@ -168,10 +168,10 @@ public class Environment implements Serializable
 		Collections.shuffle(populationStartCentresList);
 		populationStartCentres = populationStartCentresList.toArray(new Vector2[0]);
 
-		if (populationStartCentres.length > 0)
-			initialisePopulation(Arrays.copyOfRange(
-					populationStartCentres, 0, WorldGenerationSettings.numPopulationClusters));
-		else
+//		if (populationStartCentres.length > 0)
+//			initialisePopulation(Arrays.copyOfRange(
+//					populationStartCentres, 0, WorldGenerationSettings.numPopulationClusters));
+//		else
 			initialisePopulation();
 
 		flushEntitiesToAdd();
@@ -247,7 +247,8 @@ public class Environment implements Serializable
 	public void initialisePopulation() {
 		Vector2[] clusterCentres = new Vector2[WorldGenerationSettings.numPopulationClusters];
 		for (int i = 0; i < clusterCentres.length; i++)
-			clusterCentres[i] = randomPosition(WorldGenerationSettings.populationClusterRadius);
+			clusterCentres[i] = Geometry.randomVector(
+					Simulation.RANDOM.nextFloat(WorldGenerationSettings.environmentRadius));
 		initialisePopulation(clusterCentres);
 	}
 
@@ -259,7 +260,7 @@ public class Environment implements Serializable
 
 	public Vector2 randomPosition(float entityRadius, Vector2 centre, float clusterRadius) {
 		for (int i = 0; i < 20; i++) {
-			float r = clusterRadius * Simulation.RANDOM.nextFloat();
+			float r = Simulation.RANDOM.nextFloat(clusterRadius);
 			Vector2 pos = Geometry.randomVector(r*r);
 			pos.setLength((float) Math.sqrt(pos.len()));
 			pos.add(centre);
@@ -324,7 +325,7 @@ public class Environment implements Serializable
 			int count = causeOfDeathCounts.getOrDefault(cod, 0);
 			causeOfDeathCounts.put(cod, count + 1);
 		}
-		if (Settings.enableChemicalField)
+		if (Settings.enableChemicalField && (e instanceof Cell && !((Cell) e).isEngulfed()))
 			chemicalSolution.depositCircle(e.getPos(), e.getRadius() * 1.5f, e.getColor());
 		e.dispose();
 	}

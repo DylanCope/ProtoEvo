@@ -4,6 +4,7 @@ import com.badlogic.gdx.math.MathUtils;
 import com.protoevo.biology.neat.NetworkGenome;
 import com.protoevo.biology.neat.Neuron;
 import com.protoevo.biology.neat.NeuronGene;
+import com.protoevo.core.Simulation;
 
 import java.util.function.Supplier;
 
@@ -14,11 +15,15 @@ public class GeneRegulatoryNetworkFactory {
         String trait = node.getName();
         float min = gene.getMinValue();
         float max = gene.getMaxValue();
-        NeuronGene sensor = networkGenome.addSensor(
-                getInputName(trait),
-                z -> 2 * (z - min) / (max - min) - 1,
-                node
-        );
+//        NeuronGene sensor = networkGenome.addSensor(
+//                getInputName(trait),
+//                z -> 2 * (z - min) / (max - min) - 1,
+//                node
+//        );
+        NeuronGene sensor = networkGenome.getNeuronGene("Bias");
+        if (sensor == null)
+            sensor = networkGenome.addSensor("Bias");
+
         if (gene.isRegulated()) {
             NeuronGene output = networkGenome.addOutput(
                     getOutputName(trait),
@@ -27,9 +32,9 @@ public class GeneRegulatoryNetworkFactory {
             );
             networkGenome.addSynapse(sensor, output, 1);
         }
-        else {
-            networkGenome.addSensor(sensor);
-        }
+//        else {
+//            networkGenome.addSensor(sensor);
+//        }
     }
 
     public static String getInputName(String geneName) {
@@ -54,17 +59,22 @@ public class GeneRegulatoryNetworkFactory {
             NetworkGenome networkGenome, GeneExpressionFunction.ExpressionNode node, IntegerTrait gene,
             Supplier<Float> getMin, Supplier<Float> getMax) {
         String trait = node.getName();
-        NeuronGene sensor = networkGenome.addSensor(
-                getInputName(trait),
-                z -> 2 * (z - getMin.get()) / (getMax.get() - getMin.get()) - 1,
-                node
-        );
+//        NeuronGene sensor = networkGenome.addSensor(
+//                getInputName(trait),
+//                z -> 2 * (z - getMin.get()) / (getMax.get() - getMin.get()) - 1,
+//                node
+//        );
+        NeuronGene sensor = networkGenome.getNeuronGene("Bias");
+        if (sensor == null)
+            sensor = networkGenome.addSensor("Bias");
+
         NeuronGene output = networkGenome.addOutput(
                 getOutputName(trait),
                 z -> (float) Math.round(getMin.get() + (getMax.get() - getMin.get()) * Neuron.Activation.SIGMOID.apply(z)),
                 node
         );
-        networkGenome.addSynapse(sensor, output, 1);
+//        networkGenome.addSynapse(sensor, output, 1);
+        networkGenome.addSynapse(sensor, output, Simulation.RANDOM.nextFloat(-1, 1));
     }
 
     private static void addIntegerGeneIO(
@@ -88,13 +98,19 @@ public class GeneRegulatoryNetworkFactory {
             NetworkGenome networkGenome, GeneExpressionFunction.ExpressionNode node, BooleanTrait gene) {
         String trait = node.getName();
 
-        NeuronGene sensor = networkGenome.addSensor(getInputName(trait));
+//        NeuronGene sensor = networkGenome.addSensor(getInputName(trait));
+
+        NeuronGene sensor = networkGenome.getNeuronGene("Bias");
+        if (sensor == null)
+            sensor = networkGenome.addSensor("Bias");
+
         NeuronGene output = networkGenome.addOutput(
                 getOutputName(trait),
                 z -> (z < 0) ? -1f : 1f,
                 node
         );
-        networkGenome.addSynapse(sensor, output, 1);
+//        networkGenome.addSynapse(sensor, output, 1);
+        networkGenome.addSynapse(sensor, output, Simulation.RANDOM.nextFloat(-1, 1));
     }
 
     public static NetworkGenome createNetworkGenome(GeneExpressionFunction geneExpressionFunction) {

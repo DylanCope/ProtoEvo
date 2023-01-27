@@ -117,6 +117,7 @@ public class Rock implements Serializable, Shape {
         return false;
     }
 
+    private final float[] intersectTs = new float[2];
     @Override
     public boolean rayCollisions(Vector2[] ray, Shape.Collision[] collisions) {
         Vector2 dirRay = ray[1].cpy().sub(ray[0]);
@@ -127,7 +128,7 @@ public class Rock implements Serializable, Shape {
 
             Vector2[] edge = edges[i];
             Vector2 dirEdge = edge[1].cpy().sub(edge[0]);
-            float[] coefs = edgesIntersectCoef(ray[0], dirRay, edge[0], dirEdge);
+            float[] coefs = edgesIntersectCoef(ray[0], dirRay, edge[0], dirEdge, intersectTs);
             if (coefs != null && edgeIntersectCondition(coefs)) {
                 collisions[numCollisions].point.set(ray[0].cpy().add(dirRay.cpy().scl(coefs[0])));
                 collisions[numCollisions].didCollide = true;
@@ -154,27 +155,26 @@ public class Rock implements Serializable, Shape {
         return false;
     }
 
-    public static float[] edgesIntersectCoef(Vector2 start1, Vector2 dir1, Vector2 start2, Vector2 dir2) {
+    public static float[] edgesIntersectCoef(Vector2 start1, Vector2 dir1, Vector2 start2, Vector2 dir2, float[] ts) {
+        float coef00 = dir1.len2();
+        float coef01 = -dir1.dot(dir2);
+        float coef10 = -dir2.dot(dir1);
+        float coef11 = dir2.len2();
 
-        float[][] coefs = new float[][]{
-                {dir1.len2(), -dir1.dot(dir2)},
-                {-dir2.dot(dir1), dir2.len2()}
-        };
+        float const0 = start2.dot(dir1) - start1.dot(dir1);
+        float const1 = start1.dot(dir2) - start2.dot(dir2);
 
-        float[] consts = new float[]{
-                start2.dot(dir1) - start1.dot(dir1),
-                start1.dot(dir2) - start2.dot(dir2),
-        };
-
-        float det = coefs[0][0] * coefs[1][1] - coefs[1][0] * coefs[0][1];
+        float det = coef00 * coef11 - coef10 * coef01;
 
         if (det == 0)
             return null;
 
-        float t1 = (consts[0]*coefs[1][1] - consts[1]*coefs[0][1]) / det;
-        float t2 = (-consts[0]*coefs[1][0] + consts[1]*coefs[0][0]) / det;
+        float t1 = (const0*coef11 - const1*coef01) / det;
+        float t2 = (-const0*coef10 + const1*coef00) / det;
 
-        return new float[]{t1, t2};
+        ts[0] = t1;
+        ts[1] = t2;
+        return ts;
     }
 
     public static boolean edgeIntersectCondition(float[] coefs) {
@@ -183,7 +183,7 @@ public class Rock implements Serializable, Shape {
     }
 
     public static boolean edgesIntersect(Vector2 start1, Vector2 dir1, Vector2 start2, Vector2 dir2) {
-        float[] coefs = edgesIntersectCoef(start1, dir1, start2, dir2);
+        float[] coefs = edgesIntersectCoef(start1, dir1, start2, dir2, new float[2]);
         if (coefs == null)
             return false;
         return edgeIntersectCondition(coefs);

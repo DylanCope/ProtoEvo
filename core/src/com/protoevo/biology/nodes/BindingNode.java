@@ -1,6 +1,5 @@
 package com.protoevo.biology.nodes;
 
-import com.badlogic.gdx.physics.box2d.Contact;
 import com.protoevo.biology.Cell;
 import com.protoevo.biology.PlantCell;
 import com.protoevo.biology.protozoa.Protozoan;
@@ -9,11 +8,11 @@ import com.protoevo.env.JointsManager;
 
 import java.util.Optional;
 
-public class BindingAttachment extends NodeAttachment {
+public class BindingNode extends NodeAttachment {
 
     private SurfaceNode otherNode;
 
-    public BindingAttachment(SurfaceNode node) {
+    public BindingNode(SurfaceNode node) {
         super(node);
     }
 
@@ -36,7 +35,7 @@ public class BindingAttachment extends NodeAttachment {
                 otherCell.createCellBinding(contact, cell, PlantCell.plantCAM);
                 this.otherNode = otherNode;
                 otherNode.getAttachment()
-                        .ifPresent(a -> ((BindingAttachment) a).setOtherNode(node));
+                        .ifPresent(a -> ((BindingNode) a).setOtherNode(node));
             }
         }
     }
@@ -47,7 +46,7 @@ public class BindingAttachment extends NodeAttachment {
 
     private boolean createBindingCondition(SurfaceNode otherNode) {
         Optional<NodeAttachment> otherAttachment = otherNode.getAttachment();
-        return otherAttachment.map(a -> a instanceof BindingAttachment).orElse(false)
+        return otherAttachment.map(a -> a instanceof BindingNode).orElse(false)
                 && node.getWorldPosition().dst2(otherNode.getWorldPosition())
                    < JointsManager.idealJointLength(otherNode.getCell(), node.getCell());
     }

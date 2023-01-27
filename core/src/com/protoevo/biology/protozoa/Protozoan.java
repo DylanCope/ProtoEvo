@@ -1,13 +1,13 @@
 package com.protoevo.biology.protozoa;
 
 import com.badlogic.gdx.graphics.Color;
-import com.badlogic.gdx.physics.box2d.Contact;
+import com.badlogic.gdx.math.Vector2;
 import com.protoevo.biology.*;
 import com.protoevo.biology.evolution.*;
 import com.protoevo.biology.neat.NeuralNetwork;
-import com.protoevo.biology.nodes.LightSensitiveAttachment;
+import com.protoevo.biology.nodes.LightSensitiveNode;
 import com.protoevo.biology.nodes.NodeAttachment;
-import com.protoevo.biology.nodes.SpikeAttachment;
+import com.protoevo.biology.nodes.Spike;
 import com.protoevo.biology.nodes.SurfaceNode;
 import com.protoevo.core.Simulation;
 import com.protoevo.core.settings.ProtozoaSettings;
@@ -33,9 +33,11 @@ public class Protozoan extends Cell implements Evolvable
 	private List<SurfaceNode> surfaceNodes;
 
 	private float damageRate = 0;
-	private float herbivoreFactor, splitRadius, maxTurning, growthControlFactor = 1f;
+	private float herbivoreFactor, splitRadius;
 	private float timeSinceLastGeneUpdate = 0;
 	private final float geneUpdateTime = Settings.simulationUpdateDelta * 20;
+	private Collection<Cell> engulfedCells = new ArrayList<>();
+	private Vector2 tmp = new Vector2();
 
 	@Override
 	public void update(float delta)
@@ -50,8 +52,10 @@ public class Protozoan extends Cell implements Evolvable
 		age(delta);
 		handleCollisions(delta);
 		surfaceNodes.forEach(n -> n.update(delta));
+		engulfedCells.forEach(c -> eat((EdibleCell) c, delta));
+		engulfedCells.removeIf(c -> c.getHealth() < 0.1f);
 
-		if (shouldSplit() && !hasBurst()) {
+		if (shouldSplit() && hasNotBurst()) {
 			getEnv().requestBurst(this, Protozoan.class, this::createSplitChild);
 		}
 	}
@@ -83,21 +87,10 @@ public class Protozoan extends Cell implements Evolvable
 	}
 
 	@EvolvableFloat(name="Split Radius",
-			min=ProtozoaSettings.maxProtozoanBirthRadius, max=SimulationSettings.maxParticleRadius)
+			min=ProtozoaSettings.maxProtozoanBirthRadius,
+			max=SimulationSettings.maxParticleRadius)
 	public void setSplitRadius(float splitRadius) {
 		this.splitRadius = splitRadius;
-	}
-
-	@EvolvableFloat(name="Birth Radius",
-			min=ProtozoaSettings.minProtozoanBirthRadius, max=ProtozoaSettings.maxProtozoanBirthRadius)
-	public void setBirthRadius(float birthRadius) {
-		if (getRadius() < birthRadius)
-			setRadius(birthRadius);
-	}
-
-	@EvolvableFloat(name="Max Turn", min=ProtozoaSettings.protozoaMinMaxTurn, max=ProtozoaSettings.protozoaMaxMaxTurn)
-	public void setMaxTurning(float maxTurning) {
-		this.maxTurning = maxTurning;
 	}
 
 	@EvolvableObject(name="Cell Colour",
@@ -111,6 +104,11 @@ public class Protozoan extends Cell implements Evolvable
 					max=ProtozoaSettings.maxProtozoanGrowthRate)
 	public void setGrowth(float growthRate) {
 		setGrowthRate(growthRate);
+	}
+
+	@EvolvableFloat(name="Repair Rate")
+	public void setRepairRate(float repairRate) {
+		super.setRepairRate(repairRate);
 	}
 
 	@EvolvableFloat(name="Retinal Production")
@@ -133,7 +131,7 @@ public class Protozoan extends Cell implements Evolvable
 
 	@Override
 	@GeneRegulator(name="Size",
-			       min=ProtozoaSettings.minProtozoanBirthRadius,
+			       min=ProtozoaSettings.minProtozoanSplitRadius,
 			       max=ProtozoaSettings.maxProtozoanSplitRadius)
 	public float getRadius() {
 		return super.getRadius();
@@ -152,7 +150,33 @@ public class Protozoan extends Cell implements Evolvable
 	@Override
 	public void eat(EdibleCell e, float delta)
 	{
-		float extraction = 5f * getRadius() / e.getRadius();
+		Vector2 vel = tmp.set(getPos()).sub(e.getPos());
+		float d2 = vel.len2();
+		vel.setLength(ProtozoaSettings.engulfForce * tmp.len2())
+				.add(getVel());
+
+		e.getPos().add(vel.scl(delta));
+		float maxD = 0.9f * (getRadius() - e.getRadius());
+
+		if (d2 > maxD*maxD && e.isFullyEngulfed()) {
+			tmp.set(e.getPos()).sub(getPos()).setLength(maxD);
+			e.getPos().set(getPos()).add(tmp);
+		}
+		if (d2 < maxD*maxD) {
+			e.setFullyEngulfed();
+		}
+
+		for (Cell other : engulfedCells) {
+			float rr = e.getRadius() + other.getRadius();
+			d2 = other.getPos().dst2(e.getPos());
+			if (other != e && d2 < rr*rr) {
+				tmp.set(e.getPos()).sub(other.getPos());
+				tmp.setLength(ProtozoaSettings.engulfForce * delta * (rr*rr - d2));
+				e.getPos().add(tmp);
+			}
+		}
+
+		float extraction = .5f;// 5f * getRadius() / e.getRadius();
 		if (e instanceof PlantCell) {
 			extraction *= herbivoreFactor;
 		} else if (e instanceof MeatCell) {
@@ -193,7 +217,7 @@ public class Protozoan extends Cell implements Evolvable
 
 	@Override
 	public void kill(CauseOfDeath causeOfDeath) {
-		if (!super.isDead() && !hasBurst())
+		if (!super.isDead() && hasNotBurst())
 			getEnv().requestBurst(
 					this,
 					MeatCell.class,
@@ -215,11 +239,11 @@ public class Protozoan extends Cell implements Evolvable
 	}
 
 	public int getNumSpikes() {
-		return getNumOfAttachments(SpikeAttachment.class);
+		return getNumOfAttachments(Spike.class);
 	}
 
 	public int getNumLightSensitiveNodes() {
-		return getNumOfAttachments(LightSensitiveAttachment.class);
+		return getNumOfAttachments(LightSensitiveNode.class);
 	}
 
 	@Override
@@ -227,14 +251,15 @@ public class Protozoan extends Cell implements Evolvable
 		Map<String, Float> stats = super.getStats();
 		stats.put("Death Rate", 100 * damageRate);
 		stats.put("Split Radius", Settings.statsDistanceScalar * splitRadius);
-		stats.put("Max Turning", maxTurning);
 		stats.put("Has Mated", crossOverGenome == null ? 0f : 1f);
 		int numSpikes = getNumSpikes();
 		if (numSpikes > 0)
 			stats.put("Num Spikes", (float) numSpikes);
 		NeuralNetwork grn = geneExpressionFunction.getRegulatoryNetwork();
-		stats.put("GRN Depth", (float) grn.getDepth());
-		stats.put("GRN Size", (float) grn.getSize());
+		if (grn != null) {
+			stats.put("GRN Depth", (float) grn.getDepth());
+			stats.put("GRN Size", (float) grn.getSize());
+		}
 		int numLSN = getNumLightSensitiveNodes();
 		if (numLSN > 0) {
 			stats.put("Light Sensitive Nodes", (float) numLSN);
@@ -261,11 +286,27 @@ public class Protozoan extends Cell implements Evolvable
 	public void handleCollisions(float delta) {
 		for (CollisionHandler.FixtureCollision contact : getContacts()) {
 			Object collided = getOther(contact);
-			if (collided instanceof EdibleCell) {
-				eat((EdibleCell) collided, delta);
+			if (collided instanceof Cell && engulfCondition((Cell) collided)) {
+//				eat((EdibleCell) collided, delta);
+				engulf((Cell) collided, delta);
 			}
 		}
 	}
+
+	public boolean engulfCondition(Cell cell) {
+		return cell instanceof EdibleCell && cell.getRadius() < getRadius() / 2
+				&& getRadius() > 2 * SimulationSettings.minParticleRadius;
+	}
+
+	public void engulf(Cell cell, float delta) {
+		cell.setEngulfer(this);
+//		if (cell.getPhantomPos().dst2(getPos()) < getRadius() * getRadius()) {
+//			cell.kill(CauseOfDeath.EATEN);
+//		}
+		cell.kill(CauseOfDeath.EATEN);
+		engulfedCells.add(cell);
+	}
+
 
 	@Override
 	public boolean isEdible() {
@@ -292,5 +333,9 @@ public class Protozoan extends Cell implements Evolvable
 
 	public Collection<SurfaceNode> getSurfaceNodes() {
 		return surfaceNodes;
+	}
+
+	public Collection<Cell> getEngulfedCells() {
+		return engulfedCells;
 	}
 }

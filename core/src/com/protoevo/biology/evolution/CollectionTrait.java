@@ -40,32 +40,16 @@ public class CollectionTrait implements Trait<List<Evolvable>> {
 
         this.collection = new ArrayList<>(size);
         for (int i = 0; i < size; i++) {
-            collection.add(createNewElement(i));
+            Evolvable.Element element = createNewElement(i);
+            collection.add(element);
+            GeneExpressionFunction elementFn = element.getGeneExpressionFunction();
+            geneExpressionFunction.merge(elementFn);
         }
     }
 
     private Evolvable.Element createNewElement(int index) {
-//        GeneExpressionFunction componentFn = Evolvable.createGeneMapping(collectionType);
-//        Evolvable.Element component = (Evolvable.Element) Evolvable.createNewComponent(collectionType, componentFn);
-//        component.setGeneExpressionFunction(componentFn);
-//        component.setIndex(index);
-//        componentFn.prependNames(name + "/" + index);
-//        componentFn.registerTargetEvolvable(name + "/" + index, component);
-//        geneExpressionFunction.merge(componentFn);
-//        collection.add(component);
-
-//        Evolvable.Element component = (Evolvable.Element) Evolvable.createNewComponent(collectionType, componentFn);
-//        component.setGeneExpressionFunction(componentFn);
-//        Evolvable.Element element = (Evolvable.Element) Evolvable.createNew(collectionType);
-//        GeneExpressionFunction elementFn = element.getGeneExpressionFunction();
-//        element.setIndex(index);
-//        elementFn.prependNames(name + "/" + index);
-//        elementFn.registerTargetEvolvable(name + "/" + index, element);
         GeneExpressionFunction elementFn = Evolvable.createGeneMapping(collectionType);
-        Evolvable.Element element = Evolvable.createNewElement(name, index, collectionType, elementFn);
-        elementFn = element.getGeneExpressionFunction();
-        geneExpressionFunction.merge(elementFn);
-        return element;
+        return Evolvable.createNewElement(name, index, collectionType, elementFn);
     }
 
     @Override

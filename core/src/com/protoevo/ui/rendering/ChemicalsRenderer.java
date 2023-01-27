@@ -9,14 +9,16 @@ import com.badlogic.gdx.graphics.glutils.ShaderProgram;
 import com.protoevo.env.ChemicalSolution;
 import com.protoevo.env.Environment;
 
-public class ChemicalsRenderer {
+public class ChemicalsRenderer implements Renderer {
     private final Environment environment;
     private final SpriteBatch chemicalBatch;
     private final ShaderProgram chemicalShader;
     private final Texture chemicalTexture;
+    private final OrthographicCamera camera;
 
-    public ChemicalsRenderer(Environment environment) {
+    public ChemicalsRenderer(OrthographicCamera camera, Environment environment) {
         this.environment = environment;
+        this.camera = camera;
 
         ChemicalSolution chemicalSolution = environment.getChemicalSolution();
         chemicalTexture = new Texture(chemicalSolution.getChemicalPixmap());
@@ -28,10 +30,9 @@ public class ChemicalsRenderer {
         if (!chemicalShader.isCompiled()) {
             throw new RuntimeException("Shader compilation failed: " + chemicalShader.getLog());
         }
-
     }
 
-    public void render(OrthographicCamera camera) {
+    public void render(float delta) {
         ChemicalSolution chemicalSolution = environment.getChemicalSolution();
 
         if (chemicalSolution == null || chemicalTexture == null)
@@ -53,5 +54,11 @@ public class ChemicalsRenderer {
         chemicalBatch.draw(chemicalTexture, x, y,
                 chemicalSolution.getFieldWidth(), chemicalSolution.getFieldWidth());
         chemicalBatch.end();
+    }
+
+    @Override
+    public void dispose() {
+        chemicalTexture.dispose();
+        chemicalBatch.dispose();
     }
 }

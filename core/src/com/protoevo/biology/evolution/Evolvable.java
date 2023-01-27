@@ -47,14 +47,16 @@ public interface Evolvable extends Serializable {
     }
 
     static <T extends Evolvable> T asexualClone(T evolvable) {
-        GeneExpressionFunction geneExpressionFunction = evolvable.getGeneExpressionFunction();
-        if (evolvable instanceof Evolvable.Element) {
-            Evolvable.Element element = (Evolvable.Element) evolvable;
-            return (T) Evolvable.createNewElement(
-                    null, element.getIndex(),
-                    element.getClass(), geneExpressionFunction.cloneWithMutation());
-        }
-        return (T) Evolvable.createNew(evolvable.getClass(), geneExpressionFunction.cloneWithMutation());
+        GeneExpressionFunction fn = evolvable.getGeneExpressionFunction().cloneWithMutation();
+        Supplier<T> constructor = (Supplier<T>) createEvolvableConstructor(evolvable.getClass(), fn);
+        T newEvolvable = constructor.get();
+        newEvolvable.setGeneExpressionFunction(fn);
+        if (evolvable instanceof Evolvable.Element)
+            ((Evolvable.Element) newEvolvable).setIndex(((Evolvable.Element) evolvable).getIndex());
+        fn.registerTargetEvolvable(newEvolvable.name(), newEvolvable);
+        fn.update();
+        newEvolvable.build();
+        return newEvolvable;
     }
 
     static <T extends Evolvable> T createChild(

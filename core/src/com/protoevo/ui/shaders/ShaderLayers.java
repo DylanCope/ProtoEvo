@@ -7,6 +7,7 @@ import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.glutils.FrameBuffer;
 import com.badlogic.gdx.graphics.glutils.ShaderProgram;
+import com.protoevo.ui.FrameBufferManager;
 import com.protoevo.ui.rendering.Renderer;
 
 import java.util.List;
@@ -18,6 +19,7 @@ public class ShaderLayers implements Renderer {
     private final SpriteBatch batch;
     private final FrameBuffer fbo;
     private final OrthographicCamera camera;
+    private final FrameBufferManager fboManager = new FrameBufferManager();
 
     public ShaderLayers(Renderer baseLayer, ShaderLayer... shaderLayers) {
         this.baseRenderer = baseLayer;
@@ -47,10 +49,9 @@ public class ShaderLayers implements Renderer {
             return;
         }
 
-        fbo.bind();
-        fbo.begin();
+        fboManager.begin(fbo);
         baseRenderer.render(delta);
-        fbo.end();
+        fboManager.end();
 
         float graphicsWidth = Gdx.graphics.getWidth();
         float graphicsHeight = Gdx.graphics.getHeight();
@@ -65,12 +66,11 @@ public class ShaderLayers implements Renderer {
                 batch.setShader(shaderProgram);
                 Sprite sprite = getFBOSprite();
                 if (i < layers.size() - 1) {
-                    fbo.bind();
-                    fbo.begin();
+                    fboManager.begin(fbo);
                     batch.begin();
                     batch.draw(sprite, 0, 0, graphicsWidth, graphicsHeight);
                     batch.end();
-                    fbo.end();
+                    fboManager.end();
                 } else {
                     batch.begin();
                     batch.draw(sprite, 0, 0, graphicsWidth, graphicsHeight);

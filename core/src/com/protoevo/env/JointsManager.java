@@ -128,9 +128,12 @@ public class JointsManager implements Serializable {
 
         for (JoinedParticles joining : jointRemovalRequests) {
             particleBindings.remove(joining);
+            if (joining.particleA.getJoints() == null)
+                continue;
             for (JointEdge jointEdge : joining.particleA.getJoints()) {
-                if (jointEdge.joint.getBodyA() == joining.particleB.getBody()
-                        || jointEdge.joint.getBodyB() == joining.particleB.getBody()) {
+                if ((jointEdge.joint.getBodyA() == joining.particleB.getBody()
+                        || jointEdge.joint.getBodyB() == joining.particleB.getBody())
+                        && !(jointEdge.joint.getBodyA() == null || jointEdge.joint.getBodyB() == null)) {
                     environment.getWorld().destroyJoint(jointEdge.joint);
                 }
             }

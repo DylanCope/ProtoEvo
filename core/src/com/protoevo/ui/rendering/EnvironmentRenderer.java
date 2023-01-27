@@ -6,6 +6,7 @@ import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.glutils.ShaderProgram;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
+import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.physics.box2d.Box2DDebugRenderer;
@@ -20,7 +21,10 @@ import com.protoevo.core.settings.Settings;
 import com.protoevo.env.*;
 import com.protoevo.input.ParticleTracker;
 import com.protoevo.ui.SimulationInputManager;
+import com.protoevo.ui.shaders.BlurLayer;
+import com.protoevo.ui.shaders.ShaderLayers;
 import com.protoevo.utils.DebugMode;
+import com.protoevo.utils.Utils;
 
 import java.util.HashMap;
 
@@ -38,7 +42,8 @@ public class EnvironmentRenderer implements Renderer {
     private final OrthographicCamera camera;
     private final Simulation simulation;
     private final SimulationInputManager inputManager;
-    private final ChemicalsRenderer chemicalsRenderer;
+    private final Renderer chemicalsRenderer;
+    private final Vector2 tmp = new Vector2();
 
     public static Sprite loadSprite(String path) {
         Texture texture = new Texture(Gdx.files.internal(path), true);
@@ -62,7 +67,10 @@ public class EnvironmentRenderer implements Renderer {
         shapeRenderer.setAutoShapeType(true);
 
         if (environment.getChemicalSolution() != null)
-            chemicalsRenderer = new ChemicalsRenderer(environment);
+            chemicalsRenderer = new ShaderLayers(
+                    new ChemicalsRenderer(camera, environment)
+//                    new BlurLayer(camera)
+            );
         else
             chemicalsRenderer = null;
     }
@@ -76,8 +84,8 @@ public class EnvironmentRenderer implements Renderer {
             return;
         }
 
-        Vector2 particle1Position = p1.getBody().getPosition();
-        Vector2 particle2Position = p2.getBody().getPosition();
+        Vector2 particle1Position = p1.getPos();
+        Vector2 particle2Position = p2.getPos();
         float scale = 1.5f;
         float r = scale * Math.min(p1.getRadius(), p2.getRadius());
         float d = particle1Position.dst(particle2Position) + r / 2;
@@ -86,7 +94,7 @@ public class EnvironmentRenderer implements Renderer {
         jointSprite.setSize(r, d);
         jointSprite.setOrigin(r / 2, r / 2);
 
-        float angle = 90 + particle1Position.sub(particle2Position).angleDeg();
+        float angle = 90 + tmp.set(particle1Position).sub(particle2Position).angleDeg();
         jointSprite.setRotation(angle);
         jointSprite.setColor(lerp(p1.getColor(), p2.getColor(), .5f));
 
@@ -97,13 +105,13 @@ public class EnvironmentRenderer implements Renderer {
 
         ScreenUtils.clear(0, 0.1f, 0.2f, .95f);
 
-        batch.enableBlending();
-        batch.setProjectionMatrix(camera.combined);
-
         synchronized (environment) {
             if (chemicalsRenderer != null)
-                chemicalsRenderer.render(camera);
+                chemicalsRenderer.render(delta);
 
+
+            batch.enableBlending();
+            batch.setProjectionMatrix(camera.combined);
             // Render Particles
             batch.begin();
             if (camera.zoom < 3)
@@ -129,6 +137,8 @@ public class EnvironmentRenderer implements Renderer {
             }
             shapeRenderer.end();
 
+            if (DebugMode.isInteractionInfo())
+                renderInteractionDebug();
             if (DebugMode.isDebugModePhysicsDebug())
                 renderPhysicsDebug();
         }
@@ -136,9 +146,6 @@ public class EnvironmentRenderer implements Renderer {
 
     public void renderPhysicsDebug() {
         debugRenderer.render(simulation.getEnv().getWorld(), camera.combined);
-        ParticleTracker particleTracker = inputManager.getParticleTracker();
-
-
         shapeRenderer.begin();
         shapeRenderer.setColor(Color.GOLD);
         shapeRenderer.set(ShapeRenderer.ShapeType.Line);
@@ -154,6 +161,12 @@ public class EnvironmentRenderer implements Renderer {
                 shapeRenderer.box(x, y, 0, size, size, 0);
             }
         }
+        shapeRenderer.end();
+    }
+
+    public void renderInteractionDebug() {
+        shapeRenderer.begin();
+        ParticleTracker particleTracker = inputManager.getParticleTracker();
 
         if (particleTracker.isTracking()) {
             Particle particle = particleTracker.getTrackedParticle();
@@ -215,6 +228,17 @@ public class EnvironmentRenderer implements Renderer {
             ProtozoaRenderer protozoanRenderer = protozoaRenderers
                     .computeIfAbsent((Protozoan) p, ProtozoaRenderer::new);
             protozoanRenderer.render(delta, camera, batch);
+
+            for (Cell cell : ((Protozoan) p).getEngulfedCells()) {
+//                float x = cell.getPos().x - cell.getRadius();
+//                float y = cell.getPos().y - cell.getRadius();
+//                float r = cell.getRadius() * 2;
+//
+//                batch.setColor(cell.getColor().r, cell.getColor().g, cell.getColor().b,
+//                        MathUtils.lerp(1.0f, 0.25f, cell.getHealth()));
+//                batch.draw(particleTexture, x, y, r, r);
+                drawParticle(delta, cell);
+            }
         }
         else {
             float x = p.getPos().x - p.getRadius();

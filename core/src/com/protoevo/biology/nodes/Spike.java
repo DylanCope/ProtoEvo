@@ -5,16 +5,14 @@ import com.protoevo.biology.CauseOfDeath;
 import com.protoevo.biology.Cell;
 import com.protoevo.core.Simulation;
 import com.protoevo.core.settings.ProtozoaSettings;
-import com.protoevo.core.settings.SimulationSettings;
-import com.protoevo.utils.Utils;
 
-public class SpikeAttachment extends NodeAttachment {
+public class Spike extends NodeAttachment {
 
     private final Vector2 spikePoint = new Vector2();
     private Cell cell;
     private final float attackFactor = 10f;
 
-    public SpikeAttachment(SurfaceNode node) {
+    public Spike(SurfaceNode node) {
         super(node);
     }
 

@@ -9,7 +9,7 @@ import com.protoevo.core.settings.ProtozoaSettings;
 import com.protoevo.core.settings.SimulationSettings;
 import com.protoevo.utils.Utils;
 
-public class LightSensitiveAttachment extends NodeAttachment {
+public class LightSensitiveNode extends NodeAttachment {
     private final Vector2[] ray = new Vector2[]{new Vector2(), new Vector2()};
     private final Shape.Collision[] collisions =
             new Shape.Collision[]{new Shape.Collision(), new Shape.Collision()};
@@ -23,7 +23,7 @@ public class LightSensitiveAttachment extends NodeAttachment {
     public static final int nRays = 8;
     public static final float fov = (float) (Math.PI / 2.);
 
-    public LightSensitiveAttachment(SurfaceNode node) {
+    public LightSensitiveNode(SurfaceNode node) {
         super(node);
     }
 
@@ -132,7 +132,7 @@ public class LightSensitiveAttachment extends NodeAttachment {
         return Utils.linearRemap(
                 node.getCell().getRadius(),
                 ProtozoaSettings.minProtozoanBirthRadius, SimulationSettings.maxParticleRadius,
-                node.getCell().getRadius() * 3f, ProtozoaSettings.protozoaLightRange);
+                node.getCell().getRadius() * 5f, ProtozoaSettings.protozoaLightRange);
     }
 
     @Override

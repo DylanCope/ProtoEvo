@@ -4,7 +4,7 @@ import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.Vector2;
 import com.protoevo.biology.Cell;
-import com.protoevo.biology.nodes.FlagellumAttachment;
+import com.protoevo.biology.nodes.Flagellum;
 import com.protoevo.biology.nodes.SurfaceNode;
 import com.protoevo.core.Simulation;
 import com.protoevo.core.settings.ProtozoaSettings;
@@ -31,7 +31,7 @@ public class FlagellumRenderer extends NodeRenderer {
 
     @Override
     public Sprite getSprite(float delta) {
-        FlagellumAttachment attachment = (FlagellumAttachment) node.getAttachment()
+        Flagellum attachment = (Flagellum) node.getAttachment()
                 .orElseThrow(() -> new RuntimeException("Expected flagellum attachment."));
 
         Sprite[] frames = getAnimationFrames();
@@ -58,7 +58,7 @@ public class FlagellumRenderer extends NodeRenderer {
         Cell cell = node.getCell();
         Vector2 pos = cell.getPos();
 
-        FlagellumAttachment attachment = (FlagellumAttachment) node.getAttachment().get();
+        Flagellum attachment = (Flagellum) node.getAttachment().get();
         float maxThrust = ProtozoaSettings.maxProtozoaThrust;
         Vector2 thrust = attachment.getThrustVector().cpy().setLength(cell.getRadius()*1.5f);
         float mag = Utils.linearRemap(thrust.len(), 0, maxThrust, 0, 1.5f);
