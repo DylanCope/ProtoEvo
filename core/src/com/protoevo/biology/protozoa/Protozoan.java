@@ -152,11 +152,14 @@ public class Protozoan extends Cell implements Evolvable
 	{
 		Vector2 vel = tmp.set(getPos()).sub(e.getPos());
 		float d2 = vel.len2();
-		vel.setLength(ProtozoaSettings.engulfForce * tmp.len2())
-				.add(getVel());
+		vel.setLength(ProtozoaSettings.engulfForce * tmp.len2());
+		if (!e.isFullyEngulfed())
+			vel.add(getVel());
+		else
+			vel.add(getVel().cpy().scl(0.8f));
 
 		e.getPos().add(vel.scl(delta));
-		float maxD = 0.9f * (getRadius() - e.getRadius());
+		float maxD = 0.7f * (getRadius() - e.getRadius());
 
 		if (d2 > maxD*maxD && e.isFullyEngulfed()) {
 			tmp.set(e.getPos()).sub(getPos()).setLength(maxD);
@@ -176,7 +179,7 @@ public class Protozoan extends Cell implements Evolvable
 			}
 		}
 
-		float extraction = .5f;// 5f * getRadius() / e.getRadius();
+		float extraction = .5f;
 		if (e instanceof PlantCell) {
 			extraction *= herbivoreFactor;
 		} else if (e instanceof MeatCell) {

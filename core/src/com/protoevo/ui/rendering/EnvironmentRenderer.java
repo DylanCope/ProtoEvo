@@ -230,21 +230,22 @@ public class EnvironmentRenderer implements Renderer {
             protozoanRenderer.render(delta, camera, batch);
 
             for (Cell cell : ((Protozoan) p).getEngulfedCells()) {
-//                float x = cell.getPos().x - cell.getRadius();
-//                float y = cell.getPos().y - cell.getRadius();
-//                float r = cell.getRadius() * 2;
-//
-//                batch.setColor(cell.getColor().r, cell.getColor().g, cell.getColor().b,
-//                        MathUtils.lerp(1.0f, 0.25f, cell.getHealth()));
-//                batch.draw(particleTexture, x, y, r, r);
-                drawParticle(delta, cell);
+                float x = cell.getPos().x - cell.getRadius();
+                float y = cell.getPos().y - cell.getRadius();
+                float r = cell.getRadius() * 2;
+
+                float d2 = tmp.set(p.getPos()).dst2(cell.getPos());
+                float dInside = p.getRadius() - cell.getRadius();
+                float alpha = Utils.linearRemap(
+                        d2, dInside*dInside, dInside*dInside*0.75f*0.75f, 1.0f, 0.05f);
+                batch.setColor(cell.getColor().r, cell.getColor().g, cell.getColor().b, alpha);
+                batch.draw(particleTexture, x, y, r, r);
             }
         }
         else {
             float x = p.getPos().x - p.getRadius();
             float y = p.getPos().y - p.getRadius();
             float r = p.getRadius() * 2;
-
             batch.setColor(p.getColor());
             batch.draw(particleTexture, x, y, r, r);
         }
