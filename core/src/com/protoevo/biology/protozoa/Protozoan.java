@@ -5,10 +5,7 @@ import com.badlogic.gdx.math.Vector2;
 import com.protoevo.biology.*;
 import com.protoevo.biology.evolution.*;
 import com.protoevo.biology.neat.NeuralNetwork;
-import com.protoevo.biology.nodes.Photoreceptor;
-import com.protoevo.biology.nodes.NodeAttachment;
-import com.protoevo.biology.nodes.Spike;
-import com.protoevo.biology.nodes.SurfaceNode;
+import com.protoevo.biology.nodes.*;
 import com.protoevo.core.Simulation;
 import com.protoevo.core.settings.ProtozoaSettings;
 import com.protoevo.core.settings.Settings;
@@ -36,8 +33,8 @@ public class Protozoan extends Cell implements Evolvable
 	private float herbivoreFactor, splitRadius;
 	private float timeSinceLastGeneUpdate = 0;
 	private final float geneUpdateTime = Settings.simulationUpdateDelta * 20;
-	private Collection<Cell> engulfedCells = new ArrayList<>();
 	private Vector2 tmp = new Vector2();
+	private final Collection<Cell> engulfedCells = new ArrayList<>(0);
 
 	@Override
 	public void update(float delta)
@@ -52,6 +49,7 @@ public class Protozoan extends Cell implements Evolvable
 		age(delta);
 		handleCollisions(delta);
 		surfaceNodes.forEach(n -> n.update(delta));
+
 		engulfedCells.forEach(c -> eat((EdibleCell) c, delta));
 		engulfedCells.removeIf(c -> c.getHealth() < 0.1f);
 
@@ -147,48 +145,6 @@ public class Protozoan extends Cell implements Evolvable
 		return getConstructionMassAvailable();
 	}
 
-	@Override
-	public void eat(EdibleCell e, float delta)
-	{
-		Vector2 vel = tmp.set(getPos()).sub(e.getPos());
-		float d2 = vel.len2();
-		vel.setLength(ProtozoaSettings.engulfForce * tmp.len2());
-		if (!e.isFullyEngulfed())
-			vel.add(getVel());
-		else
-			vel.add(getVel().cpy().scl(0.8f));
-
-		e.getPos().add(vel.scl(delta));
-		float maxD = 0.7f * (getRadius() - e.getRadius());
-
-		if (d2 > maxD*maxD && e.isFullyEngulfed()) {
-			tmp.set(e.getPos()).sub(getPos()).setLength(maxD);
-			e.getPos().set(getPos()).add(tmp);
-		}
-		if (d2 < maxD*maxD) {
-			e.setFullyEngulfed();
-		}
-
-		for (Cell other : engulfedCells) {
-			float rr = e.getRadius() + other.getRadius();
-			d2 = other.getPos().dst2(e.getPos());
-			if (other != e && d2 < rr*rr) {
-				tmp.set(e.getPos()).sub(other.getPos());
-				tmp.setLength(ProtozoaSettings.engulfForce * delta * (rr*rr - d2));
-				e.getPos().add(tmp);
-			}
-		}
-
-		float extraction = .5f;
-		if (e instanceof PlantCell) {
-			extraction *= herbivoreFactor;
-		} else if (e instanceof MeatCell) {
-			extraction /= herbivoreFactor;
-		}
-
-		super.eat(e, extraction * delta);
-	}
-
 
 	private boolean shouldSplit() {
 		return getRadius() > splitRadius && getHealth() > ProtozoaSettings.minHealthToSplit;
@@ -228,6 +184,49 @@ public class Protozoan extends Cell implements Evolvable
 					true);
 		super.kill(causeOfDeath);
 	}
+
+	@Override
+	public void eat(EdibleCell e, float delta)
+	{
+		Vector2 vel = tmp.set(getPos()).sub(e.getPos());
+		float d2 = vel.len2();
+		vel.setLength(ProtozoaSettings.engulfForce * tmp.len2());
+		if (!e.isFullyEngulfed())
+			vel.add(getVel());
+		else
+			vel.add(getVel().cpy().scl(0.8f));
+
+		e.getPos().add(vel.scl(delta));
+		float maxD = 0.7f * (getRadius() - e.getRadius());
+
+		if (d2 > maxD*maxD && e.isFullyEngulfed()) {
+			tmp.set(e.getPos()).sub(getPos()).setLength(maxD);
+			e.getPos().set(getPos()).add(tmp);
+		}
+		if (d2 < maxD*maxD) {
+			e.setFullyEngulfed();
+		}
+
+		for (Cell other : engulfedCells) {
+			float rr = e.getRadius() + other.getRadius();
+			d2 = other.getPos().dst2(e.getPos());
+			if (other != e && d2 < rr*rr) {
+				tmp.set(e.getPos()).sub(other.getPos());
+				tmp.setLength(ProtozoaSettings.engulfForce * delta * (rr*rr - d2));
+				e.getPos().add(tmp);
+			}
+		}
+
+		float extraction = .5f;
+		if (e instanceof PlantCell) {
+			extraction *= getHerbivoreFactor();
+		} else if (e instanceof MeatCell) {
+			extraction /= getHerbivoreFactor();
+		}
+
+		super.eat(e, extraction * delta);
+	}
+
 
 	@Override
 	public String getPrettyName() {
@@ -287,27 +286,9 @@ public class Protozoan extends Cell implements Evolvable
 	}
 
 	public void handleCollisions(float delta) {
-		for (CollisionHandler.FixtureCollision contact : getContacts()) {
-			Object collided = getOther(contact);
-			if (collided instanceof Cell && engulfCondition((Cell) collided)) {
-//				eat((EdibleCell) collided, delta);
-				engulf((Cell) collided, delta);
-			}
-		}
-	}
-
-	public boolean engulfCondition(Cell cell) {
-		return cell instanceof EdibleCell && cell.getRadius() < getRadius() / 2
-				&& getRadius() > 2 * SimulationSettings.minParticleRadius;
-	}
-
-	public void engulf(Cell cell, float delta) {
-		cell.setEngulfer(this);
-//		if (cell.getPhantomPos().dst2(getPos()) < getRadius() * getRadius()) {
-//			cell.kill(CauseOfDeath.EATEN);
+//		for (CollisionHandler.FixtureCollision contact : getContacts()) {
+//			Object collided = getOther(contact);
 //		}
-		cell.kill(CauseOfDeath.EATEN);
-		engulfedCells.add(cell);
 	}
 
 
@@ -340,5 +321,9 @@ public class Protozoan extends Cell implements Evolvable
 
 	public Collection<Cell> getEngulfedCells() {
 		return engulfedCells;
+	}
+
+	public float getHerbivoreFactor() {
+		return herbivoreFactor;
 	}
 }

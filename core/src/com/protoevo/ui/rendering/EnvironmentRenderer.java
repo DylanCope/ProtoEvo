@@ -26,6 +26,7 @@ import com.protoevo.ui.shaders.ShaderLayers;
 import com.protoevo.utils.DebugMode;
 import com.protoevo.utils.Utils;
 
+import java.util.Collection;
 import java.util.HashMap;
 
 import static com.protoevo.utils.Utils.lerp;
@@ -229,17 +230,22 @@ public class EnvironmentRenderer implements Renderer {
                     .computeIfAbsent((Protozoan) p, ProtozoaRenderer::new);
             protozoanRenderer.render(delta, camera, batch);
 
-            for (Cell cell : ((Protozoan) p).getEngulfedCells()) {
-                float x = cell.getPos().x - cell.getRadius();
-                float y = cell.getPos().y - cell.getRadius();
-                float r = cell.getRadius() * 2;
+            Protozoan protozoan = (Protozoan) p;
+            Collection<Cell> engulfedCells = protozoan.getEngulfedCells();
+            if (engulfedCells != null) {
+                for (Cell cell : protozoan.getEngulfedCells()) {
+                    float x = cell.getPos().x - cell.getRadius();
+                    float y = cell.getPos().y - cell.getRadius();
+                    float r = cell.getRadius() * 2;
 
-                float d2 = tmp.set(p.getPos()).dst2(cell.getPos());
-                float dInside = p.getRadius() - cell.getRadius();
-                float alpha = Utils.linearRemap(
-                        d2, dInside*dInside, dInside*dInside*0.75f*0.75f, 1.0f, 0.05f);
-                batch.setColor(cell.getColor().r, cell.getColor().g, cell.getColor().b, alpha);
-                batch.draw(particleTexture, x, y, r, r);
+                    float d2 = tmp.set(p.getPos()).dst2(cell.getPos());
+                    float dInside = p.getRadius() - cell.getRadius();
+                    float alpha = Utils.linearRemap(
+                            d2, dInside * dInside, dInside * dInside * 0.75f * 0.75f,
+                            1.0f, 0.05f);
+                    batch.setColor(cell.getColor().r, cell.getColor().g, cell.getColor().b, alpha);
+                    batch.draw(particleTexture, x, y, r, r);
+                }
             }
         }
         else {

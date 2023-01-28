@@ -5,7 +5,9 @@ import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.math.Vector2;
 import com.protoevo.biology.Cell;
 import com.protoevo.biology.EdibleCell;
+import com.protoevo.biology.Food;
 import com.protoevo.biology.PlantCell;
+import com.protoevo.biology.protozoa.Protozoan;
 import com.protoevo.core.settings.Settings;
 import com.protoevo.core.settings.SimulationSettings;
 import com.protoevo.utils.DebugMode;
@@ -106,7 +108,9 @@ public class ChemicalSolution implements Serializable {
             chemicalPixmap.setColor(cellColour.r, cellColour.g, cellColour.b, deposit);
             chemicalPixmap.fillCircle(fieldX, fieldY, toChemicalGridXDist(e.getRadius()));
         }
-        else {
+        else if (e instanceof Protozoan) {
+            Protozoan protozoan = (Protozoan) e;
+
             int size = toChemicalGridXDist(e.getRadius());
             int x = toChemicalGridX(e.getPos().x);
             int y = toChemicalGridY(-e.getPos().y);
@@ -123,7 +127,15 @@ public class ChemicalSolution implements Serializable {
                             float amount = Utils.linearRemap(
                                     i*i + j*j, size*size / 4f, size*size,
                                     1, 0.1f);
-                            tmpColour.a *= amount;
+                            float extraction = (1 + delta) * amount * tmpColour.a;
+
+                            if (tmpColour.g > 0.75f)
+                                protozoan.addFood(Food.Type.Plant, extraction * tmpColour.g * 1e-5f);
+
+                            if (tmpColour.r > 0.75f)
+                                protozoan.addFood(Food.Type.Meat, extraction * tmpColour.r * 1e-5f);
+
+                            tmpColour.a = Math.max(0, tmpColour.a - extraction);
                             chemicalPixmap.drawPixel(x, y, tmpColour.toIntBits());
                         }
                     }

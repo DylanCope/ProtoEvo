@@ -45,10 +45,17 @@ public class BindingNode extends NodeAttachment {
     }
 
     private boolean createBindingCondition(SurfaceNode otherNode) {
+        return otherIsBinding(otherNode) && isCloseEnough(otherNode);
+    }
+
+    private boolean otherIsBinding(SurfaceNode otherNode) {
         Optional<NodeAttachment> otherAttachment = otherNode.getAttachment();
-        return otherAttachment.map(a -> a instanceof BindingNode).orElse(false)
-                && node.getWorldPosition().dst2(otherNode.getWorldPosition())
-                   < JointsManager.idealJointLength(otherNode.getCell(), node.getCell());
+        return otherAttachment.map(a -> a instanceof BindingNode).orElse(false);
+    }
+
+    private boolean isCloseEnough(SurfaceNode otherNode) {
+        float d = JointsManager.idealJointLength(otherNode.getCell(), node.getCell());
+        return node.getWorldPosition().dst2(otherNode.getWorldPosition()) < d*d;
     }
 
     @Override

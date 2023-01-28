@@ -146,6 +146,12 @@ public abstract class Cell extends Particle implements Serializable
 		foodToDigest.put(foodType, food);
 	}
 
+	public void addFood(Food.Type foodType, float amount) {
+		Food food = foodToDigest.getOrDefault(foodType, new Food(amount, foodType));
+		food.addSimpleMass(amount);
+		foodToDigest.put(foodType, food);
+	}
+
 	public void digest(float delta) {
 		for (Food food : foodToDigest.values()) {
 			float rate = delta * 2f * getDigestionRate(food.getType());
