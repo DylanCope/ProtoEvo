@@ -26,9 +26,9 @@ public class SurfaceNode implements Evolvable.Element {
         if (p < 0.1) {
             attachment = Optional.of(new Flagellum(this));
         } else if (p < 0.4) {
-            attachment = Optional.of(new BindingNode(this));
-//        } else if (p < 0.6) {
-//            attachment = Optional.of(new PhagocyticReceptor(this));
+            attachment = Optional.of(new AdhesionReceptor(this));
+        } else if (p < 0.6) {
+            attachment = Optional.of(new PhagocyticReceptor(this));
         } else if (p < 0.9) {
             attachment = Optional.of(new Photoreceptor(this));
         }

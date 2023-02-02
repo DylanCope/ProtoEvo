@@ -8,6 +8,7 @@ import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.glutils.ShaderProgram;
 import com.protoevo.env.ChemicalSolution;
 import com.protoevo.env.Environment;
+import com.protoevo.utils.DebugMode;
 
 public class ChemicalsRenderer implements Renderer {
     private final Environment environment;
@@ -43,10 +44,13 @@ public class ChemicalsRenderer implements Renderer {
 
         chemicalBatch.enableBlending();
         chemicalBatch.setProjectionMatrix(camera.combined);
-
-        chemicalShader.bind();
-        chemicalShader.setUniformf("u_resolution", Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
-        chemicalBatch.setShader(chemicalShader);
+        if (!DebugMode.isModeOrHigher(DebugMode.INTERACTION_INFO)) {
+            chemicalShader.bind();
+            chemicalShader.setUniformf("u_resolution", Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
+            chemicalBatch.setShader(chemicalShader);
+        } else {
+            chemicalBatch.setShader(null);
+        }
 
         chemicalBatch.begin();
         float x = -chemicalSolution.getFieldWidth() / 2;

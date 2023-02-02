@@ -8,11 +8,11 @@ import com.protoevo.env.JointsManager;
 
 import java.util.Optional;
 
-public class BindingNode extends NodeAttachment {
+public class AdhesionReceptor extends NodeAttachment {
 
     private SurfaceNode otherNode;
 
-    public BindingNode(SurfaceNode node) {
+    public AdhesionReceptor(SurfaceNode node) {
         super(node);
     }
 
@@ -35,7 +35,7 @@ public class BindingNode extends NodeAttachment {
                 otherCell.createCellBinding(contact, cell, PlantCell.plantCAM);
                 this.otherNode = otherNode;
                 otherNode.getAttachment()
-                        .ifPresent(a -> ((BindingNode) a).setOtherNode(node));
+                        .ifPresent(a -> ((AdhesionReceptor) a).setOtherNode(node));
             }
         }
     }
@@ -50,7 +50,7 @@ public class BindingNode extends NodeAttachment {
 
     private boolean otherIsBinding(SurfaceNode otherNode) {
         Optional<NodeAttachment> otherAttachment = otherNode.getAttachment();
-        return otherAttachment.map(a -> a instanceof BindingNode).orElse(false);
+        return otherAttachment.map(a -> a instanceof AdhesionReceptor).orElse(false);
     }
 
     private boolean isCloseEnough(SurfaceNode otherNode) {

@@ -45,6 +45,10 @@ public enum DebugMode {
         }
     }
 
+    public static boolean isModeOrHigher(DebugMode mode) {
+        return DEBUG_MODE.ordinal() >= mode.ordinal();
+    }
+
     public static void setMode(DebugMode mode) {
         DEBUG_MODE = mode;
     }
