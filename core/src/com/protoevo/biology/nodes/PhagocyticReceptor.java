@@ -5,7 +5,7 @@ import com.protoevo.biology.CauseOfDeath;
 import com.protoevo.biology.Cell;
 import com.protoevo.biology.EdibleCell;
 import com.protoevo.biology.protozoa.Protozoan;
-import com.protoevo.core.settings.SimulationSettings;
+import com.protoevo.settings.SimulationSettings;
 import com.protoevo.env.CollisionHandler;
 
 public class PhagocyticReceptor extends NodeAttachment {

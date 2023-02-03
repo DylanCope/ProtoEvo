@@ -1,8 +1,8 @@
 package com.protoevo.biology;
 
-import com.badlogic.gdx.graphics.Color;
 import com.protoevo.core.Simulation;
 import com.protoevo.env.Environment;
+import com.protoevo.utils.Colour;
 
 
 public class MeatCell extends EdibleCell {
@@ -15,7 +15,7 @@ public class MeatCell extends EdibleCell {
         float r = (150 + Simulation.RANDOM.nextInt(105)) / 255f;
         float g = (25  + Simulation.RANDOM.nextInt(100)) / 255f;
         float b = (25  + Simulation.RANDOM.nextInt(100)) / 255f;
-        setHealthyColour(new Color(r, g, b, 1f));
+        setHealthyColour(new Colour(r, g, b, 1f));
 //        setDegradedColour(new Color(158 / 255f, 121, 79, 1f));
     }
 

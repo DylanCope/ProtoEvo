@@ -7,7 +7,7 @@ import com.protoevo.biology.Cell;
 import com.protoevo.biology.nodes.Flagellum;
 import com.protoevo.biology.nodes.SurfaceNode;
 import com.protoevo.core.Simulation;
-import com.protoevo.core.settings.ProtozoaSettings;
+import com.protoevo.settings.ProtozoaSettings;
 import com.protoevo.utils.ImageUtils;
 import com.protoevo.utils.Utils;
 

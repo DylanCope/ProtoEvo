@@ -3,7 +3,7 @@ package com.protoevo.biology.evolution;
 import com.protoevo.biology.neat.NetworkGenome;
 import com.protoevo.biology.neat.NeuralNetwork;
 import com.protoevo.core.Simulation;
-import com.protoevo.core.settings.SimulationSettings;
+import com.protoevo.settings.SimulationSettings;
 
 import java.io.Serializable;
 import java.lang.reflect.Constructor;

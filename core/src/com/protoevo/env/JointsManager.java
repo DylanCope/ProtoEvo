@@ -174,6 +174,11 @@ public class JointsManager implements Serializable {
         if (bodyA.getJointList().size >= maxJoints || bodyB.getJointList().size >= maxJoints)
             return;
 
+        if (jointsToAdd.stream().anyMatch(jointDef ->
+                (jointDef.bodyA == bodyA && jointDef.bodyB == bodyB)
+                        || (jointDef.bodyA == bodyB && jointDef.bodyB == bodyA)))
+            return;
+
         if (bodyA.getUserData() instanceof Particle
                 && bodyB.getUserData() instanceof Particle) {
             Particle particleA = (Particle) bodyA.getUserData();

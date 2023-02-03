@@ -5,11 +5,12 @@ import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.*;
 import com.badlogic.gdx.utils.Array;
 import com.protoevo.biology.CauseOfDeath;
-import com.protoevo.core.settings.Settings;
-import com.protoevo.core.settings.SimulationSettings;
+import com.protoevo.settings.Settings;
+import com.protoevo.settings.SimulationSettings;
 import com.protoevo.env.CollisionHandler;
 import com.protoevo.env.Environment;
 import com.protoevo.env.Rock;
+import com.protoevo.utils.Colour;
 import com.protoevo.utils.Geometry;
 
 import java.util.*;
@@ -299,8 +300,8 @@ public class Particle implements Shape {
     }
 
     @Override
-    public Color getColor() {
-        return Color.WHITE;
+    public Colour getColour() {
+        return Colour.WHITE;
     }
 
     @Override

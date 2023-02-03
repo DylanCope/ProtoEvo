@@ -1,9 +1,8 @@
 package com.protoevo.biology.neat;
 
 import com.google.common.collect.Iterators;
-import com.google.common.collect.Streams;
 import com.protoevo.core.Simulation;
-import com.protoevo.core.settings.SimulationSettings;
+import com.protoevo.settings.SimulationSettings;
 
 import java.io.Serializable;
 import java.util.*;

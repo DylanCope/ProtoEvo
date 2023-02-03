@@ -3,13 +3,15 @@ package com.protoevo.biology;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.math.MathUtils;
 import com.protoevo.core.Particle;
-import com.protoevo.core.settings.Settings;
-import com.protoevo.core.settings.SimulationSettings;
+import com.protoevo.settings.Settings;
+import com.protoevo.settings.SimulationSettings;
 import com.protoevo.env.CollisionHandler;
 import com.protoevo.env.JointsManager;
 import com.protoevo.env.Rock;
+import com.protoevo.utils.Colour;
 import com.protoevo.utils.Geometry;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.util.*;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -18,9 +20,11 @@ import static com.protoevo.utils.Utils.lerp;
 
 public abstract class Cell extends Particle implements Serializable
 {
-	private static final long serialVersionUID = -4333766895269415282L;
+	@Serial
+	private static final long serialVersionUID = 1L;
 
-	private Color healthyColour = new Color(Color.WHITE), fullyDegradedColour = new Color(Color.WHITE);
+	private final Colour healthyColour = new Colour(Color.WHITE);
+	private final Colour fullyDegradedColour = new Colour(Color.WHITE);
 	private int generation = 1;
 	protected boolean hasHandledDeath = false;
 	private float timeAlive = 0f;
@@ -154,7 +158,7 @@ public abstract class Cell extends Particle implements Serializable
 
 	public void digest(float delta) {
 		for (Food food : foodToDigest.values()) {
-			float rate = delta * 2f * getDigestionRate(food.getType());
+			float rate = delta * SimulationSettings.digestionFactor * getDigestionRate(food.getType());
 			if (food.getSimpleMass() > 0) {
 				float massExtracted = food.getSimpleMass() * rate;
 				addConstructionMass(massExtracted);
@@ -176,7 +180,8 @@ public abstract class Cell extends Particle implements Serializable
 		if (!isDead() && getHealth() < 1f && getRepairRate() > 0) {
 			float massRequired = getMass() * 0.01f * delta;
 			float energyRequired = massRequired * 3f;
-			if (massRequired < constructionMassAvailable && energyRequired < energyAvailable) {
+			if (massRequired < constructionMassAvailable
+					&& energyRequired < energyAvailable) {
 				useEnergy(energyRequired);
 				useConstructionMass(massRequired);
 				heal(delta * Settings.cellRepairRate * getRepairRate());
@@ -221,7 +226,7 @@ public abstract class Cell extends Particle implements Serializable
 			return;
 
 		float gr = getGrowthRate();
-		float newR = getRadius() * (1 + 5f * gr * delta);
+		float newR = getRadius() + SimulationSettings.cellGrowthFactor * gr * delta;
 
 		if (newR == getRadius() || gr == 0)
 			return;
@@ -266,6 +271,7 @@ public abstract class Cell extends Particle implements Serializable
 		cellBindings.add(binding);
 		if (!isBoundTo(other)) {
 			attachedCells.add(other);
+			other.attachedCells.add(this);
 			JointsManager jointsManager = getEnv().getJointsManager();
 			jointsManager.createJoint(collision, getBody(), other.getBody());
 		}
@@ -324,7 +330,7 @@ public abstract class Cell extends Particle implements Serializable
 	}
 
 	private boolean isBoundTo(Cell otherCell) {
-		return attachedCells.contains(otherCell);
+		return attachedCells.contains(otherCell) || otherCell.attachedCells.contains(this);
 	}
 
 	public void handleBindingInteraction(CellAdhesion.Binding binding, float delta) {
@@ -484,33 +490,33 @@ public abstract class Cell extends Particle implements Serializable
 	}
 
 	@Override
-	public Color getColor() {
-		Color healthyColour = getHealthyColour();
-		Color degradedColour = getFullyDegradedColour();
+	public Colour getColour() {
+		Colour healthyColour = getHealthyColour();
+		Colour degradedColour = getFullyDegradedColour();
 		return lerp(healthyColour, degradedColour, 1 - getHealth());
 	}
 
-	public Color getHealthyColour() {
+	public Colour getHealthyColour() {
 		return healthyColour;
 	}
 
-	public void setHealthyColour(Color healthyColour) {
+	public void setHealthyColour(Colour healthyColour) {
 		this.healthyColour.set(healthyColour);
 	}
 
-	public void setDegradedColour(Color fullyDegradedColour) {
+	public void setDegradedColour(Colour fullyDegradedColour) {
 		this.fullyDegradedColour.set(fullyDegradedColour);
 	}
 
-	public Color getFullyDegradedColour() {
+	public Colour getFullyDegradedColour() {
 		if (fullyDegradedColour == null) {
-			Color healthyColour = getHealthyColour();
+			Colour healthyColour = getHealthyColour();
 			float r = healthyColour.r;
 			float g = healthyColour.g;
 			float b = healthyColour.b;
 			float mean = (r + g + b) / 3;
 			float p = 0.4f;  // proportion of colour to keep
-			return lerp(healthyColour, new Color(mean, mean, mean, 1), 1 - p);
+			return healthyColour.lerp(new Colour(mean, mean, mean, 1), 1 - p);
 		}
 		return fullyDegradedColour;
 	}

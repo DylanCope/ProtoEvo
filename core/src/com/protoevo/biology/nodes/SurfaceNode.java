@@ -3,7 +3,7 @@ package com.protoevo.biology.nodes;
 import com.badlogic.gdx.math.Vector2;
 import com.protoevo.biology.Cell;
 import com.protoevo.biology.evolution.*;
-import com.protoevo.core.settings.ProtozoaSettings;
+import com.protoevo.settings.ProtozoaSettings;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -15,8 +15,8 @@ public class SurfaceNode implements Evolvable.Element {
     private float angle;
     private final Vector2 relativePosition = new Vector2(), worldPosition = new Vector2();
     private Optional<NodeAttachment> attachment = Optional.empty();
-    private final float[] inputActivation = new float[ProtozoaSettings.surfaceNodeActivationSize];
-    private final float[] outputActivation = new float[ProtozoaSettings.surfaceNodeActivationSize];
+    private final float[] inputActivation = new float[3];
+    private final float[] outputActivation = new float[3];
     private int nodeIdx;
     private final Map<String, Float> stats = new HashMap<>();
     private GeneExpressionFunction geneExpressionFunction;

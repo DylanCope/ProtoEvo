@@ -1,6 +1,6 @@
 package com.protoevo.env;
 
-import com.protoevo.core.settings.Settings;
+import com.protoevo.settings.Settings;
 
 import java.io.Serializable;
 

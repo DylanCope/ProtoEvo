@@ -1,4 +1,4 @@
-package com.protoevo.core.settings;
+package com.protoevo.settings;
 
 public final class Settings {
     // Simulation settings

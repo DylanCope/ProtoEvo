@@ -12,7 +12,7 @@ import com.protoevo.biology.nodes.SurfaceNode;
 import com.protoevo.biology.protozoa.Protozoan;
 import com.protoevo.core.Particle;
 import com.protoevo.core.Simulation;
-import com.protoevo.core.settings.RenderSettings;
+import com.protoevo.settings.RenderSettings;
 import com.protoevo.env.Rock;
 import com.protoevo.utils.ImageUtils;
 

@@ -1,6 +1,6 @@
 package com.protoevo.biology;
 
-import com.protoevo.core.settings.Settings;
+import com.protoevo.settings.Settings;
 
 import java.io.Serializable;
 import java.util.Collection;

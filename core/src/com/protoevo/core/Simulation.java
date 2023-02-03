@@ -1,13 +1,12 @@
 package com.protoevo.core;
 
 import com.github.javafaker.Faker;
-import com.protoevo.core.settings.Settings;
-import com.protoevo.core.settings.SimulationSettings;
+import com.protoevo.settings.Settings;
+import com.protoevo.settings.SimulationSettings;
 import com.protoevo.env.ChemicalSolution;
 import com.protoevo.env.Environment;
 import com.protoevo.ui.SimulationScreen;
 import com.protoevo.utils.FileIO;
-import com.protoevo.utils.Utils;
 
 import java.io.IOException;
 import java.nio.file.Files;

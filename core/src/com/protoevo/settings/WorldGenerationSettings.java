@@ -1,4 +1,4 @@
-package com.protoevo.core.settings;
+package com.protoevo.settings;
 
 public class WorldGenerationSettings {
     public static final int worldGenerationSeed = 1;

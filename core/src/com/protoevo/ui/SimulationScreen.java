@@ -21,7 +21,7 @@ import com.protoevo.biology.protozoa.Protozoan;
 import com.protoevo.core.Application;
 import com.protoevo.core.Particle;
 import com.protoevo.core.Simulation;
-import com.protoevo.core.settings.WorldGenerationSettings;
+import com.protoevo.settings.WorldGenerationSettings;
 import com.protoevo.env.Environment;
 import com.protoevo.input.ParticleTracker;
 import com.protoevo.ui.nn.NetworkRenderer;

@@ -1,16 +1,15 @@
 package com.protoevo.biology.protozoa;
 
-import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.math.Vector2;
 import com.protoevo.biology.*;
 import com.protoevo.biology.evolution.*;
 import com.protoevo.biology.neat.NeuralNetwork;
 import com.protoevo.biology.nodes.*;
 import com.protoevo.core.Simulation;
-import com.protoevo.core.settings.ProtozoaSettings;
-import com.protoevo.core.settings.Settings;
-import com.protoevo.core.settings.SimulationSettings;
-import com.protoevo.env.CollisionHandler;
+import com.protoevo.settings.ProtozoaSettings;
+import com.protoevo.settings.Settings;
+import com.protoevo.settings.SimulationSettings;
+import com.protoevo.utils.Colour;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -92,8 +91,8 @@ public class Protozoan extends Cell implements Evolvable
 	}
 
 	@EvolvableObject(name="Cell Colour",
-					 traitClass ="com.protoevo.biology.protozoa.ProtozoaColorTrait")
-	public void setColour(Color colour) {
+					 traitClass ="com.protoevo.biology.protozoa.ProtozoaColourTrait")
+	public void setColour(Colour colour) {
 		setHealthyColour(colour);
 	}
 

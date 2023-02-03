@@ -9,10 +9,10 @@ import com.protoevo.biology.protozoa.Protozoan;
 import com.protoevo.core.FixtureCategories;
 import com.protoevo.core.Particle;
 import com.protoevo.core.SpatialHash;
-import com.protoevo.core.settings.WorldGenerationSettings;
-import com.protoevo.core.settings.Settings;
+import com.protoevo.settings.WorldGenerationSettings;
+import com.protoevo.settings.Settings;
 import com.protoevo.core.Simulation;
-import com.protoevo.core.settings.SimulationSettings;
+import com.protoevo.settings.SimulationSettings;
 import com.protoevo.utils.FileIO;
 import com.protoevo.utils.Geometry;
 

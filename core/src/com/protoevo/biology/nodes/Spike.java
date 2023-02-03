@@ -4,7 +4,7 @@ import com.badlogic.gdx.math.Vector2;
 import com.protoevo.biology.CauseOfDeath;
 import com.protoevo.biology.Cell;
 import com.protoevo.core.Simulation;
-import com.protoevo.core.settings.ProtozoaSettings;
+import com.protoevo.settings.ProtozoaSettings;
 
 public class Spike extends NodeAttachment {
 

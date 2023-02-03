@@ -1,12 +1,12 @@
 package com.protoevo.biology;
 
-import com.badlogic.gdx.graphics.Color;
-import com.protoevo.core.settings.PlantSettings;
-import com.protoevo.core.settings.Settings;
 import com.protoevo.core.Simulation;
-import com.protoevo.core.settings.SimulationSettings;
 import com.protoevo.env.CollisionHandler;
 import com.protoevo.env.Environment;
+import com.protoevo.settings.PlantSettings;
+import com.protoevo.settings.Settings;
+import com.protoevo.settings.SimulationSettings;
+import com.protoevo.utils.Colour;
 
 import java.util.Map;
 
@@ -20,7 +20,8 @@ public class PlantCell extends EdibleCell {
 
     public PlantCell(float radius, Environment environment) {
         super(Math.max(radius, PlantSettings.minPlantBirthRadius), Food.Type.Plant, environment);
-        setGrowthRate(Simulation.RANDOM.nextFloat(PlantSettings.minPlantGrowth, PlantSettings.maxPlantGrowth));
+        setGrowthRate(Simulation.RANDOM.nextFloat(PlantSettings.minPlantGrowth,
+                                                  PlantSettings.maxPlantGrowth));
 
         maxRadius = Simulation.RANDOM.nextFloat(
                 2 * SimulationSettings.minParticleRadius, SimulationSettings.maxParticleRadius);
@@ -29,7 +30,7 @@ public class PlantCell extends EdibleCell {
         setCAMAvailable(plantCAM, 1f);
 
         float darken = 0.9f;
-        setHealthyColour(new Color(
+        setHealthyColour(new Colour(
                 darken * (30 + Simulation.RANDOM.nextInt(105)) / 255f,
                 darken * (150  + Simulation.RANDOM.nextInt(100)) / 255f,
                 darken * (10  + Simulation.RANDOM.nextInt(100)) / 255f,
@@ -100,17 +101,17 @@ public class PlantCell extends EdibleCell {
      * <a href="https://www.desmos.com/calculator/hmhjwdk0jc">Desmos Graph</a>
      * @return The growth rate based on the crowding and current radius.
      */
-    @Override
-    public float getGrowthRate() {
-        float x = (-getCrowdingFactor() + PlantSettings.plantCriticalCrowding) / PlantSettings.plantCrowdingGrowthDecay;
-        x = (float) (Math.tanh(x));// * Math.tanh(-0.01 + 50 * getCrowdingFactor() / Settings.plantCriticalCrowding));
-        x = x < 0 ? (float) (1 - Math.exp(-PlantSettings.plantCrowdingGrowthDecay * x)) : x;
-        float growthRate = super.getGrowthRate() * x;
-        if (getRadius() > maxRadius)
-            growthRate *= Math.exp(maxRadius - getRadius());
-        growthRate = growthRate > 0 ? growthRate * getHealth() : growthRate;
-        return growthRate;
-    }
+//    @Override
+//    public float getGrowthRate() {
+//        float x = (-getCrowdingFactor() + PlantSettings.plantCriticalCrowding) / PlantSettings.plantCrowdingGrowthDecay;
+//        x = (float) (Math.tanh(x));// * Math.tanh(-0.01 + 50 * getCrowdingFactor() / Settings.plantCriticalCrowding));
+//        x = x < 0 ? (float) (1 - Math.exp(-PlantSettings.plantCrowdingGrowthDecay * x)) : x;
+//        float growthRate = super.getGrowthRate() * x;
+//        if (getRadius() > maxRadius)
+//            growthRate *= Math.exp(maxRadius - getRadius());
+//        growthRate = growthRate > 0 ? growthRate * getHealth() : growthRate;
+//        return growthRate;
+//    }
 
     public Map<String, Float> getStats() {
         Map<String, Float> stats = super.getStats();

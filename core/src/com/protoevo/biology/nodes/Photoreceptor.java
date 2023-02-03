@@ -5,8 +5,8 @@ import com.badlogic.gdx.math.Vector2;
 import com.protoevo.biology.Cell;
 import com.protoevo.core.Shape;
 import com.protoevo.core.Particle;
-import com.protoevo.core.settings.ProtozoaSettings;
-import com.protoevo.core.settings.SimulationSettings;
+import com.protoevo.settings.ProtozoaSettings;
+import com.protoevo.settings.SimulationSettings;
 import com.protoevo.utils.Utils;
 
 public class Photoreceptor extends NodeAttachment {

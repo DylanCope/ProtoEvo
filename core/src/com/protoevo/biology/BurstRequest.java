@@ -2,8 +2,7 @@ package com.protoevo.biology;
 
 import com.badlogic.gdx.math.Vector2;
 import com.protoevo.core.Simulation;
-import com.protoevo.core.settings.SimulationSettings;
-import com.protoevo.env.Environment;
+import com.protoevo.settings.SimulationSettings;
 import com.protoevo.utils.Geometry;
 
 import java.util.function.Function;

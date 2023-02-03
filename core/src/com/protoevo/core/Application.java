@@ -2,11 +2,9 @@ package com.protoevo.core;
 
 import com.badlogic.gdx.ApplicationAdapter;
 import com.badlogic.gdx.Gdx;
-import com.badlogic.gdx.backends.lwjgl3.Lwjgl3Application;
 import com.badlogic.gdx.graphics.GL20;
-import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.utils.ScreenUtils;
-import com.protoevo.core.settings.SimulationSettings;
+import com.protoevo.settings.SimulationSettings;
 import com.protoevo.env.ChemicalSolution;
 import com.protoevo.ui.SimulationScreen;
 

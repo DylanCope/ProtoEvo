@@ -1,8 +1,7 @@
 package com.protoevo.env;
 
 import com.badlogic.gdx.math.Vector2;
-import com.protoevo.core.settings.WorldGenerationSettings;
-import com.protoevo.core.Simulation;
+import com.protoevo.settings.WorldGenerationSettings;
 import com.protoevo.utils.Geometry;
 
 import java.util.ArrayList;

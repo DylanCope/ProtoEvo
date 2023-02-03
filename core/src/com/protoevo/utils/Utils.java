@@ -28,6 +28,15 @@ public class Utils {
         );
     }
 
+    public static Colour lerp(Colour a, Colour b, float t) {
+        return new Colour(
+                a.r + (b.r - a.r) * t,
+                a.g + (b.g - a.g) * t,
+                a.b + (b.b - a.b) * t,
+                a.a + (b.a - a.a) * t
+        );
+    }
+
     public static float lerp(float a, float b, float t) {
         return a + (b - a) * t;
     }

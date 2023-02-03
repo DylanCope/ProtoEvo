@@ -4,6 +4,7 @@ import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.math.Vector2;
 import com.protoevo.core.Shape;
 import com.protoevo.core.Simulation;
+import com.protoevo.utils.Colour;
 import com.protoevo.utils.Geometry;
 
 import java.io.Serializable;
@@ -17,7 +18,7 @@ public class Rock implements Serializable, Shape {
     private final Vector2 centre;
     private final Vector2[] normals;
     private final Vector2[] boundingBox;
-    private final Color colour;
+    private final Colour colour;
 
     public Rock(Vector2 p1, Vector2 p2, Vector2 p3) {
         points = new Vector2[]{p1, p2, p3};
@@ -195,15 +196,16 @@ public class Rock implements Serializable, Shape {
         return edgesIntersect(e1[0], dir1, e2[0], dir2);
     }
 
-    public Color getColor() {
+    @Override
+    public Colour getColour() {
         return colour;
     }
 
-    public static Color randomRockColour() {
+    public static Colour randomRockColour() {
         float darkener = 0.75f;
         int tone = 80 + Simulation.RANDOM.nextInt(20);
         int yellowing = Simulation.RANDOM.nextInt(20);
-        return new Color(
+        return new Colour(
                 darkener * (tone + yellowing) / 255.f,
                 darkener * (tone + yellowing) / 255.f,
                 darkener * tone / 255.f, 1);
