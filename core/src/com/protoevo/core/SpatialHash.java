@@ -3,10 +3,15 @@ package com.protoevo.core;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector2;
 
+import java.io.Serial;
+import java.io.Serializable;
 import java.util.Collection;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class SpatialHash<T extends Shape> {
+public class SpatialHash<T extends Shape> implements Serializable {
+
+    @Serial
+    private static final long serialVersionUID = 1L;
 
     private final int resolution;
     private final float cellSize, worldRadius;

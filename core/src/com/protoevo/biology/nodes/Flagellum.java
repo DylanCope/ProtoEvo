@@ -6,7 +6,13 @@ import com.protoevo.biology.Cell;
 import com.protoevo.settings.ProtozoaSettings;
 import com.protoevo.settings.SimulationSettings;
 
-public class Flagellum extends NodeAttachment {
+import java.io.Serial;
+import java.io.Serializable;
+
+public class Flagellum extends NodeAttachment implements Serializable {
+
+    @Serial
+    private static final long serialVersionUID = 1L;
 
     private final Vector2 thrustVector = new Vector2();
     private float torque;

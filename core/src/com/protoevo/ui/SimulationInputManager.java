@@ -50,23 +50,18 @@ public class SimulationInputManager {
         CursorUpdater cursorUpdater = new CursorUpdater(simulationScreen, this);
 
         ImageButton jediButton = simulationScreen.createBarImageButton("icons/jedi_on.png", event -> {
-            if (event.toString().equals("touchDown")) {
-                moveParticle.toggleJediMode();
-                ImageButton button = (ImageButton) event.getListenerActor();
-
-                Drawable tmp = button.getStyle().imageUp;
-                button.getStyle().imageUp = button.getStyle().imageDown;
-                button.getStyle().imageDown = tmp;
-            }
+            moveParticle.toggleJediMode();
+            ImageButton button = (ImageButton) event.getListenerActor();
+            Drawable tmp = button.getStyle().imageUp;
+            button.getStyle().imageUp = button.getStyle().imageDown;
+            button.getStyle().imageDown = tmp;
             return true;
         });
         TextureRegion region = new TextureRegion(new Texture("icons/jedi_off.png"));
         jediButton.getStyle().imageDown = new TextureRegionDrawable(region);
 
         inputLayers.addLayers(cursorUpdater, spawnParticleInput, moveParticle, particleTracker);
-
         inputLayers.addLayer(panZoomCameraInput);
-
 
         topBar.addLeft(moveParticleButton);
         topBar.addLeft(jediButton);

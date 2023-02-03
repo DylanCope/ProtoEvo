@@ -256,25 +256,14 @@ public interface Evolvable extends Serializable {
         return geneExpressionFunction;
     }
 
+
     static <T extends Evolvable> GeneExpressionFunction.Regulators extractRegulators(Class<T> clazz) {
         GeneExpressionFunction.Regulators regulators = new GeneExpressionFunction.Regulators();
         for (Method method : clazz.getMethods()) {
             if (method.isAnnotationPresent(GeneRegulator.class)) {
                 String regulatorName = method.getAnnotation(GeneRegulator.class).name();
-                float max = method.getAnnotation(GeneRegulator.class).max();
-                float min = method.getAnnotation(GeneRegulator.class).min();
-
-                Function<Evolvable, Float> getter = evolvable -> {
-                    try {
-                        return 2f * ((Float) method.invoke(evolvable) - min) / (max - min) - 1f;
-                    } catch (IllegalAccessException | InvocationTargetException | IllegalArgumentException e) {
-                        throw new RuntimeException(
-                                "Failed to get value for gene regulator " + regulatorName + ": " + e);
-                    }
-                };
-
                 GeneExpressionFunction.RegulationNode regulator =
-                        new GeneExpressionFunction.RegulationNode(regulatorName, getter);
+                        new GeneExpressionFunction.RegulationNode(regulatorName, method);
                 regulators.put(regulatorName, regulator);
             }
         }

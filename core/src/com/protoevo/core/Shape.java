@@ -5,9 +5,15 @@ import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.math.Vector2;
 import com.protoevo.utils.Colour;
 
+import java.io.Serial;
+import java.io.Serializable;
+
 public interface Shape {
 
-    class Collision {
+    class Collision implements Serializable {
+        @Serial
+        private static final long serialVersionUID = 1L;
+
         public final Vector2 point = new Vector2();
         public boolean didCollide = false;
     }

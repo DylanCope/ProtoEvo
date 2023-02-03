@@ -100,35 +100,29 @@ public class SimulationScreen {
         topBar = new TopBar(this, font.getLineHeight());
 
         ImageButton closeButton = createBarImageButton("icons/x-button.png", event -> {
-            if (event.toString().equals("touchDown")) {
-                Gdx.app.exit();
-            }
+            simulation.close();
+            Gdx.app.exit();
+            System.exit(0);
             return true;
         });
         topBar.addRight(closeButton);
 
         ImageButton pauseButton = createBarImageButton("icons/play_pause.png", event -> {
-            if (event.toString().equals("touchDown")) {
-                simulation.togglePause();
-            }
+            simulation.togglePause();
             return true;
         });
         topBar.addLeft(pauseButton);
 
         ImageButton toggleRenderingButton = createBarImageButton("icons/fast_forward.png", event -> {
-            if (event.toString().equals("touchDown")) {
-                toggleEnvironmentRendering();
-                app.toggleSeparateThread();
-            }
+            toggleEnvironmentRendering();
+            app.toggleSeparateThread();
             return true;
         });
         topBar.addLeft(toggleRenderingButton);
 
         ImageButton homeButton = createBarImageButton("icons/home_icon.png", event -> {
-            if (event.toString().equals("touchDown")) {
-                camera.position.set(0, 0, 0);
-                camera.zoom = WorldGenerationSettings.environmentRadius;
-            }
+            camera.position.set(0, 0, 0);
+            camera.zoom = WorldGenerationSettings.environmentRadius;
             return true;
         });
         topBar.addLeft(homeButton);
@@ -160,8 +154,13 @@ public class SimulationScreen {
         return button;
     }
 
-    public ImageButton createBarImageButton(String texturePath, EventListener listener) {
-        return createImageButton(texturePath, topBar.getButtonSize(), topBar.getButtonSize(), listener);
+    public ImageButton createBarImageButton(String texturePath, EventListener touchListener) {
+        return createImageButton(texturePath, topBar.getButtonSize(), topBar.getButtonSize(), event -> {
+            if (event.toString().equals("touchDown")) {
+                touchListener.handle(event);
+            }
+            return true;
+        });
     }
 
     public Stage getStage() {
@@ -263,9 +262,9 @@ public class SimulationScreen {
             Protozoan protozoan = (Protozoan) particleTracker.getTrackedParticle();
             int i = 0;
             for (SurfaceNode node : protozoan.getSurfaceNodes()) {
-                if (node.getAttachment().isPresent()) {
+                if (node.getAttachment() != null) {
                     float y = getYPosLHS(lineNo);
-                    String text = "Node " + i + ": " + node.getAttachment().get().getName();
+                    String text = "Node " + i + ": " + node.getAttachment().getName();
                     font.draw(uiBatch, text, textAwayFromEdge, y);
                     lineNo++;
                 }

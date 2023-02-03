@@ -26,14 +26,14 @@ import java.util.stream.Collectors;
 public class Environment implements Serializable
 {
 	private static final long serialVersionUID = 2804817237950199223L;
-	private final World world;
+	private transient World world;
 	private float elapsedTime;
 	private final ConcurrentHashMap<String, Float> stats = new ConcurrentHashMap<>();
 	private final ConcurrentHashMap<String, Float> debugStats = new ConcurrentHashMap<>();
 	public final ConcurrentHashMap<CauseOfDeath, Integer> causeOfDeathCounts =
 			new ConcurrentHashMap<>(CauseOfDeath.values().length, 1);
 	private final ConcurrentHashMap<Class<? extends Cell>, SpatialHash<Cell>> spatialHashes;
-	private final Map<Class<? extends Particle>, Function<Float, Vector2>> spawnPositionFns
+	private final transient Map<Class<? extends Particle>, Function<Float, Vector2>> spawnPositionFns
 			= new HashMap<>(3, 1);
 	private ChemicalSolution chemicalSolution;
 	private final List<Rock> rocks = new ArrayList<>();
@@ -52,10 +52,9 @@ public class Environment implements Serializable
 
 	public Environment()
 	{
+		jointsManager = new JointsManager(this);
 		world = new World(new Vector2(0, 0), true);
 		world.setContinuousPhysics(false);
-
-		jointsManager = new JointsManager(this);
 		world.setContactListener(new CollisionHandler(this));
 
 		System.out.println("Creating chemicals solution... ");
@@ -85,6 +84,9 @@ public class Environment implements Serializable
 
 	public void update(float delta)
 	{
+		if (world == null)  // on deserialisation
+			rebuildWorld();
+
 		cells.parallelStream().forEach(Particle::reset);
 
 		elapsedTime += delta;
@@ -140,7 +142,12 @@ public class Environment implements Serializable
 		}
 
 		WorldGeneration.generateRocks(this, 200);
+		createRockFixtures();
 
+		return clusterCentres;
+	}
+
+	public void createRockFixtures() {
 		for (Rock rock : this.getRocks()) {
 			BodyDef rockBodyDef = new BodyDef();
 			Body rockBody = world.createBody(rockBodyDef);
@@ -156,7 +163,16 @@ public class Environment implements Serializable
 
 			rockBody.createFixture(rockFixtureDef);
 		}
-		return clusterCentres;
+	}
+
+	public void rebuildWorld() {
+		world = new World(new Vector2(0, 0), true);
+		world.setContinuousPhysics(false);
+		world.setContactListener(new CollisionHandler(this));
+		createRockFixtures();
+		for (Cell cell : cells) {
+			cell.createBody();
+		}
 	}
 
 	public void initialise() {

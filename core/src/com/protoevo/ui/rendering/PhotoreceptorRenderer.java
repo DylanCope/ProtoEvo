@@ -11,7 +11,7 @@ import com.protoevo.core.Shape;
 import com.protoevo.utils.ImageUtils;
 
 public class PhotoreceptorRenderer extends NodeRenderer {
-    protected static final Sprite lightSensitiveSprite = ImageUtils.loadSprite("cell/light_sensitive_node.png");
+    protected static final Sprite photoreceptorSprite = ImageUtils.loadSprite("cell/light_sensitive_node.png");
 
     public PhotoreceptorRenderer(SurfaceNode node) {
         super(node);
@@ -25,11 +25,11 @@ public class PhotoreceptorRenderer extends NodeRenderer {
     @Override
     public void render(float delta, SpriteBatch batch) {
         super.render(delta, batch);
-        if (node.getAttachment().isPresent() &&
-                node.getAttachment().get() instanceof Photoreceptor) {
-            Photoreceptor attachment = (Photoreceptor) node.getAttachment().get();
-            lightSensitiveSprite.setColor(attachment.getColour());
-            renderRotatedNode(lightSensitiveSprite, batch);
+        if (node.getAttachment() != null &&
+                node.getAttachment() instanceof Photoreceptor) {
+            Photoreceptor attachment = (Photoreceptor) node.getAttachment();
+            photoreceptorSprite.setColor(attachment.getColour().getColor());
+            renderRotatedNode(photoreceptorSprite, batch);
         }
     }
 
@@ -50,10 +50,10 @@ public class PhotoreceptorRenderer extends NodeRenderer {
 
     @Override
     public void renderDebug(ShapeRenderer sr) {
-        if (!node.getAttachment().isPresent())
+        if (node.getAttachment() == null)
             return;
 
-        Photoreceptor attachment = (Photoreceptor) node.getAttachment().get();
+        Photoreceptor attachment = (Photoreceptor) node.getAttachment();
         sr.setColor(1, 0, 0, 1);
 
         SurfaceNode node = attachment.getNode();

@@ -8,7 +8,13 @@ import com.protoevo.biology.protozoa.Protozoan;
 import com.protoevo.settings.SimulationSettings;
 import com.protoevo.env.CollisionHandler;
 
-public class PhagocyticReceptor extends NodeAttachment {
+import java.io.Serial;
+import java.io.Serializable;
+
+public class PhagocyticReceptor extends NodeAttachment implements Serializable {
+
+    @Serial
+    private static final long serialVersionUID = 1L;
     private final Vector2 tmp = new Vector2();
 
     public PhagocyticReceptor(SurfaceNode node) {

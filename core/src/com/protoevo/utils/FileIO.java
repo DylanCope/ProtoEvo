@@ -10,19 +10,17 @@ public class FileIO
 
 	public static void save(Object object, String filename)
 	{
-		return; // TODO: Implement this method
-//		try
-//	    {
-//			FileOutputStream fileOut =
-//			new FileOutputStream(filename + ".dat");
-//			ObjectOutputStream out = new ObjectOutputStream(fileOut);
-//			out.writeObject(object);
-//			out.close();
-//			fileOut.close();
-//			System.out.println("Serialized data saved to:" + filename + ".dat" );
-//		} catch(IOException i) {
-//	    	i.printStackTrace();
-//	    }
+		try
+	    {
+			FileOutputStream fileOut =
+			new FileOutputStream(filename + ".dat");
+			ObjectOutputStream out = new ObjectOutputStream(fileOut);
+			out.writeObject(object);
+			out.close();
+			fileOut.close();
+		} catch(IOException i) {
+	    	i.printStackTrace();
+	    }
 	}
 	
 	public static Object load(String filename) throws IOException, ClassNotFoundException {

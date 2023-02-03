@@ -26,10 +26,10 @@ public class ChemicalSolution implements Serializable {
     private final float xMin, yMin, xMax, yMax;
     private final int chemicalTextureHeight;
     private final int chemicalTextureWidth;
-    private final Pixmap chemicalPixmap, swapPixmap;
+    private transient Pixmap chemicalPixmap, swapPixmap;
     private final byte[] swapBuffer;
     private float timeSinceUpdate = 0;
-    private JCudaKernelRunner diffusionKernel;
+    private transient JCudaKernelRunner diffusionKernel;
     private Consumer<Pixmap> updateChemicalsTextureCallback;
     private final transient Color tmpColour = new Color();
 
@@ -170,6 +170,9 @@ public class ChemicalSolution implements Serializable {
                 });
 
         try {
+            if (diffusionKernel == null)
+                initialise();
+
             diffusionKernel.processImage(
                     swapBuffer, chemicalTextureWidth, chemicalTextureHeight);
         }
@@ -273,7 +276,13 @@ public class ChemicalSolution implements Serializable {
                     color.r = tmp[0];
                     color.g = tmp[1];
                     color.b = tmp[2];
+
+                    swapPixmap.drawPixel(x, y, Color.rgba8888(color));
                 });
+
+        Pixmap tmp = chemicalPixmap;
+        chemicalPixmap = swapPixmap;
+        swapPixmap = tmp;
     }
 
     public void diffuse() {
@@ -284,6 +293,11 @@ public class ChemicalSolution implements Serializable {
     }
 
     public void update(float delta) {
+        if (chemicalPixmap == null) {
+            chemicalPixmap = new Pixmap(chemicalTextureWidth, chemicalTextureHeight, Pixmap.Format.RGBA8888);
+            swapPixmap = new Pixmap(chemicalTextureWidth, chemicalTextureHeight, Pixmap.Format.RGBA8888);
+        }
+
         timeSinceUpdate += delta;
         if (timeSinceUpdate > SimulationSettings.chemicalDiffusionInterval) {
             diffuse();

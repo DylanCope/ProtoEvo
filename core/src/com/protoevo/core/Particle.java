@@ -1,19 +1,21 @@
 package com.protoevo.core;
 
-import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.*;
 import com.badlogic.gdx.utils.Array;
 import com.protoevo.biology.CauseOfDeath;
-import com.protoevo.settings.Settings;
-import com.protoevo.settings.SimulationSettings;
 import com.protoevo.env.CollisionHandler;
 import com.protoevo.env.Environment;
 import com.protoevo.env.Rock;
+import com.protoevo.settings.Settings;
+import com.protoevo.settings.SimulationSettings;
 import com.protoevo.utils.Colour;
 import com.protoevo.utils.Geometry;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
@@ -22,11 +24,12 @@ public class Particle implements Shape {
 
     private final Vector2[] boundingBox = new Vector2[]{new Vector2(), new Vector2()};
     private Environment environment;
-    private Body body;
-    private Fixture dynamicsFixture, sensorFixture;
+    private transient Body body;
+    private transient Fixture dynamicsFixture, sensorFixture;
     private boolean dead = false, disposed = false;
     private float radius = SimulationSettings.minParticleRadius * (1 + 2 * (float) Math.random());
     private final Vector2 pos = new Vector2(0, 0);
+    private float angle;
     private final ConcurrentHashMap<String, Float> stats = new ConcurrentHashMap<>();
     private final Collection<CollisionHandler.FixtureCollision> contacts = new ConcurrentLinkedQueue<>();
     private final Collection<Object> interactionObjects = new ConcurrentLinkedQueue<>();
@@ -46,14 +49,15 @@ public class Particle implements Shape {
             kill(CauseOfDeath.FAILED_TO_CONSTRUCT);
             return;
         }
+        this.pos.set(pos);
         createBody();
-        setPos(pos);
         environment.ensureAddedToEnvironment(this);
     }
 
     public void update(float delta) {
         if (body != null) {
             pos.set(body.getPosition());
+            angle = body.getAngle();
 
             if (getSpeed() < getRadius() / 50f) {
                 body.setLinearVelocity(0, 0);
@@ -99,6 +103,8 @@ public class Particle implements Shape {
         body.setLinearDamping(5f);
         body.setAngularDamping(5f);
         body.setSleepingAllowed(true);
+
+        body.setTransform(pos, angle);
 
         circle.dispose();
 

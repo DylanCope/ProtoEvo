@@ -72,12 +72,11 @@ public class ProtozoaRenderer {
     }
 
     public NodeRenderer createNodeRenderer(SurfaceNode node) {
-        Optional<? extends NodeAttachment> maybeAttachment = node.getAttachment();
-        return maybeAttachment
-                .map(NodeAttachment::getClass)
-                .map(nodeRendererMap::get)
-                .map(f -> f.apply(node))
-                .orElse(new NodeRenderer(node));
+        NodeAttachment maybeAttachment = node.getAttachment();
+        if (maybeAttachment == null || !nodeRendererMap.containsKey(maybeAttachment.getClass())) {
+            return new NodeRenderer(node);
+        }
+        return nodeRendererMap.get(maybeAttachment.getClass()).apply(node);
     }
 
     public void render(float delta, OrthographicCamera camera, SpriteBatch batch) {

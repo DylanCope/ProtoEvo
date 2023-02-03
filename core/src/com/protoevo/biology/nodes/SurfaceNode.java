@@ -5,16 +5,25 @@ import com.protoevo.biology.Cell;
 import com.protoevo.biology.evolution.*;
 import com.protoevo.settings.ProtozoaSettings;
 
+import java.io.Serial;
+import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
-public class SurfaceNode implements Evolvable.Element {
+public class SurfaceNode implements Evolvable.Element, Serializable {
+
+    @Serial
+    private static final long serialVersionUID = 1L;
+
+    public static final String activationPrefix = "Activation/";
+    public static final String inputActivationPrefix = "Input" + activationPrefix;
+    public static final String outputActivationPrefix = "Output" + activationPrefix;
 
     private Cell cell;
     private float angle;
     private final Vector2 relativePosition = new Vector2(), worldPosition = new Vector2();
-    private Optional<NodeAttachment> attachment = Optional.empty();
+    private NodeAttachment attachment = null;
     private final float[] inputActivation = new float[3];
     private final float[] outputActivation = new float[3];
     private int nodeIdx;
@@ -24,13 +33,13 @@ public class SurfaceNode implements Evolvable.Element {
     public SurfaceNode() {
         float p = (float) Math.random();
         if (p < 0.1) {
-            attachment = Optional.of(new Flagellum(this));
+            attachment = new Flagellum(this);
         } else if (p < 0.4) {
-            attachment = Optional.of(new AdhesionReceptor(this));
+            attachment = new AdhesionReceptor(this);
         } else if (p < 0.6) {
-            attachment = Optional.of(new PhagocyticReceptor(this));
+            attachment = new PhagocyticReceptor(this);
         } else if (p < 0.9) {
-            attachment = Optional.of(new Photoreceptor(this));
+            attachment = new Photoreceptor(this);
         }
     }
 
@@ -55,16 +64,16 @@ public class SurfaceNode implements Evolvable.Element {
     }
 
     public void update(float delta) {
-        attachment.ifPresent(a -> {
-            a.update(delta, inputActivation, outputActivation);
-        });
+        if (attachment != null) {
+            attachment.update(delta, inputActivation, outputActivation);
+        }
     }
 
     public void setAttachment(NodeAttachment attachment) {
-        this.attachment = Optional.of(attachment);
+        this.attachment = attachment;
     }
 
-    public Optional<NodeAttachment> getAttachment() {
+    public NodeAttachment getAttachment() {
         return attachment;
     }
 
@@ -76,32 +85,32 @@ public class SurfaceNode implements Evolvable.Element {
         return outputActivation;
     }
 
-    @RegulatedFloat(name="InputActivation/0", min=-1, max=1)
+    @RegulatedFloat(name=inputActivationPrefix + "0", min=-1, max=1)
     public void setActivation0(float value) {
         inputActivation[0] = value;
     }
 
-    @GeneRegulator(name="OutputActivation/0")
+    @GeneRegulator(name=outputActivationPrefix + "0")
     public float getActivation0() {
         return outputActivation[0];
     }
 
-    @RegulatedFloat(name="InputActivation/1", min=-1, max=1)
+    @RegulatedFloat(name=inputActivationPrefix + "1", min=-1, max=1)
     public void setActivation1(float value) {
         inputActivation[1] = value;
     }
 
-    @GeneRegulator(name="OutputActivation/1")
+    @GeneRegulator(name=outputActivationPrefix + "1")
     public float getActivation1() {
         return outputActivation[1];
     }
 
-    @RegulatedFloat(name="InputActivation/2", min=-1, max=1)
+    @RegulatedFloat(name=inputActivationPrefix + "2", min=-1, max=1)
     public void setActivation2(float value) {
         inputActivation[2] = value;
     }
 
-    @GeneRegulator(name="OutputActivation/2")
+    @GeneRegulator(name=outputActivationPrefix + "2")
     public float getActivation2() {
         return outputActivation[2];
     }
@@ -115,7 +124,10 @@ public class SurfaceNode implements Evolvable.Element {
     }
 
     public float getInteractionRange() {
-        return attachment.map(NodeAttachment::getInteractionRange).orElse(0f);
+        if (attachment == null)
+            return 0f;
+        else
+            return attachment.getInteractionRange();
     }
 
     @Override

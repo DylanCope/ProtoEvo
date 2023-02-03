@@ -34,8 +34,8 @@ public class AdhesionReceptor extends NodeAttachment {
                 cell.createCellBinding(contact, otherCell, PlantCell.plantCAM);
                 otherCell.createCellBinding(contact, cell, PlantCell.plantCAM);
                 this.otherNode = otherNode;
-                otherNode.getAttachment()
-                        .ifPresent(a -> ((AdhesionReceptor) a).setOtherNode(node));
+                if (otherNode.getAttachment() != null && otherNode.getAttachment() instanceof AdhesionReceptor)
+                    ((AdhesionReceptor) otherNode.getAttachment()).setOtherNode(node);
             }
         }
     }
@@ -49,8 +49,7 @@ public class AdhesionReceptor extends NodeAttachment {
     }
 
     private boolean otherIsBinding(SurfaceNode otherNode) {
-        Optional<NodeAttachment> otherAttachment = otherNode.getAttachment();
-        return otherAttachment.map(a -> a instanceof AdhesionReceptor).orElse(false);
+        return otherNode.getAttachment() instanceof AdhesionReceptor;
     }
 
     private boolean isCloseEnough(SurfaceNode otherNode) {

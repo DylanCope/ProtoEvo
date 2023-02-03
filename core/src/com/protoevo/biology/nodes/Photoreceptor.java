@@ -7,16 +7,23 @@ import com.protoevo.core.Shape;
 import com.protoevo.core.Particle;
 import com.protoevo.settings.ProtozoaSettings;
 import com.protoevo.settings.SimulationSettings;
+import com.protoevo.utils.Colour;
 import com.protoevo.utils.Utils;
 
-public class Photoreceptor extends NodeAttachment {
+import java.io.Serial;
+import java.io.Serializable;
+
+public class Photoreceptor extends NodeAttachment implements Serializable {
+
+    @Serial
+    private static final long serialVersionUID = 1L;
     private final Vector2[] ray = new Vector2[]{new Vector2(), new Vector2()};
     private final Shape.Collision[] collisions =
             new Shape.Collision[]{new Shape.Collision(), new Shape.Collision()};
     private final Vector2 tmp = new Vector2(), tmp2 = new Vector2();
     private final Vector2 attachmentRelPos = new Vector2();
     private float interactionRange = 0;
-    private final Color colour = new Color();
+    private final Colour colour = new Colour();
     private float r, g, b;
     private int rayIdx;
     private float minSqLen;
@@ -121,7 +128,7 @@ public class Photoreceptor extends NodeAttachment {
         return ray;
     }
 
-    public Color getColour() {
+    public Colour getColour() {
         return colour;
     }
 

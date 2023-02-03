@@ -60,6 +60,13 @@ public class Colour implements Serializable {
         return c;
     }
 
+    public void set(float r, float g, float b, float a) {
+        this.r = r;
+        this.g = g;
+        this.b = b;
+        this.a = a;
+    }
+
     public Colour lerp(Colour c, float t) {
         this.r = (1 - t) * this.r + t * c.r;
         this.g = (1 - t) * this.g + t * c.g;

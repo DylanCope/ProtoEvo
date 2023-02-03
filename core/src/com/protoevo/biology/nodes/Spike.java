@@ -6,7 +6,13 @@ import com.protoevo.biology.Cell;
 import com.protoevo.core.Simulation;
 import com.protoevo.settings.ProtozoaSettings;
 
-public class Spike extends NodeAttachment {
+import java.io.Serial;
+import java.io.Serializable;
+
+public class Spike extends NodeAttachment implements Serializable {
+
+    @Serial
+    private static final long serialVersionUID = 1L;
 
     private final Vector2 spikePoint = new Vector2();
     private Cell cell;

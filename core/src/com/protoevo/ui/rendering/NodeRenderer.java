@@ -29,7 +29,7 @@ public class NodeRenderer {
 
     public NodeRenderer(SurfaceNode node) {
         this.node = node;
-        this.attachmentClass = node.getAttachment().map(NodeAttachment::getClass);
+        this.attachmentClass = Optional.ofNullable(node.getAttachment()).map(NodeAttachment::getClass);
     }
 
     public SurfaceNode getNode() {
@@ -37,7 +37,7 @@ public class NodeRenderer {
     }
 
     public Sprite getSprite(float delta) {
-        return node.getAttachment()
+        return Optional.ofNullable(node.getAttachment())
                 .map(NodeAttachment::getClass)
                 .map(attachmentSprites::get)
                 .orElse(nodeEmptySprite);
@@ -64,9 +64,12 @@ public class NodeRenderer {
     }
 
     public boolean isStale() {
-        return node.getCell().isDead() || !node.getAttachment()
-                .map(NodeAttachment::getClass)
-                .equals(attachmentClass);
+        if (node.getAttachment() == null)
+            return true;
+
+        return node.getCell().isDead() || attachmentClass
+                .map(cls -> !cls.equals(node.getAttachment().getClass()))
+                .orElse(false);
     }
 
     public void renderDebug(ShapeRenderer sr) {}

@@ -1,6 +1,12 @@
 package com.protoevo.biology.nodes;
 
-public abstract class NodeAttachment {
+import java.io.Serial;
+import java.io.Serializable;
+
+public abstract class NodeAttachment implements Serializable {
+
+    @Serial
+    private static final long serialVersionUID = 1L;
 
     protected SurfaceNode node;
 

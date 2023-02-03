@@ -31,8 +31,9 @@ public class FlagellumRenderer extends NodeRenderer {
 
     @Override
     public Sprite getSprite(float delta) {
-        Flagellum attachment = (Flagellum) node.getAttachment()
-                .orElseThrow(() -> new RuntimeException("Expected flagellum attachment."));
+        Flagellum attachment = (Flagellum) node.getAttachment();
+        if (attachment == null)
+            throw new RuntimeException("Expected flagellum attachment.");
 
         Sprite[] frames = getAnimationFrames();
         int idx = (int) (frames.length * animationTime);
@@ -53,12 +54,12 @@ public class FlagellumRenderer extends NodeRenderer {
 
     @Override
     public void renderDebug(ShapeRenderer sr) {
-        if (!node.getAttachment().isPresent())
+        if (node.getAttachment() == null)
             return;
         Cell cell = node.getCell();
         Vector2 pos = cell.getPos();
 
-        Flagellum attachment = (Flagellum) node.getAttachment().get();
+        Flagellum attachment = (Flagellum) node.getAttachment();
         float maxThrust = ProtozoaSettings.maxProtozoaThrust;
         Vector2 thrust = attachment.getThrustVector().cpy().setLength(cell.getRadius()*1.5f);
         float mag = Utils.linearRemap(thrust.len(), 0, maxThrust, 0, 1.5f);

@@ -20,22 +20,13 @@ public class MouseOverNeuronCallback {
     public String getSurfaceNodeLabel(Neuron neuron,
                                       GeneExpressionFunction.ExpressionNode geneNode,
                                       SurfaceNode surfaceNode) {
-        String label = "Node "+ surfaceNode.getIndex() + surfaceNode.getAttachment()
-                .map(attachment -> ": " + attachment.getName())
-                .orElse("");
+        String label = "Node";
+        if (surfaceNode.getAttachment() != null)
+            label += " " + surfaceNode.getAttachment().getName() + ": ";
 
-        if (geneNode.getTrait().getTraitName().contains("Activation/")) {
-            String[] parts = geneNode.getTrait().getTraitName().split("Activation/");
-            int idx = Integer.parseInt(parts[1]);
-            if (parts[0].equals("Input")) {
-                label += " " + surfaceNode.getAttachment()
-                        .map(attachment -> attachment.getInputMeaning(idx))
-                        .orElse("Input " + idx);
-            } else {
-                label += " " + surfaceNode.getAttachment()
-                        .map(attachment -> attachment.getOutputMeaning(idx))
-                        .orElse("Output " + idx);
-            }
+        if (geneNode.getTrait().getTraitName().contains(SurfaceNode.activationPrefix)) {
+            String[] parts = geneNode.getTrait().getTraitName().split(SurfaceNode.activationPrefix);
+            label = getAttachmentIOString(surfaceNode, label, parts);
         } else {
             label += " " + geneNode.getTrait().getTraitName();
         }
@@ -44,28 +35,35 @@ public class MouseOverNeuronCallback {
     }
 
     public String getSurfaceNodeLabel(Neuron neuron,
-                                      GeneExpressionFunction.RegulationNode geneNode,
+                                      GeneExpressionFunction.RegulationNode regulationNode,
                                       SurfaceNode surfaceNode) {
-        String label = "Node "+ surfaceNode.getIndex() + surfaceNode.getAttachment()
-                .map(attachment -> ": " + attachment.getName())
-                .orElse("");
+        String label = "Node";
+        if (surfaceNode.getAttachment() != null)
+            label += " " + surfaceNode.getAttachment().getName() + ": ";
 
-        if (geneNode.getName().contains("Activation/")) {
-            String[] parts = geneNode.getName().split("Activation/");
-            int idx = Integer.parseInt(parts[1]);
-            if (parts[0].equals("Input")) {
-                label += " " + surfaceNode.getAttachment()
-                        .map(attachment -> attachment.getInputMeaning(idx))
-                        .orElse("Input " + idx);
-            } else {
-                label += " " + surfaceNode.getAttachment()
-                        .map(attachment -> attachment.getOutputMeaning(idx))
-                        .orElse("Output " + idx);
-            }
+        if (regulationNode.getName().contains(SurfaceNode.activationPrefix)) {
+            String[] parts = regulationNode.getName().split(SurfaceNode.activationPrefix);
+            label = getAttachmentIOString(surfaceNode, label, parts);
         } else {
-            label += " " + geneNode.getName();
+            label += " " + regulationNode.getName();
         }
         label += " = " + Utils.numberToString(neuron.getLastState(), 2);
+        return label;
+    }
+
+    private String getAttachmentIOString(SurfaceNode surfaceNode, String label, String[] parts) {
+        int idx = Integer.parseInt(parts[1]);
+        if (parts[0].equals("Input")) {
+            if (surfaceNode.getAttachment() != null)
+                label += " " + surfaceNode.getAttachment().getInputMeaning(idx);
+            else
+                label += "Input " + idx;
+        } else {
+            if (surfaceNode.getAttachment() != null)
+                label += " " + surfaceNode.getAttachment().getOutputMeaning(idx);
+            else
+                label += "Output " + idx;
+        }
         return label;
     }
 

@@ -20,18 +20,37 @@ public class GeneExpressionFunction implements Evolvable.Component, Serializable
     public static class RegulationNode implements Serializable {
         public static final long serialVersionUID = 1L;
         public String name;
-        private final Function<Evolvable, Float> regulatorGetter;
+        private transient Function<Evolvable, Float> regulatorGetter;
+        private final String methodGetterName;
         private String targetID;
         private Object lastTarget;
 
-        public RegulationNode(String name, Function<Evolvable, Float> regulatorGetter) {
-            this.name = name;
-            this.regulatorGetter = regulatorGetter;
+        private Function<Evolvable, Float> createGetter(Method method) {
+            String regulatorName = method.getAnnotation(GeneRegulator.class).name();
+            float max = method.getAnnotation(GeneRegulator.class).max();
+            float min = method.getAnnotation(GeneRegulator.class).min();
+            return evolvable -> {
+                try {
+                    return 2f * ((Float) method.invoke(evolvable) - min) / (max - min) - 1f;
+                } catch (IllegalAccessException | InvocationTargetException | IllegalArgumentException e) {
+                    throw new RuntimeException(
+                        "Failed to get value for gene regulator "
+                        + regulatorName + "(" + method.getName() + ":" + method.getDeclaringClass() + ")", e);
+                }
+            };
         }
 
-        public RegulationNode(String name, Function<Evolvable, Float> regulatorGetter, String targetID) {
+        public RegulationNode(String name, Method getterMethod) {
+            this.name = name;
+            this.regulatorGetter = createGetter(getterMethod);
+            this.methodGetterName = getterMethod.getName();
+        }
+
+        public RegulationNode(String name, Function<Evolvable, Float> regulatorGetter,
+                              String targetID, String methodGetterName) {
             this.name = name;
             this.regulatorGetter = regulatorGetter;
+            this.methodGetterName = methodGetterName;
             this.targetID = targetID;
         }
 
@@ -41,6 +60,17 @@ public class GeneExpressionFunction implements Evolvable.Component, Serializable
 
         public float getValue(Evolvable evolvable) {
             lastTarget = evolvable;
+            if (regulatorGetter == null) {
+                for (Method method : evolvable.getClass().getMethods())
+                    if (method.getName().equals(methodGetterName)) {
+                        regulatorGetter = createGetter(method);
+                        break;
+                    }
+
+                if (regulatorGetter == null)
+                    throw new RuntimeException(
+                        "Failed to find method " + methodGetterName + " in " + evolvable.getClass());
+            }
             return regulatorGetter.apply(evolvable);
         }
 
@@ -53,7 +83,7 @@ public class GeneExpressionFunction implements Evolvable.Component, Serializable
         }
 
         public RegulationNode copy() {
-            return new RegulationNode(name, regulatorGetter, targetID);
+            return new RegulationNode(name, regulatorGetter, targetID, methodGetterName);
         }
 
         public String getName() {
@@ -65,7 +95,8 @@ public class GeneExpressionFunction implements Evolvable.Component, Serializable
         public static final long serialVersionUID = 1L;
         private String name;
         private final Trait<?> trait;
-        private final Method traitSetter;
+        private transient Method traitSetter;
+        private final String methodName;
         private final Map<String, Object> dependencies;
         private String[] dependents;
         private Object lastTraitValue;
@@ -76,6 +107,7 @@ public class GeneExpressionFunction implements Evolvable.Component, Serializable
             this.name = name;
             this.trait = trait;
             this.traitSetter = traitSetter;
+            this.methodName = traitSetter != null ? traitSetter.getName() : null;
             this.dependencies = new HashMap<>();
             for (String str : dependencies)
                 if (!str.equals(""))
@@ -88,6 +120,7 @@ public class GeneExpressionFunction implements Evolvable.Component, Serializable
             this.name = name;
             this.trait = trait;
             this.traitSetter = traitSetter;
+            this.methodName = traitSetter != null ? traitSetter.getName() : null;
             this.targetID = targetID;
             this.dependencies = dependencies;
             this.dependents = dependents;
@@ -128,12 +161,13 @@ public class GeneExpressionFunction implements Evolvable.Component, Serializable
         }
 
         public boolean acceptsEvolvable(Class<? extends Evolvable> evolvableType) {
-            return mapsToTrait() && traitSetter.getDeclaringClass().equals(evolvableType);
+            return mapsToTrait() && getTraitSetter().getDeclaringClass().equals(evolvableType);
         }
 
         public void setTraitValue(Evolvable target, Object traitValue) {
-            if (!traitValue.equals(lastTraitValue)) {
-                Evolvable.setTraitValue(target, traitSetter, traitValue);
+            Method setter = getTraitSetter(target);
+            if (!traitValue.equals(lastTraitValue) && setter != null) {
+                Evolvable.setTraitValue(target, setter, traitValue);
                 lastTraitValue = traitValue;
                 lastTarget = target;
             }
@@ -152,11 +186,30 @@ public class GeneExpressionFunction implements Evolvable.Component, Serializable
         }
 
         public boolean mapsToTrait() {
-            return traitSetter != null;
+            return getTraitSetter() != null;
         }
 
         public Method getTraitSetter() {
-            return traitSetter;
+            return getTraitSetter(lastTarget);
+        }
+
+        public Method getTraitSetter(Object target) {
+            if (traitSetter != null)
+                return traitSetter;
+
+            if (target == null || methodName == null)
+                return null;
+
+            // this is to handle transient method field.
+            // if the node was serialized and rebuilt, the method field will be null.
+            for (Method method : target.getClass().getMethods()) {
+                if (method.getName().equals(methodName)) {
+                    traitSetter = method;
+                    return method;
+                }
+            }
+
+            return null;
         }
 
         public void prependName(String name) {
