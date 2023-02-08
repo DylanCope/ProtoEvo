@@ -1,43 +1,63 @@
 package com.protoevo.ui.rendering;
 
+import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.OrthographicCamera;
+import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
+import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector2;
 import com.protoevo.biology.nodes.Flagellum;
-import com.protoevo.biology.nodes.Photoreceptor;
 import com.protoevo.biology.nodes.NodeAttachment;
+import com.protoevo.biology.nodes.Photoreceptor;
 import com.protoevo.biology.nodes.SurfaceNode;
 import com.protoevo.biology.protozoa.Protozoan;
 import com.protoevo.core.Particle;
 import com.protoevo.core.Simulation;
-import com.protoevo.settings.RenderSettings;
 import com.protoevo.env.Rock;
-import com.protoevo.utils.ImageUtils;
+import com.protoevo.settings.RenderSettings;
+import com.protoevo.utils.Geometry;
+import com.protoevo.utils.Utils;
 
-import java.awt.*;
-import java.awt.image.BufferedImage;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Random;
 import java.util.function.Function;
 
 public class ProtozoaRenderer {
 
     enum InteriorTexture {
-        GOLGI(0, 2, "golgi", "golgi_2", "golgi_3"),
-        NUCLEUS(1, 1, "nucleus_1", "nucleus_2"),
-        RIBOSOMES(0, 3, "ribosomes_1", "ribosomes_2", "ribosomes_3"),
-        MITOCHONDRIA(0, 2, "mitochondria_1"),
-        MICROFILAMENT(0, 3, "microfilament_1", "microfilament_2", "microfilament_3");
+        GOLGI(0, 2, 0.1f, 0.3f,
+                "golgi_1", "golgi_2", "golgi_3"),
+        NUCLEUS(1, 1, 0.5f, 0.7f,
+                "nucleus_1", "nucleus_2", "nucleus_3"),
+        RIBOSOMES(0, 3, 0.05f, 0.1f,
+                "ribosomes_1", "ribosomes_2", "ribosomes_3"),
+        MITOCHONDRIA(0, 2, 0.2f, 0.4f,
+                "mitochondria_1", "mitochondria_2"),
+        MICROFILAMENT(0, 3, 0.1f, 0.2f,
+                "microfilament_1", "microfilament_2", "microfilament_3");
 
-        private final BufferedImage[] textures;
+        private final Texture[] textures;
         private final int minCount, maxCount;
-        InteriorTexture(int minCount, int maxCount, String...textureNames) {
+        private final float minScale, maxScale;
+
+        InteriorTexture(
+                int minCount, int maxCount,
+                float minScale, float maxScale,
+                String...textureNames) {
             this.minCount = minCount;
             this.maxCount = maxCount;
-            textures = new BufferedImage[textureNames.length];
+            this.minScale = minScale;
+            this.maxScale = maxScale;
+            textures = new Texture[textureNames.length];
             for (int i = 0; i < textureNames.length; i++) {
-                textures[i] = ImageUtils.loadImage("cell/cell_interior/" + textureNames[i] + ".png");
+                textures[i] = new Texture(
+                        "cell/cell_interior/" + textureNames[i] + ".png");
+                textures[i].setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Linear);
+                textures[i].setAnisotropicFilter(16);
             }
         }
 
@@ -49,8 +69,12 @@ public class ProtozoaRenderer {
             return minCount;
         }
 
-        public BufferedImage randomTexture() {
+        public Texture randomTexture() {
             return textures[Simulation.RANDOM.nextInt(0, textures.length)];
+        }
+
+        public float randomScale() {
+            return Simulation.RANDOM.nextFloat(minScale, maxScale);
         }
     }
 
@@ -62,13 +86,63 @@ public class ProtozoaRenderer {
             }
         };
 
+    private static class InteriorElement {
+        private final Sprite elementSprite;
+        private float angle;
+        private final float scale;
+        private Vector2 position;
+        private final Protozoan protozoan;
+
+        public InteriorElement(InteriorTexture texture, Protozoan protozoan) {
+            this.protozoan = protozoan;
+            scale = texture.randomScale();
+            this.elementSprite = new Sprite(texture.randomTexture());
+            this.angle = MathUtils.random((float) (2 * Math.PI));
+            this.position = Geometry.randomPointInCircle(1 - scale);
+        }
+
+        public void draw(float delta, OrthographicCamera camera, SpriteBatch batch) {
+//            angle += delta * 0.5f;
+//            position = Geometry.rotate(position, delta * 0.5f);
+            float cellAngle = protozoan.getAngle();
+
+            float criticalZoom = RenderSettings.cameraZoomForCellDetails;
+            float a = Utils.linearRemap(
+                    camera.zoom, criticalZoom, .5f * criticalZoom, 0, 1f);
+            Color c = protozoan.getColor();
+            elementSprite.setColor(c.r, c.g, c.b, a);
+            elementSprite.setOriginCenter();
+            elementSprite.setRotation(angle);
+            elementSprite.setPosition(
+                    (float) (protozoan.getPos().x + Math.cos(cellAngle + angle) * position.x * protozoan.getRadius() * 0.7f),
+                    (float) (protozoan.getPos().y + Math.sin(cellAngle + angle) * position.y * protozoan.getRadius() * 0.7f));
+//            elementSprite.setSize(size, size);
+            float w = scale * protozoan.getRadius();
+            float h = w * elementSprite.getHeight() / elementSprite.getWidth();
+            elementSprite.setSize(w, h);
+            elementSprite.draw(batch);
+        }
+    }
+
+    private static final Sprite spikeTexture = new Sprite(new Texture("cell/spike.png"));
     private final Protozoan protozoan;
-    private Sprite detailedSprite = null;
+//    private Sprite detailedSprite = null;
+//    private BufferedImage protozoanImage = null;
+//    private boolean isGeneratingImage = false;
     private final Map<SurfaceNode, NodeRenderer> nodeRenderers;
+    private final ArrayList<InteriorElement> interiorElements = new ArrayList<>();
 
     public ProtozoaRenderer(Protozoan protozoan) {
         this.protozoan = protozoan;
         nodeRenderers = new HashMap<>(protozoan.getSurfaceNodes().size());
+
+        Random random = new Random();
+        for (InteriorTexture type : InteriorTexture.values()) {
+            int count = random.nextInt(type.getMinCount(),  type.getMaxCount() + 1);
+            for (int i = 0; i < count; i++) {
+                interiorElements.add(new InteriorElement(type, protozoan));
+            }
+        }
     }
 
     public NodeRenderer createNodeRenderer(SurfaceNode node) {
@@ -86,29 +160,43 @@ public class ProtozoaRenderer {
         float cellAngle = (float) Math.toDegrees(protozoan.getAngle());
         float size = protozoan.getRadius() * 2;
 
-        Sprite cellSprite;
-        if (RenderSettings.cameraZoomForCellDetails > camera.zoom) {
-            if (detailedSprite == null) {
-                detailedSprite = ImageUtils.convertToSprite(generateCellImage());
-            }
-            cellSprite = detailedSprite;
-            cellSprite.setOriginCenter();
-            cellSprite.setRotation(cellAngle);
+        Sprite cellSprite = CellTexture.getSprite();
 
-            nodeRenderers.entrySet().removeIf(e -> e.getValue().isStale());
-            for (SurfaceNode node : protozoan.getSurfaceNodes()) {
-                nodeRenderers.computeIfAbsent(node, this::createNodeRenderer)
-                        .render(delta, batch);
-            }
+        for (InteriorElement element : interiorElements) {
+            element.draw(delta, camera, batch);
         }
-        else {
-            cellSprite = ParticleTexture.getSprite();
+
+//        nodeRenderers.entrySet().removeIf(e -> e.getValue().isStale());
+        for (SurfaceNode node : protozoan.getSurfaceNodes()) {
+//            nodeRenderers.computeIfAbsent(node, this::createNodeRenderer)
+//                    .render(delta, batch);
+            float t = node.getAngle() + protozoan.getAngle();
+            spikeTexture.setColor(protozoan.getColor());
+//            spikeTexture.setOrigin(spikeTexture.getWidth() / 2f, 0f);
+//            spikeTexture.setRotation(t);
+//            float h = spikeTexture.getHeight() / 2f + protozoan.getRadius();
+            float r = protozoan.getRadius() * 0.95f;
+            float nodeX = (float) (x + r * Math.cos(t));
+            float nodeY = (float) (y + r * Math.sin(t));
+
+            float w = size * 0.1f;
+            float h = w * spikeTexture.getHeight() / spikeTexture.getWidth();
+//            spikeTexture.setSize(w, h);
+            spikeTexture.setBounds(nodeX, nodeY, w, h);
+            spikeTexture.setOrigin(nodeX, nodeY);
+            spikeTexture.draw(batch);
         }
 
         cellSprite.setColor(protozoan.getColor());
         cellSprite.setPosition(x, y);
         cellSprite.setSize(size, size);
         cellSprite.draw(batch);
+
+        if (RenderSettings.cameraZoomForCellDetails > camera.zoom) {
+            for (InteriorElement element : interiorElements) {
+                element.draw(delta, camera, batch);
+            }
+        }
     }
 
     public void renderDebug(ShapeRenderer sr) {
@@ -155,51 +243,14 @@ public class ProtozoaRenderer {
     }
 
     public void dispose() {
-        if (detailedSprite != null) {
-            detailedSprite.getTexture().dispose();
-            detailedSprite = null;
-        }
+//        if (detailedSprite != null) {
+//            detailedSprite.getTexture().dispose();
+//            detailedSprite = null;
+//        }
         for (NodeRenderer nodeRenderer : nodeRenderers.values()) {
             nodeRenderer.dispose();
         }
         nodeRenderers.clear();
-    }
-
-    public static BufferedImage generateCellImage() {
-        BufferedImage base = ParticleTexture.getBufferedImage();
-
-        ArrayList<InteriorTexture> types = new ArrayList<>();
-        Random random = new Random();
-        for (InteriorTexture type : InteriorTexture.values()) {
-            int count = random.nextInt(type.getMinCount(),  type.getMaxCount() + 1);
-            for (int i = 0; i < count; i++) {
-                types.add(type);
-            }
-        }
-        Collections.shuffle(types);
-
-        BufferedImage newImage = new BufferedImage(
-                base.getWidth(), base.getHeight(), BufferedImage.TYPE_INT_ARGB);
-
-        Graphics2D g2d = newImage.createGraphics();
-        g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-        g2d.drawImage(base, null, 0, 0);
-        double dt = 2 * Math.PI / types.size();
-        for (int i = 0; i < types.size(); i++) {
-            double t = i * dt + random.nextDouble(-dt / 3, dt / 3);
-            BufferedImage texture = types.get(i).randomTexture();
-            texture = ImageUtils.scaleImage(texture, random.nextDouble(0.6, 1));
-//            if (random.nextBoolean())
-//                texture = ImageUtils.flipImageHorizontally(texture);
-            texture = ImageUtils.rotateImageByRadians(texture, t);
-//            if (random.nextBoolean())
-//                texture = ImageUtils.flipImageVertically(texture);
-
-            g2d.drawImage(texture, null,
-                    (newImage.getWidth() - texture.getWidth()) / 2,
-                    (newImage.getHeight() - texture.getHeight()) / 2);
-        }
-        return newImage;
     }
 
 }

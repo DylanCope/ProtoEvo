@@ -55,7 +55,7 @@ public class EnvironmentRenderer implements Renderer {
 
         debugRenderer = new Box2DDebugRenderer();
         batch = new SpriteBatch();
-        particleTexture = ParticleTexture.getTexture();
+        particleTexture = CellTexture.getTexture();
 
         jointSprite = loadSprite("cell/binding_base_128x128.png");
 
@@ -100,6 +100,15 @@ public class EnvironmentRenderer implements Renderer {
     public void render(float delta) {
 
         ScreenUtils.clear(0, 0.1f, 0.2f, .95f);
+
+//        Gdx.gl.glEnable(GL20.GL_BLEND);
+//        Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
+//        Gdx.gl.glBlendEquation(GL20.GL_FUNC_ADD);
+//        Gdx.gl.glEnable(GL20.GL_BLEND);
+////        Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
+//        Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE);
+//        Gdx.gl.glBlendEquation(GL20.GL_FUNC_ADD);
+        Gdx.gl.glBlendFunc(GL20.GL_ONE, GL20.GL_ONE_MINUS_SRC_ALPHA);
 
         synchronized (environment) {
             if (chemicalsRenderer != null)

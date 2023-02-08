@@ -59,6 +59,10 @@ public class Geometry {
         return Geometry.randomUnit().scl(length);
     }
 
+    public static Vector2 randomPointInCircle(float circleR) {
+        return Geometry.randomVector((float) Math.sqrt(Math.random() * circleR * circleR));
+    }
+
     public static float getCircleArea(float r) {
         return (float) (Math.PI * r * r);
     }

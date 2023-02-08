@@ -44,7 +44,7 @@ public class ImageUtils {
     }
 
     public static Texture convertToTexture(BufferedImage image) {
-        Texture texture = new Texture(convertToPixmap(image));
+        Texture texture = new Texture(convertToPixmap(image), true);
 //        texture.setFilter(Texture.TextureFilter.MipMapLinearNearest, Texture.TextureFilter.MipMapLinearNearest);
 //        texture.setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Linear);
         return texture;
@@ -132,5 +132,20 @@ public class ImageUtils {
             frame++;
         }
         return frames.toArray(new Sprite[0]);
+    }
+
+    public static BufferedImage[] loadAnimationFrames(String framesFolder) {
+        int frame = 1;
+        List<BufferedImage> frames = Lists.newArrayList();
+        while (true) {
+            String framePath = framesFolder + "/" + frame + ".png";
+            File frameFile = new File(framePath);
+            if (!frameFile.exists()) {
+                break;
+            }
+            frames.add(loadImage(framePath));
+            frame++;
+        }
+        return frames.toArray(new BufferedImage[0]);
     }
 }

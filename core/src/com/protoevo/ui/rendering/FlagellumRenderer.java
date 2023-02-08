@@ -2,6 +2,7 @@ package com.protoevo.ui.rendering;
 
 import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
+import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector2;
 import com.protoevo.biology.Cell;
 import com.protoevo.biology.nodes.Flagellum;
@@ -11,19 +12,28 @@ import com.protoevo.settings.ProtozoaSettings;
 import com.protoevo.utils.ImageUtils;
 import com.protoevo.utils.Utils;
 
+import java.awt.image.BufferedImage;
+
 public class FlagellumRenderer extends NodeRenderer {
 
     private static Sprite[] animationFrames;
 
     private static Sprite[] getAnimationFrames() {
         if (animationFrames == null) {
+//            BufferedImage[] frames = ImageUtils.loadAnimationFrames("cell/flagella/");
+//            animationFrames = new Sprite[frames.length * 2];
+//            for (int i = 0; i < frames.length; i++) {
+//                animationFrames[frames.length - i - 1] = ImageUtils.convertToSprite(frames[i]);
+//                animationFrames[i + frames.length] =
+//                        ImageUtils.convertToSprite(ImageUtils.flipImageHorizontally(frames[i]));
+//            }
             animationFrames = ImageUtils.loadSpriteAnimationFrames("cell/flagella/");
         }
         return animationFrames;
     }
 
     private float animationTime;
-    private final float animationSpeed = 3f;
+    private float animationSpeed = 3f;
 
     public FlagellumRenderer(SurfaceNode node) {
         super(node);
@@ -36,7 +46,6 @@ public class FlagellumRenderer extends NodeRenderer {
             throw new RuntimeException("Expected flagellum attachment.");
 
         Sprite[] frames = getAnimationFrames();
-        int idx = (int) (frames.length * animationTime);
         if (!Simulation.isPaused()) {
             float thrust = attachment.getThrustVector().len();
             if (thrust > 0) {
@@ -45,11 +54,14 @@ public class FlagellumRenderer extends NodeRenderer {
                         0.5f, 1f);
                 animationTime += animationSpeed * delta * p;
             }
+//            if (animationTime <= 0 || animationTime >= 1)
+//                animationSpeed *= -1;
             if (animationTime >= 1)
-                animationTime %= 1;
+                animationTime = 0;
         }
 
-        return frames[Math.min(idx, frames.length - 1)];
+        int idx = (int) (frames.length * animationTime);
+        return frames[MathUtils.clamp(idx, 0,frames.length - 1)];
     }
 
     @Override

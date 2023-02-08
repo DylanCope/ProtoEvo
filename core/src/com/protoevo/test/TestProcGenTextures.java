@@ -37,24 +37,24 @@ public class TestProcGenTextures {
         private BufferedImage rotated;
 
         public TestPane() {
-            master = ProtozoaRenderer.generateCellImage();
-//            master = ProtozoaTexture.generateImage(Evolvable.createNew(Protozoan.class));
-
-            Timer timer = new Timer(40, new ActionListener() {
-                private double time = 0;
-                private final double delta = 0.05; //.1;
-
-                @Override
-                public void actionPerformed(ActionEvent e) {
-                    time += delta;
-                    if (time > 1) {
-                        master = ProtozoaRenderer.generateCellImage();
-                        time = 0;
-                    }
-                    repaint();
-                }
-            });
-            timer.start();
+//            master = ProtozoaRenderer.generateCellImage();
+////            master = ProtozoaTexture.generateImage(Evolvable.createNew(Protozoan.class));
+//
+//            Timer timer = new Timer(40, new ActionListener() {
+//                private double time = 0;
+//                private final double delta = 0.05; //.1;
+//
+//                @Override
+//                public void actionPerformed(ActionEvent e) {
+//                    time += delta;
+//                    if (time > 1) {
+//                        master = ProtozoaRenderer.generateCellImage();
+//                        time = 0;
+//                    }
+//                    repaint();
+//                }
+//            });
+//            timer.start();
         }
 
         @Override
