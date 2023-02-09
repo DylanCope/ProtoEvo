@@ -54,12 +54,12 @@ public class MouseOverNeuronCallback {
     private String getAttachmentIOString(SurfaceNode surfaceNode, String label, String[] parts) {
         int idx = Integer.parseInt(parts[1]);
         if (parts[0].equals("Input")) {
-            if (surfaceNode.getAttachment() != null)
+            if (surfaceNode.getAttachment() != null && surfaceNode.getAttachment().getInputMeaning(idx) != null)
                 label += " " + surfaceNode.getAttachment().getInputMeaning(idx);
             else
                 label += "Input " + idx;
         } else {
-            if (surfaceNode.getAttachment() != null)
+            if (surfaceNode.getAttachment() != null && surfaceNode.getAttachment().getOutputMeaning(idx) != null)
                 label += " " + surfaceNode.getAttachment().getOutputMeaning(idx);
             else
                 label += "Output " + idx;

@@ -31,6 +31,7 @@ import com.protoevo.ui.shaders.ShockWaveLayer;
 import com.protoevo.ui.shaders.VignetteLayer;
 import com.protoevo.utils.CursorUtils;
 import com.protoevo.utils.DebugMode;
+import com.protoevo.utils.ImageUtils;
 import com.protoevo.utils.Utils;
 
 import java.util.Map;
@@ -144,7 +145,8 @@ public class SimulationScreen {
     }
 
     public ImageButton createImageButton(String texturePath, float width, float height, EventListener listener) {
-        Texture texture = new Texture(texturePath);
+        Texture texture = ImageUtils.getTexture(texturePath);
+
         Drawable drawable = new TextureRegionDrawable(new TextureRegion(texture));
         ImageButton button = new ImageButton(drawable);
         button.setSize(width, height);
@@ -191,7 +193,6 @@ public class SimulationScreen {
             debugString += separator + "Contacts: " + environment.getWorld().getContactCount();
             debugString += separator + "Joints: " + environment.getWorld().getJointCount();
             debugString += separator + "Fixtures: " + environment.getWorld().getFixtureCount();
-//            debugString += separator + "Proxies: " + environment.getWorld().getProxyCount();
 
             int totalCells = environment.getCells().size();
             int sleepCount = totalCells - (int) environment.getCells().stream()

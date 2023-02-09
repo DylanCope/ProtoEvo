@@ -13,23 +13,24 @@ import java.util.Map;
 import java.util.Optional;
 
 public class NodeRenderer {
-    protected static final Sprite nodeEmptySprite = ImageUtils.loadSprite("cell/surface_node_empty.png");
+    protected static final Sprite nodeEmptySprite = ImageUtils.loadSprite("cell/nodes/node_empty.png");
     private static final Map<Class<? extends NodeAttachment>, Sprite> attachmentSprites =
             new HashMap<Class<? extends NodeAttachment>, Sprite>() {
                 {
-                    put(Spike.class, ImageUtils.loadSprite("cell/spike/spike_large.png"));
-                    put(Photoreceptor.class, ImageUtils.loadSprite("cell/light_sensitive_node.png"));
-                    put(AdhesionReceptor.class, ImageUtils.loadSprite("cell/surface_node_binder.png"));
-                    put(PhagocyticReceptor.class, ImageUtils.loadSprite("cell/phagocytic_receptor.png"));
+                    put(Spike.class, ImageUtils.loadSprite("cell/nodes/spike_node.png"));
+                    put(Photoreceptor.class, ImageUtils.loadSprite("cell/nodes/photoreceptor/base.png"));
+                    put(AdhesionReceptor.class, ImageUtils.loadSprite("cell/nodes/binding_node.png"));
+                    put(PhagocyticReceptor.class, ImageUtils.loadSprite("cell/nodes/phagoreceptor.png"));
                 }
-            };
+            } ;
 
     protected SurfaceNode node;
     private final Optional<Class<? extends NodeAttachment>> attachmentClass;
 
     public NodeRenderer(SurfaceNode node) {
         this.node = node;
-        this.attachmentClass = Optional.ofNullable(node.getAttachment()).map(NodeAttachment::getClass);
+        this.attachmentClass = Optional.ofNullable(node.getAttachment())
+                .map(NodeAttachment::getClass);
     }
 
     public SurfaceNode getNode() {
@@ -44,23 +45,30 @@ public class NodeRenderer {
     }
 
     public void render(float delta, SpriteBatch batch) {
+        if (!node.exists())
+            return;
+
+        if (node.getAttachment() instanceof AdhesionReceptor
+                && ((AdhesionReceptor) node.getAttachment()).getOtherNode().isPresent())
+            return;
+
         Cell cell = node.getCell();
         Sprite sprite = getSprite(delta);
         sprite.setColor(cell.getColor());
-        renderRotatedNode(sprite, batch);
+        drawAtNode(batch, sprite);
     }
 
-    public void renderRotatedNode(Sprite nodeSprite, SpriteBatch batch) {
+    public void drawAtNode(SpriteBatch batch, Sprite sprite) {
+        drawAtNode(batch, sprite, .4f);
+    }
+
+    public void drawAtNode(SpriteBatch batch, Sprite sprite, float scale) {
         Cell cell = node.getCell();
-        Vector2 pos = cell.getPos();
-        float cellAngle = cell.getAngle();
-        float size = 2 * cell.getRadius();
-        nodeSprite.setPosition(pos.x - size, pos.y - size);
-        nodeSprite.setSize(2*size, 2*size);
-        nodeSprite.setOriginCenter();
-        float attachmentAngle = (float) Math.toDegrees(cellAngle + node.getAngle());
-        nodeSprite.setRotation(attachmentAngle - 90);
-        nodeSprite.draw(batch);
+        ImageUtils.drawOnCircumference(
+                batch, sprite, cell.getPos(),
+                0.98f * cell.getRadius(),
+                node.getAngle() + cell.getAngle(),
+                scale * cell.getRadius());
     }
 
     public boolean isStale() {

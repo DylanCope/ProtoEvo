@@ -18,6 +18,7 @@ import com.protoevo.core.Simulation;
 import com.protoevo.env.Rock;
 import com.protoevo.settings.RenderSettings;
 import com.protoevo.utils.Geometry;
+import com.protoevo.utils.ImageUtils;
 import com.protoevo.utils.Utils;
 
 import java.util.ArrayList;
@@ -166,25 +167,10 @@ public class ProtozoaRenderer {
             element.draw(delta, camera, batch);
         }
 
-//        nodeRenderers.entrySet().removeIf(e -> e.getValue().isStale());
+        nodeRenderers.entrySet().removeIf(e -> e.getValue().isStale());
         for (SurfaceNode node : protozoan.getSurfaceNodes()) {
-//            nodeRenderers.computeIfAbsent(node, this::createNodeRenderer)
-//                    .render(delta, batch);
-            float t = node.getAngle() + protozoan.getAngle();
-            spikeTexture.setColor(protozoan.getColor());
-//            spikeTexture.setOrigin(spikeTexture.getWidth() / 2f, 0f);
-//            spikeTexture.setRotation(t);
-//            float h = spikeTexture.getHeight() / 2f + protozoan.getRadius();
-            float r = protozoan.getRadius() * 0.95f;
-            float nodeX = (float) (x + r * Math.cos(t));
-            float nodeY = (float) (y + r * Math.sin(t));
-
-            float w = size * 0.1f;
-            float h = w * spikeTexture.getHeight() / spikeTexture.getWidth();
-//            spikeTexture.setSize(w, h);
-            spikeTexture.setBounds(nodeX, nodeY, w, h);
-            spikeTexture.setOrigin(nodeX, nodeY);
-            spikeTexture.draw(batch);
+            nodeRenderers.computeIfAbsent(node, this::createNodeRenderer)
+                    .render(delta, batch);
         }
 
         cellSprite.setColor(protozoan.getColor());
@@ -192,11 +178,11 @@ public class ProtozoaRenderer {
         cellSprite.setSize(size, size);
         cellSprite.draw(batch);
 
-        if (RenderSettings.cameraZoomForCellDetails > camera.zoom) {
-            for (InteriorElement element : interiorElements) {
-                element.draw(delta, camera, batch);
-            }
-        }
+//        if (RenderSettings.cameraZoomForCellDetails > camera.zoom) {
+//            for (InteriorElement element : interiorElements) {
+//                element.draw(delta, camera, batch);
+//            }
+//        }
     }
 
     public void renderDebug(ShapeRenderer sr) {

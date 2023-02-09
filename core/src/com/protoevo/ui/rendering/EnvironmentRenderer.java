@@ -108,7 +108,7 @@ public class EnvironmentRenderer implements Renderer {
 ////        Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
 //        Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE);
 //        Gdx.gl.glBlendEquation(GL20.GL_FUNC_ADD);
-        Gdx.gl.glBlendFunc(GL20.GL_ONE, GL20.GL_ONE_MINUS_SRC_ALPHA);
+//        Gdx.gl.glBlendFunc(GL20.GL_ONE, GL20.GL_ONE_MINUS_SRC_ALPHA);
 
         synchronized (environment) {
             if (chemicalsRenderer != null)
@@ -196,7 +196,8 @@ public class EnvironmentRenderer implements Renderer {
             if (particle instanceof Cell) {
                 Cell cell = (Cell) particle;
                 shapeRenderer.setColor(0, 0, 1, 1);
-                for (Cell other : cell.getAttachedCells()) {
+                for (JointsManager.JoinedParticles joining : cell.getAttachedCells()) {
+                    Cell other = (Cell) joining.getOther(cell);
                     Vector2 otherPos = other.getPos();
                     float otherR = other.getRadius();
                     shapeRenderer.setColor(Color.ORANGE);

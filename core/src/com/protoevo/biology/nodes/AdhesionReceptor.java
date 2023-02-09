@@ -18,6 +18,9 @@ public class AdhesionReceptor extends NodeAttachment {
 
     @Override
     public void update(float delta, float[] input, float[] output) {
+        if (otherNode != null)
+            ensureBindingStillValid();
+
         Cell cell = node.getCell();
         for (CollisionHandler.FixtureCollision contact : cell.getContacts()) {
             Object other = cell.getOther(contact);
@@ -27,10 +30,22 @@ public class AdhesionReceptor extends NodeAttachment {
         }
     }
 
+    private void ensureBindingStillValid() {
+        if (otherNode.getCell().isDead()
+                || !(otherNode.getAttachment() instanceof AdhesionReceptor)
+                || otherNode.getCell().notBoundTo(node.getCell())
+                || node.getCell().notBoundTo(otherNode.getCell())){
+            node.getCell().requestJointRemoval(otherNode.getCell());
+            otherNode = null;
+        }
+    }
+
     private void tryBindTo(CollisionHandler.FixtureCollision contact, Protozoan otherCell) {
         for (SurfaceNode otherNode : otherCell.getSurfaceNodes()) {
             if (createBindingCondition(otherNode)) {
                 Cell cell = node.getCell();
+                contact.anchorA = node.getWorldPosition();
+                contact.anchorB = otherNode.getWorldPosition();
                 cell.createCellBinding(contact, otherCell, PlantCell.plantCAM);
                 otherCell.createCellBinding(contact, cell, PlantCell.plantCAM);
                 this.otherNode = otherNode;
@@ -38,6 +53,10 @@ public class AdhesionReceptor extends NodeAttachment {
                     ((AdhesionReceptor) otherNode.getAttachment()).setOtherNode(node);
             }
         }
+    }
+
+    public Optional<SurfaceNode> getOtherNode() {
+        return Optional.ofNullable(otherNode);
     }
 
     public void setOtherNode(SurfaceNode otherNode) {

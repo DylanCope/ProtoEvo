@@ -8,6 +8,7 @@ import com.badlogic.gdx.scenes.scene2d.utils.Drawable;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 import com.badlogic.gdx.utils.Null;
 import com.protoevo.ui.SimulationInputManager;
+import com.protoevo.utils.ImageUtils;
 
 public class LightningButton extends ImageButton {
 
@@ -41,7 +42,7 @@ public class LightningButton extends ImageButton {
     }
 
     private static Drawable loadDrawable(String path) {
-        return new TextureRegionDrawable(new TextureRegion(new Texture(path)));
+        return new TextureRegionDrawable(new TextureRegion(ImageUtils.getTexture(path)));
     }
 
     private static Drawable getDrawable(boolean state) {

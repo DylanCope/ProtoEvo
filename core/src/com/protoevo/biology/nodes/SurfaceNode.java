@@ -3,13 +3,12 @@ package com.protoevo.biology.nodes;
 import com.badlogic.gdx.math.Vector2;
 import com.protoevo.biology.Cell;
 import com.protoevo.biology.evolution.*;
-import com.protoevo.settings.ProtozoaSettings;
+import com.protoevo.settings.SimulationSettings;
 
 import java.io.Serial;
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Optional;
 
 public class SurfaceNode implements Evolvable.Element, Serializable {
 
@@ -29,6 +28,7 @@ public class SurfaceNode implements Evolvable.Element, Serializable {
     private int nodeIdx;
     private final Map<String, Float> stats = new HashMap<>();
     private GeneExpressionFunction geneExpressionFunction;
+    private boolean nodeExists = false;
 
     public SurfaceNode() {
         float p = (float) Math.random();
@@ -64,9 +64,36 @@ public class SurfaceNode implements Evolvable.Element, Serializable {
     }
 
     public void update(float delta) {
-        if (attachment != null) {
+        if (!nodeExists)
+            tryCreate();
+
+        if (attachment != null && nodeExists) {
             attachment.update(delta, inputActivation, outputActivation);
         }
+    }
+
+    public float requiredArcLength() {
+        return (float) (SimulationSettings.maxParticleRadius * 2 * Math.PI / 15f);
+    }
+
+    public void tryCreate() {
+        if (cell.getSurfaceNodes() == null)
+            return;
+
+        for (SurfaceNode node : cell.getSurfaceNodes()) {
+            if (node == this)
+                continue;
+            float dAngle = Math.abs(node.getAngle() - angle);
+            float arcLen = dAngle * cell.getRadius();
+            if (arcLen < this.requiredArcLength() / 2f + node.requiredArcLength() / 2f) {
+                return;
+            }
+        }
+        nodeExists = true;
+    }
+
+    public boolean exists() {
+        return nodeExists;
     }
 
     public void setAttachment(NodeAttachment attachment) {

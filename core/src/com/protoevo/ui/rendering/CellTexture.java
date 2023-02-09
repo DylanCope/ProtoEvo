@@ -6,6 +6,7 @@ import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.graphics.g2d.TextureAtlas;
+import com.protoevo.utils.ImageUtils;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
@@ -38,18 +39,7 @@ public class CellTexture {
 
     public static Texture getTexture() {
         if (particleTexture == null) {
-//            Pixmap particlePixmap = getPixmap();
-//            particleTexture = new Texture(particlePixmap, true);
-//            particleTexture.setFilter(Texture.TextureFilter.MipMapLinearNearest, Texture.TextureFilter.Linear);
-//            particleTexture = getTextureAtlas().findRegion("particle_base_512x512").getTexture();
-            particleTexture = getTextureAtlas().findRegion("base_cell").getTexture();
-
-//            textureAtlas.findRegion()
-//            particleTexture = new Texture(pathToFile);
-//            particleTexture.setFilter(Texture.TextureFilter.MipMapLinearLinear, Texture.TextureFilter.MipMapLinearLinear);
-            particleTexture.setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Linear);
-            particleTexture.setAnisotropicFilter(16);
-//            particleTexture.setFilter(Texture.TextureFilter.MipMapNearestNearest, Texture.TextureFilter.MipMapNearestNearest);
+            particleTexture = ImageUtils.getTexture(pathToFile);
         }
 
         return particleTexture;

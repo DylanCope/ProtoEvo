@@ -11,7 +11,8 @@ import com.protoevo.core.Shape;
 import com.protoevo.utils.ImageUtils;
 
 public class PhotoreceptorRenderer extends NodeRenderer {
-    protected static final Sprite photoreceptorSprite = ImageUtils.loadSprite("cell/light_sensitive_node.png");
+    private static final Sprite photoreceptorSprite =
+            ImageUtils.loadSprite("cell/nodes/photoreceptor/light_patch.png");
 
     public PhotoreceptorRenderer(SurfaceNode node) {
         super(node);
@@ -29,7 +30,7 @@ public class PhotoreceptorRenderer extends NodeRenderer {
                 node.getAttachment() instanceof Photoreceptor) {
             Photoreceptor attachment = (Photoreceptor) node.getAttachment();
             photoreceptorSprite.setColor(attachment.getColour().getColor());
-            renderRotatedNode(photoreceptorSprite, batch);
+            drawAtNode(batch, photoreceptorSprite);
         }
     }
 

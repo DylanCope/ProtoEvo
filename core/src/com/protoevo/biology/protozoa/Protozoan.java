@@ -316,6 +316,7 @@ public class Protozoan extends Cell implements Evolvable
 		return geneExpressionFunction;
 	}
 
+	@Override
 	public Collection<SurfaceNode> getSurfaceNodes() {
 		return surfaceNodes;
 	}

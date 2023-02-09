@@ -1,0 +1,111 @@
+
+cell.png
+size: 1024, 1024
+format: RGBA8888
+filter: Linear, Linear
+repeat: none
+base_cell
+  rotate: false
+  xy: 2, 308
+  size: 509, 509
+  orig: 509, 509
+  offset: 0, 0
+  index: -1
+golgi
+  rotate: false
+  xy: 156, 231
+  size: 105, 75
+  orig: 105, 75
+  offset: 0, 0
+  index: 2
+golgi
+  rotate: false
+  xy: 513, 593
+  size: 79, 77
+  orig: 79, 77
+  offset: 0, 0
+  index: 3
+golgi
+  rotate: false
+  xy: 513, 542
+  size: 66, 49
+  orig: 66, 49
+  offset: 0, 0
+  index: 1
+microfilament
+  rotate: false
+  xy: 105, 94
+  size: 48, 64
+  orig: 48, 64
+  offset: 0, 0
+  index: 2
+microfilament
+  rotate: false
+  xy: 738, 799
+  size: 86, 18
+  orig: 86, 18
+  offset: 0, 0
+  index: 3
+microfilament
+  rotate: false
+  xy: 594, 611
+  size: 37, 59
+  orig: 37, 59
+  offset: 0, 0
+  index: 1
+mitochondria
+  rotate: false
+  xy: 659, 746
+  size: 77, 71
+  orig: 77, 71
+  offset: 0, 0
+  index: 1
+mitochondria
+  rotate: false
+  xy: 2, 2
+  size: 95, 50
+  orig: 95, 50
+  offset: 0, 0
+  index: 2
+nucleus
+  rotate: false
+  xy: 2, 160
+  size: 152, 146
+  orig: 152, 146
+  offset: 0, 0
+  index: 1
+nucleus
+  rotate: false
+  xy: 513, 672
+  size: 144, 145
+  orig: 144, 145
+  offset: 0, 0
+  index: 2
+nucleus
+  rotate: false
+  xy: 2, 54
+  size: 101, 104
+  orig: 101, 104
+  offset: 0, 0
+  index: 3
+ribosomes
+  rotate: false
+  xy: 263, 234
+  size: 51, 72
+  orig: 51, 72
+  offset: 0, 0
+  index: 2
+ribosomes
+  rotate: false
+  xy: 156, 172
+  size: 65, 57
+  orig: 65, 57
+  offset: 0, 0
+  index: 3
+ribosomes
+  rotate: false
+  xy: 659, 699
+  size: 35, 45
+  orig: 35, 45
+  offset: 0, 0
+  index: 1

@@ -12,7 +12,7 @@ public class CollisionHandler implements ContactListener, Serializable {
     public static class FixtureCollision {
 
         public Object objA, objB;
-        public Vector2 point;
+        public Vector2 point, anchorA, anchorB;
 
         public FixtureCollision(Object objA, Object objB, Vector2 point) {
             this.objA = objA;

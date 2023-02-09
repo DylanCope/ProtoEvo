@@ -1,6 +1,7 @@
 package com.protoevo.ui.rendering;
 
 import com.badlogic.gdx.graphics.g2d.Sprite;
+import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector2;
@@ -27,7 +28,7 @@ public class FlagellumRenderer extends NodeRenderer {
 //                animationFrames[i + frames.length] =
 //                        ImageUtils.convertToSprite(ImageUtils.flipImageHorizontally(frames[i]));
 //            }
-            animationFrames = ImageUtils.loadSpriteAnimationFrames("cell/flagella/");
+            animationFrames = ImageUtils.loadSpriteAnimationFrames("cell/nodes/flagella/");
         }
         return animationFrames;
     }
@@ -62,6 +63,17 @@ public class FlagellumRenderer extends NodeRenderer {
 
         int idx = (int) (frames.length * animationTime);
         return frames[MathUtils.clamp(idx, 0,frames.length - 1)];
+    }
+
+    @Override
+    public void render(float delta, SpriteBatch batch) {
+        if (!node.exists())
+            return;
+
+        Cell cell = node.getCell();
+        Sprite sprite = getSprite(delta);
+        sprite.setColor(cell.getColor());
+        drawAtNode(batch, sprite, 0.6f);
     }
 
     @Override

@@ -10,6 +10,7 @@ import com.badlogic.gdx.scenes.scene2d.utils.Drawable;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 import com.protoevo.core.Particle;
 import com.protoevo.input.*;
+import com.protoevo.utils.ImageUtils;
 
 import java.util.Collection;
 
@@ -57,7 +58,7 @@ public class SimulationInputManager {
             button.getStyle().imageDown = tmp;
             return true;
         });
-        TextureRegion region = new TextureRegion(new Texture("icons/jedi_off.png"));
+        TextureRegion region = new TextureRegion(ImageUtils.getTexture("icons/jedi_off.png"));
         jediButton.getStyle().imageDown = new TextureRegionDrawable(region);
 
         inputLayers.addLayers(cursorUpdater, spawnParticleInput, moveParticle, particleTracker);

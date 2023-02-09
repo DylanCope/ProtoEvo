@@ -70,4 +70,17 @@ public class Geometry {
     public static boolean doCirclesCollide(Vector2 pos1, float r1, Vector2 pos2, float r2) {
         return pos1.dst2(pos2) <= (r1 + r2) * (r1 + r2);
     }
+
+    public static float[][] equidistantPointsOnSphere(int n) {
+        int d = 3;
+        float[][] points = new float[n][d];
+        float phi = (float) ((1 + Math.sqrt(5)) / 2);
+        for (int i = 0; i < n; i++) {
+            float t = (float) (2 * Math.PI * i / phi);
+            points[i][0] = (float) Math.cos(t);
+            points[i][1] = (float) Math.sin(t);
+            points[i][2] = (float) (i / (float) n);
+        }
+        return points;
+    }
 }

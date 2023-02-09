@@ -16,12 +16,32 @@ public class JointsManager implements Serializable {
 
     public static class JoinedParticles implements Serializable {
         public static long serialVersionUID = 1L;
-        public Particle particleA;
-        public Particle particleB;
+        public Particle particleA, particleB;
+        public float anchorAngleA, anchorAngleB;
+        private final Vector2 anchorA = new Vector2(), anchorB = new Vector2();
 
-        public JoinedParticles(Particle particleA, Particle particleB) {
+
+        public JoinedParticles(
+                Particle particleA, Particle particleB,
+                float anchorAngleA, float anchorAngleB) {
             this.particleA = particleA;
             this.particleB = particleB;
+            this.anchorAngleA = anchorAngleA;
+            this.anchorAngleB = anchorAngleB;
+        }
+
+        public Vector2 getAnchorA() {
+            anchorA.set(particleA.getRadius(), 0)
+                    .rotateRad(anchorAngleA + particleA.getAngle())
+                    .add(particleA.getPos());
+            return anchorA;
+        }
+
+        public Vector2 getAnchorB() {
+            anchorB.set(particleB.getRadius(), 0)
+                    .rotateRad(anchorAngleB + particleB.getAngle())
+                    .add(particleB.getPos());
+            return anchorB;
         }
 
         @Override
@@ -37,6 +57,15 @@ public class JointsManager implements Serializable {
         @Override
         public int hashCode() {
             return particleA.hashCode() + particleB.hashCode();
+        }
+
+        public Particle getOther(Particle particle) {
+            if (particle == particleA)
+                return particleB;
+            else if (particle == particleB)
+                return particleA;
+
+            throw new IllegalArgumentException("Particle is not part of this binding");
         }
     }
 
@@ -90,10 +119,8 @@ public class JointsManager implements Serializable {
         return jointRemovalRequests.contains(new JoinedParticles(p1, p2));
     }
 
-    private void destroyJointAndUpdateJoinedParticles(Joint joint) {
+    private void destroyJoint(Joint joint) {
         environment.getWorld().destroyJoint(joint);
-        Particle p1 = (Particle) joint.getBodyA().getUserData();
-        Particle p2 = (Particle) joint.getBodyB().getUserData();
     }
 
     public void handleStaleJoints() {
@@ -109,7 +136,7 @@ public class JointsManager implements Serializable {
             Body bodyB = joint.getBodyB();
 
             if (bodyA == null || bodyB == null) {
-                destroyJointAndUpdateJoinedParticles(joint);
+                destroyJoint(joint);
                 continue;
             }
 
@@ -119,7 +146,7 @@ public class JointsManager implements Serializable {
                 Particle p2 = (Particle) joint.getBodyB().getUserData();
 
                 if (p1.isDead() || p2.isDead()) {
-                    destroyJointAndUpdateJoinedParticles(joint);
+                    destroyJoint(joint);
                 }
 
                 handleGrowingParticle(joint, p1, p2);
@@ -169,11 +196,22 @@ public class JointsManager implements Serializable {
         return defJoint;
     }
 
-    public void createJoint(CollisionHandler.FixtureCollision contact, Body bodyA, Body bodyB) {
-        int maxJoints = 2;
-        if (bodyA.getJointList().size >= maxJoints || bodyB.getJointList().size >= maxJoints)
-            return;
+    public boolean joiningExists(JoinedParticles joining) {
+        Body bodyA = joining.particleA.getBody();
+        Body bodyB = joining.particleB.getBody();
+        return particleBindings.contains(joining) || jointsToAdd.stream().anyMatch(jointDef ->
+                (jointDef.bodyA == bodyA && jointDef.bodyB == bodyB)
+                        || (jointDef.bodyA == bodyB && jointDef.bodyB == bodyA));
+    }
 
+    public void createJoint(JoinedParticles joining) {
+        if (!joiningExists(joining)) {
+            jointsToAdd.add(makeJointDef(joining.particleA, joining.particleB,
+                    joining.getAnchorA(), joining.getAnchorB()));
+        }
+    }
+
+    public void createJoint(CollisionHandler.FixtureCollision contact, Body bodyA, Body bodyB) {
         if (jointsToAdd.stream().anyMatch(jointDef ->
                 (jointDef.bodyA == bodyA && jointDef.bodyB == bodyB)
                         || (jointDef.bodyA == bodyB && jointDef.bodyB == bodyA)))
@@ -184,13 +222,23 @@ public class JointsManager implements Serializable {
             Particle particleA = (Particle) bodyA.getUserData();
             Particle particleB = (Particle) bodyB.getUserData();
 
-            Vector2 anchorA = bodyA.getLocalPoint(contact.point);
-            Vector2 anchorB = bodyB.getLocalPoint(contact.point);
+            Vector2 anchorA, anchorB;
+            if (contact.anchorA != null && contact.anchorB != null) {
+                anchorA = bodyA.getLocalPoint(contact.anchorA);
+                anchorB = bodyB.getLocalPoint(contact.anchorB);
+            } else {
+                anchorA = bodyA.getLocalPoint(contact.point);
+                anchorB = bodyB.getLocalPoint(contact.point);
+            }
             jointsToAdd.add(makeJointDef(particleA, particleB, anchorA, anchorB));
         }
     }
 
     public void requestJointRemoval(Particle particleA, Particle particleB) {
         jointRemovalRequests.add(new JoinedParticles(particleA, particleB));
+    }
+
+    public void requestJointRemoval(JoinedParticles joining) {
+        jointRemovalRequests.add(joining);
     }
 }

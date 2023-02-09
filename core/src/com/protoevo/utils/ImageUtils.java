@@ -3,6 +3,8 @@ package com.protoevo.utils;
 import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Sprite;
+import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.math.Vector2;
 import com.google.common.collect.Lists;
 
 import javax.imageio.ImageIO;
@@ -16,6 +18,23 @@ import java.util.List;
 public class ImageUtils {
 
     private static final Canvas canvas = new Canvas();
+
+    public static void drawOnCircumference(
+            SpriteBatch batch, Sprite texture, Vector2 center,
+            float radius, float angle, float width) {
+//        Vector2 nodePos = node.getRelativePos().cpy().scl(0.95f).add(center);
+
+        float nodeX = (float) (center.x + radius * Math.cos(angle));
+        float nodeY = (float) (center.y + radius * Math.sin(angle));
+
+        float h = width * texture.getHeight() / texture.getWidth();
+        texture.setBounds(nodeX - width/2f, nodeY, width, h);
+
+        texture.setOrigin(width/2f, 0);
+        texture.setRotation((float) Math.toDegrees(angle) - 90);
+
+        texture.draw(batch);
+    }
 
     public static BufferedImage loadImage(String path) {
         try {
@@ -34,7 +53,7 @@ public class ImageUtils {
     }
 
     public static Sprite loadSprite(String path) {
-        return new Sprite(new Texture(path));
+        return new Sprite(getTexture(path));
     }
 
     public static Sprite convertToSprite(BufferedImage image) {
@@ -46,7 +65,7 @@ public class ImageUtils {
     public static Texture convertToTexture(BufferedImage image) {
         Texture texture = new Texture(convertToPixmap(image), true);
 //        texture.setFilter(Texture.TextureFilter.MipMapLinearNearest, Texture.TextureFilter.MipMapLinearNearest);
-//        texture.setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Linear);
+        texture.setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Linear);
         return texture;
     }
 
@@ -147,5 +166,12 @@ public class ImageUtils {
             frame++;
         }
         return frames.toArray(new BufferedImage[0]);
+    }
+
+    public static Texture getTexture(String s) {
+        Texture texture =  new Texture(s);
+        texture.setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Linear);
+        texture.setAnisotropicFilter(16);
+        return texture;
     }
 }

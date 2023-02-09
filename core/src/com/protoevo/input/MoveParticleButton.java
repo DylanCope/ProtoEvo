@@ -7,6 +7,7 @@ import com.badlogic.gdx.scenes.scene2d.ui.ImageButton;
 import com.badlogic.gdx.scenes.scene2d.utils.Drawable;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 import com.badlogic.gdx.utils.Null;
+import com.protoevo.utils.ImageUtils;
 
 public class MoveParticleButton extends ImageButton {
 
@@ -81,7 +82,7 @@ public class MoveParticleButton extends ImageButton {
     }
 
     private static Drawable loadDrawable(String path) {
-        return new TextureRegionDrawable(new TextureRegion(new Texture(path)));
+        return new TextureRegionDrawable(new TextureRegion(ImageUtils.getTexture(path)));
     }
 
     private static Drawable getDrawable(State state) {
