@@ -3,6 +3,7 @@ package com.protoevo.biology;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.math.MathUtils;
 import com.protoevo.biology.nodes.SurfaceNode;
+import com.protoevo.biology.organelles.Organelle;
 import com.protoevo.core.Particle;
 import com.protoevo.settings.Settings;
 import com.protoevo.settings.SimulationSettings;
@@ -36,7 +37,6 @@ public abstract class Cell extends Particle implements Serializable
 	private final Map<Food.ComplexMolecule, Float> availableComplexMolecules = new HashMap<>(0);
 	private int maxAttachedCells = 0;
 	private final ConcurrentLinkedQueue<JointsManager.JoinedParticles> attachedCells = new ConcurrentLinkedQueue<>();
-	private final ConcurrentLinkedQueue<JointsManager.JoinedParticles> toDetach = new ConcurrentLinkedQueue<>();
 	private final ConcurrentLinkedQueue<CellAdhesion.Binding> cellBindings = new ConcurrentLinkedQueue<>();
 	private final Map<CellAdhesion.CAM, Float> surfaceCAMs = new HashMap<>(0);
 	private final Map<Food.Type, Float> foodDigestionRates = new HashMap<>(0);
@@ -45,6 +45,7 @@ public abstract class Cell extends Particle implements Serializable
 	private final Map<Food.ComplexMolecule, Float> complexMoleculeProductionRates = new HashMap<>(0);
 	private final Map<CellAdhesion.CAM, Float> camProductionRates = new HashMap<>(0);
 	private final ArrayList<Cell> children = new ArrayList<>();
+	private ArrayList<Organelle> organelles = new ArrayList<>();
 	private boolean hasBurst= false;
 	private float repairRate = 1f;
 
@@ -59,15 +60,19 @@ public abstract class Cell extends Particle implements Serializable
 		digest(delta);
 		repair(delta);
 		grow(delta);
+
+		organelles.forEach(organelle -> organelle.update(delta));
+
 		resourceProduction(delta);
 		progressConstructionProjects(delta);
 
-		toDetach.clear();
-		attachedCells.stream()
-				.filter(this::detachCellCondition)
-				.forEach(this::requestJointRemoval);
-		attachedCells.removeIf(toDetach::contains);
-		toDetach.clear();
+//		toDetach.clear();
+		attachedCells.removeIf(this::detachCellCondition);
+//		attachedCells.stream()
+//				.filter(this::detachCellCondition)
+//				.forEach(this::requestJointRemoval);
+//		attachedCells.removeIf(toDetach::contains);
+//		toDetach.clear();
 
 		for (CellAdhesion.Binding binding : cellBindings)
 			handleBindingInteraction(binding, delta);
@@ -79,19 +84,31 @@ public abstract class Cell extends Particle implements Serializable
 	}
 
 	public void requestJointRemoval(JointsManager.JoinedParticles joining) {
-		getEnv().getJointsManager().requestJointRemoval(joining);
-		toDetach.add(joining);
+		if (attachedCells.contains(joining)) {
+			getEnv().getJointsManager().requestJointRemoval(joining);
+			attachedCells.remove(joining);
+		}
 	}
 
 	public void requestJointRemoval(Cell other) {
+		JointsManager.JoinedParticles toRemove = null;
 		for (JointsManager.JoinedParticles joining : attachedCells) {
 			if (joining.getOther(this) == other) {
 				getEnv().getJointsManager().requestJointRemoval(joining);
-				toDetach.add(joining);
+				toRemove = joining;
+				break;
 			}
 		}
-		attachedCells.removeIf(toDetach::contains);
-		toDetach.clear();
+		if (toRemove != null)
+			attachedCells.remove(toRemove);
+	}
+
+	public void setOrganelles(ArrayList<Organelle> organelles) {
+		this.organelles = organelles;
+	}
+
+	public void addOrganelle(Organelle organelle) {
+		organelles.add(organelle);
 	}
 
 	public void progressConstructionProjects(float delta) {
@@ -208,13 +225,22 @@ public abstract class Cell extends Particle implements Serializable
 	public boolean detachCellCondition(JointsManager.JoinedParticles joining) {
 		Cell other = (Cell) joining.getOther(this);
 
-		if (other.isDead())
+		boolean detach = other.isDead();
+
+		if (detach) {
+			requestJointRemoval(joining);
 			return true;
+		}
 
 		float dist2 = joining.getAnchorA().dst2(joining.getAnchorB());
-		float maxDist = 1.1f * JointsManager.idealJointLength(this, other);
-		float minDist = 0.9f * (other.getRadius() + getRadius());
-		return dist2 > maxDist*maxDist || dist2 < minDist*minDist;
+		float idealLength = JointsManager.idealJointLength(this, other);
+		float maxDist = 1.2f * idealLength;
+		detach = dist2 > maxDist*maxDist;
+
+		if (detach)
+			requestJointRemoval(joining);
+
+		return detach;
 	}
 
 	public boolean attachCondition(Cell other) {
@@ -303,6 +329,14 @@ public abstract class Cell extends Particle implements Serializable
 			JointsManager jointsManager = getEnv().getJointsManager();
 			jointsManager.createJoint(joining);
 		}
+	}
+
+	public void registerJoining(JointsManager.JoinedParticles joining) {
+		attachedCells.add(joining);
+	}
+
+	public void deregisterJoining(JointsManager.JoinedParticles joining) {
+		attachedCells.remove(joining);
 	}
 
 	public int getMaxAttachedCells() {

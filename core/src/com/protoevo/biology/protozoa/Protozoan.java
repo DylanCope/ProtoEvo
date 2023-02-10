@@ -34,7 +34,7 @@ public class Protozoan extends Cell implements Evolvable
 	private float herbivoreFactor, splitRadius;
 	private float timeSinceLastGeneUpdate = 0;
 	private final float geneUpdateTime = Settings.simulationUpdateDelta * 20;
-	private Vector2 tmp = new Vector2();
+	private final Vector2 tmp = new Vector2();
 	private final Collection<Cell> engulfedCells = new ArrayList<>(0);
 
 	@Override

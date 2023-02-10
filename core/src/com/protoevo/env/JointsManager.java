@@ -4,7 +4,7 @@ import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.*;
 import com.badlogic.gdx.physics.box2d.joints.RopeJoint;
 import com.badlogic.gdx.physics.box2d.joints.RopeJointDef;
-import com.badlogic.gdx.utils.Array;
+import com.protoevo.biology.Cell;
 import com.protoevo.core.Particle;
 
 import java.io.Serializable;
@@ -18,6 +18,7 @@ public class JointsManager implements Serializable {
         public static long serialVersionUID = 1L;
         public Particle particleA, particleB;
         public float anchorAngleA, anchorAngleB;
+        public transient Joint joint;
         private final Vector2 anchorA = new Vector2(), anchorB = new Vector2();
 
 
@@ -31,15 +32,17 @@ public class JointsManager implements Serializable {
         }
 
         public Vector2 getAnchorA() {
-            anchorA.set(particleA.getRadius(), 0)
-                    .rotateRad(anchorAngleA + particleA.getAngle())
+            float t = anchorAngleA + particleA.getAngle();
+            float r = particleA.getRadius();
+            anchorA.set((float) (r * Math.cos(t)), (float) (r * Math.sin(t)))
                     .add(particleA.getPos());
             return anchorA;
         }
 
         public Vector2 getAnchorB() {
-            anchorB.set(particleB.getRadius(), 0)
-                    .rotateRad(anchorAngleB + particleB.getAngle())
+            float t = anchorAngleB + particleB.getAngle();
+            float r = particleB.getRadius();
+            anchorB.set((float) (r * Math.cos(t)), (float) (r * Math.sin(t)))
                     .add(particleB.getPos());
             return anchorB;
         }
@@ -70,10 +73,10 @@ public class JointsManager implements Serializable {
     }
 
     private final Environment environment;
-    private final List<JointDef> jointsToAdd = new ArrayList<>();
-    private final ConcurrentLinkedQueue<JoinedParticles> jointRemovalRequests = new ConcurrentLinkedQueue<>();
+    private final Collection<JoinedParticles> jointsToAdd = new ConcurrentLinkedQueue<>();
+    private final Collection<JoinedParticles> jointRemovalRequests = new ConcurrentLinkedQueue<>();
 
-    private final Set<JoinedParticles> particleBindings = new HashSet<>();
+    private final Collection<JoinedParticles> particleBindings = new HashSet<>();
 
     public JointsManager(Environment environment) {
         this.environment = environment;
@@ -83,100 +86,108 @@ public class JointsManager implements Serializable {
         return particleBindings;
     }
 
+    private boolean jointDefIsStale(JointDef jointDef) {
+
+        if (jointDef.bodyA == null || jointDef.bodyB == null)
+            return true;
+        if (jointDef.bodyA.getUserData() == null || jointDef.bodyB.getUserData() == null)
+            return true;
+        if (jointDef.bodyA.getUserData() instanceof Particle) {
+            Particle particleA = (Particle) jointDef.bodyA.getUserData();
+            if (particleA.isDead())
+                return true;
+        }
+        if (jointDef.bodyB.getUserData() instanceof Particle) {
+            Particle particleB = (Particle) jointDef.bodyB.getUserData();
+            return particleB.isDead();
+        }
+
+        return false;
+
+    }
+
     public void flushJoints() {
         handleStaleJoints();
 
-        for (JointDef jointDef : jointsToAdd) {
-            if (jointDef.bodyA == null || jointDef.bodyB == null)
+        for (JoinedParticles joining : jointsToAdd) {
+            if (joining.particleA.isDead() || joining.particleB.isDead()) {
+                requestJointRemoval(joining);
                 continue;
-            if (jointDef.bodyA.getUserData() == null || jointDef.bodyB.getUserData() == null)
-                continue;
-            if (jointDef.bodyA.getUserData() instanceof Particle) {
-                Particle particleA = (Particle) jointDef.bodyA.getUserData();
-                if (particleA.isDead())
-                    continue;
             }
-            if (jointDef.bodyB.getUserData() instanceof Particle) {
-                Particle particleB = (Particle) jointDef.bodyB.getUserData();
-                if (particleB.isDead())
-                    continue;
+            JointDef jointDef = makeJointDef(joining);
+            if (jointDefIsStale(jointDef)) {
+                if (joining.particleA instanceof Cell)
+                    ((Cell) joining.particleA).deregisterJoining(joining);
+                if (joining.particleB instanceof Cell)
+                    ((Cell) joining.particleB).deregisterJoining(joining);
+            } else {
+                joining.joint = environment.getWorld().createJoint(jointDef);
+                particleBindings.add(joining);
             }
-            environment.getWorld().createJoint(jointDef);
-            JoinedParticles joining = new JoinedParticles(
-                    (Particle) jointDef.bodyA.getUserData(),
-                    (Particle) jointDef.bodyB.getUserData());
-            particleBindings.add(joining);
         }
         jointsToAdd.clear();
     }
 
-    private boolean removalRequested(Joint joint) {
-        Body bodyA = joint.getBodyA();
-        Body bodyB = joint.getBodyB();
-        Particle p1 = (Particle) joint.getBodyA().getUserData();
-        Particle p2 = (Particle) joint.getBodyB().getUserData();
-
-        return jointRemovalRequests.contains(new JoinedParticles(p1, p2));
-    }
-
-    private void destroyJoint(Joint joint) {
-        environment.getWorld().destroyJoint(joint);
-    }
-
     public void handleStaleJoints() {
-        Array<Joint> joints = new Array<>();
-        environment.getWorld().getJoints(joints);
+        for (JoinedParticles joining : particleBindings) {
 
-        particleBindings.removeIf(joinedParticles ->
-            joinedParticles.particleA.isDead() || joinedParticles.particleB.isDead()
-        );
+            if (joining.particleA.isDead() || joining.particleB.isDead()) {
+                requestJointRemoval(joining);
+                continue;
+            }
 
-        for (Joint joint : joints) {
+            Joint joint = joining.joint;
+            if (joint == null)
+                continue;
+
             Body bodyA = joint.getBodyA();
             Body bodyB = joint.getBodyB();
 
             if (bodyA == null || bodyB == null) {
-                destroyJoint(joint);
-                continue;
+                requestJointRemoval(joining);
+//                continue;
             }
 
-            if (bodyA.getUserData() instanceof Particle
-                    && bodyB.getUserData() instanceof Particle) {
-                Particle p1 = (Particle) joint.getBodyA().getUserData();
-                Particle p2 = (Particle) joint.getBodyB().getUserData();
-
-                if (p1.isDead() || p2.isDead()) {
-                    destroyJoint(joint);
-                }
-
-                handleGrowingParticle(joint, p1, p2);
-            }
+//            if (bodyA.getUserData() instanceof Particle
+//                    && bodyB.getUserData() instanceof Particle) {
+//                handleGrowingParticle(joining);
+//            }
         }
 
         for (JoinedParticles joining : jointRemovalRequests) {
+            if (joining.particleA instanceof Cell)
+                ((Cell) joining.particleA).deregisterJoining(joining);
+            if (joining.particleB instanceof Cell)
+                ((Cell) joining.particleB).deregisterJoining(joining);
+
             particleBindings.remove(joining);
-            if (joining.particleA.getJoints() == null)
-                continue;
-            for (JointEdge jointEdge : joining.particleA.getJoints()) {
-                if ((jointEdge.joint.getBodyA() == joining.particleB.getBody()
-                        || jointEdge.joint.getBodyB() == joining.particleB.getBody())
-                        && !(jointEdge.joint.getBodyA() == null || jointEdge.joint.getBodyB() == null)) {
-                    environment.getWorld().destroyJoint(jointEdge.joint);
-                }
-            }
+            if (joining.joint != null)
+                environment.getWorld().destroyJoint(joining.joint);
+//            if (joining.particleA.getJoints() == null)
+//                continue;
+//            for (JointEdge jointEdge : joining.particleA.getJoints()) {
+//                if ((jointEdge.joint.getBodyA() == joining.particleB.getBody()
+//                        || jointEdge.joint.getBodyB() == joining.particleB.getBody())
+//                        && !(jointEdge.joint.getBodyA() == null || jointEdge.joint.getBodyB() == null)) {
+//                    environment.getWorld().destroyJoint(jointEdge.joint);
+//                }
+//            }
         }
         jointRemovalRequests.clear();
     }
 
-    private void handleGrowingParticle(Joint joint, Particle p1, Particle p2) {
+    private void handleGrowingParticle(JoinedParticles joining) {
+        Particle p1 = joining.particleA;
+        Particle p2 = joining.particleB;
+
+        Joint joint = joining.joint;
+
         if (joint instanceof RopeJoint) {
             float idealJointLength = (p1.getRadius() + p2.getRadius()) * 1.1f;
             RopeJoint ropeJoint = (RopeJoint) joint;
             if (1.05f * ropeJoint.getMaxLength() < idealJointLength) {
                 environment.getWorld().destroyJoint(joint);
-                Vector2 anchorA = ropeJoint.getLocalAnchorA();
-                Vector2 anchorB = ropeJoint.getLocalAnchorB();
-                jointsToAdd.add(makeJointDef(p1, p2, anchorA, anchorB));
+                jointsToAdd.add(joining);
             }
         }
     }
@@ -185,11 +196,20 @@ public class JointsManager implements Serializable {
         return (p1.getRadius() + p2.getRadius()) * .2f;
     }
 
+
+    private JointDef makeJointDef(JoinedParticles joining) {
+        return makeJointDef(joining.particleA, joining.particleB, joining.getAnchorA(), joining.getAnchorB());
+    }
+
     private JointDef makeJointDef(Particle particleA, Particle particleB, Vector2 anchorA, Vector2 anchorB) {
         RopeJointDef defJoint = new RopeJointDef();
         defJoint.maxLength = idealJointLength(particleA, particleB);
         defJoint.bodyA = particleA.getBody();
         defJoint.bodyB = particleB.getBody();
+
+        anchorA = defJoint.bodyA.getLocalPoint(anchorA);
+        anchorB = defJoint.bodyB.getLocalPoint(anchorB);
+
         defJoint.localAnchorA.set(anchorA.setLength(particleA.getRadius()));
         defJoint.localAnchorB.set(anchorB.setLength(particleB.getRadius()));
         defJoint.collideConnected = true;
@@ -197,48 +217,23 @@ public class JointsManager implements Serializable {
     }
 
     public boolean joiningExists(JoinedParticles joining) {
-        Body bodyA = joining.particleA.getBody();
-        Body bodyB = joining.particleB.getBody();
-        return particleBindings.contains(joining) || jointsToAdd.stream().anyMatch(jointDef ->
-                (jointDef.bodyA == bodyA && jointDef.bodyB == bodyB)
-                        || (jointDef.bodyA == bodyB && jointDef.bodyB == bodyA));
+        return jointsToAdd.contains(joining) || particleBindings.contains(joining);
     }
 
     public void createJoint(JoinedParticles joining) {
         if (!joiningExists(joining)) {
-            jointsToAdd.add(makeJointDef(joining.particleA, joining.particleB,
-                    joining.getAnchorA(), joining.getAnchorB()));
+            jointsToAdd.add(joining);
         }
-    }
-
-    public void createJoint(CollisionHandler.FixtureCollision contact, Body bodyA, Body bodyB) {
-        if (jointsToAdd.stream().anyMatch(jointDef ->
-                (jointDef.bodyA == bodyA && jointDef.bodyB == bodyB)
-                        || (jointDef.bodyA == bodyB && jointDef.bodyB == bodyA)))
-            return;
-
-        if (bodyA.getUserData() instanceof Particle
-                && bodyB.getUserData() instanceof Particle) {
-            Particle particleA = (Particle) bodyA.getUserData();
-            Particle particleB = (Particle) bodyB.getUserData();
-
-            Vector2 anchorA, anchorB;
-            if (contact.anchorA != null && contact.anchorB != null) {
-                anchorA = bodyA.getLocalPoint(contact.anchorA);
-                anchorB = bodyB.getLocalPoint(contact.anchorB);
-            } else {
-                anchorA = bodyA.getLocalPoint(contact.point);
-                anchorB = bodyB.getLocalPoint(contact.point);
-            }
-            jointsToAdd.add(makeJointDef(particleA, particleB, anchorA, anchorB));
-        }
-    }
-
-    public void requestJointRemoval(Particle particleA, Particle particleB) {
-        jointRemovalRequests.add(new JoinedParticles(particleA, particleB));
     }
 
     public void requestJointRemoval(JoinedParticles joining) {
-        jointRemovalRequests.add(joining);
+        if (!jointRemovalRequests.contains(joining)) {
+            if (joining.particleA instanceof Cell)
+                ((Cell) joining.particleA).deregisterJoining(joining);
+            if (joining.particleB instanceof Cell)
+                ((Cell) joining.particleB).deregisterJoining(joining);
+
+            jointRemovalRequests.add(joining);
+        }
     }
 }

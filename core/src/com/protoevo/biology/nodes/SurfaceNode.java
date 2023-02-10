@@ -81,7 +81,7 @@ public class SurfaceNode implements Evolvable.Element, Serializable {
             return;
 
         for (SurfaceNode node : cell.getSurfaceNodes()) {
-            if (node == this)
+            if (node == this || !node.exists())
                 continue;
             float dAngle = Math.abs(node.getAngle() - angle);
             float arcLen = dAngle * cell.getRadius();

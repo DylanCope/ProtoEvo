@@ -1,5 +1,7 @@
 package com.protoevo.biology;
 
+import com.protoevo.biology.organelles.Organelle;
+import com.protoevo.biology.organelles.PlantAdhesionOrganelle;
 import com.protoevo.core.Simulation;
 import com.protoevo.env.CollisionHandler;
 import com.protoevo.env.Environment;
@@ -26,8 +28,9 @@ public class PlantCell extends EdibleCell {
         maxRadius = Simulation.RANDOM.nextFloat(
                 2 * SimulationSettings.minParticleRadius, SimulationSettings.maxParticleRadius);
 
-        setMaxAttachedCells(2);
-        setCAMAvailable(plantCAM, 1f);
+//        Organelle organelle = new Organelle(this);
+//        organelle.setFunction(new PlantAdhesionOrganelle(organelle));
+//        addOrganelle(organelle);
 
         float darken = 0.9f;
         setHealthyColour(new Colour(

@@ -25,13 +25,14 @@ public class AdhesionReceptor extends NodeAttachment {
         for (CollisionHandler.FixtureCollision contact : cell.getContacts()) {
             Object other = cell.getOther(contact);
             if (other instanceof Protozoan) {
-                tryBindTo(contact, (Protozoan) other);
+                tryBindTo((Protozoan) other);
             }
         }
     }
 
     private void ensureBindingStillValid() {
         if (otherNode.getCell().isDead()
+                || !otherNode.exists()
                 || !(otherNode.getAttachment() instanceof AdhesionReceptor)
                 || otherNode.getCell().notBoundTo(node.getCell())
                 || node.getCell().notBoundTo(otherNode.getCell())){
@@ -40,17 +41,24 @@ public class AdhesionReceptor extends NodeAttachment {
         }
     }
 
-    private void tryBindTo(CollisionHandler.FixtureCollision contact, Protozoan otherCell) {
+    private void tryBindTo(Protozoan otherCell) {
         for (SurfaceNode otherNode : otherCell.getSurfaceNodes()) {
             if (createBindingCondition(otherNode)) {
                 Cell cell = node.getCell();
-                contact.anchorA = node.getWorldPosition();
-                contact.anchorB = otherNode.getWorldPosition();
-                cell.createCellBinding(contact, otherCell, PlantCell.plantCAM);
-                otherCell.createCellBinding(contact, cell, PlantCell.plantCAM);
+                JointsManager.JoinedParticles joining = new JointsManager.JoinedParticles(
+                        cell, otherCell, node.getAngle(), otherNode.getAngle());
+
+                JointsManager jointsManager = cell.getEnv().getJointsManager();
+                jointsManager.createJoint(joining);
+
+                cell.registerJoining(joining);
+                otherCell.registerJoining(joining);
+
                 this.otherNode = otherNode;
                 if (otherNode.getAttachment() != null && otherNode.getAttachment() instanceof AdhesionReceptor)
                     ((AdhesionReceptor) otherNode.getAttachment()).setOtherNode(node);
+
+                break;
             }
         }
     }
@@ -64,7 +72,13 @@ public class AdhesionReceptor extends NodeAttachment {
     }
 
     private boolean createBindingCondition(SurfaceNode otherNode) {
-        return otherIsBinding(otherNode) && isCloseEnough(otherNode);
+        return otherNode.exists() && notAlreadyBound(otherNode) && otherIsBinding(otherNode) && isCloseEnough(otherNode);
+    }
+
+    private boolean notAlreadyBound(SurfaceNode otherNode) {
+        Cell otherCell = otherNode.getCell();
+        Cell cell = node.getCell();
+        return otherCell.notBoundTo(cell) && cell.notBoundTo(otherCell);
     }
 
     private boolean otherIsBinding(SurfaceNode otherNode) {

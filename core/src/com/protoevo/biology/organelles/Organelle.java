@@ -1,5 +1,6 @@
 package com.protoevo.biology.organelles;
 
+import com.protoevo.biology.Cell;
 import com.protoevo.biology.evolution.Evolvable;
 import com.protoevo.biology.evolution.GeneExpressionFunction;
 import com.protoevo.biology.evolution.RegulatedFloat;
@@ -10,8 +11,15 @@ public class Organelle implements Evolvable.Element {
 
     private GeneExpressionFunction geneExpressionFunction;
     private int index;
-    private final Optional<OrganelleFunction> function = Optional.empty();
+    private OrganelleFunction function = null;
     private final float[] inputs = new float[3];
+    private Cell cell;
+
+    public Organelle() {}
+
+    public Organelle(Cell cell) {
+        this.cell = cell;
+    }
 
     @Override
     public void setGeneExpressionFunction(GeneExpressionFunction fn) {
@@ -23,8 +31,22 @@ public class Organelle implements Evolvable.Element {
         return geneExpressionFunction;
     }
 
+    public Cell getCell() {
+        return cell;
+    }
+
+    public void setCell(Cell cell) {
+        this.cell = cell;
+    }
+
     public void update(float delta) {
-        function.ifPresent(f -> f.update(delta, inputs));
+        if (function != null) {
+            function.update(delta, inputs);
+        }
+    }
+
+    public void setFunction(OrganelleFunction function) {
+        this.function = function;
     }
 
     @RegulatedFloat(name = "Input/0")
