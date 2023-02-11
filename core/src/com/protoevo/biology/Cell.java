@@ -34,15 +34,14 @@ public abstract class Cell extends Particle implements Serializable
 	private float growthRate = 0.0f;
 	private float energyAvailable = SimulationSettings.startingAvailableCellEnergy;
 	private float constructionMassAvailable, wasteMass;
-	private final Map<Food.ComplexMolecule, Float> availableComplexMolecules = new HashMap<>(0);
+	private final Map<ComplexMolecule, Float> availableComplexMolecules = new HashMap<>(0);
 	private int maxAttachedCells = 0;
 	private final ConcurrentLinkedQueue<JointsManager.JoinedParticles> attachedCells = new ConcurrentLinkedQueue<>();
-	private final ConcurrentLinkedQueue<CellAdhesion.Binding> cellBindings = new ConcurrentLinkedQueue<>();
 	private final Map<CellAdhesion.CAM, Float> surfaceCAMs = new HashMap<>(0);
 	private final Map<Food.Type, Float> foodDigestionRates = new HashMap<>(0);
 	private final Map<Food.Type, Food> foodToDigest = new HashMap<>(0);
 	private final Set<ConstructionProject> constructionProjects = new HashSet<>(0);
-	private final Map<Food.ComplexMolecule, Float> complexMoleculeProductionRates = new HashMap<>(0);
+	private final Map<ComplexMolecule, Float> complexMoleculeProductionRates = new HashMap<>(0);
 	private final Map<CellAdhesion.CAM, Float> camProductionRates = new HashMap<>(0);
 	private final ArrayList<Cell> children = new ArrayList<>();
 	private ArrayList<Organelle> organelles = new ArrayList<>();
@@ -63,19 +62,10 @@ public abstract class Cell extends Particle implements Serializable
 
 		organelles.forEach(organelle -> organelle.update(delta));
 
-		resourceProduction(delta);
-		progressConstructionProjects(delta);
+//		resourceProduction(delta);
+//		progressConstructionProjects(delta);
 
-//		toDetach.clear();
 		attachedCells.removeIf(this::detachCellCondition);
-//		attachedCells.stream()
-//				.filter(this::detachCellCondition)
-//				.forEach(this::requestJointRemoval);
-//		attachedCells.removeIf(toDetach::contains);
-//		toDetach.clear();
-
-		for (CellAdhesion.Binding binding : cellBindings)
-			handleBindingInteraction(binding, delta);
 	}
 
 	public void voidDamage(float delta) {
@@ -113,25 +103,29 @@ public abstract class Cell extends Particle implements Serializable
 
 	public void progressConstructionProjects(float delta) {
 		for (ConstructionProject project : constructionProjects) {
-			if (project.notFinished() && project.canMakeProgress(
-					energyAvailable,
-					constructionMassAvailable,
-					availableComplexMolecules,
-					delta)) {
-				useEnergy(project.energyToMakeProgress(delta));
-				useConstructionMass(project.massToMakeProgress(delta));
-				if (project.requiresComplexMolecules())
-					for (Food.ComplexMolecule molecule : project.getRequiredMolecules()) {
-						float amountUsed = project.complexMoleculesToMakeProgress(delta, molecule);
-						depleteComplexMolecule(molecule, amountUsed);
-					}
-				project.progress(delta);
-			}
+			progressProject(project, delta);
+		}
+	}
+
+	public void progressProject(ConstructionProject project, float delta) {
+		if (delta > 0 && project.notFinished() && project.canMakeProgress(
+				energyAvailable,
+				constructionMassAvailable,
+				availableComplexMolecules,
+				delta)) {
+			useEnergy(project.energyToMakeProgress(delta));
+			useConstructionMass(project.massToMakeProgress(delta));
+			if (project.requiresComplexMolecules())
+				for (ComplexMolecule molecule : project.getRequiredMolecules()) {
+					float amountUsed = project.complexMoleculesToMakeProgress(delta, molecule);
+					depleteComplexMolecule(molecule, amountUsed);
+				}
+			project.progress(delta);
 		}
 	}
 
 	public void resourceProduction(float delta) {
-		for (Food.ComplexMolecule molecule : complexMoleculeProductionRates.keySet()) {
+		for (ComplexMolecule molecule : complexMoleculeProductionRates.keySet()) {
 			float producedMass = delta * complexMoleculeProductionRates.getOrDefault(molecule, 0f);
 			float requiredEnergy = molecule.getProductionCost() * producedMass;
 			if (producedMass > 0 && constructionMassAvailable > producedMass && energyAvailable > requiredEnergy) {
@@ -169,7 +163,7 @@ public abstract class Cell extends Particle implements Serializable
 		Food food = foodToDigest.getOrDefault(foodType, new Food(extractedMass, foodType));
 		food.addSimpleMass(extractedMass);
 
-		for (Food.ComplexMolecule molecule : cell.getComplexMolecules()) {
+		for (ComplexMolecule molecule : cell.getComplexMolecules()) {
 			if (cell.getComplexMoleculeAvailable(molecule) > 0) {
 				float extractedAmount = extraction * cell.getComplexMoleculeAvailable(molecule);
 				cell.depleteComplexMolecule(molecule, extractedAmount);
@@ -194,7 +188,7 @@ public abstract class Cell extends Particle implements Serializable
 				food.subtractSimpleMass(massExtracted);
 				energyAvailable += food.getEnergy(massExtracted);
 			}
-			for (Food.ComplexMolecule molecule : food.getComplexMolecules()) {
+			for (ComplexMolecule molecule : food.getComplexMolecules()) {
 				float amount = food.getComplexMoleculeMass(molecule);
 				if (amount == 0)
 					continue;
@@ -241,18 +235,6 @@ public abstract class Cell extends Particle implements Serializable
 			requestJointRemoval(joining);
 
 		return detach;
-	}
-
-	public boolean attachCondition(Cell other) {
-		if (other.isDead() || attachedCells.size() >= maxAttachedCells
-				|| other.attachedCells.size() >= maxAttachedCells)
-			return false;
-
-		for (CellAdhesion.CAM cam : surfaceCAMs.keySet()) {
-			if (getCAMAvailable(cam) > 0 && other.getCAMAvailable(cam) > 0)
-				return true;
-		}
-		return false;
 	}
 
 	public void addConstructionProject(ConstructionProject project) {
@@ -306,31 +288,6 @@ public abstract class Cell extends Particle implements Serializable
 		return growthRate;
 	}
 
-//	public void createCellBinding(CollisionHandler.FixtureCollision collision, Cell other, CellAdhesion.CAM cam) {
-//		CellAdhesion.Binding binding = new CellAdhesion.Binding(this, other, cam);
-//		cellBindings.add(binding);
-//		if (notBoundTo(other)) {
-//			float angleA = collision.anchorA.
-//			JointsManager.JoinedParticles joining = new JointsManager.JoinedParticles(this, other);
-//			attachedCells.add(joining);
-//			other.attachedCells.add(joining);
-//			JointsManager jointsManager = getEnv().getJointsManager();
-//			jointsManager.createJoint(collision, getBody(), other.getBody());
-//		}
-//	}
-
-	public void createCellBinding(JointsManager.JoinedParticles joining) {
-//		CellAdhesion.Binding binding = new CellAdhesion.Binding(this, other, cam);
-//		cellBindings.add(binding);
-		Cell other = (Cell) joining.getOther(this);
-		if (notBoundTo(other)) {
-			attachedCells.add(joining);
-			other.attachedCells.add(joining);
-			JointsManager jointsManager = getEnv().getJointsManager();
-			jointsManager.createJoint(joining);
-		}
-	}
-
 	public void registerJoining(JointsManager.JoinedParticles joining) {
 		attachedCells.add(joining);
 	}
@@ -339,24 +296,8 @@ public abstract class Cell extends Particle implements Serializable
 		attachedCells.remove(joining);
 	}
 
-	public int getMaxAttachedCells() {
-		return maxAttachedCells;
-	}
-
-	public void setMaxAttachedCells(int maxAttachedCells) {
-		this.maxAttachedCells = maxAttachedCells;
-	}
-
-	public Collection<CellAdhesion.Binding> getCellBindings() {
-		return cellBindings;
-	}
-
 	public Collection<CellAdhesion.CAM> getSurfaceCAMs() {
 		return surfaceCAMs.keySet();
-	}
-
-	public boolean canMakeBindings() {
-		return true;
 	}
 
 	@Override
@@ -385,64 +326,6 @@ public abstract class Cell extends Particle implements Serializable
 				return false;
 		}
 		return true;
-	}
-
-	public void handleBindingInteraction(CellAdhesion.Binding binding, float delta) {
-		CellAdhesion.CAMJunctionType junctionType = binding.getCAM().getJunctionType();
-		if (junctionType.equals(CellAdhesion.CAMJunctionType.OCCLUDING))
-			handleOcclusionBindingInteraction(binding, delta);
-		else if (junctionType.equals(CellAdhesion.CAMJunctionType.CHANNEL_FORMING))
-			handleChannelBindingInteraction(binding, delta);
-		else if (junctionType.equals(CellAdhesion.CAMJunctionType.SIGNAL_RELAYING))
-			handleSignallingBindingInteraction(binding, delta);
-	}
-
-	public void handleOcclusionBindingInteraction(CellAdhesion.Binding binding, float delta) {}
-
-	public void handleChannelBindingInteraction(CellAdhesion.Binding binding, float delta) {
-		Cell other = binding.getDestinationEntity();
-		float transferRate = Settings.channelBindingEnergyTransport;
-
-		float massDelta = getConstructionMassAvailable() - other.getConstructionMassAvailable();
-		float constructionMassTransfer = Math.abs(transferRate * massDelta * delta);
-		if (massDelta > 0) {
-			other.addConstructionMass(constructionMassTransfer);
-			useConstructionMass(constructionMassTransfer);
-		} else {
-			addConstructionMass(constructionMassTransfer);
-			other.useConstructionMass(constructionMassTransfer);
-		}
-
-		float energyDelta = getEnergyAvailable() - other.getEnergyAvailable();
-		float energyTransfer = Math.abs(transferRate * energyDelta * delta);
-		if (energyDelta > 0) {
-			other.addAvailableEnergy(energyTransfer);
-			useEnergy(energyTransfer);
-		} else {
-			addAvailableEnergy(energyTransfer);
-			other.useEnergy(energyTransfer);
-		}
-
-		for (Food.ComplexMolecule molecule : getComplexMolecules())
-			handleComplexMoleculeTransport(other, molecule, delta);
-		for (Food.ComplexMolecule molecule : other.getComplexMolecules())
-			other.handleComplexMoleculeTransport(this, molecule, delta);
-	}
-
-	private void handleComplexMoleculeTransport(Cell other, Food.ComplexMolecule molecule, float delta) {
-		float massDelta = getComplexMoleculeAvailable(molecule) - other.getComplexMoleculeAvailable(molecule);
-		float transferRate = Settings.occludingBindingEnergyTransport;
-		if (massDelta > 0) {
-			float massTransfer = transferRate * massDelta * delta;
-			other.addAvailableComplexMolecule(molecule, massTransfer);
-			depleteComplexMolecule(molecule, massTransfer);
-		}
-	}
-
-	public void handleSignallingBindingInteraction(CellAdhesion.Binding binding, float delta) {}
-
-	public boolean isAttached(Cell e) {
-		return cellBindings.stream().anyMatch(binding -> binding.getDestinationEntity().equals(e));
 	}
 	
 	public abstract boolean isEdible();
@@ -484,12 +367,12 @@ public abstract class Cell extends Particle implements Serializable
 		stats.put("Growth Rate", 10000 * Settings.statsDistanceScalar * getGrowthRate());
 		stats.put("Repair Rate", Settings.statsDistanceScalar * getRepairRate());
 
-		for (Food.ComplexMolecule molecule : availableComplexMolecules.keySet())
+		for (ComplexMolecule molecule : availableComplexMolecules.keySet())
 			if (availableComplexMolecules.get(molecule) > 0)
 				stats.put(molecule + " Available", availableComplexMolecules.get(molecule));
 
-		if (cellBindings.size() > 0)
-			stats.put("Num Cell Bindings", (float) cellBindings.size());
+		if (attachedCells.size() > 0)
+			stats.put("Num Cell Bindings", (float) attachedCells.size());
 
 		for (CellAdhesion.CAMJunctionType junctionType : CellAdhesion.CAMJunctionType.values()) {
 			float camMass = 0;
@@ -504,11 +387,11 @@ public abstract class Cell extends Particle implements Serializable
 			stats.put("Being Engulfed", 1f);
 
 		float massTimeScalar = Settings.statsMassScalar / Settings.statsTimeScalar;
-		for (Food.ComplexMolecule molecule : complexMoleculeProductionRates.keySet())
+		for (ComplexMolecule molecule : complexMoleculeProductionRates.keySet())
 			if (complexMoleculeProductionRates.get(molecule) > 0)
 				stats.put(molecule + " Production", massTimeScalar * complexMoleculeProductionRates.get(molecule));
 
-		for (Food.ComplexMolecule molecule : availableComplexMolecules.keySet())
+		for (ComplexMolecule molecule : availableComplexMolecules.keySet())
 			if (availableComplexMolecules.get(molecule) > 0)
 				stats.put(molecule + " Available", 100f * Settings.statsMassScalar * availableComplexMolecules.get(molecule));
 
@@ -525,7 +408,6 @@ public abstract class Cell extends Particle implements Serializable
 	public Map<String, Float> getDebugStats() {
 		Map<String, Float> stats = super.getDebugStats();
 		stats.put("Num Attached Cells", (float) attachedCells.size());
-		stats.put("Num Cell Bindings", (float) cellBindings.size());
 		return stats;
 	}
 	
@@ -563,15 +445,6 @@ public abstract class Cell extends Particle implements Serializable
 	}
 
 	public Colour getFullyDegradedColour() {
-		if (fullyDegradedColour == null) {
-			Colour healthyColour = getHealthyColour();
-			float r = healthyColour.r;
-			float g = healthyColour.g;
-			float b = healthyColour.b;
-			float mean = (r + g + b) / 3;
-			float p = 0.4f;  // proportion of colour to keep
-			return healthyColour.lerp(new Colour(mean, mean, mean, 1), 1 - p);
-		}
 		return fullyDegradedColour;
 	}
 
@@ -631,20 +504,20 @@ public abstract class Cell extends Particle implements Serializable
 		energyAvailable = Math.max(0, energyAvailable - energy);
 	}
 
-	public Collection<Food.ComplexMolecule> getComplexMolecules() {
+	public Collection<ComplexMolecule> getComplexMolecules() {
 		return availableComplexMolecules.keySet();
 	}
 
-	public void depleteComplexMolecule(Food.ComplexMolecule molecule, float amount) {
+	public void depleteComplexMolecule(ComplexMolecule molecule, float amount) {
 		float currAmount = getComplexMoleculeAvailable(molecule);
 		setComplexMoleculeAvailable(molecule, currAmount - amount);
 	}
 
-	public float getComplexMoleculeAvailable(Food.ComplexMolecule molecule) {
+	public float getComplexMoleculeAvailable(ComplexMolecule molecule) {
 		return availableComplexMolecules.getOrDefault(molecule, 0f);
 	}
 
-	private void addAvailableComplexMolecule(Food.ComplexMolecule molecule, float amount) {
+	public void addAvailableComplexMolecule(ComplexMolecule molecule, float amount) {
 		float currentAmount = availableComplexMolecules.getOrDefault(molecule, 0f);
 		float newAmount = Math.min(getComplexMoleculeMassCap(), currentAmount + amount);
 		availableComplexMolecules.put(molecule, newAmount);
@@ -654,7 +527,7 @@ public abstract class Cell extends Particle implements Serializable
 		return getMass(getRadius() * 0.1f);
 	}
 
-	public void setComplexMoleculeAvailable(Food.ComplexMolecule molecule, float amount) {
+	public void setComplexMoleculeAvailable(ComplexMolecule molecule, float amount) {
 		availableComplexMolecules.put(molecule, Math.max(0, amount));
 	}
 
@@ -678,7 +551,7 @@ public abstract class Cell extends Particle implements Serializable
 		constructionMassAvailable = Math.max(0, constructionMassAvailable - mass);
 	}
 
-	public void setComplexMoleculeProductionRate(Food.ComplexMolecule molecule, float rate) {
+	public void setComplexMoleculeProductionRate(ComplexMolecule molecule, float rate) {
 		complexMoleculeProductionRates.put(molecule, rate);
 	}
 

@@ -1,6 +1,10 @@
 package com.protoevo.biology.organelles;
 
-public abstract class OrganelleFunction {
+import java.io.Serializable;
+
+public abstract class OrganelleFunction  implements Serializable {
+
+    public static long serialVersionUID = 1L;
 
     protected final Organelle organelle;
 

@@ -5,6 +5,8 @@ import com.protoevo.biology.*;
 import com.protoevo.biology.evolution.*;
 import com.protoevo.biology.neat.NeuralNetwork;
 import com.protoevo.biology.nodes.*;
+import com.protoevo.biology.organelles.Cilia;
+import com.protoevo.biology.organelles.Organelle;
 import com.protoevo.core.Simulation;
 import com.protoevo.settings.ProtozoaSettings;
 import com.protoevo.settings.Settings;
@@ -33,7 +35,7 @@ public class Protozoan extends Cell implements Evolvable
 	private float damageRate = 0;
 	private float herbivoreFactor, splitRadius;
 	private float timeSinceLastGeneUpdate = 0;
-	private final float geneUpdateTime = Settings.simulationUpdateDelta * 20;
+	private final static float geneUpdateTime = Settings.simulationUpdateDelta * 20;
 	private final Vector2 tmp = new Vector2();
 	private final Collection<Cell> engulfedCells = new ArrayList<>(0);
 
@@ -48,7 +50,6 @@ public class Protozoan extends Cell implements Evolvable
 			timeSinceLastGeneUpdate = 0;
 		}
 		age(delta);
-		handleCollisions(delta);
 		surfaceNodes.forEach(n -> n.update(delta));
 
 		engulfedCells.forEach(c -> eat((EdibleCell) c, delta));
@@ -69,7 +70,6 @@ public class Protozoan extends Cell implements Evolvable
 			name = "Surface Nodes",
 			elementClassPath = "com.protoevo.biology.nodes.SurfaceNode",
 			minSize = 1,
-			maxSize = 10,
 			initialSize = 3
 	)
 	public void setSurfaceNodes(ArrayList<SurfaceNode> surfaceNodes) {
@@ -77,6 +77,18 @@ public class Protozoan extends Cell implements Evolvable
 		for (SurfaceNode node : surfaceNodes)
 			node.setCell(this);
 	}
+
+//	@EvolvableCollection(
+//			name = "Organelles",
+//			elementClassPath = "com.protoevo.biology.organelles.Organelle",
+//			initialSize = 1
+//	)
+//	public void setOrganelles(ArrayList<Organelle> organelles) {
+//		for (Organelle organelle : organelles) {
+//			organelle.setCell(this);
+//			addOrganelle(organelle);
+//		}
+//	}
 
 	@EvolvableFloat(name="Herbivore Factor", min=0.5f, max=2f)
 	public void setHerbivoreFactor(float herbivoreFactor) {
@@ -110,18 +122,6 @@ public class Protozoan extends Cell implements Evolvable
 		super.setRepairRate(repairRate);
 	}
 
-	@EvolvableFloat(name="Retinal Production")
-	public void setRetinalProduction(float production) {
-		setComplexMoleculeProductionRate(Food.ComplexMolecule.Retinal, production);
-	}
-
-	@EvolvableObject(name="CAM Production",
-					 traitClass ="com.protoevo.biology.protozoa.CAMProductionTrait")
-	public void setCAMProduction(Map<CellAdhesion.CAM, Float> camProduction) {
-		for (CellAdhesion.CAM cam : camProduction.keySet())
-			setCAMProductionRate(cam, camProduction.get(cam));
-	}
-
 	@Override
 	@GeneRegulator(name="Health")
 	public float getHealth() {
@@ -134,11 +134,6 @@ public class Protozoan extends Cell implements Evolvable
 			       max=ProtozoaSettings.maxProtozoanSplitRadius)
 	public float getRadius() {
 		return super.getRadius();
-	}
-
-	@GeneRegulator(name="Retinal Available", max=1/1000f)
-	public float getRetinalAmount() {
-		return getComplexMoleculeAvailable(Food.ComplexMolecule.Retinal);
 	}
 
 	@GeneRegulator(name="Construction Mass Available", max=1/1000f)
@@ -186,9 +181,8 @@ public class Protozoan extends Cell implements Evolvable
 		super.kill(causeOfDeath);
 	}
 
-	@Override
-	public void eat(EdibleCell e, float delta)
-	{
+	private void handleEngulfing(EdibleCell e, float delta) {
+		// Move engulfed cell towards the centre of this cell
 		Vector2 vel = tmp.set(getPos()).sub(e.getPos());
 		float d2 = vel.len2();
 		vel.setLength(ProtozoaSettings.engulfForce * tmp.len2());
@@ -200,6 +194,7 @@ public class Protozoan extends Cell implements Evolvable
 		e.getPos().add(vel.scl(delta));
 		float maxD = 0.7f * (getRadius() - e.getRadius());
 
+		// Ensure the engulfed cell doesn't exit the cell if fully engulfed
 		if (d2 > maxD*maxD && e.isFullyEngulfed()) {
 			tmp.set(e.getPos()).sub(getPos()).setLength(maxD);
 			e.getPos().set(getPos()).add(tmp);
@@ -208,6 +203,7 @@ public class Protozoan extends Cell implements Evolvable
 			e.setFullyEngulfed();
 		}
 
+		// Ensure the engulfed cells don't overlap too much
 		for (Cell other : engulfedCells) {
 			float rr = e.getRadius() + other.getRadius();
 			d2 = other.getPos().dst2(e.getPos());
@@ -217,6 +213,12 @@ public class Protozoan extends Cell implements Evolvable
 				e.getPos().add(tmp);
 			}
 		}
+	}
+
+	@Override
+	public void eat(EdibleCell e, float delta)
+	{
+		handleEngulfing(e, delta);
 
 		float extraction = .5f;
 		if (e instanceof PlantCell) {
@@ -285,13 +287,6 @@ public class Protozoan extends Cell implements Evolvable
 		damageRate = getRadius() * ProtozoaSettings.protozoaStarvationFactor;
 		damage(damageRate * delta, CauseOfDeath.OLD_AGE);
 	}
-
-	public void handleCollisions(float delta) {
-//		for (CollisionHandler.FixtureCollision contact : getContacts()) {
-//			Object collided = getOther(contact);
-//		}
-	}
-
 
 	@Override
 	public boolean isEdible() {

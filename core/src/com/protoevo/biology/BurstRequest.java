@@ -70,7 +70,7 @@ public class BurstRequest<T extends Cell> {
     public void allocateChildResources(Cell child, float p) {
         child.setAvailableConstructionMass(parent.getConstructionMassAvailable() * p);
         child.setEnergyAvailable(parent.getEnergyAvailable() * p);
-        for (Food.ComplexMolecule molecule : parent.getComplexMolecules())
+        for (ComplexMolecule molecule : parent.getComplexMolecules())
             child.setComplexMoleculeAvailable(molecule, p * parent.getComplexMoleculeAvailable(molecule));
 
         for (CellAdhesion.CAM cam : parent.getSurfaceCAMs())
@@ -79,7 +79,7 @@ public class BurstRequest<T extends Cell> {
         for (Food.Type foodType : parent.getFoodToDigest().keySet()) {
             Food oldFood = parent.getFoodToDigest().get(foodType);
             Food newFood = new Food(p * oldFood.getSimpleMass(), foodType);
-            for (Food.ComplexMolecule molecule : oldFood.getComplexMolecules()) {
+            for (ComplexMolecule molecule : oldFood.getComplexMolecules()) {
                 float moleculeAmount = p * oldFood.getComplexMoleculeMass(molecule);
                 newFood.addComplexMoleculeMass(molecule, moleculeAmount);
             }

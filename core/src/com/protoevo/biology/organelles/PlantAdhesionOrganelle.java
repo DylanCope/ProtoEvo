@@ -5,8 +5,14 @@ import com.protoevo.biology.Cell;
 import com.protoevo.biology.PlantCell;
 import com.protoevo.env.CollisionHandler;
 import com.protoevo.env.JointsManager;
+import com.protoevo.utils.Geometry;
 
-public class PlantAdhesionOrganelle extends OrganelleFunction {
+import java.io.Serializable;
+
+public class PlantAdhesionOrganelle extends OrganelleFunction implements Serializable {
+
+    public static long serialVersionUID = 1L;
+    private final Vector2 tmp = new Vector2();
 
     public PlantAdhesionOrganelle(Organelle organelle) {
         super(organelle);
@@ -15,6 +21,9 @@ public class PlantAdhesionOrganelle extends OrganelleFunction {
     @Override
     public void update(float delta, float[] input) {
         Cell cell = organelle.getCell();
+        if (cell == null)
+            return;
+
         for (CollisionHandler.FixtureCollision contact : cell.getContacts()) {
             Object other = cell.getOther(contact);
             if (other instanceof PlantCell && createBindingCondition((Cell) other)) {
@@ -25,9 +34,11 @@ public class PlantAdhesionOrganelle extends OrganelleFunction {
 
     private void bindTo(Vector2 contact, PlantCell otherCell) {
         Cell cell = organelle.getCell();
-        float t1 = contact.angleRad(cell.getPos());
-        float t2 = contact.angleRad(otherCell.getPos());
-        JointsManager.JoinedParticles joining = new JointsManager.JoinedParticles(cell, otherCell, t1, t2);
+        float t1 = Geometry.angle(tmp.set(contact).sub(cell.getPos()));
+        float t2 = Geometry.angle(tmp.set(contact).sub(otherCell.getPos()));
+
+        JointsManager.JoinedParticles joining =
+                new JointsManager.JoinedParticles(cell, otherCell, t1, t2);
 
         JointsManager jointsManager = cell.getEnv().getJointsManager();
         jointsManager.createJoint(joining);
@@ -37,11 +48,7 @@ public class PlantAdhesionOrganelle extends OrganelleFunction {
     }
 
     private boolean createBindingCondition(Cell other) {
-        return !other.isDead() && notAlreadyBound(other);
+        return !other.isDead() && organelle.getCell().notBoundTo(other);
     }
 
-    private boolean notAlreadyBound(Cell otherCell) {
-        Cell cell = organelle.getCell();
-        return otherCell.notBoundTo(cell) && cell.notBoundTo(otherCell);
-    }
 }

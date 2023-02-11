@@ -1,10 +1,10 @@
 package com.protoevo.biology.nodes;
 
-import com.protoevo.biology.Cell;
-import com.protoevo.biology.PlantCell;
+import com.protoevo.biology.*;
 import com.protoevo.biology.protozoa.Protozoan;
 import com.protoevo.env.CollisionHandler;
 import com.protoevo.env.JointsManager;
+import com.protoevo.settings.Settings;
 
 import java.util.Optional;
 
@@ -18,19 +18,59 @@ public class AdhesionReceptor extends NodeAttachment {
 
     @Override
     public void update(float delta, float[] input, float[] output) {
-        if (otherNode != null)
-            ensureBindingStillValid();
-
+        if (otherNode != null && ensureBindingStillValid()) {
+            handleResourceExchange(delta);
+        }
         Cell cell = node.getCell();
         for (CollisionHandler.FixtureCollision contact : cell.getContacts()) {
             Object other = cell.getOther(contact);
-            if (other instanceof Protozoan) {
+            if (other instanceof Protozoan)
                 tryBindTo((Protozoan) other);
-            }
         }
     }
 
-    private void ensureBindingStillValid() {
+    public void handleResourceExchange(float delta) {
+        Cell cell = node.getCell();
+        Cell other = otherNode.getCell();
+        float transferRate = Settings.channelBindingEnergyTransport;
+
+        float massDelta = cell.getConstructionMassAvailable() - other.getConstructionMassAvailable();
+        float constructionMassTransfer = Math.abs(transferRate * massDelta * delta);
+        if (massDelta > 0) {
+            other.addConstructionMass(constructionMassTransfer);
+            cell.useConstructionMass(constructionMassTransfer);
+        } else {
+            cell.addConstructionMass(constructionMassTransfer);
+            other.useConstructionMass(constructionMassTransfer);
+        }
+
+        float energyDelta = cell.getEnergyAvailable() - other.getEnergyAvailable();
+        float energyTransfer = Math.abs(transferRate * energyDelta * delta);
+        if (energyDelta > 0) {
+            other.addAvailableEnergy(energyTransfer);
+            cell.useEnergy(energyTransfer);
+        } else {
+            cell.addAvailableEnergy(energyTransfer);
+            other.useEnergy(energyTransfer);
+        }
+
+        for (ComplexMolecule molecule : cell.getComplexMolecules())
+            handleComplexMoleculeTransport(other, cell, molecule, delta);
+        for (ComplexMolecule molecule : other.getComplexMolecules())
+            handleComplexMoleculeTransport(cell, other, molecule, delta);
+    }
+
+    private void handleComplexMoleculeTransport(Cell src, Cell dst, ComplexMolecule molecule, float delta) {
+        float massDelta = dst.getComplexMoleculeAvailable(molecule) - src.getComplexMoleculeAvailable(molecule);
+        float transferRate = Settings.occludingBindingEnergyTransport;
+        if (massDelta > 0) {
+            float massTransfer = transferRate * massDelta * delta;
+            dst.addAvailableComplexMolecule(molecule, massTransfer);
+            src.depleteComplexMolecule(molecule, massTransfer);
+        }
+    }
+
+    private boolean ensureBindingStillValid() {
         if (otherNode.getCell().isDead()
                 || !otherNode.exists()
                 || !(otherNode.getAttachment() instanceof AdhesionReceptor)
@@ -38,7 +78,9 @@ public class AdhesionReceptor extends NodeAttachment {
                 || node.getCell().notBoundTo(otherNode.getCell())){
             node.getCell().requestJointRemoval(otherNode.getCell());
             otherNode = null;
+            return false;
         }
+        return true;
     }
 
     private void tryBindTo(Protozoan otherCell) {

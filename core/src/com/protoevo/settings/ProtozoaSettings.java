@@ -1,5 +1,7 @@
 package com.protoevo.settings;
 
+import com.badlogic.gdx.math.MathUtils;
+
 public class ProtozoaSettings {
     public static final float minProtozoanBirthRadius = 3f / 100f;
     public static final float maxProtozoanBirthRadius = 8f / 100f;
@@ -22,4 +24,5 @@ public class ProtozoaSettings {
     public static final float eatingConversionRatio = 0.75f;
     public static final float maxProtozoaThrust = .005f;
     public static final float maxProtozoaTorque = .01f;
+    public static float maxCiliaTurn = MathUtils.PI; // radians per second
 }

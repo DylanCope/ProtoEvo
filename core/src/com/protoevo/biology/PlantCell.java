@@ -15,8 +15,6 @@ import java.util.Map;
 public class PlantCell extends EdibleCell {
     public static final long serialVersionUID = -3975433688803760076L;
 
-    public static final CellAdhesion.CAM plantCAM = CellAdhesion.newHeterophilicCAM();
-
     private final float maxRadius;
     private float crowdingFactor;
 

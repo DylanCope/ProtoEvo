@@ -1,59 +1,51 @@
 package com.protoevo.biology;
 
+import com.badlogic.gdx.math.MathUtils;
+
+import java.io.Serial;
 import java.io.Serializable;
 import java.util.Collection;
 import java.util.Map;
 
-public abstract class ConstructionProject implements Serializable {
+public class ConstructionProject implements Serializable {
 
+    @Serial
     private static final long serialVersionUID = 1L;
 
-    private final float requiredMass;
-    private final float requiredEnergy;
     private float timeSpent;
-    private final float timeToComplete;
-    private final Map<Food.ComplexMolecule, Float> requiredComplexMolecules;
+    private final Constructable target;
 
-    /**
-     * @param requiredMass required mass to contribute to project
-     * @param requiredEnergy required energy to contribute to project
-     * @param timeToComplete required time to contribute to project
-     * @param requiredComplexMolecules required complex molecules to contribute to project
-     */
-    public ConstructionProject(float requiredMass,
-                               float requiredEnergy,
-                               float timeToComplete,
-                               Map<Food.ComplexMolecule, Float> requiredComplexMolecules) {
-        this.requiredMass = requiredMass;
-        this.requiredComplexMolecules = requiredComplexMolecules;
-        this.timeToComplete = timeToComplete;
-        this.requiredEnergy = requiredEnergy;
+    public ConstructionProject(Constructable constructable) {
+        this.target = constructable;
     }
 
     public float getRequiredMass() {
-        return requiredMass;
+        return target.getRequiredMass();
     }
 
     public boolean requiresComplexMolecules() {
+        Map<ComplexMolecule, Float> requiredComplexMolecules = target.getRequiredComplexMolecules();
         return requiredComplexMolecules != null && !requiredComplexMolecules.isEmpty();
     }
 
-    public Collection<Food.ComplexMolecule> getRequiredMolecules() {
+    public Collection<ComplexMolecule> getRequiredMolecules() {
+        Map<ComplexMolecule, Float> requiredComplexMolecules = target.getRequiredComplexMolecules();
         return requiredComplexMolecules.keySet();
     }
 
-    public float getRequiredComplexMoleculeAmount(Food.ComplexMolecule molecule) {
+    public float getRequiredComplexMoleculeAmount(ComplexMolecule molecule) {
+        Map<ComplexMolecule, Float> requiredComplexMolecules = target.getRequiredComplexMolecules();
         return requiredComplexMolecules.getOrDefault(molecule, 0f);
     }
 
     public boolean canMakeProgress(float availableEnergy,
                                    float availableMass,
-                                   Map<Food.ComplexMolecule, Float> availableComplexMolecules,
+                                   Map<ComplexMolecule, Float> availableComplexMolecules,
                                    float delta) {
         if (availableEnergy < energyToMakeProgress(delta) || availableMass < massToMakeProgress(delta))
             return false;
         if (requiresComplexMolecules() && availableComplexMolecules != null)
-            for (Food.ComplexMolecule molecule : getRequiredMolecules()) {
+            for (ComplexMolecule molecule : getRequiredMolecules()) {
                 float available = availableComplexMolecules.getOrDefault(molecule, 0f);
                 if (available < complexMoleculesToMakeProgress(delta, molecule))
                     return false;
@@ -61,12 +53,16 @@ public abstract class ConstructionProject implements Serializable {
         return true;
     }
 
+    public float getTimeToComplete() {
+        return target.getTimeToComplete();
+    }
+
     public float getProgress() {
-        return Math.max(Math.min(timeSpent / timeToComplete, 1f), 0f);
+        return MathUtils.clamp(timeSpent / getTimeToComplete(), 0f, 1f);
     }
 
     public boolean notFinished() {
-        return timeSpent < timeToComplete;
+        return timeSpent < getTimeToComplete();
     }
 
     /**
@@ -74,19 +70,31 @@ public abstract class ConstructionProject implements Serializable {
      * @param delta Change in time
      */
     public void progress(float delta) {
-        timeSpent = Math.min(timeSpent + delta, timeToComplete);
+        timeSpent = Math.min(timeSpent + delta, getTimeToComplete());
+    }
+
+    public void reset() {
+        timeSpent = 0;
+    }
+
+    public void deconstruct(float delta) {
+        timeSpent = Math.max(timeSpent - delta, 0);
     }
 
     public float massToMakeProgress(float delta) {
-        return delta * requiredMass / timeToComplete;
+        return delta * getRequiredMass() / getTimeToComplete();
+    }
+
+    public float getRequiredEnergy() {
+        return target.getRequiredEnergy();
     }
 
     public float energyToMakeProgress(float delta) {
-        return delta * requiredEnergy / timeToComplete;
+        return delta * getRequiredEnergy() / getTimeToComplete();
     }
 
-    public float complexMoleculesToMakeProgress(float delta, Food.ComplexMolecule molecule) {
+    public float complexMoleculesToMakeProgress(float delta, ComplexMolecule molecule) {
         float amount = getRequiredComplexMoleculeAmount(molecule);
-        return delta * amount / timeToComplete;
+        return delta * amount / getTimeToComplete();
     }
 }

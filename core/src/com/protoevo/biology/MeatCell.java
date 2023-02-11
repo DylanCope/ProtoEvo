@@ -45,8 +45,4 @@ public class MeatCell extends EdibleCell {
         return "Meat";
     }
 
-    @Override
-    public boolean canMakeBindings() {
-        return false;
-    }
 }

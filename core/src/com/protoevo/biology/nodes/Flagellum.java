@@ -50,7 +50,7 @@ public class Flagellum extends NodeAttachment implements Serializable {
         // smaller flagella generate less thrust and torque
         float sizePenalty = cell.getRadius() / SimulationSettings.maxParticleRadius;
 
-        float thrust = 1f; //MathUtils.clamp(input[0], -1f, 1f);
+        float thrust = MathUtils.clamp(input[0], -1f, 1f);
         torque = MathUtils.clamp(input[1], -1f, 1f);
 
         thrustVector.set(node.getRelativePos()).scl(-1).nor();

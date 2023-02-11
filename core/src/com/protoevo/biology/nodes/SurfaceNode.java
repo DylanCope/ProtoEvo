@@ -2,11 +2,15 @@ package com.protoevo.biology.nodes;
 
 import com.badlogic.gdx.math.Vector2;
 import com.protoevo.biology.Cell;
+import com.protoevo.biology.ComplexMolecule;
+import com.protoevo.biology.ConstructionProject;
+import com.protoevo.biology.MoleculeFunctionalContext;
 import com.protoevo.biology.evolution.*;
 import com.protoevo.settings.SimulationSettings;
 
 import java.io.Serial;
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -19,8 +23,18 @@ public class SurfaceNode implements Evolvable.Element, Serializable {
     public static final String inputActivationPrefix = "Input" + activationPrefix;
     public static final String outputActivationPrefix = "Output" + activationPrefix;
 
+//    private Map<MoleculeFunctionalContext.MoleculeFunction, Float> nodeFunctionSignatures =
+//            new HashMap<>(possibleAttachments.length);
+//    {
+//        for (Class<NodeAttachment> attachment : possibleAttachments) {
+//            nodeFunctionSignatures.
+//        }
+//    }
+
+//    private MoleculeFunctionalContext nodeMoleculeFunctionalContext = () -> nodeFunctionSignatures;
+
     private Cell cell;
-    private float angle;
+    private float angle, constructionSignature, deltaTime;
     private final Vector2 relativePosition = new Vector2(), worldPosition = new Vector2();
     private NodeAttachment attachment = null;
     private final float[] inputActivation = new float[3];
@@ -30,21 +44,62 @@ public class SurfaceNode implements Evolvable.Element, Serializable {
     private GeneExpressionFunction geneExpressionFunction;
     private boolean nodeExists = false;
 
+    private final Map<MoleculeFunctionalContext.MoleculeFunction, Float> nodeFunctionSignatures =
+            new HashMap<>(NodeAttachment.possibleAttachments.length, 1);
+    private final MoleculeFunctionalContext moleculeFunctionalContext = () -> nodeFunctionSignatures;
+    private static final float criticalCandidateConstructionProgress = 0.1f;
+
     public SurfaceNode() {
-        float p = (float) Math.random();
-        if (p < 0.1) {
-            attachment = new Flagellum(this);
-        } else if (p < 0.4) {
-            attachment = new AdhesionReceptor(this);
-        } else if (p < 0.6) {
-            attachment = new PhagocyticReceptor(this);
-        } else if (p < 0.9) {
-            attachment = new Photoreceptor(this);
+        ArrayList<NodeAttachment> candidateAttachments = new ArrayList<>();
+        for (Class<NodeAttachment> attachmentClass : NodeAttachment.possibleAttachments) {
+            try {
+                NodeAttachment attachment = attachmentClass.getConstructor(SurfaceNode.class)
+                        .newInstance(this);
+                candidateAttachments.add(attachment);
+            } catch (Exception e) {
+                throw new RuntimeException("Failed to instantiate node attachment: " + e);
+            }
         }
+
+        for (int i = 0; i < candidateAttachments.size(); i++) {
+            NodeAttachment candidate = candidateAttachments.get(i);
+            nodeFunctionSignatures.put(
+                    (molecule, potency) -> constructCandidate(candidate, molecule, potency),
+                    i / (float) candidateAttachments.size());
+        }
+    }
+
+    private void constructCandidate(NodeAttachment candidate, ComplexMolecule molecule, float potency) {
+        if (cell == null)
+            return;
+
+        float matching = moleculeFunctionalContext.getMatching(molecule, constructionSignature);
+        if (matching > 0 && attachment != null && candidate != attachment) {
+            ConstructionProject constructionProject = attachment.getConstructionProject();
+            constructionProject.deconstruct(matching * potency * deltaTime);
+            if (attachment.getConstructionProgress() < criticalCandidateConstructionProgress)
+                attachment = null;
+
+        } else {
+            ConstructionProject constructionProject = candidate.getConstructionProject();
+            cell.progressProject(constructionProject, matching * potency * deltaTime);
+        }
+
+        if (candidate.getConstructionProgress() >= criticalCandidateConstructionProgress)
+            attachment = candidate;
     }
 
     public void setCell(Cell cell) {
         this.cell = cell;
+    }
+
+
+    /**
+     * @param signature The signature of the attachment to be added.
+     */
+    @EvolvableFloat(name = "Construction Signature")
+    public void setConstructionSignature(float signature) {
+        this.constructionSignature = signature;
     }
 
     @EvolvableFloat(name = "Angle", max = 2 * (float) Math.PI, regulated = false)
@@ -64,12 +119,21 @@ public class SurfaceNode implements Evolvable.Element, Serializable {
     }
 
     public void update(float delta) {
-        if (!nodeExists)
-            tryCreate();
+        if (nodeExists) {
+            handleAttachmentConstructionProjects(delta);
 
-        if (attachment != null && nodeExists) {
-            attachment.update(delta, inputActivation, outputActivation);
+            if (attachment != null) {
+                attachment.update(delta, inputActivation, outputActivation);
+            }
+        } else {
+            tryCreate();
         }
+    }
+
+    private void handleAttachmentConstructionProjects(float delta) {
+        deltaTime = delta;
+        for (ComplexMolecule molecule : cell.getComplexMolecules())
+            moleculeFunctionalContext.accept(molecule);
     }
 
     public float requiredArcLength() {

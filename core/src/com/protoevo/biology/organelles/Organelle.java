@@ -2,6 +2,7 @@ package com.protoevo.biology.organelles;
 
 import com.protoevo.biology.Cell;
 import com.protoevo.biology.evolution.Evolvable;
+import com.protoevo.biology.evolution.EvolvableInteger;
 import com.protoevo.biology.evolution.GeneExpressionFunction;
 import com.protoevo.biology.evolution.RegulatedFloat;
 
@@ -63,6 +64,8 @@ public class Organelle implements Evolvable.Element {
     public void setInput2(float input) {
         inputs[2] = input;
     }
+
+    @EvolvableInteger(name = "Function", max = Integer.MAX_VALUE)
 
     @Override
     public void setIndex(int index) {

@@ -1,5 +1,6 @@
 package com.protoevo.utils;
 
+import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector2;
 
 public class Geometry {
@@ -7,7 +8,14 @@ public class Geometry {
     public static final Vector2 ZERO = new Vector2(0, 0);
 
     public static Vector2 fromAngle(float angle) {
-        return new Vector2((float) Math.cos(angle), (float) Math.sin(angle));
+        return new Vector2(MathUtils.cos(angle), MathUtils.sin(angle));
+    }
+
+    public static float angle(Vector2 v) {
+        float t = v.angleRad();
+        if (t < 0)
+            t += 2 * MathUtils.PI;
+        return t;
     }
 
     public static float[] circleIntersectLineCoefficients(Vector2 dir, Vector2 x, float r) {

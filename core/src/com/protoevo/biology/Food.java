@@ -27,30 +27,6 @@ public class Food implements Serializable {
         }
     }
 
-    /**
-     * Complex molecules are required for the construction of specialised cell behaviour.
-     * The implemented molecules are:
-     * (1) <a href="https://en.wikipedia.org/wiki/Retinal">Retinal</a>.
-     * (2) <a href="https://en.wikipedia.org/wiki/Neurotransmitter">Neurotransmitter</a>.
-     * (3) <a href="https://en.wikipedia.org/wiki/Trichocyst">Toxicyst</a>.
-     */
-    public enum ComplexMolecule {
-        Retinal(.5f), Neurotransmitter(1), Toxicyst(1);
-
-        private final float productionCost;
-
-        ComplexMolecule(float productionCost) {
-            this.productionCost = productionCost;
-        }
-
-        /**
-         * @return energy required to produce one unit of the complex molecule
-         */
-        public float getProductionCost() {
-            return productionCost;
-        }
-    }
-
     private float mass;
     private final Type type;
     private final Map<ComplexMolecule, Float> complexMoleculeMasses;
