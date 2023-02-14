@@ -15,7 +15,7 @@ public interface MoleculeFunctionalContext extends Consumer<ComplexMolecule> {
     }
 
     default float toFunctionSignature(ComplexMolecule molecule) {
-        return molecule.signature();
+        return molecule.getSignature();
     }
 
     Map<MoleculeFunction, Float> getMoleculeFunctionSignatures();
@@ -36,6 +36,10 @@ public interface MoleculeFunctionalContext extends Consumer<ComplexMolecule> {
 
     default float getMatching(ComplexMolecule molecule, float signature) {
         return getMoleculeMatching(toFunctionSignature(molecule), signature);
+    }
+
+    default float getMatching(ComplexMolecule molecule1, ComplexMolecule molecule2) {
+        return getMoleculeMatching(toFunctionSignature(molecule1), toFunctionSignature(molecule2));
     }
 
     default Optional<MoleculeFunction> getClosestFunction(float moleculeSignature) {

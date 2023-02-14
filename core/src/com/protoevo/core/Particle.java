@@ -261,7 +261,7 @@ public class Particle implements Shape {
     }
 
     public float getMassDensity() {
-        return 1f;
+        return SimulationSettings.basicParticleMassDensity;
     }
 
     @Override

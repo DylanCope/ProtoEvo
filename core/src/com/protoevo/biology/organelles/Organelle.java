@@ -65,7 +65,7 @@ public class Organelle implements Evolvable.Element {
         inputs[2] = input;
     }
 
-    @EvolvableInteger(name = "Function", max = Integer.MAX_VALUE)
+//    @EvolvableInteger(name = "Function", max = Integer.MAX_VALUE)
 
     @Override
     public void setIndex(int index) {

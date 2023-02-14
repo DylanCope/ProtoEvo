@@ -3,9 +3,13 @@ package com.protoevo.biology.nodes;
 import com.protoevo.biology.ComplexMolecule;
 import com.protoevo.biology.Constructable;
 import com.protoevo.biology.ConstructionProject;
+import com.protoevo.core.Particle;
+import com.protoevo.settings.SimulationSettings;
+import com.protoevo.utils.Geometry;
 
 import java.io.Serial;
 import java.io.Serializable;
+import java.util.HashMap;
 import java.util.Map;
 
 public abstract class NodeAttachment implements Serializable, Constructable {
@@ -23,13 +27,16 @@ public abstract class NodeAttachment implements Serializable, Constructable {
 
     protected SurfaceNode node;
     private final ConstructionProject constructionProject;
+    private final Map<ComplexMolecule, Float> requiredComplexMolecules = new HashMap<>();
 
     public float getRequiredMass() {
-        return 0;
+        float density = SimulationSettings.basicParticleMassDensity;
+        float area = Geometry.getCircleArea(SimulationSettings.maxParticleRadius);
+        return density * area / 20f;
     }
 
     public float getRequiredEnergy() {
-        return 0;
+        return SimulationSettings.startingAvailableCellEnergy / 100f;
     }
 
     public float getTimeToComplete() {
@@ -37,7 +44,7 @@ public abstract class NodeAttachment implements Serializable, Constructable {
     }
 
     public Map<ComplexMolecule, Float> getRequiredComplexMolecules() {
-        return Map.of();
+        return requiredComplexMolecules;
     }
 
     public float getConstructionProgress() {

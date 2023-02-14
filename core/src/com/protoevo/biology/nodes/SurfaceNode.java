@@ -56,16 +56,21 @@ public class SurfaceNode implements Evolvable.Element, Serializable {
                 NodeAttachment attachment = attachmentClass.getConstructor(SurfaceNode.class)
                         .newInstance(this);
                 candidateAttachments.add(attachment);
-            } catch (Exception e) {
+            }
+            catch (Exception e) {
                 throw new RuntimeException("Failed to instantiate node attachment: " + e);
             }
         }
 
         for (int i = 0; i < candidateAttachments.size(); i++) {
             NodeAttachment candidate = candidateAttachments.get(i);
+            float signature = i / (float) candidateAttachments.size();
+            candidate.getRequiredComplexMolecules().put(
+                    ComplexMolecule.fromSignature(signature),
+                    candidate.getRequiredMass() / 10f);
             nodeFunctionSignatures.put(
                     (molecule, potency) -> constructCandidate(candidate, molecule, potency),
-                    i / (float) candidateAttachments.size());
+                    signature);
         }
     }
 
@@ -82,7 +87,7 @@ public class SurfaceNode implements Evolvable.Element, Serializable {
 
         } else {
             ConstructionProject constructionProject = candidate.getConstructionProject();
-            cell.progressProject(constructionProject, matching * potency * deltaTime);
+            progressProject(constructionProject, molecule, matching * potency);
         }
 
         if (candidate.getConstructionProgress() >= criticalCandidateConstructionProgress)
@@ -91,6 +96,40 @@ public class SurfaceNode implements Evolvable.Element, Serializable {
 
     public void setCell(Cell cell) {
         this.cell = cell;
+    }
+
+    public void progressProject(ConstructionProject project, ComplexMolecule availableMolecule, float moleculeEffectiveness) {
+        float amount = moleculeEffectiveness * deltaTime;
+
+        if (amount <= 0 && !project.notFinished())
+            return;
+
+        float scale = 1f;
+
+        float availableEnergy = cell.getEnergyAvailable();
+        float energyUsed = Math.min(availableEnergy, project.energyToMakeProgress(deltaTime));
+        scale *= energyUsed / project.energyToMakeProgress(deltaTime);
+
+        float availableConstructionMass = cell.getConstructionMassAvailable();
+        float massUsed = Math.min(availableConstructionMass, project.massToMakeProgress(deltaTime));
+        scale *= massUsed / project.massToMakeProgress(deltaTime);
+
+        float moleculeUsed = 0;
+        for (ComplexMolecule requiredMolecule : project.getRequiredMolecules()) {
+            float thisMatch = moleculeFunctionalContext.getMatching(availableMolecule, requiredMolecule);
+            float amountRequired = thisMatch * project.complexMoleculesToMakeProgress(deltaTime, requiredMolecule);
+            float thisMoleculeUsed =
+                    thisMatch * Math.min(cell.getComplexMoleculeAvailable(availableMolecule), amountRequired);
+            moleculeUsed += thisMoleculeUsed;
+            scale *= thisMoleculeUsed / amountRequired;
+            cell.depleteComplexMolecule(requiredMolecule, thisMoleculeUsed);
+        }
+
+        project.progress(amount * scale);
+
+        cell.depleteComplexMolecule(availableMolecule, moleculeUsed);
+        cell.useEnergy(energyUsed);
+        cell.useConstructionMass(massUsed);
     }
 
 

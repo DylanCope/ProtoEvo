@@ -30,7 +30,7 @@ public class GeneRegulatoryNetworkFactory {
                     z -> MathUtils.clamp((0.5f + 0.5f * z) * (max - min) + min, min, max),
                     node
             );
-            networkGenome.addSynapse(sensor, output, 1);
+            networkGenome.addSynapse(sensor, output, Simulation.RANDOM.nextFloat(-1, 1));
         }
 //        else {
 //            networkGenome.addSensor(sensor);
