@@ -6,12 +6,9 @@ import com.google.common.collect.Streams;
 import com.protoevo.biology.*;
 import com.protoevo.biology.evolution.Evolvable;
 import com.protoevo.biology.protozoa.Protozoan;
-import com.protoevo.core.FixtureCategories;
-import com.protoevo.core.Particle;
-import com.protoevo.core.SpatialHash;
+import com.protoevo.core.*;
 import com.protoevo.settings.WorldGenerationSettings;
 import com.protoevo.settings.Settings;
-import com.protoevo.core.Simulation;
 import com.protoevo.settings.SimulationSettings;
 import com.protoevo.utils.FileIO;
 import com.protoevo.utils.Geometry;
@@ -28,14 +25,14 @@ public class Environment implements Serializable
 	private static final long serialVersionUID = 2804817237950199223L;
 	private transient World world;
 	private float elapsedTime;
-	private final ConcurrentHashMap<String, Float> stats = new ConcurrentHashMap<>();
-	private final ConcurrentHashMap<String, Float> debugStats = new ConcurrentHashMap<>();
+	private final Statistics stats = new Statistics();
+	private final Statistics debugStats = new Statistics();
 	public final ConcurrentHashMap<CauseOfDeath, Integer> causeOfDeathCounts =
 			new ConcurrentHashMap<>(CauseOfDeath.values().length, 1);
 	private final ConcurrentHashMap<Class<? extends Cell>, SpatialHash<Cell>> spatialHashes;
 	private final transient Map<Class<? extends Particle>, Function<Float, Vector2>> spawnPositionFns
 			= new HashMap<>(3, 1);
-	private ChemicalSolution chemicalSolution;
+	private final ChemicalSolution chemicalSolution;
 	private final List<Rock> rocks = new ArrayList<>();
 	private long generation = 1, protozoaBorn = 0, totalCellsAdded = 0, crossoverEvents = 0;
 
@@ -387,28 +384,28 @@ public class Environment implements Serializable
 		}
 	}
 
-	public Map<String, Float> getStats(boolean includeProtozoaStats) {
-		stats.clear();
-		stats.put("Protozoa", (float) numberOfProtozoa());
-		stats.put("Plants", (float) getCount(PlantCell.class));
-		stats.put("Meat Pellets", (float) getCount(MeatCell.class));
-		stats.put("Max Generation", (float) generation);
-		stats.put("Time Elapsed", elapsedTime);
-		stats.put("Protozoa Born", (float) protozoaBorn);
-		stats.put("Crossover Events", (float) crossoverEvents);
+	public Statistics getStats(boolean includeProtozoaStats) {
+		Statistics stats = new Statistics();
+		stats.putCount("Protozoa", numberOfProtozoa());
+		stats.putCount("Plants", getCount(PlantCell.class));
+		stats.putCount("Meat Pellets", getCount(MeatCell.class));
+		stats.putCount("Max Generation", (int) generation);
+		stats.putTime("Time Elapsed", elapsedTime);
+		stats.putCount("Protozoa Born", (int) protozoaBorn);
+		stats.putCount("Crossover Events", (int) crossoverEvents);
 		for (CauseOfDeath cod : CauseOfDeath.values()) {
 			if (cod.isDebugDeath())
 				continue;
 			int count = causeOfDeathCounts.getOrDefault(cod, 0);
 			if (count > 0)
-				stats.put("Died from " + cod.getReason(), (float) count);
+				stats.putCount("Died from " + cod.getReason(), count);
 		}
-		if (includeProtozoaStats)
-			stats.putAll(getProtozoaStats());
+//		if (includeProtozoaStats)
+//			stats.putAll(getProtozoaStats());
 		return stats;
 	}
 
-	public Map<String, Float> getDebugStats() {
+	public Statistics getDebugStats() {
 		debugStats.clear();
 		for (CauseOfDeath cod : CauseOfDeath.values()) {
 			if (!cod.isDebugDeath())
@@ -420,36 +417,38 @@ public class Environment implements Serializable
 		return debugStats;
 	}
 
-	public Map<String, Float> getStats() {
+	public Statistics getStats() {
 		return getStats(false);
 	}
 
-	public Map<String, Float> getProtozoaStats() {
-		Map<String, Float> stats = new TreeMap<>();
-		Collection<Protozoan> protozoa = cells.stream()
-				.filter(cell -> cell instanceof Protozoan)
-				.map(cell -> (Protozoan) cell)
-				.collect(Collectors.toSet());
+	public Statistics getProtozoaStats() {
+		Statistics stats = new Statistics();
 
-		for (Cell e : protozoa) {
-			for (Map.Entry<String, Float> stat : e.getStats().entrySet()) {
-				String key = "Sum " + stat.getKey();
-				float currentValue = stats.getOrDefault(key, 0f);
-				stats.put(key, stat.getValue() + currentValue);
-			}
-		}
-
-		int numProtozoa = protozoa.size();
-		for (Cell e : protozoa) {
-			for (Map.Entry<String, Float> stat : e.getStats().entrySet()) {
-				float sumValue = stats.getOrDefault("Sum " + stat.getKey(), 0f);
-				float mean = sumValue / numProtozoa;
-				stats.put("Mean " + stat.getKey(), mean);
-				float currVar = stats.getOrDefault("Var " + stat.getKey(), 0f);
-				float deltaVar = (float) Math.pow(stat.getValue() - mean, 2) / numProtozoa;
-				stats.put("Var " + stat.getKey(), currVar + deltaVar);
-			}
-		}
+		// TODO: move calculating mean stats to Statistics class
+//		Collection<Protozoan> protozoa = cells.stream()
+//				.filter(cell -> cell instanceof Protozoan)
+//				.map(cell -> (Protozoan) cell)
+//				.collect(Collectors.toSet());
+//
+//		for (Cell e : protozoa) {
+//			for (Statistics.Stat stat : e.getStats()) {
+//				String key = "Sum " + stat.getName();
+//				float currentValue = stats.getOrDefault(key, 0f);
+//				stats.put(key, stat.getValue() + currentValue);
+//			}
+//		}
+//
+//		int numProtozoa = protozoa.size();
+//		for (Cell e : protozoa) {
+//			for (Map.Entry<String, Float> stat : e.getStats().entrySet()) {
+//				float sumValue = stats.getOrDefault("Sum " + stat.getKey(), 0f);
+//				float mean = sumValue / numProtozoa;
+//				stats.put("Mean " + stat.getKey(), mean);
+//				float currVar = stats.getOrDefault("Var " + stat.getKey(), 0f);
+//				float deltaVar = (float) Math.pow(stat.getValue() - mean, 2) / numProtozoa;
+//				stats.put("Var " + stat.getKey(), currVar + deltaVar);
+//			}
+//		}
 		return stats;
 	}
 	

@@ -60,7 +60,7 @@ public class Flagellum extends NodeAttachment implements Serializable {
 
 		float work = getKineticEnergyRequired(thrustVector, torque);
 		if (cell.enoughEnergyAvailable(work)) {
-			cell.useEnergy(work);
+			cell.depleteEnergy(work);
 			cell.applyImpulse(thrustVector);
             cell.applyTorque(torque);
 		}

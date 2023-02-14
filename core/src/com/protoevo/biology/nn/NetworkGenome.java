@@ -1,4 +1,4 @@
-package com.protoevo.biology.neat;
+package com.protoevo.biology.nn;
 
 import com.google.common.collect.Iterators;
 import com.protoevo.core.Simulation;

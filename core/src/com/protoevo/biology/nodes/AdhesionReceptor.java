@@ -38,20 +38,20 @@ public class AdhesionReceptor extends NodeAttachment {
         float constructionMassTransfer = Math.abs(transferRate * massDelta * delta);
         if (massDelta > 0) {
             other.addConstructionMass(constructionMassTransfer);
-            cell.useConstructionMass(constructionMassTransfer);
+            cell.depleteConstructionMass(constructionMassTransfer);
         } else {
             cell.addConstructionMass(constructionMassTransfer);
-            other.useConstructionMass(constructionMassTransfer);
+            other.depleteConstructionMass(constructionMassTransfer);
         }
 
         float energyDelta = cell.getEnergyAvailable() - other.getEnergyAvailable();
         float energyTransfer = Math.abs(transferRate * energyDelta * delta);
         if (energyDelta > 0) {
             other.addAvailableEnergy(energyTransfer);
-            cell.useEnergy(energyTransfer);
+            cell.depleteEnergy(energyTransfer);
         } else {
             cell.addAvailableEnergy(energyTransfer);
-            other.useEnergy(energyTransfer);
+            other.depleteEnergy(energyTransfer);
         }
 
         for (ComplexMolecule molecule : cell.getComplexMolecules())

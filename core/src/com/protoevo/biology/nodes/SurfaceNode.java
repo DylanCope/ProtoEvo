@@ -23,16 +23,6 @@ public class SurfaceNode implements Evolvable.Element, Serializable {
     public static final String inputActivationPrefix = "Input" + activationPrefix;
     public static final String outputActivationPrefix = "Output" + activationPrefix;
 
-//    private Map<MoleculeFunctionalContext.MoleculeFunction, Float> nodeFunctionSignatures =
-//            new HashMap<>(possibleAttachments.length);
-//    {
-//        for (Class<NodeAttachment> attachment : possibleAttachments) {
-//            nodeFunctionSignatures.
-//        }
-//    }
-
-//    private MoleculeFunctionalContext nodeMoleculeFunctionalContext = () -> nodeFunctionSignatures;
-
     private Cell cell;
     private float angle, constructionSignature, deltaTime;
     private final Vector2 relativePosition = new Vector2(), worldPosition = new Vector2();
@@ -67,7 +57,7 @@ public class SurfaceNode implements Evolvable.Element, Serializable {
             float signature = i / (float) candidateAttachments.size();
             candidate.getRequiredComplexMolecules().put(
                     ComplexMolecule.fromSignature(signature),
-                    candidate.getRequiredMass() / 10f);
+                    candidate.getRequiredMass() / 20f);
             nodeFunctionSignatures.put(
                     (molecule, potency) -> constructCandidate(candidate, molecule, potency),
                     signature);
@@ -98,7 +88,9 @@ public class SurfaceNode implements Evolvable.Element, Serializable {
         this.cell = cell;
     }
 
-    public void progressProject(ConstructionProject project, ComplexMolecule availableMolecule, float moleculeEffectiveness) {
+    public void progressProject(ConstructionProject project,
+                                ComplexMolecule availableMolecule,
+                                float moleculeEffectiveness) {
         float amount = moleculeEffectiveness * deltaTime;
 
         if (amount <= 0 && !project.notFinished())
@@ -118,18 +110,17 @@ public class SurfaceNode implements Evolvable.Element, Serializable {
         for (ComplexMolecule requiredMolecule : project.getRequiredMolecules()) {
             float thisMatch = moleculeFunctionalContext.getMatching(availableMolecule, requiredMolecule);
             float amountRequired = thisMatch * project.complexMoleculesToMakeProgress(deltaTime, requiredMolecule);
-            float thisMoleculeUsed =
+            float moleculeUsedHere =
                     thisMatch * Math.min(cell.getComplexMoleculeAvailable(availableMolecule), amountRequired);
-            moleculeUsed += thisMoleculeUsed;
-            scale *= thisMoleculeUsed / amountRequired;
-            cell.depleteComplexMolecule(requiredMolecule, thisMoleculeUsed);
+            moleculeUsed += moleculeUsedHere;
+            scale *= moleculeUsedHere / amountRequired;
         }
 
         project.progress(amount * scale);
 
-        cell.depleteComplexMolecule(availableMolecule, moleculeUsed);
-        cell.useEnergy(energyUsed);
-        cell.useConstructionMass(massUsed);
+        cell.depleteComplexMolecule(availableMolecule, scale * moleculeUsed);
+        cell.depleteEnergy(scale * energyUsed);
+        cell.depleteConstructionMass(scale * massUsed);
     }
 
 

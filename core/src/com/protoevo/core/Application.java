@@ -31,6 +31,7 @@ public class Application extends ApplicationAdapter {
 			simulation.prepare();
 		}).start();
 //		}
+//		simulation.prepare();
 	}
 
 	@Override

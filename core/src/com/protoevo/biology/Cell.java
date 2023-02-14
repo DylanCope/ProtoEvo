@@ -5,6 +5,7 @@ import com.badlogic.gdx.math.MathUtils;
 import com.protoevo.biology.nodes.SurfaceNode;
 import com.protoevo.biology.organelles.Organelle;
 import com.protoevo.core.Particle;
+import com.protoevo.core.Statistics;
 import com.protoevo.settings.Settings;
 import com.protoevo.settings.SimulationSettings;
 import com.protoevo.env.CollisionHandler;
@@ -113,8 +114,8 @@ public abstract class Cell extends Particle implements Serializable
 				constructionMassAvailable,
 				availableComplexMolecules,
 				delta)) {
-			useEnergy(project.energyToMakeProgress(delta));
-			useConstructionMass(project.massToMakeProgress(delta));
+			depleteEnergy(project.energyToMakeProgress(delta));
+			depleteConstructionMass(project.massToMakeProgress(delta));
 			if (project.requiresComplexMolecules())
 				for (ComplexMolecule molecule : project.getRequiredMolecules()) {
 					float amountUsed = project.complexMoleculesToMakeProgress(delta, molecule);
@@ -130,8 +131,8 @@ public abstract class Cell extends Particle implements Serializable
 			float requiredEnergy = molecule.getProductionCost() * producedMass;
 			if (producedMass > 0 && constructionMassAvailable > producedMass && energyAvailable > requiredEnergy) {
 				addAvailableComplexMolecule(molecule, producedMass);
-				useConstructionMass(producedMass);
-				useEnergy(requiredEnergy);
+				depleteConstructionMass(producedMass);
+				depleteEnergy(requiredEnergy);
 			}
 		}
 		for (CellAdhesion.CAM cam : camProductionRates.keySet()) {
@@ -140,8 +141,8 @@ public abstract class Cell extends Particle implements Serializable
 			if (producedMass > 0 && constructionMassAvailable > producedMass && energyAvailable > requiredEnergy) {
 				float currentAmount = surfaceCAMs.getOrDefault(cam, 0f);
 				surfaceCAMs.put(cam, currentAmount + producedMass);
-				useConstructionMass(producedMass);
-				useEnergy(requiredEnergy);
+				depleteConstructionMass(producedMass);
+				depleteEnergy(requiredEnergy);
 			}
 		}
 	}
@@ -205,15 +206,15 @@ public abstract class Cell extends Particle implements Serializable
 			float energyRequired = massRequired * 3f;
 			if (massRequired < constructionMassAvailable
 					&& energyRequired < energyAvailable) {
-				useEnergy(energyRequired);
-				useConstructionMass(massRequired);
-				heal(delta * Settings.cellRepairRate * getRepairRate());
+				depleteEnergy(energyRequired);
+				depleteConstructionMass(massRequired);
+				heal(delta * getRepairRate());
 			}
 		}
 	}
 
 	private float getRepairRate() {
-		return repairRate;
+		return Settings.cellRepairRate * repairRate;
 	}
 
 	public boolean detachCellCondition(JointsManager.JoinedParticles joining) {
@@ -266,7 +267,7 @@ public abstract class Cell extends Particle implements Serializable
 		if (newR > SimulationSettings.minParticleRadius || gr > 0) {
 			setRadius(newR);
 			if (massChange > 0)
-				useConstructionMass(massChange);
+				depleteConstructionMass(massChange);
 		}
 		if (newR < getMinRadius())
 			kill(CauseOfDeath.GREW_TOO_SMALL);
@@ -352,27 +353,26 @@ public abstract class Cell extends Particle implements Serializable
 		return timeAlive;
 	}
 
-	public Map<String, Float> getStats() {
-		Map<String, Float> stats = super.getStats();
-		stats.put("Age", 100 * timeAlive);
-		stats.put("Health", 100 * getHealth());
-		stats.put("Generation", (float) getGeneration());
-		float energyScalar = Settings.statsMassScalar * Settings.statsDistanceScalar * Settings.statsDistanceScalar;
-		stats.put("Available Energy", energyScalar * energyAvailable);
-		stats.put("Total Mass", Settings.statsMassScalar * getMass());
-		stats.put("Construction Mass", Settings.statsMassScalar * constructionMassAvailable);
+	public Statistics getStats() {
+		Statistics stats = super.getStats();
+		stats.putTime("Age", timeAlive);
+		stats.putPercentage("Health", 100 * getHealth());
+		stats.putCount("Generation", getGeneration());
+		stats.putEnergy("Available Energy", energyAvailable);
+		stats.putMass("Construction Mass", constructionMassAvailable);
 		if (wasteMass > 0)
-			stats.put("Waste Mass", Settings.statsDistanceScalar * wasteMass);
+			stats.putMass("Waste Mass", wasteMass);
 
-		stats.put("Growth Rate", 10000 * Settings.statsDistanceScalar * getGrowthRate());
-		stats.put("Repair Rate", Settings.statsDistanceScalar * getRepairRate());
+		stats.putSpeed("Growth Rate", getGrowthRate());
+		stats.put("Repair Rate", 100 * getRepairRate(),
+				Statistics.ComplexUnit.PERCENTAGE_PER_TIME);
 
 		for (ComplexMolecule molecule : availableComplexMolecules.keySet())
 			if (availableComplexMolecules.get(molecule) > 0)
-				stats.put(molecule + " Available", availableComplexMolecules.get(molecule));
+				stats.putMass(molecule + " Available", availableComplexMolecules.get(molecule));
 
 		if (attachedCells.size() > 0)
-			stats.put("Num Cell Bindings", (float) attachedCells.size());
+			stats.putCount("Num Cell Bindings", attachedCells.size());
 
 		for (CellAdhesion.CAMJunctionType junctionType : CellAdhesion.CAMJunctionType.values()) {
 			float camMass = 0;
@@ -380,33 +380,33 @@ public abstract class Cell extends Particle implements Serializable
 				if (molecule.getJunctionType().equals(junctionType))
 					camMass += surfaceCAMs.get(molecule);
 			if (camMass > 0)
-				stats.put(junctionType + " CAM Mass", camMass);
+				stats.putMass(junctionType + " CAM Mass", camMass);
 		}
 
 		if (engulfer != null)
-			stats.put("Being Engulfed", 1f);
+			stats.putBoolean("Being Engulfed", true);
 
-		float massTimeScalar = Settings.statsMassScalar / Settings.statsTimeScalar;
+		Statistics.ComplexUnit massPerTime = Statistics.ComplexUnit.MASS_PER_TIME;
 		for (ComplexMolecule molecule : complexMoleculeProductionRates.keySet())
 			if (complexMoleculeProductionRates.get(molecule) > 0)
-				stats.put(molecule + " Production", massTimeScalar * complexMoleculeProductionRates.get(molecule));
+				stats.put(molecule + " Production", complexMoleculeProductionRates.get(molecule), massPerTime);
 
 		for (ComplexMolecule molecule : availableComplexMolecules.keySet())
 			if (availableComplexMolecules.get(molecule) > 0)
-				stats.put(molecule + " Available", 100f * Settings.statsMassScalar * availableComplexMolecules.get(molecule));
+				stats.putMass(molecule + " Available", availableComplexMolecules.get(molecule));
 
 		for (Food.Type foodType : foodDigestionRates.keySet())
 			if (foodDigestionRates.get(foodType) > 0)
-				stats.put(foodType + " Digestion Rate", massTimeScalar * foodDigestionRates.get(foodType));
+				stats.put(foodType + " Digestion Rate", foodDigestionRates.get(foodType), massPerTime);
 
 		for (Food food : foodToDigest.values())
-			stats.put(food + " to Digest", Settings.statsMassScalar * food.getSimpleMass());
+			stats.putMass(food + " to Digest", food.getSimpleMass());
 
 		return stats;
 	}
 
-	public Map<String, Float> getDebugStats() {
-		Map<String, Float> stats = super.getDebugStats();
+	public Statistics getDebugStats() {
+		Statistics stats = super.getDebugStats();
 		stats.put("Num Attached Cells", (float) attachedCells.size());
 		return stats;
 	}
@@ -500,7 +500,7 @@ public abstract class Cell extends Particle implements Serializable
 		energyAvailable = energy;
 	}
 
-	public void useEnergy(float energy) {
+	public void depleteEnergy(float energy) {
 		energyAvailable = Math.max(0, energyAvailable - energy);
 	}
 
@@ -547,7 +547,7 @@ public abstract class Cell extends Particle implements Serializable
 		setAvailableConstructionMass(constructionMassAvailable + mass);
 	}
 
-	public void useConstructionMass(float mass) {
+	public void depleteConstructionMass(float mass) {
 		constructionMassAvailable = Math.max(0, constructionMassAvailable - mass);
 	}
 

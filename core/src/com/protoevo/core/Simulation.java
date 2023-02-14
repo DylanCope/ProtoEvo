@@ -187,7 +187,7 @@ public class Simulation implements Runnable
 
 	public void printStats() {
 		environment.getStats(true).forEach(
-			(k, v) -> System.out.printf("%s: %.5f\n", k, v)
+			stat -> System.out.println(stat.toString())
 		);
 	}
 
@@ -232,19 +232,24 @@ public class Simulation implements Runnable
 	}
 
 	public void makeHistorySnapshot() {
-		Map<String, Float> stats = environment.getStats(true);
-
-		if (statsNames == null) {
-			statsNames = new ArrayList<>(environment.getStats(true).keySet());
-			String statsCsvHeader = String.join(",", statsNames);
-			FileIO.appendLine(historyFile, statsCsvHeader);
-		}
-
-		String statsString = statsNames.stream()
-				.map(k -> String.format("%.5f", stats.get(k)))
-				.collect(Collectors.joining(","));
-
-		FileIO.appendLine(historyFile, statsString);
+//		Statistics stats = environment.getStats(true);
+//
+//		if (statsNames == null) {
+//			statsNames = new ArrayList<>();
+//			for (Statistics.Stat stat : stats.getStats())
+//				statsNames.add(stat.getName());
+//
+//			String statsCsvHeader = String.join(",", statsNames);
+//			FileIO.appendLine(historyFile, statsCsvHeader);
+//		}
+//
+//		Map<String, Statistics.Stat> statMap = stats.getStatsMap();
+//
+//		String statsString = statsNames.stream()
+//				.map(k -> statMap.get(k).getValueString())
+//				.collect(Collectors.joining(","));
+//
+//		FileIO.appendLine(historyFile, statsString);
 	}
 
 	public void toggleDebug() {

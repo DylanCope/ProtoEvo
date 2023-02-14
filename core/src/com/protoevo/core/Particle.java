@@ -30,7 +30,7 @@ public class Particle implements Shape {
     private float radius = SimulationSettings.minParticleRadius * (1 + 2 * (float) Math.random());
     private final Vector2 pos = new Vector2(0, 0);
     private float angle;
-    private final ConcurrentHashMap<String, Float> stats = new ConcurrentHashMap<>();
+    private final Statistics stats = new Statistics();
     private final Collection<CollisionHandler.FixtureCollision> contacts = new ConcurrentLinkedQueue<>();
     private final Collection<Object> interactionObjects = new ConcurrentLinkedQueue<>();
     private CauseOfDeath causeOfDeath = null;
@@ -343,12 +343,11 @@ public class Particle implements Shape {
         return other.getPos().dst2(getPos()) < r*r;
     }
 
-    public Map<String, Float> getStats() {
+    public Statistics getStats() {
         stats.clear();
-        stats.put("Size", Settings.statsDistanceScalar * getRadius());
-        stats.put("Speed", Settings.statsDistanceScalar * getSpeed());
-        stats.put("Total Mass", Settings.statsMassScalar * getMass());
-        stats.put("Mass Density", Settings.statsMassScalar * getMassDensity());
+        stats.putDistance("Size", getRadius());
+        stats.putSpeed("Speed", getSpeed());
+        stats.putMass("Total Mass", getMass());
         return stats;
     }
 
@@ -382,21 +381,21 @@ public class Particle implements Shape {
         return "Particle";
     }
 
-    public Map<String, Float> getDebugStats() {
-        Map<String, Float> stats = new TreeMap<>();
-        stats.put("Position X", Settings.statsDistanceScalar * getPos().x);
-        stats.put("Position Y", Settings.statsDistanceScalar * getPos().y);
+    public Statistics getDebugStats() {
+        Statistics stats = new Statistics();
+        stats.putDistance("Position X", getPos().x);
+        stats.putDistance("Position Y", getPos().y);
         if (body != null) {
             stats.put("Inertia", body.getInertia());
-            stats.put("Num Joints", (float) body.getJointList().size);
-            stats.put("Num Fixtures", (float) body.getFixtureList().size);
-            stats.put("Is Sleeping", body.isAwake() ? 0f : 1f);
+            stats.putCount("Num Joints", body.getJointList().size);
+            stats.putCount("Num Fixtures", body.getFixtureList().size);
+            stats.putBoolean("Is Sleeping", body.isAwake());
         }
-        stats.put("Num Contacts", (float) contacts.size());
-        stats.put("Num Interactions", (float) interactionObjects.size());
-        stats.put("Is Dead", dead ? 1f : 0f);
-        stats.put("Local Count", (float) environment.getLocalCount(this));
-        stats.put("Local Cap", (float) environment.getLocalCapacity(this));
+        stats.putBoolean("Is Dead", dead);
+        stats.putCount("Num Contacts", contacts.size());
+        stats.putCount("Num Interactions", interactionObjects.size());
+        stats.putCount("Local Count", environment.getLocalCount(this));
+        stats.putCount("Local Cap", environment.getLocalCapacity(this));
         return stats;
     }
 

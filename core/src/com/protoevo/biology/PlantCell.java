@@ -3,6 +3,7 @@ package com.protoevo.biology;
 import com.protoevo.biology.organelles.Organelle;
 import com.protoevo.biology.organelles.PlantAdhesionOrganelle;
 import com.protoevo.core.Simulation;
+import com.protoevo.core.Statistics;
 import com.protoevo.env.CollisionHandler;
 import com.protoevo.env.Environment;
 import com.protoevo.settings.PlantSettings;
@@ -114,8 +115,8 @@ public class PlantCell extends EdibleCell {
 //        return growthRate;
 //    }
 
-    public Map<String, Float> getStats() {
-        Map<String, Float> stats = super.getStats();
+    public Statistics getStats() {
+        Statistics stats = super.getStats();
         stats.put("Crowding Factor", getCrowdingFactor());
         stats.put("Split Radius", Settings.statsDistanceScalar * maxRadius);
         return stats;

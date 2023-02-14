@@ -36,8 +36,8 @@ public class MoleculeProductionOrganelle extends OrganelleFunction implements Se
         float energyAvailable = cell.getEnergyAvailable();
         if (producedMass > 0 && constructionMassAvailable > producedMass && energyAvailable > requiredEnergy) {
             cell.addAvailableComplexMolecule(productionMolecule, producedMass);
-            cell.useConstructionMass(producedMass);
-            cell.useEnergy(requiredEnergy);
+            cell.depleteConstructionMass(producedMass);
+            cell.depleteEnergy(requiredEnergy);
         }
     }
 }

@@ -1,9 +1,9 @@
 package com.protoevo.biology.evolution;
 
 import com.badlogic.gdx.math.MathUtils;
-import com.protoevo.biology.neat.NetworkGenome;
-import com.protoevo.biology.neat.Neuron;
-import com.protoevo.biology.neat.NeuronGene;
+import com.protoevo.biology.nn.NetworkGenome;
+import com.protoevo.biology.nn.Neuron;
+import com.protoevo.biology.nn.NeuronGene;
 import com.protoevo.core.Simulation;
 
 import java.util.function.Supplier;

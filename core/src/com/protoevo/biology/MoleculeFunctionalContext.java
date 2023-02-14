@@ -2,15 +2,16 @@ package com.protoevo.biology;
 
 import com.badlogic.gdx.math.MathUtils;
 
+import java.io.Serializable;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
-public interface MoleculeFunctionalContext extends Consumer<ComplexMolecule> {
+public interface MoleculeFunctionalContext extends Consumer<ComplexMolecule>, Serializable {
 
-    interface MoleculeFunction extends BiConsumer<ComplexMolecule, Float> {
+    interface MoleculeFunction extends BiConsumer<ComplexMolecule, Float>, Serializable {
         void accept(ComplexMolecule molecule, Float potency);
     }
 

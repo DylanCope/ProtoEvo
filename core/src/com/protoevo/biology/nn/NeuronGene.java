@@ -1,4 +1,4 @@
-package com.protoevo.biology.neat;
+package com.protoevo.biology.nn;
 
 import com.protoevo.core.Simulation;
 

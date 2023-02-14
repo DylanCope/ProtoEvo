@@ -3,7 +3,6 @@ package com.protoevo.biology.nodes;
 import com.protoevo.biology.ComplexMolecule;
 import com.protoevo.biology.Constructable;
 import com.protoevo.biology.ConstructionProject;
-import com.protoevo.core.Particle;
 import com.protoevo.settings.SimulationSettings;
 import com.protoevo.utils.Geometry;
 
@@ -32,15 +31,15 @@ public abstract class NodeAttachment implements Serializable, Constructable {
     public float getRequiredMass() {
         float density = SimulationSettings.basicParticleMassDensity;
         float area = Geometry.getCircleArea(SimulationSettings.maxParticleRadius);
-        return density * area / 20f;
+        return density * area / 50f;
     }
 
     public float getRequiredEnergy() {
-        return SimulationSettings.startingAvailableCellEnergy / 100f;
+        return SimulationSettings.startingAvailableCellEnergy / 200f;
     }
 
     public float getTimeToComplete() {
-        return 1f;
+        return .05f;
     }
 
     public Map<ComplexMolecule, Float> getRequiredComplexMolecules() {

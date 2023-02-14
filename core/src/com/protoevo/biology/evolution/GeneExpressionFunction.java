@@ -1,7 +1,7 @@
 package com.protoevo.biology.evolution;
 
-import com.protoevo.biology.neat.NetworkGenome;
-import com.protoevo.biology.neat.NeuralNetwork;
+import com.protoevo.biology.nn.NetworkGenome;
+import com.protoevo.biology.nn.NeuralNetwork;
 import com.protoevo.core.Simulation;
 import com.protoevo.settings.SimulationSettings;
 

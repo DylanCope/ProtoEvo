@@ -3,11 +3,10 @@ package com.protoevo.biology.protozoa;
 import com.badlogic.gdx.math.Vector2;
 import com.protoevo.biology.*;
 import com.protoevo.biology.evolution.*;
-import com.protoevo.biology.neat.NeuralNetwork;
+import com.protoevo.biology.nn.NeuralNetwork;
 import com.protoevo.biology.nodes.*;
-import com.protoevo.biology.organelles.Cilia;
-import com.protoevo.biology.organelles.Organelle;
 import com.protoevo.core.Simulation;
+import com.protoevo.core.Statistics;
 import com.protoevo.settings.ProtozoaSettings;
 import com.protoevo.settings.Settings;
 import com.protoevo.settings.SimulationSettings;
@@ -17,7 +16,6 @@ import java.io.Serial;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.Map;
 
 public class Protozoan extends Cell implements Evolvable
 {
@@ -252,26 +250,26 @@ public class Protozoan extends Cell implements Evolvable
 	}
 
 	@Override
-	public Map<String, Float> getStats() {
-		Map<String, Float> stats = super.getStats();
-		stats.put("Death Rate", 100 * damageRate);
-		stats.put("Split Radius", Settings.statsDistanceScalar * splitRadius);
-		stats.put("Has Mated", crossOverGenome == null ? 0f : 1f);
+	public Statistics getStats() {
+		Statistics stats = super.getStats();
+		stats.put("Death Rate", 100 * damageRate, Statistics.ComplexUnit.PERCENTAGE_PER_TIME);
+		stats.putDistance("Split Radius", splitRadius);
+		stats.putBoolean("Has Mated", crossOverGenome == null);
 		int numSpikes = getNumSpikes();
 		if (numSpikes > 0)
-			stats.put("Num Spikes", (float) numSpikes);
+			stats.putCount("Num Spikes", numSpikes);
 		NeuralNetwork grn = geneExpressionFunction.getRegulatoryNetwork();
 		if (grn != null) {
-			stats.put("GRN Depth", (float) grn.getDepth());
-			stats.put("GRN Size", (float) grn.getSize());
+			stats.putCount("GRN Depth", grn.getDepth());
+			stats.putCount("GRN Size", grn.getSize());
 		}
 		int numLSN = getNumLightSensitiveNodes();
 		if (numLSN > 0) {
-			stats.put("Light Sensitive Nodes", (float) numLSN);
+			stats.putCount("Light Sensitive Nodes", numLSN);
 		}
 
 		stats.put("Herbivore Factor", herbivoreFactor);
-		stats.put("Mutation Chance", 100 * geneExpressionFunction.getMutationRate());
+		stats.putPercentage("Mutation Chance", 100 * geneExpressionFunction.getMutationRate());
 		return stats;
 	}
 

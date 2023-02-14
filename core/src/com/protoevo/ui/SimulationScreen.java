@@ -15,12 +15,13 @@ import com.badlogic.gdx.scenes.scene2d.Touchable;
 import com.badlogic.gdx.scenes.scene2d.ui.ImageButton;
 import com.badlogic.gdx.scenes.scene2d.utils.Drawable;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
-import com.protoevo.biology.neat.NeuralNetwork;
+import com.protoevo.biology.nn.NeuralNetwork;
 import com.protoevo.biology.nodes.SurfaceNode;
 import com.protoevo.biology.protozoa.Protozoan;
 import com.protoevo.core.Application;
 import com.protoevo.core.Particle;
 import com.protoevo.core.Simulation;
+import com.protoevo.core.Statistics;
 import com.protoevo.settings.WorldGenerationSettings;
 import com.protoevo.env.Environment;
 import com.protoevo.input.ParticleTracker;
@@ -33,9 +34,6 @@ import com.protoevo.utils.CursorUtils;
 import com.protoevo.utils.DebugMode;
 import com.protoevo.utils.ImageUtils;
 import com.protoevo.utils.Utils;
-
-import java.util.Map;
-import java.util.TreeMap;
 
 public class SimulationScreen {
 
@@ -53,8 +51,8 @@ public class SimulationScreen {
     private final NetworkRenderer networkRenderer;
     private final float noRenderPollStatsTime = 2f;
     private float elapsedTime = 0, pollStatsCounter = 0, countDownToRender = 0;
-    private final TreeMap<String, Float> stats = new TreeMap<>();
-    private final TreeMap<String, Float> debugStats = new TreeMap<>();
+    private final Statistics stats = new Statistics();
+    private final Statistics debugStats = new Statistics();
 
     private float graphicsHeight;
     private float graphicsWidth;
@@ -203,19 +201,19 @@ public class SimulationScreen {
             ParticleTracker tracker = inputManager.getParticleTracker();
             if (tracker.isTracking()) {
                 Particle trackedParticle = tracker.getTrackedParticle();
-                Map<String, Float> stats = trackedParticle.getDebugStats();
+                Statistics stats = trackedParticle.getDebugStats();
                 int lineNumber = 0;
                 int valueLength = 8;
-                for (Map.Entry<String, Float> entityStat : stats.entrySet()) {
-                    String valueStr = Utils.numberToString(entityStat.getValue(), 2);
-                    String text = entityStat.getKey() + ": ";
+                for (Statistics.Stat entityStat : stats) {
+                    String valueStr = entityStat.getValueString();
+                    StringBuilder text = new StringBuilder(entityStat.getName() + ": ");
                     for (int i = 0; i < valueLength - valueStr.length(); i++) {
-                        text += " ";
+                        text.append(" ");
                     }
-                    text += valueStr;
-                    layout.setText(debugFont, text);
+                    text.append(valueStr);
+                    layout.setText(debugFont, text.toString());
                     float x = graphicsWidth - layout.width - textAwayFromEdge;
-                    debugFont.draw(uiBatch, text, x, getYPosRHS(lineNumber));
+                    debugFont.draw(uiBatch, text.toString(), x, getYPosRHS(lineNumber));
                     lineNumber++;
                 }
             }
@@ -232,16 +230,15 @@ public class SimulationScreen {
         return graphicsHeight - topBar.getHeight() * 1.5f - 1.3f * infoTextSize * i;
     }
 
-    private int renderStats(Map<String, Float> stats, int lineNumber, BitmapFont statsFont) {
-        for (Map.Entry<String, Float> entityStat : stats.entrySet()) {
-            String text = entityStat.getKey() + ": " + Utils.numberToString(entityStat.getValue(), 2);
-            statsFont.draw(uiBatch, text, textAwayFromEdge, getYPosLHS(lineNumber));
+    private int renderStats(Statistics stats, int lineNumber, BitmapFont statsFont) {
+        for (Statistics.Stat stat : stats) {
+            statsFont.draw(uiBatch, stat.toString(), textAwayFromEdge, getYPosLHS(lineNumber));
             lineNumber++;
         }
         return lineNumber;
     }
 
-    public int renderStats(Map<String, Float> stats) {
+    public int renderStats(Statistics stats) {
         return renderStats(stats, 0, font);
     }
 

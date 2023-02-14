@@ -42,7 +42,7 @@ public class Cilia extends OrganelleFunction {
 
         float work = getKineticEnergyRequired(thrustVector);
         if (cell.enoughEnergyAvailable(work)) {
-            cell.useEnergy(work);
+            cell.depleteEnergy(work);
             cell.applyImpulse(thrustVector);
         }
         else if (cell.getEnergyAvailable() > 0) {

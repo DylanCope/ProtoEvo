@@ -1,4 +1,4 @@
-package com.protoevo.biology.neat;
+package com.protoevo.biology.nn;
 
 import java.io.Serializable;
 import java.util.Arrays;

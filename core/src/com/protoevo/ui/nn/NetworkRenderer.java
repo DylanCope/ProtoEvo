@@ -1,6 +1,5 @@
 package com.protoevo.ui.nn;
 
-import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.InputAdapter;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
@@ -8,14 +7,13 @@ import com.badlogic.gdx.graphics.g2d.GlyphLayout;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.Vector2;
-import com.protoevo.biology.neat.NeuralNetwork;
-import com.protoevo.biology.neat.Neuron;
+import com.protoevo.biology.nn.NeuralNetwork;
+import com.protoevo.biology.nn.Neuron;
 import com.protoevo.core.Simulation;
 import com.protoevo.ui.SimulationInputManager;
 import com.protoevo.ui.SimulationScreen;
 import com.protoevo.ui.rendering.Renderer;
 import com.protoevo.utils.DebugMode;
-import com.protoevo.utils.Utils;
 
 import java.util.Arrays;
 import java.util.TreeMap;
