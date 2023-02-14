@@ -1,4 +1,4 @@
-package com.protoevo.biology.protozoa;
+package com.protoevo.biology.cells;
 
 import com.badlogic.gdx.math.Vector2;
 import com.protoevo.biology.*;
@@ -103,7 +103,7 @@ public class Protozoan extends Cell implements Evolvable
 	}
 
 	@EvolvableObject(name="Cell Colour",
-					 traitClass ="com.protoevo.biology.protozoa.ProtozoaColourTrait")
+					 traitClass ="com.protoevo.biology.cells.ProtozoaColourTrait")
 	public void setColour(Colour colour) {
 		setHealthyColour(colour);
 	}

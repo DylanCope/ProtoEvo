@@ -2,7 +2,7 @@ package com.protoevo.biology.nodes;
 
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector2;
-import com.protoevo.biology.Cell;
+import com.protoevo.biology.cells.Cell;
 import com.protoevo.settings.ProtozoaSettings;
 import com.protoevo.settings.SimulationSettings;
 

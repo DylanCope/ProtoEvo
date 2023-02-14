@@ -12,13 +12,12 @@ import com.protoevo.biology.nodes.Flagellum;
 import com.protoevo.biology.nodes.NodeAttachment;
 import com.protoevo.biology.nodes.Photoreceptor;
 import com.protoevo.biology.nodes.SurfaceNode;
-import com.protoevo.biology.protozoa.Protozoan;
+import com.protoevo.biology.cells.Protozoan;
 import com.protoevo.core.Particle;
 import com.protoevo.core.Simulation;
 import com.protoevo.env.Rock;
 import com.protoevo.settings.RenderSettings;
 import com.protoevo.utils.Geometry;
-import com.protoevo.utils.ImageUtils;
 import com.protoevo.utils.Utils;
 
 import java.util.ArrayList;

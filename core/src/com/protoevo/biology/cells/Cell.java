@@ -1,7 +1,8 @@
-package com.protoevo.biology;
+package com.protoevo.biology.cells;
 
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.math.MathUtils;
+import com.protoevo.biology.*;
 import com.protoevo.biology.nodes.SurfaceNode;
 import com.protoevo.biology.organelles.Organelle;
 import com.protoevo.core.Particle;

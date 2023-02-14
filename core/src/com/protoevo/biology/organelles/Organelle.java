@@ -1,12 +1,9 @@
 package com.protoevo.biology.organelles;
 
-import com.protoevo.biology.Cell;
+import com.protoevo.biology.cells.Cell;
 import com.protoevo.biology.evolution.Evolvable;
-import com.protoevo.biology.evolution.EvolvableInteger;
 import com.protoevo.biology.evolution.GeneExpressionFunction;
 import com.protoevo.biology.evolution.RegulatedFloat;
-
-import java.util.Optional;
 
 public class Organelle implements Evolvable.Element {
 

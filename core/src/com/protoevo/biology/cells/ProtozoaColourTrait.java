@@ -1,4 +1,4 @@
-package com.protoevo.biology.protozoa;
+package com.protoevo.biology.cells;
 
 
 import com.badlogic.gdx.math.MathUtils;

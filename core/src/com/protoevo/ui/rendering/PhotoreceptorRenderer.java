@@ -4,7 +4,7 @@ import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.Vector2;
-import com.protoevo.biology.Cell;
+import com.protoevo.biology.cells.Cell;
 import com.protoevo.biology.nodes.Photoreceptor;
 import com.protoevo.biology.nodes.SurfaceNode;
 import com.protoevo.core.Shape;

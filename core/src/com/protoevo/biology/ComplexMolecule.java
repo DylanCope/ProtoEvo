@@ -16,7 +16,7 @@ public class ComplexMolecule implements Serializable {
     }
 
     /**
-     * @return energy required to produce one unit of the complex molecule
+     * @return energy required to produce one mass unit of the complex molecule
      */
     public float getProductionCost() {
         return getProductionCost;

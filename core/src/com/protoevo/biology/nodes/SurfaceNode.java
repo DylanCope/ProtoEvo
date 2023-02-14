@@ -1,7 +1,7 @@
 package com.protoevo.biology.nodes;
 
 import com.badlogic.gdx.math.Vector2;
-import com.protoevo.biology.Cell;
+import com.protoevo.biology.cells.Cell;
 import com.protoevo.biology.ComplexMolecule;
 import com.protoevo.biology.ConstructionProject;
 import com.protoevo.biology.MoleculeFunctionalContext;

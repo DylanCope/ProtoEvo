@@ -1,6 +1,7 @@
-package com.protoevo.biology;
+package com.protoevo.biology.cells;
 
 
+import com.protoevo.biology.Food;
 import com.protoevo.env.Environment;
 
 public abstract class EdibleCell extends Cell

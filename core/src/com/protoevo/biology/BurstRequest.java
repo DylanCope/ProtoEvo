@@ -1,6 +1,7 @@
 package com.protoevo.biology;
 
 import com.badlogic.gdx.math.Vector2;
+import com.protoevo.biology.cells.Cell;
 import com.protoevo.core.Simulation;
 import com.protoevo.settings.SimulationSettings;
 import com.protoevo.utils.Geometry;

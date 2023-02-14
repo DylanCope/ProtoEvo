@@ -2,9 +2,9 @@ package com.protoevo.biology.nodes;
 
 import com.badlogic.gdx.math.Vector2;
 import com.protoevo.biology.CauseOfDeath;
-import com.protoevo.biology.Cell;
-import com.protoevo.biology.EdibleCell;
-import com.protoevo.biology.protozoa.Protozoan;
+import com.protoevo.biology.cells.Cell;
+import com.protoevo.biology.cells.EdibleCell;
+import com.protoevo.biology.cells.Protozoan;
 import com.protoevo.settings.SimulationSettings;
 import com.protoevo.env.CollisionHandler;
 

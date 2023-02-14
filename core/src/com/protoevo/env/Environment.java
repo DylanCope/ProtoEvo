@@ -4,8 +4,11 @@ import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.*;
 import com.google.common.collect.Streams;
 import com.protoevo.biology.*;
+import com.protoevo.biology.cells.Cell;
+import com.protoevo.biology.cells.MeatCell;
+import com.protoevo.biology.cells.PlantCell;
 import com.protoevo.biology.evolution.Evolvable;
-import com.protoevo.biology.protozoa.Protozoan;
+import com.protoevo.biology.cells.Protozoan;
 import com.protoevo.core.*;
 import com.protoevo.settings.WorldGenerationSettings;
 import com.protoevo.settings.Settings;
@@ -18,7 +21,6 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 
 public class Environment implements Serializable
 {

@@ -1,5 +1,7 @@
-package com.protoevo.biology;
+package com.protoevo.biology.cells;
 
+import com.protoevo.biology.CauseOfDeath;
+import com.protoevo.biology.Food;
 import com.protoevo.core.Simulation;
 import com.protoevo.env.Environment;
 import com.protoevo.utils.Colour;

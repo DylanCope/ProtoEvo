@@ -17,7 +17,7 @@ import com.badlogic.gdx.scenes.scene2d.utils.Drawable;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 import com.protoevo.biology.nn.NeuralNetwork;
 import com.protoevo.biology.nodes.SurfaceNode;
-import com.protoevo.biology.protozoa.Protozoan;
+import com.protoevo.biology.cells.Protozoan;
 import com.protoevo.core.Application;
 import com.protoevo.core.Particle;
 import com.protoevo.core.Simulation;

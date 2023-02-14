@@ -1,7 +1,8 @@
 package com.protoevo.biology.nodes;
 
 import com.protoevo.biology.*;
-import com.protoevo.biology.protozoa.Protozoan;
+import com.protoevo.biology.cells.Cell;
+import com.protoevo.biology.cells.Protozoan;
 import com.protoevo.env.CollisionHandler;
 import com.protoevo.env.JointsManager;
 import com.protoevo.settings.Settings;

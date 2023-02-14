@@ -1,7 +1,8 @@
 package com.protoevo.biology.organelles;
 
-import com.protoevo.biology.Cell;
+import com.protoevo.biology.cells.Cell;
 import com.protoevo.biology.ComplexMolecule;
+import com.protoevo.settings.SimulationSettings;
 import com.protoevo.utils.Utils;
 
 import java.io.Serializable;
@@ -27,7 +28,7 @@ public class MoleculeProductionOrganelle extends OrganelleFunction implements Se
         }
         float rate = input[1];
 
-        float producedMass = delta * rate;
+        float producedMass = SimulationSettings.maxMoleculeProductionRate * rate * delta;
         float requiredEnergy = productionMolecule.getProductionCost() * producedMass;
 
         Cell cell = organelle.getCell();

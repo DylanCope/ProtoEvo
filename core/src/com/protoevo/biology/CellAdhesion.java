@@ -1,5 +1,6 @@
 package com.protoevo.biology;
 
+import com.protoevo.biology.cells.Cell;
 import com.protoevo.settings.Settings;
 import com.protoevo.core.Simulation;
 

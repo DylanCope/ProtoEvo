@@ -1,8 +1,8 @@
 package com.protoevo.biology.organelles;
 
 import com.badlogic.gdx.math.Vector2;
-import com.protoevo.biology.Cell;
-import com.protoevo.biology.PlantCell;
+import com.protoevo.biology.cells.Cell;
+import com.protoevo.biology.cells.PlantCell;
 import com.protoevo.env.CollisionHandler;
 import com.protoevo.env.JointsManager;
 import com.protoevo.utils.Geometry;

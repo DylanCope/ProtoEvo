@@ -1,7 +1,6 @@
-package com.protoevo.biology;
+package com.protoevo.biology.cells;
 
-import com.protoevo.biology.organelles.Organelle;
-import com.protoevo.biology.organelles.PlantAdhesionOrganelle;
+import com.protoevo.biology.Food;
 import com.protoevo.core.Simulation;
 import com.protoevo.core.Statistics;
 import com.protoevo.env.CollisionHandler;
@@ -10,8 +9,6 @@ import com.protoevo.settings.PlantSettings;
 import com.protoevo.settings.Settings;
 import com.protoevo.settings.SimulationSettings;
 import com.protoevo.utils.Colour;
-
-import java.util.Map;
 
 public class PlantCell extends EdibleCell {
     public static final long serialVersionUID = -3975433688803760076L;

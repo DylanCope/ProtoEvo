@@ -5,15 +5,13 @@ import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector2;
-import com.protoevo.biology.Cell;
+import com.protoevo.biology.cells.Cell;
 import com.protoevo.biology.nodes.Flagellum;
 import com.protoevo.biology.nodes.SurfaceNode;
 import com.protoevo.core.Simulation;
 import com.protoevo.settings.ProtozoaSettings;
 import com.protoevo.utils.ImageUtils;
 import com.protoevo.utils.Utils;
-
-import java.awt.image.BufferedImage;
 
 public class FlagellumRenderer extends NodeRenderer {
 

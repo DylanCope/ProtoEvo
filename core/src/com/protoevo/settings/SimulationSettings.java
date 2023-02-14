@@ -29,4 +29,5 @@ public class SimulationSettings {
     public static int spatialHashResolution = 20;
     public static final boolean simulationOnSeparateThread = false;
     public static float basicParticleMassDensity = 1f;
+    public static float maxMoleculeProductionRate = 1f;
 }
