@@ -29,8 +29,7 @@ public class NeuronGene implements Comparable<NeuronGene>, Serializable
     }
 
     public NeuronGene mutate() {
-        int randomChoiceIdx = Simulation.RANDOM.nextInt(Neuron.Activation.activationFunctions.length);
-        Neuron.Activation newActivation = Neuron.Activation.activationFunctions[randomChoiceIdx];
+        Neuron.Activation newActivation = Neuron.Activation.randomActivation();
         return new NeuronGene(id, type, newActivation, label);
     }
 

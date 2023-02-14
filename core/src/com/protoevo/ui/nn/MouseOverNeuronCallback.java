@@ -20,7 +20,7 @@ public class MouseOverNeuronCallback {
     public String getSurfaceNodeLabel(Neuron neuron,
                                       GeneExpressionFunction.ExpressionNode geneNode,
                                       SurfaceNode surfaceNode) {
-        String label = "Node";
+        String label = "Node " + surfaceNode.getIndex() + ":";
         if (surfaceNode.getAttachment() != null)
             label += " " + surfaceNode.getAttachment().getName() + ": ";
 
@@ -37,7 +37,7 @@ public class MouseOverNeuronCallback {
     public String getSurfaceNodeLabel(Neuron neuron,
                                       GeneExpressionFunction.RegulationNode regulationNode,
                                       SurfaceNode surfaceNode) {
-        String label = "Node";
+        String label = "Node " + surfaceNode.getIndex() + ":";
         if (surfaceNode.getAttachment() != null)
             label += " " + surfaceNode.getAttachment().getName() + ": ";
 
@@ -84,11 +84,12 @@ public class MouseOverNeuronCallback {
             }
         }
 
-        if (neuron.getLabel() != null)
+        if (neuron.hasLabel())
             return neuron.getLabel() + " = " +
                     Utils.numberToString(neuron.getLastState(), 2);
 
-        return Utils.numberToString(neuron.getLastState(), 2);
+        return Neuron.Activation.toString(neuron.getActivation()) + "(z) = "
+                + Utils.numberToString(neuron.getLastState(), 2);
     }
 
     public void apply(SpriteBatch batch, Neuron neuron, float graphicsRadius) {

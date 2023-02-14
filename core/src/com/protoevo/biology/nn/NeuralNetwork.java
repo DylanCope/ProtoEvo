@@ -190,14 +190,14 @@ public class NeuralNetwork implements Serializable
 
     public boolean hasSensor(String label) {
         for (Neuron n : neurons)
-            if (n.getLabel() != null && n.getLabel().equals(label))
+            if (n.hasLabel() && n.getLabel().equals(label))
                 return true;
         return false;
     }
 
     public void setInput(String label, float value) {
         for (Neuron n : neurons)
-            if (n.getLabel() != null && n.getLabel().equals(label)) {
+            if (n.hasLabel() && n.getLabel().equals(label)) {
                 n.setState(value);
                 return;
             }
@@ -212,7 +212,7 @@ public class NeuralNetwork implements Serializable
 
     public boolean hasOutput(String outputName) {
         for (Neuron n : neurons)
-            if (n.getLabel() != null && n.getLabel().equals(outputName))
+            if (n.hasLabel() && n.getLabel().equals(outputName))
                 return true;
         return false;
     }

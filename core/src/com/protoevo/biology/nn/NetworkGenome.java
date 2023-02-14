@@ -18,7 +18,6 @@ public class NetworkGenome implements Serializable
 	private SynapseGene[] synapseGenes;
 	private Random random = Simulation.RANDOM;
 	private float mutationChance = SimulationSettings.globalMutationChance;
-	private Neuron.Activation defaultActivation = Neuron.Activation.LINEAR;
 	private float fitness = 0.0f;
 	private int numMutations = 0, nSensors, nOutputs;
 
@@ -35,7 +34,6 @@ public class NetworkGenome implements Serializable
 		nNeuronGenes = other.nNeuronGenes;
 		random = other.random;
 		mutationChance = other.mutationChance;
-		defaultActivation = other.defaultActivation;
 		fitness = other.fitness;
 		numMutations = other.numMutations;
 		nSensors = other.nSensors;
@@ -48,11 +46,6 @@ public class NetworkGenome implements Serializable
 
 	public NetworkGenome(int numInputs, int numOutputs)
 	{
-		this(numInputs, numOutputs, Neuron.Activation.TANH);
-	}
-
-	public NetworkGenome(int numInputs, int numOutputs, Neuron.Activation defaultActivation)
-	{
 		this.nSensors = numInputs;
 		this.nOutputs = numOutputs;
 
@@ -63,7 +56,7 @@ public class NetworkGenome implements Serializable
 
 		outputNeuronGenes = new NeuronGene[numOutputs];
 		for (int i = 0; i < numOutputs; i++)
-			outputNeuronGenes[i] = new NeuronGene(nNeuronGenes++, Neuron.Type.OUTPUT, defaultActivation);
+			outputNeuronGenes[i] = new NeuronGene(nNeuronGenes++, Neuron.Type.OUTPUT, Neuron.Activation.LINEAR);
 
 		hiddenNeuronGenes = new NeuronGene[0];
 
@@ -74,20 +67,16 @@ public class NetworkGenome implements Serializable
 				NeuronGene out = outputNeuronGenes[j];
 				synapseGenes[i*numOutputs + j] = new SynapseGene(in, out);
 			}
-
-		this.defaultActivation = defaultActivation;
 	}
 
 	public NetworkGenome(NeuronGene[] sensorGenes,
 						 NeuronGene[] outputGenes,
 						 NeuronGene[] hiddenGenes,
-						 SynapseGene[] synapseGenes,
-						 Neuron.Activation activation) {
+						 SynapseGene[] synapseGenes) {
 		this.sensorNeuronGenes = sensorGenes;
 		this.outputNeuronGenes = outputGenes;
 		this.hiddenNeuronGenes = hiddenGenes;
 		this.synapseGenes = synapseGenes;
-		this.defaultActivation = activation;
 
 		nSensors = sensorGenes.length;
 		nOutputs = outputGenes.length;
@@ -139,7 +128,7 @@ public class NetworkGenome implements Serializable
 	}
 
 	public NeuronGene addOutput(String label, Object...tags) {
-		return addOutput(label, defaultActivation, tags);
+		return addOutput(label, Neuron.Activation.LINEAR, tags);
 	}
 
 	public void addFullyConnectedOutput(String label) {
@@ -159,7 +148,7 @@ public class NetworkGenome implements Serializable
 	private void createHiddenBetween(SynapseGene g) {
 
 		NeuronGene n = new NeuronGene(
-			nNeuronGenes++, Neuron.Type.HIDDEN, defaultActivation
+			nNeuronGenes++, Neuron.Type.HIDDEN, Neuron.Activation.randomActivation()
 		);
 
 		hiddenNeuronGenes = Arrays.copyOf(hiddenNeuronGenes, hiddenNeuronGenes.length + 1);
@@ -357,8 +346,7 @@ public class NetworkGenome implements Serializable
 				childSensorGenes,
 				childOutputGenes,
 				childHiddenGenes,
-				childSynapseArray,
-				defaultActivation
+				childSynapseArray
 		);
 	}
 

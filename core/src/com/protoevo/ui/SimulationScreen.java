@@ -180,7 +180,6 @@ public class SimulationScreen {
     }
 
     public void drawDebugInfo() {
-
         String separator = " | ";
         String debugString = "FPS: " + Gdx.graphics.getFramesPerSecond();
         debugString += separator + "Zoom: " + ((int) (100 * camera.zoom)) / 100.f;

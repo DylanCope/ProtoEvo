@@ -27,7 +27,15 @@ public class Neuron implements Comparable<Neuron>, Serializable {
                 return "Linear";
             if (activation.equals(TANH))
                 return "Tanh";
+            if (activation.equals(STEP))
+                return "Step";
+            if (activation.equals(RELU))
+                return "ReLU";
             return null;
+        }
+
+        static Activation randomActivation() {
+            return activationFunctions[(int) (Math.random() * activationFunctions.length)];
         }
     }
 
@@ -117,6 +125,10 @@ public class Neuron implements Comparable<Neuron>, Serializable {
         return this;
     }
 
+    public Activation getActivation() {
+        return activation;
+    }
+
     public Neuron[] getInputs() {
         return inputs;
     }
@@ -190,7 +202,11 @@ public class Neuron implements Comparable<Neuron>, Serializable {
     }
 
     public String getLabel() {
-        return label;
+        return label == null ? "" : label;
+    }
+
+    public boolean hasLabel() {
+        return label != null;
     }
 
     public void setTags(Object[] tags) {

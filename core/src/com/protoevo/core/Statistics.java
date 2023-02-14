@@ -290,13 +290,7 @@ public class Statistics implements Serializable, Iterable<Statistics.Stat> {
                 String unitStr = BaseUnit.getPrefix(exp);
                 unitStr += unit != null ? unit.toString() : "";
 
-                String valueStr;
-                if (type.equals(StatType.FLOAT)) {
-                    valueStr = String.format("%.2f", mantissa);
-                }
-                else {
-                    valueStr = String.format("%d", (int) mantissa);
-                }
+                String valueStr = String.format("%.2f", mantissa);
                 if (valueStr.endsWith(".00"))
                     valueStr = valueStr.substring(0, valueStr.length() - 3);
                 if (unitStr.length() > 1)

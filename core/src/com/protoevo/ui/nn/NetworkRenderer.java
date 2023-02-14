@@ -215,13 +215,13 @@ public class NetworkRenderer extends InputAdapter implements Renderer {
         float nodeSpacing = boxHeight / maxWidth;
         nn.setGraphicsNodeSpacing(nodeSpacing);
 
-        TreeMap<String, Neuron> sortedNeurons = new TreeMap<>();
+        final TreeMap<String, Neuron> sortedNeurons = new TreeMap<>();
         for (int depth = 0; depth <= networkDepth; depth++) {
             sortedNeurons.clear();
             final int currDepth = depth;
             Arrays.stream(neurons)
                     .filter(n -> n.getDepth() == currDepth && n.isConnectedToOutput())
-                    .forEach(n -> sortedNeurons.put(mouseOverNeuronCallback.getNeuronLabel(n), n));
+                    .forEach(n -> sortedNeurons.put(n.getLabel(), n));
 
             float x = boxXStart + depth * boxWidth / networkDepth;
             int nNodes = depthWidthValues[depth];
