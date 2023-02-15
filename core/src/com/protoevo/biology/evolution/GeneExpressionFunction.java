@@ -417,7 +417,7 @@ public class GeneExpressionFunction implements Evolvable.Component, Serializable
     }
 
     public void addEvolvableCollection(GeneExpressionFunction geneExpressionFunction,
-                                       EvolvableCollection evolvable,
+                                       EvolvableList evolvable,
                                        Method method) {
         String name = evolvable.name();
         int minSize = evolvable.minSize();

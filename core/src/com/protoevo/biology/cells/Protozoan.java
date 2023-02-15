@@ -5,6 +5,7 @@ import com.protoevo.biology.*;
 import com.protoevo.biology.evolution.*;
 import com.protoevo.biology.nn.NeuralNetwork;
 import com.protoevo.biology.nodes.*;
+import com.protoevo.biology.organelles.Organelle;
 import com.protoevo.core.Simulation;
 import com.protoevo.core.Statistics;
 import com.protoevo.settings.ProtozoaSettings;
@@ -64,7 +65,7 @@ public class Protozoan extends Cell implements Evolvable
 		this.geneExpressionFunction = fn;
 	}
 
-	@EvolvableCollection(
+	@EvolvableList(
 			name = "Surface Nodes",
 			elementClassPath = "com.protoevo.biology.nodes.SurfaceNode",
 			minSize = 1,
@@ -76,17 +77,17 @@ public class Protozoan extends Cell implements Evolvable
 			node.setCell(this);
 	}
 
-//	@EvolvableCollection(
-//			name = "Organelles",
-//			elementClassPath = "com.protoevo.biology.organelles.Organelle",
-//			initialSize = 1
-//	)
-//	public void setOrganelles(ArrayList<Organelle> organelles) {
-//		for (Organelle organelle : organelles) {
-//			organelle.setCell(this);
-//			addOrganelle(organelle);
-//		}
-//	}
+	@EvolvableList(
+			name = "Organelles",
+			elementClassPath = "com.protoevo.biology.organelles.Organelle",
+			initialSize = 2
+	)
+	public void setOrganelles(ArrayList<Organelle> organelles) {
+		for (Organelle organelle : organelles) {
+			organelle.setCell(this);
+			addOrganelle(organelle);
+		}
+	}
 
 	@EvolvableFloat(name="Herbivore Factor", min=0.5f, max=2f)
 	public void setHerbivoreFactor(float herbivoreFactor) {
@@ -138,7 +139,6 @@ public class Protozoan extends Cell implements Evolvable
 	public float getConstructionMass() {
 		return getConstructionMassAvailable();
 	}
-
 
 	private boolean shouldSplit() {
 		return getRadius() > splitRadius && getHealth() > ProtozoaSettings.minHealthToSplit;
@@ -270,6 +270,7 @@ public class Protozoan extends Cell implements Evolvable
 
 		stats.put("Herbivore Factor", herbivoreFactor);
 		stats.putPercentage("Mutation Chance", 100 * geneExpressionFunction.getMutationRate());
+
 		return stats;
 	}
 

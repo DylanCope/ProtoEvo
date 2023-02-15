@@ -9,7 +9,6 @@ import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.function.Function;
 import java.util.function.Supplier;
 
 public interface Evolvable extends Serializable {
@@ -231,8 +230,8 @@ public interface Evolvable extends Serializable {
                 geneExpressionFunction.addEvolvableObject(evolvable, method);
             }
 
-            else if (method.isAnnotationPresent(EvolvableCollection.class)) {
-                EvolvableCollection evolvable = method.getAnnotation(EvolvableCollection.class);
+            else if (method.isAnnotationPresent(EvolvableList.class)) {
+                EvolvableList evolvable = method.getAnnotation(EvolvableList.class);
                 geneExpressionFunction.addEvolvableCollection(geneExpressionFunction, evolvable, method);
             }
 

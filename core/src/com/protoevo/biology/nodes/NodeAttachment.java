@@ -39,7 +39,7 @@ public abstract class NodeAttachment implements Serializable, Constructable {
     }
 
     public float getTimeToComplete() {
-        return .05f;
+        return .5f;
     }
 
     public Map<ComplexMolecule, Float> getRequiredComplexMolecules() {

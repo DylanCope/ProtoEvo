@@ -32,7 +32,7 @@ public class ComplexMolecule implements Serializable {
 
     @Override
     public boolean equals(Object o) {
-        if (o.equals(this))
+        if (o == this)
             return true;
         if (o instanceof ComplexMolecule) {
             ComplexMolecule other = (ComplexMolecule) o;

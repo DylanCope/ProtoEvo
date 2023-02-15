@@ -32,6 +32,16 @@ public class PlantAdhesionOrganelle extends OrganelleFunction implements Seriali
         }
     }
 
+    @Override
+    public String getName() {
+        return "Plant Adhesion";
+    }
+
+    @Override
+    public String getInputMeaning(int idx) {
+        return null;
+    }
+
     private void bindTo(Vector2 contact, PlantCell otherCell) {
         Cell cell = organelle.getCell();
         float t1 = Geometry.angle(tmp.set(contact).sub(cell.getPos()));

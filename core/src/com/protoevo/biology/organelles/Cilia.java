@@ -50,4 +50,18 @@ public class Cilia extends OrganelleFunction {
             cell.applyImpulse(thrustVector);
         }
     }
+
+    @Override
+    public String getName() {
+        return "Cilia";
+    }
+
+    @Override
+    public String getInputMeaning(int idx) {
+        if (idx == 0)
+            return "Thrust";
+        if (idx == 1)
+            return "Turn";
+        return null;
+    }
 }

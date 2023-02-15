@@ -8,7 +8,7 @@ import java.lang.annotation.Target;
 
 @Target(ElementType.METHOD)
 @Retention(RetentionPolicy.RUNTIME)
-public @interface EvolvableCollection {
+public @interface EvolvableList {
     String name();
     String elementClassPath();
     int minSize() default 0;

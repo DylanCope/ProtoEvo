@@ -35,7 +35,7 @@ public abstract class Cell extends Particle implements Serializable
 	private float health = 1f;
 	private float growthRate = 0.0f;
 	private float energyAvailable = SimulationSettings.startingAvailableCellEnergy;
-	private float constructionMassAvailable, wasteMass;
+	private float constructionMassAvailable = SimulationSettings.startingAvailableConstructionMass;
 	private final Map<ComplexMolecule, Float> availableComplexMolecules = new HashMap<>(0);
 	private int maxAttachedCells = 0;
 	private final ConcurrentLinkedQueue<JointsManager.JoinedParticles> attachedCells = new ConcurrentLinkedQueue<>();
@@ -54,6 +54,12 @@ public abstract class Cell extends Particle implements Serializable
 	private boolean fullyEngulfed = false;
 
 	public void update(float delta) {
+
+		if (health <= 0.05f && !super.isDead()) {
+			kill(CauseOfDeath.HEALTH_TOO_LOW);
+			return;
+		}
+
 		super.update(delta);
 		timeAlive += delta;
 
@@ -361,8 +367,8 @@ public abstract class Cell extends Particle implements Serializable
 		stats.putCount("Generation", getGeneration());
 		stats.putEnergy("Available Energy", energyAvailable);
 		stats.putMass("Construction Mass", constructionMassAvailable);
-		if (wasteMass > 0)
-			stats.putMass("Waste Mass", wasteMass);
+//		if (wasteMass > 0)
+//			stats.putMass("Waste Mass", wasteMass);
 
 		stats.putSpeed("Growth Rate", getGrowthRate());
 		stats.put("Repair Rate", 100 * getRepairRate(),
@@ -370,7 +376,8 @@ public abstract class Cell extends Particle implements Serializable
 
 		for (ComplexMolecule molecule : availableComplexMolecules.keySet())
 			if (availableComplexMolecules.get(molecule) > 0)
-				stats.putMass(molecule + " Available", availableComplexMolecules.get(molecule));
+				stats.putMass("Molecule %.2f Available".formatted(molecule.getSignature()),
+						availableComplexMolecules.get(molecule));
 
 		if (attachedCells.size() > 0)
 			stats.putCount("Num Cell Bindings", attachedCells.size());
@@ -392,9 +399,9 @@ public abstract class Cell extends Particle implements Serializable
 			if (complexMoleculeProductionRates.get(molecule) > 0)
 				stats.put(molecule + " Production", complexMoleculeProductionRates.get(molecule), massPerTime);
 
-		for (ComplexMolecule molecule : availableComplexMolecules.keySet())
-			if (availableComplexMolecules.get(molecule) > 0)
-				stats.putMass(molecule + " Available", availableComplexMolecules.get(molecule));
+//		for (ComplexMolecule molecule : availableComplexMolecules.keySet())
+//			if (availableComplexMolecules.get(molecule) > 0)
+//				stats.putMass(molecule + " Available", availableComplexMolecules.get(molecule));
 
 		for (Food.Type foodType : foodDigestionRates.keySet())
 			if (foodDigestionRates.get(foodType) > 0)
@@ -417,8 +424,6 @@ public abstract class Cell extends Particle implements Serializable
 	}
 
 	public boolean isDead() {
-		if (health <= 0.05f && !super.isDead())
-			kill(CauseOfDeath.HEALTH_TOO_LOW);
 		return super.isDead();
 	}
 
@@ -431,6 +436,10 @@ public abstract class Cell extends Particle implements Serializable
 		Colour healthyColour = getHealthyColour();
 		Colour degradedColour = getFullyDegradedColour();
 		return lerp(healthyColour, degradedColour, 1 - getHealth());
+	}
+
+	public Collection<Organelle> getOrganelles() {
+		return organelles;
 	}
 
 	public Colour getHealthyColour() {
@@ -562,7 +571,7 @@ public abstract class Cell extends Particle implements Serializable
 
 	@Override
 	public float getMass() {
-		float extraMass = constructionMassAvailable + wasteMass;
+		float extraMass = constructionMassAvailable;
 		for (float mass : complexMoleculeProductionRates.values())
 			extraMass += mass;
 		return getMass(getRadius(), extraMass);

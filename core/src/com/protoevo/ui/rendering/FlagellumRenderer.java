@@ -71,7 +71,7 @@ public class FlagellumRenderer extends NodeRenderer {
         Cell cell = node.getCell();
         Sprite sprite = getSprite(delta);
         sprite.setColor(cell.getColor());
-        drawAtNode(batch, sprite, 0.6f);
+        drawAtNode(batch, sprite, 0.6f * node.getAttachmentConstructionProgress());
     }
 
     @Override

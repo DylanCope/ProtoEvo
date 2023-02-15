@@ -6,6 +6,7 @@ import com.protoevo.biology.ComplexMolecule;
 import com.protoevo.biology.ConstructionProject;
 import com.protoevo.biology.MoleculeFunctionalContext;
 import com.protoevo.biology.evolution.*;
+import com.protoevo.core.Statistics;
 import com.protoevo.settings.SimulationSettings;
 
 import java.io.Serial;
@@ -30,7 +31,8 @@ public class SurfaceNode implements Evolvable.Element, Serializable {
     private final float[] inputActivation = new float[3];
     private final float[] outputActivation = new float[3];
     private int nodeIdx;
-    private final Map<String, Float> stats = new HashMap<>();
+    private final Statistics stats = new Statistics();
+    private final ArrayList<NodeAttachment> candidateAttachments = new ArrayList<>();
     private GeneExpressionFunction geneExpressionFunction;
     private boolean nodeExists = false;
 
@@ -40,7 +42,6 @@ public class SurfaceNode implements Evolvable.Element, Serializable {
     private static final float criticalCandidateConstructionProgress = 0.1f;
 
     public SurfaceNode() {
-        ArrayList<NodeAttachment> candidateAttachments = new ArrayList<>();
         for (Class<NodeAttachment> attachmentClass : NodeAttachment.possibleAttachments) {
             try {
                 NodeAttachment attachment = attachmentClass.getConstructor(SurfaceNode.class)
@@ -269,5 +270,44 @@ public class SurfaceNode implements Evolvable.Element, Serializable {
     @Override
     public GeneExpressionFunction getGeneExpressionFunction() {
         return geneExpressionFunction;
+    }
+
+    public Statistics getStats() {
+        stats.clear();
+        stats.putRadian("Angle", angle);
+        stats.put("Construction Signature", constructionSignature);
+        stats.put("Node Exists", nodeExists);
+        stats.put("Function", attachment == null ? "None" : attachment.getName());
+        if (attachment != null) {
+            stats.putPercentage(
+                    "Construction Progress",
+                    100 * attachment.getConstructionProgress());
+            stats.putMass("Required Mass", attachment.getRequiredMass());
+            stats.putEnergy("Required Energy", attachment.getRequiredEnergy());
+            stats.putTime("Required Time", attachment.getTimeToComplete());
+            for (ComplexMolecule molecule : attachment.getRequiredComplexMolecules().keySet()) {
+                stats.putMass(
+                        "Required Molecule %.2f".formatted(molecule.getSignature()),
+                        attachment.getConstructionProject().getRequiredComplexMoleculeAmount(molecule));
+            }
+
+            for (ComplexMolecule molecule : cell.getComplexMolecules())
+                if (cell.getComplexMoleculeAvailable(molecule) > 0)
+                    stats.putMass("Molecule %.2f Available".formatted(molecule.getSignature()),
+                            cell.getComplexMoleculeAvailable(molecule));
+        }
+        return stats;
+    }
+
+    public String getAttachmentName() {
+        return attachment == null ? "Empty" : attachment.getName();
+    }
+
+    public boolean hasAttachment() {
+        return attachment != null;
+    }
+
+    public float getAttachmentConstructionProgress() {
+        return attachment == null ? 0f : attachment.getConstructionProgress();
     }
 }

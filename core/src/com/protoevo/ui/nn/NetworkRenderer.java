@@ -12,6 +12,7 @@ import com.protoevo.biology.nn.Neuron;
 import com.protoevo.core.Simulation;
 import com.protoevo.ui.SimulationInputManager;
 import com.protoevo.ui.SimulationScreen;
+import com.protoevo.ui.UIStyle;
 import com.protoevo.ui.rendering.Renderer;
 import com.protoevo.utils.DebugMode;
 
@@ -43,7 +44,7 @@ public class NetworkRenderer extends InputAdapter implements Renderer {
         shapeRenderer = new ShapeRenderer();
         batch = new SpriteBatch();
 
-        font = SimulationScreen.createFiraCode(infoTextSize);
+        font = UIStyle.createFiraCode(infoTextSize);
 
         this.mouseOverNeuronCallback = new MouseOverNeuronCallback(font);
     }

@@ -4,18 +4,23 @@ import com.protoevo.biology.cells.Cell;
 import com.protoevo.biology.evolution.Evolvable;
 import com.protoevo.biology.evolution.GeneExpressionFunction;
 import com.protoevo.biology.evolution.RegulatedFloat;
+import com.protoevo.core.Statistics;
 
 public class Organelle implements Evolvable.Element {
 
     private GeneExpressionFunction geneExpressionFunction;
     private int index;
     private OrganelleFunction function = null;
-    private final float[] inputs = new float[3];
+    private final float[] inputs = new float[2];
     private Cell cell;
+    private final Statistics stats = new Statistics();
 
-    public Organelle() {}
+    public Organelle() {
+        function = new MoleculeProductionOrganelle(this);
+    }
 
     public Organelle(Cell cell) {
+        this();
         this.cell = cell;
     }
 
@@ -38,9 +43,17 @@ public class Organelle implements Evolvable.Element {
     }
 
     public void update(float delta) {
-        if (function != null) {
+        if (hasFunction()) {
             function.update(delta, inputs);
         }
+    }
+
+    public boolean hasFunction() {
+        return function != null;
+    }
+
+    public OrganelleFunction getFunction() {
+        return function;
     }
 
     public void setFunction(OrganelleFunction function) {
@@ -57,13 +70,6 @@ public class Organelle implements Evolvable.Element {
         inputs[1] = input;
     }
 
-    @RegulatedFloat(name = "Input/2")
-    public void setInput2(float input) {
-        inputs[2] = input;
-    }
-
-//    @EvolvableInteger(name = "Function", max = Integer.MAX_VALUE)
-
     @Override
     public void setIndex(int index) {
         this.index = index;
@@ -72,5 +78,16 @@ public class Organelle implements Evolvable.Element {
     @Override
     public int getIndex() {
         return index;
+    }
+
+    public Statistics getStats() {
+        stats.clear();
+        stats.put("Function", function != null ? function.getName() : "None");
+        if (function != null) {
+            Statistics functionStats = function.getStats();
+            if (functionStats != null)
+                stats.putAll(function.getStats());
+        }
+        return stats;
     }
 }

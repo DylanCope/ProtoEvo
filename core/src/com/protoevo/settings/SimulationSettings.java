@@ -17,6 +17,7 @@ public class SimulationSettings {
     public static final float minParticleRadius = 3f / 100f;
     public static final float maxParticleRadius = 15f / 100f;
     public static final float startingAvailableCellEnergy = 1f;
+    public static final float startingAvailableConstructionMass = 10e-3f;
     public static final float globalMutationChance = 0.05f;
     public static final float minMutationChance = 0.001f;
     public static final float maxMutationChance = 0.1f;
@@ -29,5 +30,5 @@ public class SimulationSettings {
     public static int spatialHashResolution = 20;
     public static final boolean simulationOnSeparateThread = false;
     public static float basicParticleMassDensity = 1f;
-    public static float maxMoleculeProductionRate = 1f;
+    public static float maxMoleculeProductionRate = .01f;
 }

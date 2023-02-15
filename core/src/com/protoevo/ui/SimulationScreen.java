@@ -12,12 +12,16 @@ import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator;
 import com.badlogic.gdx.scenes.scene2d.EventListener;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.Touchable;
+import com.badlogic.gdx.scenes.scene2d.ui.Dialog;
 import com.badlogic.gdx.scenes.scene2d.ui.ImageButton;
+import com.badlogic.gdx.scenes.scene2d.ui.SelectBox;
+import com.badlogic.gdx.scenes.scene2d.ui.Skin;
 import com.badlogic.gdx.scenes.scene2d.utils.Drawable;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 import com.protoevo.biology.nn.NeuralNetwork;
 import com.protoevo.biology.nodes.SurfaceNode;
 import com.protoevo.biology.cells.Protozoan;
+import com.protoevo.biology.organelles.Organelle;
 import com.protoevo.core.Application;
 import com.protoevo.core.Particle;
 import com.protoevo.core.Simulation;
@@ -35,6 +39,11 @@ import com.protoevo.utils.DebugMode;
 import com.protoevo.utils.ImageUtils;
 import com.protoevo.utils.Utils;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.Callable;
+
 public class SimulationScreen {
 
     private final Simulation simulation;
@@ -51,25 +60,24 @@ public class SimulationScreen {
     private final NetworkRenderer networkRenderer;
     private final float noRenderPollStatsTime = 2f;
     private float elapsedTime = 0, pollStatsCounter = 0, countDownToRender = 0;
+    private float graphicsStatsYOffset = 0;
     private final Statistics stats = new Statistics();
+    private Callable<Statistics> getStats;
+    private final Map<String, Callable<Statistics>> statGetters = new HashMap<>();
     private final Statistics debugStats = new Statistics();
+    private Particle trackedParticle;
 
-    private float graphicsHeight;
-    private float graphicsWidth;
+    private final SelectBox<String> selectBox;
+
+    private final float graphicsHeight;
+    private final float graphicsWidth;
     private boolean uiHidden = false, renderingEnabled = false, simLoaded = false;
-
-    public static BitmapFont createFiraCode(int size) {
-        String fontPath = "fonts/FiraCode-Retina.ttf";
-        FreeTypeFontGenerator generator = new FreeTypeFontGenerator(Gdx.files.local(fontPath));
-        FreeTypeFontGenerator.FreeTypeFontParameter parameter = new FreeTypeFontGenerator.FreeTypeFontParameter();
-        parameter.size = size;
-        parameter.borderWidth = size / 10f;
-        parameter.borderColor = new Color(0, 0, 0, .5f);
-        return generator.generateFont(parameter);
-    }
 
     public SimulationScreen(Application app, Simulation simulation) {
         CursorUtils.setDefaultCursor();
+
+        statGetters.put("Env", () -> simulation.getEnv().getStats());
+        getStats = statGetters.get("Env");
 
         graphicsHeight = Gdx.graphics.getHeight();
         graphicsWidth = Gdx.graphics.getWidth();
@@ -89,12 +97,12 @@ public class SimulationScreen {
         infoTextSize = (int) (graphicsHeight / 50f);
         textAwayFromEdge = (int) (graphicsWidth / 60);
 
-        font = createFiraCode(infoTextSize);
+        font = UIStyle.createFiraCode(infoTextSize);
         font.setColor(Color.WHITE.mul(.9f));
-        debugFont = createFiraCode(infoTextSize);
+        debugFont = UIStyle.createFiraCode(infoTextSize);
         debugFont.setColor(Color.GOLD);
 
-        titleFont = createFiraCode((int) (graphicsHeight / 40f));
+        titleFont = UIStyle.createFiraCode((int) (graphicsHeight / 40f));
 
         topBar = new TopBar(this, font.getLineHeight());
 
@@ -125,6 +133,12 @@ public class SimulationScreen {
             return true;
         });
         topBar.addLeft(homeButton);
+
+        Skin skin = UIStyle.getUISkin();
+
+        selectBox = new SelectBox<>(skin);
+        selectBox.getStyle().font = titleFont;
+        stage.addActor(selectBox);
 
         inputManager = new SimulationInputManager(this);
         renderer = new ShaderLayers(
@@ -222,7 +236,7 @@ public class SimulationScreen {
     }
 
     public float getYPosLHS(int i) {
-        return graphicsHeight - (1.3f*infoTextSize*i + 3 * graphicsHeight / 20f);
+        return graphicsHeight - (1.3f*infoTextSize*i + 3 * graphicsHeight / 20f) - graphicsStatsYOffset;
     }
 
     public float getYPosRHS(int i) {
@@ -242,32 +256,75 @@ public class SimulationScreen {
     }
 
     public void renderStats() {
+        float titleY = (float) (17 * graphicsHeight / 20f + 1.5 * titleFont.getLineHeight());
+
         ParticleTracker particleTracker = inputManager.getParticleTracker();
         if (renderingEnabled && particleTracker.isTracking()) {
             Particle particle = particleTracker.getTrackedParticle();
-            float titleY = (float) (getYPosLHS(0) + 1.5 * titleFont.getLineHeight());
-            titleFont.draw(uiBatch, particle.getPrettyName() + " Stats", textAwayFromEdge, titleY);
-        } else {
-            float titleY = (float) (getYPosLHS(0) + 1.5 * titleFont.getLineHeight());
+
+            if ((!selectBox.isVisible() || trackedParticle != particle) && particle instanceof Protozoan) {
+                ArrayList<String> statOptions = new ArrayList<>();
+                statOptions.add("Protozoan Stats");
+                statGetters.put("Protozoan Stats", particle::getStats);
+                getStats = particle::getStats;
+
+                layout.setText(selectBox.getStyle().font, "Protozoan Stats");
+                float maxWidth = layout.width;
+
+                for (SurfaceNode node : ((Protozoan) particle).getSurfaceNodes()) {
+                    String option;
+                    if (node.getAttachment() != null)
+                         option = "Node " + node.getIndex() + " (" + node.getAttachmentName() + ") Stats";
+                    else
+                        option = "Node " + node.getIndex() + " Stats";
+                    statOptions.add(option);
+                    statGetters.put(option, node::getStats);
+                    layout.setText(selectBox.getStyle().font, option);
+                    maxWidth = Math.max(maxWidth, layout.width);
+                }
+
+                for (Organelle organelle : ((Protozoan) particle).getOrganelles()) {
+                    String option;
+                    if (organelle.getFunction() != null)
+                        option = "Organelle " + organelle.getIndex()
+                                + " (" + organelle.getFunction().getName() + ") Stats";
+                    else
+                        option = "Organelle " + organelle.getIndex() + " Stats";
+                    statOptions.add(option);
+                    statGetters.put(option, organelle::getStats);
+                    layout.setText(selectBox.getStyle().font, option);
+                    maxWidth = Math.max(maxWidth, layout.width);
+                }
+
+                if (statOptions.size() >= 2) {
+                    selectBox.setVisible(true);
+                    selectBox.setBounds(
+                            textAwayFromEdge, titleY - selectBox.getStyle().font.getLineHeight() / 2f,
+                            maxWidth, selectBox.getStyle().font.getLineHeight());
+                    selectBox.setItems(statOptions.toArray(new String[0]));
+                }
+            } else if (!(particle instanceof Protozoan)) {
+                getStats = particle::getStats;
+                selectBox.setVisible(false);
+            }
+
+            if (selectBox.getSelected() != null && selectBox.isVisible())
+                getStats = statGetters.get(selectBox.getSelected());
+
+            if (!selectBox.isVisible()) {
+                titleFont.draw(uiBatch, particle.getPrettyName() + " Stats", textAwayFromEdge, titleY);
+            }
+            trackedParticle = particle;
+        }
+        else {
+            getStats = statGetters.get("Env");
+            selectBox.setVisible(false);
+            graphicsStatsYOffset = 0;
+
             titleFont.draw(uiBatch, "Simulation Stats", textAwayFromEdge, titleY);
         }
-        int lineNo = renderStats(stats);
 
-
-        if (renderingEnabled && particleTracker.isTracking() &&
-                particleTracker.getTrackedParticle() instanceof Protozoan) {
-            Protozoan protozoan = (Protozoan) particleTracker.getTrackedParticle();
-            int i = 0;
-            for (SurfaceNode node : protozoan.getSurfaceNodes()) {
-                if (node.getAttachment() != null) {
-                    float y = getYPosLHS(lineNo);
-                    String text = "Node " + i + ": " + node.getAttachment().getName();
-                    font.draw(uiBatch, text, textAwayFromEdge, y);
-                    lineNo++;
-                }
-                i++;
-            }
-        }
+        renderStats(stats);
     }
 
     public void loadingString(String text) {
@@ -317,8 +374,6 @@ public class SimulationScreen {
         topBar.draw(delta);
 
         uiBatch.begin();
-        stage.act(delta);
-        stage.draw();
 
         if (!renderingEnabled) {
             pollStatsCounter += delta;
@@ -347,21 +402,31 @@ public class SimulationScreen {
                 }
             }
         }
+
+        stage.act(delta);
+        stage.draw();
     }
 
     public void pollStats() {
-        stats.clear();
         ParticleTracker particleTracker = inputManager.getParticleTracker();
+        try {
+            if (getStats == null)
+                getStats = simulation.getEnv()::getStats;
+
+            stats.clear();
+            stats.putAll(getStats.call());
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+
         if (renderingEnabled && particleTracker.isTracking()) {
             Particle particle = particleTracker.getTrackedParticle();
-            stats.putAll(particle.getStats());
             if (DebugMode.isDebugModePhysicsDebug()) {
                 debugStats.clear();
                 debugStats.putAll(particle.getDebugStats());
             }
 
         } else {
-            stats.putAll(simulation.getEnv().getStats());
             if (DebugMode.isDebugModePhysicsDebug()) {
                 debugStats.clear();
                 debugStats.putAll(simulation.getEnv().getDebugStats());

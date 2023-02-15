@@ -58,7 +58,10 @@ public class NodeRenderer {
     }
 
     public void drawAtNode(SpriteBatch batch, Sprite sprite) {
-        drawAtNode(batch, sprite, .4f);
+        float scale = 0.4f;
+        if (node.hasAttachment())
+            scale *= node.getAttachmentConstructionProgress();
+        drawAtNode(batch, sprite, scale);
     }
 
     public void drawAtNode(SpriteBatch batch, Sprite sprite, float scale) {

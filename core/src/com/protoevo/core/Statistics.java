@@ -25,6 +25,7 @@ public class Statistics implements Serializable, Iterable<Statistics.Stat> {
     public enum BaseUnit {
         COUNT(""),
         PERCENTAGE("%"),
+        ANGLE("°"),
         MASS("g"),
         ENERGY("J"),
         TEMPERATURE("K"),
@@ -87,11 +88,15 @@ public class Statistics implements Serializable, Iterable<Statistics.Stat> {
         }
     }
 
-    public static class ComplexUnit {
+    public static class ComplexUnit implements Serializable {
+
+        @Serial
+        private static final long serialVersionUID = 1L;
 
         public static final ComplexUnit COUNT = new ComplexUnit(BaseUnit.COUNT);
         public static final ComplexUnit PERCENTAGE = new ComplexUnit(BaseUnit.PERCENTAGE);
         public static final ComplexUnit PERCENTAGE_PER_TIME = new ComplexUnit(BaseUnit.PERCENTAGE).divide(BaseUnit.TIME);
+        public static final ComplexUnit ANGLE = new ComplexUnit(BaseUnit.ANGLE);
         public static final ComplexUnit DISTANCE = new ComplexUnit(BaseUnit.DISTANCE);
         public static final ComplexUnit AREA = new ComplexUnit(BaseUnit.DISTANCE, 2);
         public static final ComplexUnit VOLUME = new ComplexUnit(BaseUnit.DISTANCE, 3);
@@ -217,6 +222,18 @@ public class Statistics implements Serializable, Iterable<Statistics.Stat> {
             this.type = type;
         }
 
+        public Stat(Stat stat) {
+            this(stat.name, stat);
+        }
+
+        public Stat(String name, Stat stat) {
+            this.name = name;
+            this.type = stat.type;
+            this.value = stat.value;
+            this.unit = stat.unit;
+            this.unitMultipliers = stat.unitMultipliers;
+        }
+
         public void setValue(Object value) {
             if (value.getClass() != type.clazz) {
                 throw new IllegalArgumentException(
@@ -328,6 +345,10 @@ public class Statistics implements Serializable, Iterable<Statistics.Stat> {
         return stat;
     }
 
+    public void put(Stat stat) {
+        stats.put(stat.getName(), stat);
+    }
+
     public Stat put(String name, float value) {
         return put(name, StatType.FLOAT, value);
     }
@@ -354,6 +375,10 @@ public class Statistics implements Serializable, Iterable<Statistics.Stat> {
         Stat stat = put(name, StatType.FLOAT, value);
         stat.setUnit(unit);
         return stat;
+    }
+
+    public Stat putRadian(String name, float value) {
+        return put(name, (float) Math.toDegrees(value), ComplexUnit.ANGLE);
     }
 
     public Stat putPercentage(String name, float percentage) {
@@ -434,6 +459,7 @@ public class Statistics implements Serializable, Iterable<Statistics.Stat> {
     }
 
     public void putAll(Statistics other) {
-        this.stats.putAll(other.stats);
+        for (Stat stat : other)
+            put(new Stat(stat));
     }
 }
