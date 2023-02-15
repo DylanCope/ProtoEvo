@@ -35,7 +35,9 @@ public class ConstructionProject implements Serializable {
 
     public float getRequiredComplexMoleculeAmount(ComplexMolecule molecule) {
         Map<ComplexMolecule, Float> requiredComplexMolecules = target.getRequiredComplexMolecules();
-        return requiredComplexMolecules.getOrDefault(molecule, 0f);
+        if (requiredComplexMolecules.containsKey(molecule))
+            return requiredComplexMolecules.get(molecule);
+        return 0f;
     }
 
     public boolean canMakeProgress(float availableEnergy,

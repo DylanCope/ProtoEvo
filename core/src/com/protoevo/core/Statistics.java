@@ -110,6 +110,11 @@ public class Statistics implements Serializable, Iterable<Statistics.Stat> {
         public static final ComplexUnit SPEED = new ComplexUnit(BaseUnit.DISTANCE).divide(BaseUnit.TIME);
         public static final ComplexUnit ACCELERATION = new ComplexUnit(BaseUnit.DISTANCE).divide(BaseUnit.TIME, 2);
         public static final ComplexUnit FORCE = new ComplexUnit(BaseUnit.MASS).multiply(ACCELERATION);
+        public static final ComplexUnit PRESSURE = new ComplexUnit(BaseUnit.ENERGY).divide(AREA);
+        public static final ComplexUnit POWER = new ComplexUnit(BaseUnit.ENERGY).divide(BaseUnit.TIME);
+        public static final ComplexUnit IMPULSE = new ComplexUnit(BaseUnit.MASS).multiply(SPEED);
+        public static final ComplexUnit MOMENTUM = new ComplexUnit(BaseUnit.MASS).multiply(SPEED);
+        public static final ComplexUnit TORQUE = new ComplexUnit(FORCE).multiply(DISTANCE);
 
         private final Map<BaseUnit, Integer> units = new TreeMap<>();
 
@@ -117,6 +122,10 @@ public class Statistics implements Serializable, Iterable<Statistics.Stat> {
 
         public ComplexUnit(BaseUnit unit) {
             units.put(unit, 1);
+        }
+
+        public ComplexUnit(ComplexUnit unit) {
+            units.putAll(unit.units);
         }
 
         public ComplexUnit(BaseUnit unit, int exponent) {

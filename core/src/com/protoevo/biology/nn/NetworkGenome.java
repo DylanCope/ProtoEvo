@@ -145,6 +145,10 @@ public class NetworkGenome implements Serializable
 		synapseGenes[synapseGenes.length - 1] = new SynapseGene(in, out, w);
 	}
 
+	public void addSynapse(NeuronGene in, NeuronGene out) {
+		addSynapse(in, out, Simulation.RANDOM.nextFloat(-1, 1));
+	}
+
 	private void createHiddenBetween(SynapseGene g) {
 
 		NeuronGene n = new NeuronGene(
@@ -274,6 +278,14 @@ public class NetworkGenome implements Serializable
 
 		mutateHidden(neuronGene);
 	}
+
+	public void mutateSynapseGene(int idx) {
+		numMutations++;
+		if (Simulation.RANDOM.nextBoolean())
+			synapseGenes[idx] = synapseGenes[idx].mutate();
+		else
+			createHiddenBetween(synapseGenes[idx]);
+	}
 	
 	public void mutate()
 	{
@@ -283,6 +295,12 @@ public class NetworkGenome implements Serializable
 						mutateNeuronGene(neuronGene);
 					}
 				});
+
+		for (int i = 0; i < synapseGenes.length; i++) {
+			if (Math.random() < mutationChance) {
+				mutateSynapseGene(i);
+			}
+		}
 	}
 	
 	public NetworkGenome crossover(NetworkGenome other)
@@ -454,6 +472,10 @@ public class NetworkGenome implements Serializable
 				Iterators.forArray(hiddenNeuronGenes),
 				Iterators.forArray(outputNeuronGenes)
 		);
+	}
+
+	public Iterator<SynapseGene> iterateSynapseGenes() {
+		return Iterators.forArray(synapseGenes);
 	}
 
 	public void setMutationChance(float mutationChance) {

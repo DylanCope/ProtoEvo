@@ -515,8 +515,8 @@ public class GeneExpressionFunction implements Evolvable.Component, Serializable
 
         if (grnGenome != null) {
             newFn.grnGenome = new NetworkGenome(grnGenome);
-            if (Math.random() < mutationChance)
-                newFn.grnGenome.mutate();
+            newFn.setMutationChance(mutationChance);
+            newFn.grnGenome.mutate();
             newFn.geneRegulatoryNetwork = newFn.grnGenome.phenotype();
         }
 

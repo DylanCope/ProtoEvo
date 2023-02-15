@@ -295,7 +295,14 @@ public class SurfaceNode implements Evolvable.Element, Serializable {
                 if (cell.getComplexMoleculeAvailable(molecule) > 0)
                     stats.putMass("Molecule %.2f Available".formatted(molecule.getSignature()),
                             cell.getComplexMoleculeAvailable(molecule));
+
+            Statistics attachmentStats = attachment.getStats();
+            if (attachmentStats != null)
+                stats.putAll(attachmentStats);
         }
+        for (NodeAttachment candidate : candidateAttachments)
+            if (candidate.getConstructionProgress() > 0 && candidate != attachment)
+                stats.putPercentage(candidate.getName() + " Construction Progress", candidate.getConstructionProgress());
         return stats;
     }
 

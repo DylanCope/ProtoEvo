@@ -30,14 +30,14 @@ public class Cilia extends OrganelleFunction {
         // input[1] controls generated torque
 
         Cell cell = organelle.getCell();
-        // smaller flagella generate less thrust and torque
+        // smaller cilia generate less thrust and torque
         float sizePenalty = cell.getRadius() / SimulationSettings.maxParticleRadius;
 
         float thrust = MathUtils.clamp(input[0], -1f, 1f);
         float turn = MathUtils.clamp(input[1], -1f, 1f);
         angle += ProtozoaSettings.maxCiliaTurn * turn * delta;
 
-        float l = sizePenalty * thrust * ProtozoaSettings.maxProtozoaThrust;
+        float l = sizePenalty * thrust * ProtozoaSettings.maxFlagellumThrust;
         thrustVector.set(l * MathUtils.cos(angle), l * MathUtils.sin(angle));
 
         float work = getKineticEnergyRequired(thrustVector);

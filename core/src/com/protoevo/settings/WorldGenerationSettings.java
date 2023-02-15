@@ -3,11 +3,11 @@ package com.protoevo.settings;
 public class WorldGenerationSettings {
     public static final int worldGenerationSeed = 1;
     public static final int numInitialProtozoa = 500;
-    public static final int numInitialPlantPellets = 1000;
+    public static final int numInitialPlantPellets = 5000;
     public static final boolean initialPopulationClustering = true;
     public static final int numRingClusters = 6;
     public static final int numPopulationClusters = 3;
-    public static final float populationClusterRadius = 3f;
+    public static final float populationClusterRadius = 5f;
     public static final float rockClusterRadius = 2f;
     public static final float populationClusterRadiusRange = 0.f;
     public static final float environmentRadius = 10.0f;

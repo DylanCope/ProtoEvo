@@ -2,6 +2,7 @@ package com.protoevo.biology.cells;
 
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.math.MathUtils;
+import com.badlogic.gdx.math.Vector2;
 import com.protoevo.biology.*;
 import com.protoevo.biology.nodes.SurfaceNode;
 import com.protoevo.biology.organelles.Organelle;
@@ -37,13 +38,11 @@ public abstract class Cell extends Particle implements Serializable
 	private float energyAvailable = SimulationSettings.startingAvailableCellEnergy;
 	private float constructionMassAvailable = SimulationSettings.startingAvailableConstructionMass;
 	private final Map<ComplexMolecule, Float> availableComplexMolecules = new HashMap<>(0);
-	private int maxAttachedCells = 0;
 	private final ConcurrentLinkedQueue<JointsManager.JoinedParticles> attachedCells = new ConcurrentLinkedQueue<>();
 	private final Map<CellAdhesion.CAM, Float> surfaceCAMs = new HashMap<>(0);
 	private final Map<Food.Type, Float> foodDigestionRates = new HashMap<>(0);
 	private final Map<Food.Type, Food> foodToDigest = new HashMap<>(0);
 	private final Set<ConstructionProject> constructionProjects = new HashSet<>(0);
-	private final Map<ComplexMolecule, Float> complexMoleculeProductionRates = new HashMap<>(0);
 	private final Map<CellAdhesion.CAM, Float> camProductionRates = new HashMap<>(0);
 	private final ArrayList<Cell> children = new ArrayList<>();
 	private ArrayList<Organelle> organelles = new ArrayList<>();
@@ -133,15 +132,6 @@ public abstract class Cell extends Particle implements Serializable
 	}
 
 	public void resourceProduction(float delta) {
-		for (ComplexMolecule molecule : complexMoleculeProductionRates.keySet()) {
-			float producedMass = delta * complexMoleculeProductionRates.getOrDefault(molecule, 0f);
-			float requiredEnergy = molecule.getProductionCost() * producedMass;
-			if (producedMass > 0 && constructionMassAvailable > producedMass && energyAvailable > requiredEnergy) {
-				addAvailableComplexMolecule(molecule, producedMass);
-				depleteConstructionMass(producedMass);
-				depleteEnergy(requiredEnergy);
-			}
-		}
 		for (CellAdhesion.CAM cam : camProductionRates.keySet()) {
 			float producedMass = delta * camProductionRates.getOrDefault(cam, 0f);
 			float requiredEnergy = cam.getProductionCost() * producedMass;
@@ -168,7 +158,14 @@ public abstract class Cell extends Particle implements Serializable
 		float extractedMass = cell.getMass() * extraction;
 		cell.removeMass(Settings.foodExtractionWasteMultiplier * extractedMass, CauseOfDeath.EATEN);
 
-		Food food = foodToDigest.getOrDefault(foodType, new Food(extractedMass, foodType));
+		Food food;
+		if (foodToDigest.containsKey(foodType))
+			food = foodToDigest.get(foodType);
+		else {
+			food = new Food(extractedMass, foodType);
+			foodToDigest.put(foodType, food);
+		}
+
 		food.addSimpleMass(extractedMass);
 
 		for (ComplexMolecule molecule : cell.getComplexMolecules()) {
@@ -178,7 +175,6 @@ public abstract class Cell extends Particle implements Serializable
 				food.addComplexMoleculeMass(molecule, extractedMass);
 			}
 		}
-		foodToDigest.put(foodType, food);
 	}
 
 	public void addFood(Food.Type foodType, float amount) {
@@ -256,7 +252,8 @@ public abstract class Cell extends Particle implements Serializable
 			return;
 
 		float gr = getGrowthRate();
-		float newR = getRadius() + SimulationSettings.cellGrowthFactor * gr * delta;
+		double dr = SimulationSettings.cellGrowthFactor * ((double) gr) * ((double) delta);
+		float newR = (float) ((double) getRadius() + dr);
 
 		if (newR == getRadius() || gr == 0)
 			return;
@@ -360,6 +357,35 @@ public abstract class Cell extends Particle implements Serializable
 		return timeAlive;
 	}
 
+	public float getKineticEnergyRequiredForThrust(Vector2 thrustVector) {
+		float speed = getSpeed();
+		float mass = getMass();
+		return .5f * mass * (speed*speed - thrustVector.len2() / (mass * mass));
+	}
+
+	public void generateMovement(Vector2 thrustVector) {
+		generateMovement(thrustVector, 0);
+	}
+
+	public void generateMovement(Vector2 thrustVector, float torque) {
+		float work = getKineticEnergyRequiredForThrust(thrustVector);
+		// TODO: add torque to work
+
+		if (enoughEnergyAvailable(work)) {
+			depleteEnergy(work);
+			applyImpulse(thrustVector);
+			applyTorque(torque);
+		}
+		else if (getEnergyAvailable() > 0) {
+			// not accurate scaling of thrust and torque
+			thrustVector.scl(getEnergyAvailable() / work);
+			torque = torque * getEnergyAvailable() / work;
+			setEnergyAvailable(0);
+			applyImpulse(thrustVector);
+			applyTorque(torque);
+		}
+	}
+
 	public Statistics getStats() {
 		Statistics stats = super.getStats();
 		stats.putTime("Age", timeAlive);
@@ -391,17 +417,9 @@ public abstract class Cell extends Particle implements Serializable
 				stats.putMass(junctionType + " CAM Mass", camMass);
 		}
 
-		if (engulfer != null)
-			stats.putBoolean("Being Engulfed", true);
+		stats.putBoolean("Being Engulfed", engulfer != null);
 
 		Statistics.ComplexUnit massPerTime = Statistics.ComplexUnit.MASS_PER_TIME;
-		for (ComplexMolecule molecule : complexMoleculeProductionRates.keySet())
-			if (complexMoleculeProductionRates.get(molecule) > 0)
-				stats.put(molecule + " Production", complexMoleculeProductionRates.get(molecule), massPerTime);
-
-//		for (ComplexMolecule molecule : availableComplexMolecules.keySet())
-//			if (availableComplexMolecules.get(molecule) > 0)
-//				stats.putMass(molecule + " Available", availableComplexMolecules.get(molecule));
 
 		for (Food.Type foodType : foodDigestionRates.keySet())
 			if (foodDigestionRates.get(foodType) > 0)
@@ -561,10 +579,6 @@ public abstract class Cell extends Particle implements Serializable
 		constructionMassAvailable = Math.max(0, constructionMassAvailable - mass);
 	}
 
-	public void setComplexMoleculeProductionRate(ComplexMolecule molecule, float rate) {
-		complexMoleculeProductionRates.put(molecule, rate);
-	}
-
 	public void setCAMProductionRate(CellAdhesion.CAM cam, float rate) {
 		camProductionRates.put(cam, rate);
 	}
@@ -572,7 +586,7 @@ public abstract class Cell extends Particle implements Serializable
 	@Override
 	public float getMass() {
 		float extraMass = constructionMassAvailable;
-		for (float mass : complexMoleculeProductionRates.values())
+		for (float mass : availableComplexMolecules.values())
 			extraMass += mass;
 		return getMass(getRadius(), extraMass);
 	}

@@ -14,6 +14,7 @@ import com.protoevo.ui.SimulationInputManager;
 import com.protoevo.ui.SimulationScreen;
 import com.protoevo.ui.UIStyle;
 import com.protoevo.ui.rendering.Renderer;
+import com.protoevo.utils.Colour;
 import com.protoevo.utils.DebugMode;
 
 import java.util.Arrays;
@@ -29,6 +30,8 @@ public class NetworkRenderer extends InputAdapter implements Renderer {
     private final GlyphLayout layout = new GlyphLayout();
     private final BitmapFont font;
     private MouseOverNeuronCallback mouseOverNeuronCallback;
+    private Colour.Gradient weightGradient =
+            new Colour.Gradient(-1, 1, Colour.RED, Colour.WHITE, Colour.GREEN);
 
     private float boxXStart, boxYStart, boxWidth, boxHeight, infoTextSize;
 
@@ -79,6 +82,7 @@ public class NetworkRenderer extends InputAdapter implements Renderer {
             precomputeGraphicsPositions(nn, boxXStart, boxYStart, boxWidth, boxHeight);
 
         float r = nn.getGraphicsNodeSpacing() / 8;
+        Colour weightColour = new Colour();
         for (Neuron neuron : nn.getNeurons()) {
             if (!neuron.getType().equals(Neuron.Type.SENSOR) && neuron.isConnectedToOutput()) {
 
@@ -86,22 +90,10 @@ public class NetworkRenderer extends InputAdapter implements Renderer {
                     Neuron inputNeuron = neuron.getInputs()[i];
 
                     float weight = inputNeuron.getLastState() * neuron.getWeights()[i];
-                    if (Math.abs(weight) <= 1e-4)
+                    if (Float.isNaN(weight) || Math.abs(weight) <= 1e-4)
                         continue;
 
-                    if (weight > 0) {
-                        float p = weight > 1 ? 1 : weight;
-                        shapeRenderer.setColor(new Color(
-                                (int) (240 - 100 * p) / 255f, 240 / 255f, (int) (255 - 100 * p) / 255f, 1f
-                        ));
-                    } else if (weight < 0) {
-                        float p = weight < -1 ? 1 : -weight;
-                        shapeRenderer.setColor(new Color(
-                                240 / 255f, (int) (240 - 100 * p) / 255f, (int) (255 - 100 * p) / 255f, 1f
-                        ));
-                    } else {
-                        shapeRenderer.setColor(new Color(240 / 255f, 240 / 255f, 240 / 255f, 1f));
-                    }
+                    shapeRenderer.setColor(weightGradient.getColour(weightColour, weight).getColor());
 
                     if (neuron == inputNeuron) {
                         shapeRenderer.circle(

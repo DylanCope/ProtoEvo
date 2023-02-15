@@ -40,4 +40,9 @@ public class ComplexMolecule implements Serializable {
         }
         return false;
     }
+
+    @Override
+    public int hashCode() {
+        return Float.hashCode(getSignature());
+    }
 }

@@ -10,6 +10,7 @@ import com.protoevo.biology.cells.PlantCell;
 import com.protoevo.biology.evolution.Evolvable;
 import com.protoevo.biology.cells.Protozoan;
 import com.protoevo.core.*;
+import com.protoevo.core.Shape;
 import com.protoevo.settings.WorldGenerationSettings;
 import com.protoevo.settings.Settings;
 import com.protoevo.settings.SimulationSettings;
@@ -69,7 +70,7 @@ public class Environment implements Serializable
 //		int plantCap = (int) Math.ceil(SimulationSettings.maxPlants / (float) (resolution * resolution));
 //		int meatCap = (int) Math.ceil(SimulationSettings.maxMeat / (float) (resolution * resolution));
 		int protozoaCap = 100;
-		int plantCap = 100;
+		int plantCap = 200;
 		int meatCap = 50;
 
 		spatialHashes = new ConcurrentHashMap<>(3, 1);
@@ -187,7 +188,7 @@ public class Environment implements Serializable
 //			initialisePopulation(Arrays.copyOfRange(
 //					populationStartCentres, 0, WorldGenerationSettings.numPopulationClusters));
 //		else
-			initialisePopulation();
+		initialisePopulation();
 
 		flushEntitiesToAdd();
 
@@ -222,15 +223,15 @@ public class Environment implements Serializable
 	}
 
 	public void initialisePopulation(Vector2[] clusterCentres) {
-		Function<Float, Vector2> findPlantPosition = this::randomPosition;
-		Function<Float, Vector2> findProtozoaPosition = this::randomPosition;
 		if (clusterCentres != null) {
-			findPlantPosition = r -> randomPosition(2f*r, clusterCentres);
-			findProtozoaPosition = r -> randomPosition(r, clusterCentres);
+			final float clusterR = WorldGenerationSettings.populationClusterRadius;
+			spawnPositionFns.put(PlantCell.class, r -> randomPosition(r, clusterCentres, 2*clusterR));
+			spawnPositionFns.put(Protozoan.class, r -> randomPosition(r, clusterCentres, clusterR));
 		}
-
-		spawnPositionFns.put(PlantCell.class, findPlantPosition);
-		spawnPositionFns.put(Protozoan.class, findProtozoaPosition);
+		else {
+			spawnPositionFns.put(PlantCell.class, this::randomPosition);
+			spawnPositionFns.put(Protozoan.class, this::randomPosition);
+		}
 
 		System.out.println("Creating initial plant population...");
 		for (int i = 0; i < WorldGenerationSettings.numInitialPlantPellets; i++) {
@@ -273,13 +274,24 @@ public class Environment implements Serializable
 		return randomPosition(entityRadius, clusterCentre, WorldGenerationSettings.populationClusterRadius);
 	}
 
+	public Vector2 randomPosition(float entityRadius, Vector2[] clusterCentres, float clusterRadius) {
+		int clusterIdx = Simulation.RANDOM.nextInt(clusterCentres.length);
+		Vector2 clusterCentre = clusterCentres[clusterIdx];
+		return randomPosition(entityRadius, clusterCentre, clusterRadius);
+	}
+
 	public Vector2 randomPosition(float entityRadius, Vector2 centre, float clusterRadius) {
 		for (int i = 0; i < 20; i++) {
 			float r = Simulation.RANDOM.nextFloat(clusterRadius);
 			Vector2 pos = Geometry.randomVector(r*r);
 			pos.setLength((float) Math.sqrt(pos.len()));
 			pos.add(centre);
-			if (notCollidingWithAnything(pos, entityRadius))
+			Optional<? extends Shape> collision = getCollision(pos, entityRadius);
+			if (collision.isPresent() && collision.get() instanceof PlantCell) {
+				PlantCell plant = (PlantCell) collision.get();
+				plant.kill(CauseOfDeath.ENV_CAPACITY_EXCEEDED);
+				return pos;
+			} else if (collision.isEmpty())
 				return pos;
 		}
 
@@ -463,13 +475,15 @@ public class Environment implements Serializable
 		return generation;
 	}
 
-	public boolean notCollidingWithAnything(Vector2 pos, float r) {
-		boolean anyCellCollisions = Streams.concat(cells.stream(), cellsToAdd.stream())
-				.noneMatch(cell -> Geometry.doCirclesCollide(pos, r, cell.getPos(), cell.getRadius()));
-		if (!anyCellCollisions)
-			return false;
+	public Optional<? extends Shape> getCollision(Vector2 pos, float r) {
+		Optional<Cell> collidingCell = Streams.concat(cells.stream(), cellsToAdd.stream())
+				.filter(cell -> Geometry.doCirclesCollide(pos, r, cell.getPos(), cell.getRadius()))
+				.findAny();
 
-		return rocks.stream().noneMatch(rock -> rock.intersectsWith(pos, r));
+		if (collidingCell.isPresent())
+			return collidingCell;
+
+		return rocks.stream().filter(rock -> rock.intersectsWith(pos, r)).findAny();
 	}
 
 	public float getElapsedTime() {

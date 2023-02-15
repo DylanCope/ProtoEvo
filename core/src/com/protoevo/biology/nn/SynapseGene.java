@@ -51,6 +51,11 @@ public class SynapseGene implements Comparable<SynapseGene>, Serializable
         return false;
     }
 
+    public SynapseGene mutate() {
+        float newWeight = randomInitialWeight();
+        return new SynapseGene(in, out, newWeight, innovation);
+    }
+
     @Override
     public int hashCode() {
         return Objects.hash(in.getId(), out.getId());

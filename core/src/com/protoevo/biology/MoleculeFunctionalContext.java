@@ -43,13 +43,19 @@ public interface MoleculeFunctionalContext extends Consumer<ComplexMolecule>, Se
         return getMoleculeMatching(toFunctionSignature(molecule1), toFunctionSignature(molecule2));
     }
 
-    default Optional<MoleculeFunction> getClosestFunction(float moleculeSignature) {
+    default MoleculeFunction getClosestFunction(float moleculeSignature) {
         Map<MoleculeFunction, Float> functionSignatures = getMoleculeFunctionSignatures();
-        return functionSignatures.entrySet().stream().min((e1, e2) -> {
-            float diff1 = Math.abs(e1.getValue() - moleculeSignature);
-            float diff2 = Math.abs(e2.getValue() - moleculeSignature);
-            return Float.compare(diff1, diff2);
-        }).map(Map.Entry::getKey);
+        MoleculeFunction closestFunction = null;
+        float distance = Float.MAX_VALUE;
+        for (MoleculeFunction fn : functionSignatures.keySet()) {
+            float fnSignature = functionSignatures.get(fn);
+            float diff = Math.abs(fnSignature - moleculeSignature);
+            if (diff < distance) {
+                distance = diff;
+                closestFunction = fn;
+            }
+        }
+        return closestFunction;
     }
 
     default float getMoleculePotency(float moleculeSignature, MoleculeFunction fn) {
@@ -69,12 +75,11 @@ public interface MoleculeFunctionalContext extends Consumer<ComplexMolecule>, Se
 
     default void accept(ComplexMolecule molecule) {
         float moleculeSignature = toFunctionSignature(molecule);
-        Optional<MoleculeFunction> function = getClosestFunction(moleculeSignature);
+        MoleculeFunction function = getClosestFunction(moleculeSignature);
 
-        if (function.isPresent()) {
-            MoleculeFunction closestFunction = function.get();
-            float potency = getMoleculePotency(moleculeSignature, closestFunction);
-            closestFunction.accept(molecule, potency);
+        if (function != null) {
+            float potency = getMoleculePotency(moleculeSignature, function);
+            function.accept(molecule, potency);
         }
     }
 }

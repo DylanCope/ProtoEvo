@@ -85,6 +85,9 @@ public class AdhesionReceptor extends NodeAttachment {
     }
 
     private void tryBindTo(Protozoan otherCell) {
+        if (Math.random() < getConstructionProgress())
+            return;
+
         for (SurfaceNode otherNode : otherCell.getSurfaceNodes()) {
             if (createBindingCondition(otherNode)) {
                 Cell cell = node.getCell();

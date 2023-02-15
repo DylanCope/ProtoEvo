@@ -37,6 +37,9 @@ public class Protozoan extends Cell implements Evolvable
 	private final static float geneUpdateTime = Settings.simulationUpdateDelta * 20;
 	private final Vector2 tmp = new Vector2();
 	private final Collection<Cell> engulfedCells = new ArrayList<>(0);
+	private final Vector2 thrust = new Vector2();
+	private float thrustAngle = (float) (2 * Math.PI * Math.random());
+	private float thrustTurn, thrustMag;
 
 	@Override
 	public void update(float delta)
@@ -57,6 +60,8 @@ public class Protozoan extends Cell implements Evolvable
 		if (shouldSplit() && hasNotBurst()) {
 			getEnv().requestBurst(this, Protozoan.class, this::createSplitChild);
 		}
+
+		move(delta);
 	}
 
 	@Override
@@ -138,6 +143,24 @@ public class Protozoan extends Cell implements Evolvable
 	@GeneRegulator(name="Construction Mass Available", max=1/1000f)
 	public float getConstructionMass() {
 		return getConstructionMassAvailable();
+	}
+
+	@RegulatedFloat(name="Cilia Thrust", min=0, max=1)
+	public void setCiliaThrust(float thrust) {
+		float sizePenalty = getRadius() / SimulationSettings.maxParticleRadius;
+		this.thrustMag = sizePenalty * thrust * ProtozoaSettings.maxCiliaThrust;
+	}
+
+	@RegulatedFloat(name="Cilia Turn", min=0, max=1)
+	public void setCiliaTurn(float turn) {
+		this.thrustTurn = ProtozoaSettings.maxCiliaTurn * turn;
+	}
+
+	public void move(float delta) {
+		thrustAngle += delta * thrustTurn;
+		thrust.set(thrustMag * (float) Math.cos(thrustAngle),
+				   thrustMag * (float) Math.sin(thrustAngle));
+		generateMovement(thrust);
 	}
 
 	private boolean shouldSplit() {
@@ -254,7 +277,7 @@ public class Protozoan extends Cell implements Evolvable
 		Statistics stats = super.getStats();
 		stats.put("Death Rate", 100 * damageRate, Statistics.ComplexUnit.PERCENTAGE_PER_TIME);
 		stats.putDistance("Split Radius", splitRadius);
-		stats.putBoolean("Has Mated", crossOverGenome == null);
+		stats.putBoolean("Has Mated", crossOverGenome != null);
 		int numSpikes = getNumSpikes();
 		if (numSpikes > 0)
 			stats.putCount("Num Spikes", numSpikes);

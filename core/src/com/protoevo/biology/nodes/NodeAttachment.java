@@ -3,6 +3,7 @@ package com.protoevo.biology.nodes;
 import com.protoevo.biology.ComplexMolecule;
 import com.protoevo.biology.Constructable;
 import com.protoevo.biology.ConstructionProject;
+import com.protoevo.core.Statistics;
 import com.protoevo.settings.SimulationSettings;
 import com.protoevo.utils.Geometry;
 
@@ -73,4 +74,8 @@ public abstract class NodeAttachment implements Serializable, Constructable {
 
     public abstract String getInputMeaning(int index);
     public abstract String getOutputMeaning(int index);
+
+    public Statistics getStats() {
+        return null;
+    }
 }

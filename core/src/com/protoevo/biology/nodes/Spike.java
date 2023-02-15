@@ -23,9 +23,10 @@ public class Spike extends NodeAttachment implements Serializable {
     }
 
     public float getSpikeScalar() {
+        // TODO: update this to use the actual spike sprite size
         // hard coded to according the 40 pixels of the spike sprite
         // and the 128 pixels of the cell sprite
-        return 1f + 40f / 128f;
+        return getConstructionProgress() * (1f + 40f / 128f);
     }
 
     @Override

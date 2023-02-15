@@ -52,7 +52,8 @@ public class PhagocyticReceptor extends NodeAttachment implements Serializable {
 
     private boolean correctSizes(Cell other) {
         Cell cell = node.getCell();
-        return other.getRadius() < cell.getRadius() / 2
+        float progressFactor = 0.5f + 0.5f * getConstructionProgress();
+        return other.getRadius() < progressFactor * cell.getRadius() / 2
                 && cell.getRadius() > 2 * SimulationSettings.minParticleRadius;
     }
 

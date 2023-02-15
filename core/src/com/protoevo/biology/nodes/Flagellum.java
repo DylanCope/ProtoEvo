@@ -3,6 +3,7 @@ package com.protoevo.biology.nodes;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector2;
 import com.protoevo.biology.cells.Cell;
+import com.protoevo.core.Statistics;
 import com.protoevo.settings.ProtozoaSettings;
 import com.protoevo.settings.SimulationSettings;
 
@@ -16,6 +17,7 @@ public class Flagellum extends NodeAttachment implements Serializable {
 
     private final Vector2 thrustVector = new Vector2();
     private float torque;
+    private Statistics stats = new Statistics();
 
     public Flagellum(SurfaceNode node) {
         super(node);
@@ -25,7 +27,6 @@ public class Flagellum extends NodeAttachment implements Serializable {
     public float getKineticEnergyRequired(Vector2 thrustVector, float torque) {
 
         Cell cell = node.getCell();
-        cell.getBody().getAngularVelocity();
 
         float speed = cell.getSpeed();
         float mass = cell.getMass();
@@ -48,28 +49,17 @@ public class Flagellum extends NodeAttachment implements Serializable {
 
         Cell cell = node.getCell();
         // smaller flagella generate less thrust and torque
-        float sizePenalty = cell.getRadius() / SimulationSettings.maxParticleRadius;
+        float sizePenalty = getConstructionProgress() * cell.getRadius() / SimulationSettings.maxParticleRadius;
 
         float thrust = MathUtils.clamp(input[0], -1f, 1f);
-        torque = MathUtils.clamp(input[1], -1f, 1f);
+        torque = getConstructionProgress() * MathUtils.clamp(input[1], -1f, 1f);
 
         thrustVector.set(node.getRelativePos()).scl(-1).nor();
-        thrustVector.setLength(sizePenalty * thrust * ProtozoaSettings.maxProtozoaThrust);
+        thrustVector.setLength(sizePenalty * thrust * ProtozoaSettings.maxFlagellumThrust);
 
-        torque *= sizePenalty * ProtozoaSettings.maxProtozoaTorque;
+        torque *= sizePenalty * ProtozoaSettings.maxFlagellumTorque;
 
-		float work = getKineticEnergyRequired(thrustVector, torque);
-		if (cell.enoughEnergyAvailable(work)) {
-			cell.depleteEnergy(work);
-			cell.applyImpulse(thrustVector);
-            cell.applyTorque(torque);
-		}
-        else if (cell.getEnergyAvailable() > 0) {
-            thrustVector.scl(cell.getEnergyAvailable() / work);
-            torque = torque * cell.getEnergyAvailable() / work;
-            cell.applyImpulse(thrustVector);
-            cell.applyTorque(torque);
-        }
+        cell.generateMovement(thrustVector, torque);
     }
 
     @Override
@@ -97,5 +87,13 @@ public class Flagellum extends NodeAttachment implements Serializable {
 
     public float getTorque() {
         return torque;
+    }
+
+    @Override
+    public Statistics getStats() {
+        stats.clear();
+        stats.put("Thrust", thrustVector.len(), Statistics.ComplexUnit.IMPULSE);
+        stats.put("Torque", torque, Statistics.ComplexUnit.TORQUE);
+        return stats;
     }
 }

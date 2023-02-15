@@ -49,7 +49,7 @@ public class FlagellumRenderer extends NodeRenderer {
             float thrust = attachment.getThrustVector().len();
             if (thrust > 0) {
                 float p = Utils.linearRemap(thrust,
-                        0, ProtozoaSettings.maxProtozoaThrust,
+                        0, ProtozoaSettings.maxFlagellumThrust,
                         0.5f, 1f);
                 animationTime += animationSpeed * delta * p;
             }
@@ -82,7 +82,7 @@ public class FlagellumRenderer extends NodeRenderer {
         Vector2 pos = cell.getPos();
 
         Flagellum attachment = (Flagellum) node.getAttachment();
-        float maxThrust = ProtozoaSettings.maxProtozoaThrust;
+        float maxThrust = ProtozoaSettings.maxFlagellumThrust;
         Vector2 thrust = attachment.getThrustVector().cpy().setLength(cell.getRadius()*1.5f);
         float mag = Utils.linearRemap(thrust.len(), 0, maxThrust, 0, 1.5f);
         sr.setColor(0, 1, 0, 1);

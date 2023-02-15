@@ -7,7 +7,63 @@ import java.io.Serializable;
 
 public class Colour implements Serializable {
 
+    public static class Gradient {
+
+        public Colour[] colours;
+        public float[] positions;
+
+        public Gradient(Colour...colours) {
+            this.colours = colours;
+            positions = new float[colours.length];
+            for (int i = 0; i < colours.length; i++) {
+                positions[i] = (float) i / (colours.length - 1);
+            }
+        }
+
+        public Gradient(float min, float max, Colour...colours) {
+            this(colours);
+            remap(min, max);
+        }
+
+        public Gradient(Colour[] colours, float[] positions) {
+            this.colours = colours;
+            this.positions = positions;
+        }
+
+        public Colour getColour(Colour output, float position) {
+            if (position <= positions[0])
+                return output.set(colours[0]);
+            if (position >= positions[positions.length - 1])
+                return output.set(colours[colours.length - 1]);
+            for (int i = 0; i < positions.length - 1; i++) {
+                if (positions[i] <= position && position <= positions[i + 1]) {
+                    float t = (position - positions[i]) / (positions[i + 1] - positions[i]);
+                    return output.set(colours[i]).lerp(colours[i + 1], t);
+                }
+            }
+            throw new RuntimeException("Unable to produce a colour for position " + position + " in gradient");
+        }
+
+        public void remap(float min, float max) {
+            float currMin = positions[0];
+            float currMax = positions[positions.length - 1];
+            for (int i = 0; i < positions.length; i++) {
+                positions[i] = Utils.linearRemap(positions[i], currMin, currMax, min, max);
+            }
+        }
+    }
+
     public static Colour WHITE = new Colour(1, 1, 1, 1);
+    public static Colour BLACK = new Colour(0, 0, 0, 1);
+    public static Colour RED = new Colour(1, 0, 0, 1);
+    public static Colour GREEN = new Colour(0, 1, 0, 1);
+    public static Colour BLUE = new Colour(0, 0, 1, 1);
+    public static Colour YELLOW = new Colour(1, 1, 0, 1);
+    public static Colour CYAN = new Colour(0, 1, 1, 1);
+    public static Colour MAGENTA = new Colour(1, 0, 1, 1);
+    public static Colour GRAY = new Colour(0.5f, 0.5f, 0.5f, 1);
+    public static Colour LIGHT_GRAY = new Colour(0.75f, 0.75f, 0.75f, 1);
+    public static Colour DARK_GRAY = new Colour(0.25f, 0.25f, 0.25f, 1);
 
     @Serial
     private static final long serialVersionUID = 1L;

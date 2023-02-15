@@ -104,7 +104,7 @@ public class Photoreceptor extends NodeAttachment implements Serializable {
 
         if (sqLen < minSqLen) {
             minSqLen = sqLen;
-            float w = computeColourFalloffWeight();
+            float w = getConstructionProgress() * computeColourFalloffWeight();
             r += o.getColor().r * w;
             g += o.getColor().g * w;
             b += o.getColor().b * w;
