@@ -29,6 +29,7 @@ import com.protoevo.core.Statistics;
 import com.protoevo.settings.WorldGenerationSettings;
 import com.protoevo.env.Environment;
 import com.protoevo.input.ParticleTracker;
+import com.protoevo.ui.nn.MouseOverNeuronCallback;
 import com.protoevo.ui.nn.NetworkRenderer;
 import com.protoevo.ui.rendering.*;
 import com.protoevo.ui.shaders.ShaderLayers;
@@ -58,6 +59,7 @@ public class SimulationScreen {
     private final TopBar topBar;
     private final int infoTextSize, textAwayFromEdge;
     private final NetworkRenderer networkRenderer;
+    private final MouseOverNeuronCallback mouseOverNeuronCallback;
     private final float noRenderPollStatsTime = 2f;
     private float elapsedTime = 0, pollStatsCounter = 0, countDownToRender = 0;
     private float graphicsStatsYOffset = 0;
@@ -152,7 +154,9 @@ public class SimulationScreen {
         float boxHeight = 3 * graphicsHeight / 4;
         float boxXStart = graphicsWidth - boxWidth * 1.1f;
         float boxYStart = (graphicsHeight - boxHeight) / 2;
-        networkRenderer = new NetworkRenderer(simulation, this,
+        mouseOverNeuronCallback = new MouseOverNeuronCallback(font);
+        networkRenderer = new NetworkRenderer(
+                simulation, this, uiBatch, mouseOverNeuronCallback,
                 boxXStart, boxYStart, boxWidth, boxHeight, infoTextSize);
     }
 
@@ -390,8 +394,16 @@ public class SimulationScreen {
         if (renderingEnabled && DebugMode.isDebugMode())
             drawDebugInfo();
 
+        handleNetworkRenderer(delta);
+
         uiBatch.end();
 
+        stage.act(delta);
+        stage.draw();
+    }
+
+    private void handleNetworkRenderer(float delta) {
+        ParticleTracker particleTracker = inputManager.getParticleTracker();
         if (renderingEnabled && particleTracker.isTracking()) {
             Particle particle = particleTracker.getTrackedParticle();
             if (particle instanceof Protozoan) {
@@ -402,9 +414,6 @@ public class SimulationScreen {
                 }
             }
         }
-
-        stage.act(delta);
-        stage.draw();
     }
 
     public void pollStats() {

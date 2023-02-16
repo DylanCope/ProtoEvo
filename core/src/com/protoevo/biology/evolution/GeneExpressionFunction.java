@@ -17,7 +17,12 @@ public class GeneExpressionFunction implements Evolvable.Component, Serializable
     public static class ExpressionNodes extends HashMap<String, ExpressionNode> {}
     public static class Regulators extends HashMap<String, RegulationNode> {}
 
-    public static class RegulationNode implements Serializable {
+    public static abstract class Node {
+        public abstract Object getLastTarget();
+        public abstract String getDisplayName();
+    }
+
+    public static class RegulationNode extends Node implements Serializable {
         public static final long serialVersionUID = 1L;
         public String name;
         private transient Function<Evolvable, Float> regulatorGetter;
@@ -74,6 +79,7 @@ public class GeneExpressionFunction implements Evolvable.Component, Serializable
             return regulatorGetter.apply(evolvable);
         }
 
+        @Override
         public Object getLastTarget() {
             return lastTarget;
         }
@@ -89,9 +95,13 @@ public class GeneExpressionFunction implements Evolvable.Component, Serializable
         public String getName() {
             return name;
         }
+
+        public String getDisplayName() {
+            return name;
+        }
     }
 
-    public static class ExpressionNode implements Serializable {
+    public static class ExpressionNode extends Node implements Serializable {
         public static final long serialVersionUID = 1L;
         private String name;
         private final Trait<?> trait;
@@ -173,8 +183,14 @@ public class GeneExpressionFunction implements Evolvable.Component, Serializable
             }
         }
 
+        @Override
         public Object getLastTarget() {
             return lastTarget;
+        }
+
+        @Override
+        public String getDisplayName() {
+            return getTrait().getTraitName();
         }
 
         public String getName() {
@@ -590,5 +606,11 @@ public class GeneExpressionFunction implements Evolvable.Component, Serializable
             s.append(geneName).append(": ").append(expressionNodes.get(geneName)).append("\n");
         }
         return s.toString();
+    }
+
+    public ExpressionNode getExpressionNode(String name) {
+        if (expressionNodes.containsKey(name))
+            return expressionNodes.get(name);
+        return null;
     }
 }

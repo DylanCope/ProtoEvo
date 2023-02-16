@@ -10,6 +10,15 @@ import com.badlogic.gdx.scenes.scene2d.ui.*;
 
 public class UIStyle {
 
+    public static Texture getWhite1x1() {
+        Pixmap pixmap = new Pixmap(1, 1, Pixmap.Format.RGBA8888);
+        pixmap.setColor(Color.WHITE);
+        pixmap.fill();
+        Texture texture = new Texture(pixmap);
+        pixmap.dispose();
+        return texture;
+    }
+
     public static BitmapFont createFiraCode(int size) {
         String fontPath = "fonts/FiraCode-Retina.ttf";
         FreeTypeFontGenerator generator = new FreeTypeFontGenerator(Gdx.files.local(fontPath));
@@ -24,11 +33,7 @@ public class UIStyle {
     public static Skin getUISkin() {
         Skin skin = new Skin();
 
-        // Generate a 1x1 white texture and store it in the skin named "white".
-        Pixmap pixmap = new Pixmap(1, 1, Pixmap.Format.RGBA8888);
-        pixmap.setColor(Color.WHITE);
-        pixmap.fill();
-        skin.add("white", new Texture(pixmap));
+        skin.add("white", getWhite1x1());
 
         int infoTextSize = (int) (Gdx.graphics.getHeight() / 50f);
         // Store the default libGDX font under the name "default".

@@ -4,6 +4,7 @@ import com.badlogic.gdx.backends.lwjgl3.Lwjgl3Application;
 import com.badlogic.gdx.backends.lwjgl3.Lwjgl3ApplicationConfiguration;
 import com.badlogic.gdx.graphics.Texture;
 import com.protoevo.core.Application;
+import com.protoevo.settings.RenderSettings;
 import com.protoevo.utils.DebugMode;
 import com.badlogic.gdx.tools.texturepacker.TexturePacker;
 
@@ -27,19 +28,23 @@ public class DesktopLauncher {
 			config.setFullscreenMode(Lwjgl3ApplicationConfiguration.getDisplayMode());
 		}
 
-		TexturePacker.Settings settings = new TexturePacker.Settings();
-//		settings.maxWidth = 512;
-//		settings.maxHeight = 512;
-		settings.bleed = true;
-		settings.bleedIterations = 100;
-		settings.premultiplyAlpha = true;
-		settings.filterMin = Texture.TextureFilter.Linear;
-		settings.filterMag = Texture.TextureFilter.Linear;
-//		settings.filterMag = ;
+//		TexturePacker.Settings settings = new TexturePacker.Settings();
+////		settings.maxWidth = 512;
+////		settings.maxHeight = 512;
+//		settings.bleed = true;
+//		settings.bleedIterations = 100;
+//		settings.premultiplyAlpha = true;
+//		settings.filterMin = Texture.TextureFilter.Linear;
+//		settings.filterMag = Texture.TextureFilter.Linear;
+////		settings.filterMag = ;
+//
+//		String[] names = new String[]{"cell"};//, "flagella", "nodes"};
+//		for (String name : names)
+//			TexturePacker.process(settings, "textures/" + name, "textures", name);
 
-		String[] names = new String[]{"cell"};//, "flagella", "nodes"};
-		for (String name : names)
-			TexturePacker.process(settings, "textures/" + name, "textures", name);
+		config.setBackBufferConfig(
+				8, 8, 8, 8, 16, 0,
+				RenderSettings.msaaSamples); // 8, 8, 8, 8, 16, 0 are default values
 
 		config.useVsync(true);
 		config.setTitle("ProtoEvo");

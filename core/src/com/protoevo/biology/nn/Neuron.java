@@ -8,7 +8,6 @@ import java.util.function.Function;
  * Created by Dylan on 26/05/2017.
  */
 public class Neuron implements Comparable<Neuron>, Serializable {
-
     public interface Activation extends Function<Float, Float>, Serializable {
         Activation SIGMOID = z -> 1 / (1 + (float) Math.exp(-z));
         Activation LINEAR = z -> z;
@@ -125,6 +124,14 @@ public class Neuron implements Comparable<Neuron>, Serializable {
         return this;
     }
 
+    public boolean isInput(Neuron neuron) {
+        for (Neuron n : inputs)
+            if (n.equals(neuron))
+                return true;
+        return false;
+    }
+
+
     public Activation getActivation() {
         return activation;
     }
@@ -202,7 +209,7 @@ public class Neuron implements Comparable<Neuron>, Serializable {
     }
 
     public String getLabel() {
-        return label == null ? "" : label;
+        return label == null ? "Neuron " + id : label;
     }
 
     public boolean hasLabel() {

@@ -5,6 +5,7 @@ import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.GlyphLayout;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.protoevo.biology.evolution.GeneExpressionFunction;
+import com.protoevo.biology.nn.GRNTag;
 import com.protoevo.biology.nn.Neuron;
 import com.protoevo.biology.nodes.SurfaceNode;
 import com.protoevo.utils.Utils;
@@ -12,40 +13,29 @@ import com.protoevo.utils.Utils;
 public class MouseOverNeuronCallback {
     private final GlyphLayout layout = new GlyphLayout();
     private final BitmapFont font;
+    private GeneExpressionFunction geneExpressionFunction;
 
     public MouseOverNeuronCallback(BitmapFont font) {
         this.font = font;
     }
 
-    public String getSurfaceNodeLabel(Neuron neuron,
-                                      GeneExpressionFunction.ExpressionNode geneNode,
-                                      SurfaceNode surfaceNode) {
-        String label = "Node " + surfaceNode.getIndex() + ":";
-        if (surfaceNode.getAttachment() != null)
-            label += " " + surfaceNode.getAttachment().getName() + ": ";
-
-        if (geneNode.getTrait().getTraitName().contains(SurfaceNode.activationPrefix)) {
-            String[] parts = geneNode.getTrait().getTraitName().split(SurfaceNode.activationPrefix);
-            label = getAttachmentIOString(surfaceNode, label, parts);
-        } else {
-            label += " " + geneNode.getTrait().getTraitName();
-        }
-        label += " = " + Utils.numberToString(neuron.getLastState(), 2);
-        return label;
+    public void setGeneExpressionFunction(GeneExpressionFunction geneExpressionFunction) {
+        this.geneExpressionFunction = geneExpressionFunction;
     }
 
     public String getSurfaceNodeLabel(Neuron neuron,
-                                      GeneExpressionFunction.RegulationNode regulationNode,
+                                      GeneExpressionFunction.Node geneNode,
                                       SurfaceNode surfaceNode) {
         String label = "Node " + surfaceNode.getIndex() + ":";
         if (surfaceNode.getAttachment() != null)
             label += " " + surfaceNode.getAttachment().getName() + ": ";
 
-        if (regulationNode.getName().contains(SurfaceNode.activationPrefix)) {
-            String[] parts = regulationNode.getName().split(SurfaceNode.activationPrefix);
+        String displayName = geneNode.getDisplayName();
+        if (displayName.contains(SurfaceNode.activationPrefix)) {
+            String[] parts = displayName.split(SurfaceNode.activationPrefix);
             label = getAttachmentIOString(surfaceNode, label, parts);
         } else {
-            label += " " + regulationNode.getName();
+            label += " " + displayName;
         }
         label += " = " + Utils.numberToString(neuron.getLastState(), 2);
         return label;
@@ -69,15 +59,12 @@ public class MouseOverNeuronCallback {
 
     public String getNeuronLabel(Neuron neuron) {
 
-        if (neuron.getTags() != null && neuron.getTags().length > 0) {
-            if (neuron.getTags()[0] instanceof GeneExpressionFunction.ExpressionNode) {
-                GeneExpressionFunction.ExpressionNode node = (GeneExpressionFunction.ExpressionNode) neuron.getTags()[0];
-                if (node.getLastTarget() instanceof SurfaceNode) {
-                    return getSurfaceNodeLabel(neuron, node, (SurfaceNode) node.getLastTarget());
-                }
-            }
-            else if (neuron.getTags()[0] instanceof GeneExpressionFunction.RegulationNode) {
-                GeneExpressionFunction.RegulationNode node = (GeneExpressionFunction.RegulationNode) neuron.getTags()[0];
+        if (geneExpressionFunction != null && neuron.getTags() != null
+                && neuron.getTags().length > 0 && neuron.getTags()[0] instanceof GRNTag)
+        {
+            Object tagged = ((GRNTag) neuron.getTags()[0]).apply(geneExpressionFunction);
+            if (tagged instanceof GeneExpressionFunction.Node) {
+                GeneExpressionFunction.Node node = (GeneExpressionFunction.Node) tagged;
                 if (node.getLastTarget() instanceof SurfaceNode) {
                     return getSurfaceNodeLabel(neuron, node, (SurfaceNode) node.getLastTarget());
                 }
@@ -104,7 +91,7 @@ public class MouseOverNeuronCallback {
         if (labelX + infoWidth >= Gdx.graphics.getWidth())
             labelX = (int) (Gdx.graphics.getWidth() - 1.1 * infoWidth);
 
-        float labelY = Gdx.graphics.getHeight() - (y + 1.1f * graphicsRadius) + font.getLineHeight();
+        float labelY = (y + 1.1f * graphicsRadius) + font.getLineHeight();
         font.draw(batch, labelStr, labelX, labelY);
     }
 }

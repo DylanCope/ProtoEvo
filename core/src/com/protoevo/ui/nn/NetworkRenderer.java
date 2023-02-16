@@ -1,11 +1,12 @@
 package com.protoevo.ui.nn;
 
+import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.InputAdapter;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.GlyphLayout;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
-import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
+import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.Vector2;
 import com.protoevo.biology.nn.NeuralNetwork;
 import com.protoevo.biology.nn.Neuron;
@@ -16,6 +17,7 @@ import com.protoevo.ui.UIStyle;
 import com.protoevo.ui.rendering.Renderer;
 import com.protoevo.utils.Colour;
 import com.protoevo.utils.DebugMode;
+import space.earlygrey.shapedrawer.ShapeDrawer;
 
 import java.util.Arrays;
 import java.util.TreeMap;
@@ -25,17 +27,25 @@ public class NetworkRenderer extends InputAdapter implements Renderer {
     private final Simulation simulation;
     private final SimulationScreen simulationScreen;
     private NeuralNetwork nn;
-    private final ShapeRenderer shapeRenderer;
+//    private final ShapeRenderer shapeRenderer;
+    private final ShapeDrawer shapeRenderer;
     private final SpriteBatch batch;
     private final GlyphLayout layout = new GlyphLayout();
     private final BitmapFont font;
     private MouseOverNeuronCallback mouseOverNeuronCallback;
-    private Colour.Gradient weightGradient =
-            new Colour.Gradient(-1, 1, Colour.RED, Colour.WHITE, Colour.GREEN);
+    private final Colour.Gradient weightGradient =
+            new Colour.Gradient(-1, 1,
+                    Colour.RED, new Colour(1, 1, 1, 0), Colour.GREEN);
+    private final Colour.Gradient stateGradient =
+            new Colour.Gradient(-1, 1,
+                    Colour.RED, Colour.BLACK, Colour.GREEN);
 
     private float boxXStart, boxYStart, boxWidth, boxHeight, infoTextSize;
+    private Neuron mouseOverNeuron = null;
 
     public NetworkRenderer(Simulation simulation, SimulationScreen simulationScreen,
+                           SpriteBatch batch,
+                           MouseOverNeuronCallback mouseOverNeuronCallback,
                            float x, float y, float width, float height, int infoTextSize) {
         this.simulation = simulation;
         this.simulationScreen = simulationScreen;
@@ -44,12 +54,12 @@ public class NetworkRenderer extends InputAdapter implements Renderer {
         this.boxWidth = width;
         this.boxHeight = height;
         this.infoTextSize = infoTextSize;
-        shapeRenderer = new ShapeRenderer();
-        batch = new SpriteBatch();
+//        shapeRenderer = new ShapeRenderer();
+        shapeRenderer = new ShapeDrawer(batch, new TextureRegion(UIStyle.getWhite1x1()));
+        this.batch = batch;
+        this.mouseOverNeuronCallback = mouseOverNeuronCallback;
 
         font = UIStyle.createFiraCode(infoTextSize);
-
-        this.mouseOverNeuronCallback = new MouseOverNeuronCallback(font);
     }
 
     public void setMouseOverNeuronCallback(MouseOverNeuronCallback callback) {
@@ -60,29 +70,41 @@ public class NetworkRenderer extends InputAdapter implements Renderer {
         this.nn = nn;
     }
 
+    private void findMouseOverNeuron(float neuronR) {
+        SimulationInputManager inputManager = simulationScreen.getInputManager();
+        Vector2 mouse = inputManager.getMousePos();
+        mouseOverNeuron = null;
+        float mouseY = Gdx.graphics.getHeight() - mouse.y;
+        if (boxXStart - 2* neuronR < mouse.x && mouse.x < boxXStart + boxWidth + 2* neuronR &&
+                boxYStart - 2*neuronR < mouseY && mouseY < boxYStart + boxHeight + 2*neuronR) {
+            for (Neuron neuron : nn.getNeurons()) {
+                float x = neuron.getGraphicsX();
+                float y = neuron.getGraphicsY();
+                if (x - 2*neuronR <= mouse.x && mouse.x <= x + 2*neuronR
+                        && y - 2*neuronR <= mouseY && mouseY <= y + 2*neuronR) {
+                    mouseOverNeuron = neuron;
+                    return;
+                }
+            }
+        }
+    }
+
     public void render(float delta) {
         if (nn == null)
             return;
 
-        shapeRenderer.setAutoShapeType(true);
-        shapeRenderer.begin();
-        shapeRenderer.set(ShapeRenderer.ShapeType.Filled);
-
         int networkDepth = nn.getDepth();
-
-        if (DebugMode.isDebugMode()) {
-            shapeRenderer.setColor(Color.GOLD);
-            shapeRenderer.set(ShapeRenderer.ShapeType.Line);
-            shapeRenderer.box(boxXStart, boxYStart, 0, boxWidth, boxHeight, 0);
-            for (float y = boxYStart; y < boxYStart + boxHeight; y += boxHeight / networkDepth)
-                shapeRenderer.line(boxXStart, y, boxXStart + boxWidth, y);
-        }
 
         if (!nn.hasComputedGraphicsPositions())
             precomputeGraphicsPositions(nn, boxXStart, boxYStart, boxWidth, boxHeight);
 
-        float r = nn.getGraphicsNodeSpacing() / 8;
-        Colour weightColour = new Colour();
+        shapeRenderer.update();
+        float r = nn.getGraphicsNodeSpacing() / 6;
+
+        mouseOverNeuron = null;
+        findMouseOverNeuron(r);
+
+        Colour colour = new Colour();
         for (Neuron neuron : nn.getNeurons()) {
             if (!neuron.getType().equals(Neuron.Type.SENSOR) && neuron.isConnectedToOutput()) {
 
@@ -93,7 +115,12 @@ public class NetworkRenderer extends InputAdapter implements Renderer {
                     if (Float.isNaN(weight) || Math.abs(weight) <= 1e-4)
                         continue;
 
-                    shapeRenderer.setColor(weightGradient.getColour(weightColour, weight).getColor());
+                    Color weightColor = weightGradient.getColour(colour, weight).getColor();
+                    if (mouseOverNeuron != null
+                            && !(neuron.equals(mouseOverNeuron) || inputNeuron.equals(mouseOverNeuron)))
+                        weightColor.set(weightColor.r, weightColor.g, weightColor.b, 0.1f);
+
+                    shapeRenderer.setColor(weightColor);
 
                     if (neuron == inputNeuron) {
                         shapeRenderer.circle(
@@ -101,15 +128,20 @@ public class NetworkRenderer extends InputAdapter implements Renderer {
                                 neuron.getGraphicsY() - r,
                                 3*r);
                     }
-//                    else if (inputNeuron.getDepth() == neuron.getDepth()) {
-//                        float width = boxWidth / (2 * networkDepth);
-//                        float height = Math.abs(neuron.getGraphicsY() - inputNeuron.getGraphicsY());
-//                        float x = neuron.getGraphicsX() - width / 2;
-//                        float y = Math.min(neuron.getGraphicsY(), inputNeuron.getGraphicsY());
-//                        g.drawArc(x, y, width, height,-90, 180);
-//                    }
+                    else if (inputNeuron.getDepth() == neuron.getDepth()) {
+                        float w = boxWidth / (3 * networkDepth);
+                        float h = Math.abs(neuron.getGraphicsY() - inputNeuron.getGraphicsY());
+                        float x1 = neuron.getGraphicsX();
+                        float y1 = Math.min(neuron.getGraphicsY(), inputNeuron.getGraphicsY());
+                        float y = y1 + h / 2;
+                        float x = x1 + w / 2 - h*h / (w * 8);
+                        float arcR = (float) Math.sqrt((x1 - x)*(x1 - x) + (y1 - y)*(y1 - y));
+                        float t = (float) Math.atan2(h / 2, x1 - x);
+                        shapeRenderer.arc(x, y, arcR, -t, 2*t);
+                    }
                     else {
-                        shapeRenderer.line(neuron.getGraphicsX(), neuron.getGraphicsY(),
+                        shapeRenderer.line(
+                                neuron.getGraphicsX(), neuron.getGraphicsY(),
                                 inputNeuron.getGraphicsX(), inputNeuron.getGraphicsY());
                     }
                 }
@@ -120,71 +152,42 @@ public class NetworkRenderer extends InputAdapter implements Renderer {
             if (!neuron.isConnectedToOutput())
                 continue;
 
-            Color colour;
-            double state = neuron.getLastState();
-            if (state > 0) {
-                state = state > 1 ? 1 : state;
-                colour = new Color(
-                        30 / 255f, (int) (50 + state * 150) / 255f, 30 / 255f, 1f
-                );
-            } else if (state < 0) {
-                state = state < -1 ? -1 : state;
-                colour = new Color(
-                        (int) (50 - state * 150) / 255f, 30 / 255f, 30 / 255f, 1f
-                );
-            } else {
-                colour = new Color(10 / 255f, 10 / 255f, 10 / 255f, 1f);
+            float state = neuron.getLastState();
+            Color stateColor;
+            if (Float.isNaN(state))
+                stateColor = Color.BLUE;
+            else
+                stateColor = stateGradient.getColour(colour, state).getColor();
+
+            Color ringColor = Color.WHITE;
+
+            if (mouseOverNeuron != null &&
+                    !(neuron.equals(mouseOverNeuron)
+                            || neuron.isInput(mouseOverNeuron) || mouseOverNeuron.isInput(neuron))) {
+                float t = 0.75f;
+                stateColor.lerp(Color.DARK_GRAY, t);
+                ringColor.lerp(Color.DARK_GRAY, 0.5f * t);
             }
 
-            shapeRenderer.setColor(colour);
-//            g.fillOval(
-//                    neuron.getGraphicsX() - r,
-//                    neuron.getGraphicsY() - r,
-//                    2*r,
-//                    2*r);
+            shapeRenderer.setColor(stateColor);
 
+            shapeRenderer.filledCircle(
+                    neuron.getGraphicsX(),
+                    neuron.getGraphicsY(),
+                    r);
 
-//            if (simulation.inDebugMode())
-//                if (neuron.getType().equals(Neuron.Type.HIDDEN))
-//                    g.setColor(Color.YELLOW.cpy().mul(0.9f));
-//                else if (neuron.getType().equals(Neuron.Type.SENSOR))
-//                    g.setColor(Color.BLUE.cpy().mul(1.1f));
-//                else
-//                    g.setColor(Color.WHITE.cpy().mul(0.9f));
-//            else {
-//                shapeRenderer.setColor(Color.WHITE.cpy().mul(0.9f));
-//            }
-            if (neuron.getDepth() == networkDepth && neuron.getType().equals(Neuron.Type.HIDDEN))
-                shapeRenderer.setColor(new Color(150 / 255f, 30 / 255f, 150 / 255f, 1f));
-
-//            Stroke s = shapeRenderer.getStroke();
-//            shapeRenderer.setStroke(new BasicStroke((int) (0.3*r)));
+            shapeRenderer.setColor(ringColor);
 
             shapeRenderer.circle(
                     neuron.getGraphicsX(),
                     neuron.getGraphicsY(),
-                    r);
+                    r, (int) (0.3*r));
         }
 
-        shapeRenderer.end();
-
-        batch.begin();
         batch.setColor(Color.WHITE.cpy().mul(0.9f));
-        SimulationInputManager inputManager = simulationScreen.getInputManager();
-        Vector2 mouse = inputManager.getMousePos();
-
-        if (mouseOverNeuronCallback != null && boxXStart - 2*r < mouse.x && mouse.x < boxXStart + boxWidth + 2*r &&
-                boxYStart - 2*r < mouse.y && mouse.y < boxYStart + boxHeight + 2*r) {
-            for (Neuron neuron : nn.getNeurons()) {
-                float x = neuron.getGraphicsX();
-                float y = neuron.getGraphicsY();
-                if (x - 2*r <= mouse.x && mouse.x <= x + 2*r
-                        && y - 2*r <= mouse.y && mouse.y <= y + 2*r) {
-                    mouseOverNeuronCallback.apply(batch, neuron, r);
-                }
-            }
+        if (mouseOverNeuronCallback != null && mouseOverNeuron != null) {
+            mouseOverNeuronCallback.apply(batch, mouseOverNeuron, r);
         }
-        batch.end();
     }
 
     private void precomputeGraphicsPositions(NeuralNetwork nn,

@@ -2,6 +2,7 @@ package com.protoevo.biology.nn;
 
 
 import com.protoevo.core.Simulation;
+import com.protoevo.settings.SimulationSettings;
 
 import java.io.Serializable;
 import java.util.Objects;
@@ -53,7 +54,10 @@ public class SynapseGene implements Comparable<SynapseGene>, Serializable
 
     public SynapseGene mutate() {
         float newWeight = randomInitialWeight();
-        return new SynapseGene(in, out, newWeight, innovation);
+        SynapseGene newGene = new SynapseGene(in, out, newWeight, innovation);
+        if (Math.random() < SimulationSettings.deleteSynapseMutationRate)
+            newGene.setDisabled(true);
+        return newGene;
     }
 
     @Override

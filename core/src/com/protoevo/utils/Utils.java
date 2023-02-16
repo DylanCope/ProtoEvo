@@ -7,6 +7,9 @@ import com.badlogic.gdx.math.Vector2;
 public class Utils {
 
     public static String numberToString(float d, int dp) {
+        if (Float.isNaN(d))
+            return "NaN";
+
         float ten = (float) Math.pow(10, dp);
         float v = ((int) (d * ten)) / ten;
         if ((int) v == v)

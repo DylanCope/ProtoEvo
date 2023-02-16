@@ -31,4 +31,6 @@ public class SimulationSettings {
     public static final boolean simulationOnSeparateThread = false;
     public static float basicParticleMassDensity = 1f;
     public static float maxMoleculeProductionRate = .01f;
+    public static double deleteSynapseMutationRate = 0.1;
+    public static double deleteNeuronMutationRate = 0.1;
 }

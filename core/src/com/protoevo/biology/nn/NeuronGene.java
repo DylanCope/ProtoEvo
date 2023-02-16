@@ -1,6 +1,7 @@
 package com.protoevo.biology.nn;
 
 import com.protoevo.core.Simulation;
+import com.protoevo.settings.SimulationSettings;
 
 import java.io.Serializable;
 import java.util.Objects;
@@ -14,6 +15,7 @@ public class NeuronGene implements Comparable<NeuronGene>, Serializable
 
     private String label;
     private Object[] tags;
+    private boolean disabled;
 
     public NeuronGene(int id, Neuron.Type type, Neuron.Activation activation)
     {
@@ -26,11 +28,15 @@ public class NeuronGene implements Comparable<NeuronGene>, Serializable
         this.type = type;
         this.activation = activation;
         this.label = label;
+        disabled = false;
     }
 
     public NeuronGene mutate() {
         Neuron.Activation newActivation = Neuron.Activation.randomActivation();
-        return new NeuronGene(id, type, newActivation, label);
+        NeuronGene newGene = new NeuronGene(id, type, newActivation, label);
+        if (Math.random() < SimulationSettings.deleteNeuronMutationRate)
+            newGene.disable();
+        return newGene;
     }
 
     @Override
@@ -56,6 +62,14 @@ public class NeuronGene implements Comparable<NeuronGene>, Serializable
         if (label != null)
             str += ", label=" + label;
         return str;
+    }
+
+    public void disable() {
+        disabled = true;
+    }
+
+    public boolean isDisabled() {
+        return disabled;
     }
 
     public int getId() { return id; }

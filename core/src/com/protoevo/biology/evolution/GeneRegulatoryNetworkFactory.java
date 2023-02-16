@@ -1,6 +1,7 @@
 package com.protoevo.biology.evolution;
 
 import com.badlogic.gdx.math.MathUtils;
+import com.protoevo.biology.nn.GRNTag;
 import com.protoevo.biology.nn.NetworkGenome;
 import com.protoevo.biology.nn.Neuron;
 import com.protoevo.biology.nn.NeuronGene;
@@ -26,7 +27,7 @@ public class GeneRegulatoryNetworkFactory {
                     getOutputName(trait),
 //                    z -> MathUtils.clamp((0.5f + 0.5f * z) * (max - min) + min, min, max),
                     z -> Utils.linearRemap(z, -1, 1, min, max),
-                    node
+                    (GRNTag) fn -> fn.getExpressionNode(node.getName())
             );
 
             networkGenome.addSynapse(sensor, output);
@@ -71,7 +72,7 @@ public class GeneRegulatoryNetworkFactory {
                 getOutputName(trait),
 //                z -> (float) Math.round(getMin.get() + (getMax.get() - getMin.get()) * Neuron.Activation.SIGMOID.apply(z)),
                 z -> Utils.linearRemap(z, -1, 1, getMax.get(), getMin.get()),
-                node
+                (GRNTag) fn -> fn.getExpressionNode(node.getName())
         );
 //        networkGenome.addSynapse(sensor, output, 1);
         networkGenome.addSynapse(sensor, output);
@@ -107,7 +108,7 @@ public class GeneRegulatoryNetworkFactory {
         NeuronGene output = networkGenome.addOutput(
                 getOutputName(trait),
                 z -> (z < 0) ? -1f : 1f,
-                node
+                (GRNTag) fn -> fn.getExpressionNode(node.getName())
         );
 //        networkGenome.addSynapse(sensor, output, 1);
         networkGenome.addSynapse(sensor, output);
@@ -121,7 +122,8 @@ public class GeneRegulatoryNetworkFactory {
 
         GeneExpressionFunction.Regulators regulators = geneExpressionFunction.getGeneRegulators();
         for (String regulator : regulators.keySet())
-            networkGenome.addSensor(regulator, regulators.get(regulator));
+            networkGenome.addSensor(regulator,
+                    (GRNTag) fn -> fn.getGeneRegulators().get(regulator));
 
         for (GeneExpressionFunction.ExpressionNode node : expressionNodes.values()) {
             Trait<?> trait = node.getTrait();
@@ -134,7 +136,7 @@ public class GeneRegulatoryNetworkFactory {
                         getOutputName(name),
 //                        z -> min + (max - min) * Neuron.Activation.SIGMOID.apply(z),
                         z -> Utils.linearRemap(z, -1, 1, min, max),
-                        node
+                        (GRNTag) fn -> fn.getExpressionNode(node.getName())
                 );
                 for (String regulator : regulators.keySet())
                     networkGenome.addSynapse(networkGenome.getNeuronGene(regulator), outputGene);
@@ -146,7 +148,7 @@ public class GeneRegulatoryNetworkFactory {
                 addBooleanGeneIO(networkGenome, node, (BooleanTrait) trait);
         }
 
-        for (int i = 0; i < 10; i++) {
+        for (int i = 0; i < 3; i++) {
             networkGenome.mutate();
         }
 

@@ -37,8 +37,6 @@ public class Application extends ApplicationAdapter {
 	@Override
 	public void render() {
 		ScreenUtils.clear(0, 0.1f, 0.2f, 1f);
-		Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
-		Gdx.gl.glActiveTexture(GL20.GL_TEXTURE0);
 
 		if (simulationThread == null && simulation.isReady())
 			simulation.update(SimulationSettings.simulationUpdateDelta);

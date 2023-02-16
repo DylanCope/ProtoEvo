@@ -81,6 +81,7 @@ allprojects {
         ashleyVersion = '1.7.4'
         aiVersion = '1.8.2'
         gdxControllersVersion = '2.2.1'
+        shapedrawerVersion = '2.5.0'
     }
 
     repositories {
@@ -216,5 +217,6 @@ project(":core") {
 //        api file('libs/PixelFlow.jar')
 //        implementation group: 'org.processing', name: 'core', version: '3.3.6'
 
+        implementation "space.earlygrey:shapedrawer:$shapedrawerVersion"
     }
 }
