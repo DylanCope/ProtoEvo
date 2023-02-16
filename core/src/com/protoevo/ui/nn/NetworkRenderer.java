@@ -101,7 +101,6 @@ public class NetworkRenderer extends InputAdapter implements Renderer {
         shapeRenderer.update();
         float r = nn.getGraphicsNodeSpacing() / 6;
 
-        mouseOverNeuron = null;
         findMouseOverNeuron(r);
 
         Colour colour = new Colour();
@@ -159,7 +158,7 @@ public class NetworkRenderer extends InputAdapter implements Renderer {
             else
                 stateColor = stateGradient.getColour(colour, state).getColor();
 
-            Color ringColor = Color.WHITE;
+            Color ringColor = Color.WHITE.cpy();
 
             if (mouseOverNeuron != null &&
                     !(neuron.equals(mouseOverNeuron)
