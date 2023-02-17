@@ -96,6 +96,10 @@ public class ChemicalSolution implements Serializable {
         return (int) Utils.linearRemap(x, xMin, xMax, 0, chemicalTextureWidth);
     }
 
+    public boolean inBounds(float x, float y) {
+        return x >= xMin && x <= xMax && y >= yMin && y <= yMax;
+    }
+
     private int toFloatBufferIndex(int x, int y) {
         return (y * chemicalTextureWidth+ x) * 4;
     }
@@ -105,12 +109,18 @@ public class ChemicalSolution implements Serializable {
     }
 
     public void depositChemicals(float delta, Cell e) {
+        float worldX = e.getPos().x;
+        float worldY = -e.getPos().y;
+
+        if (!inBounds(worldX, worldY))
+            return;
+
         if (e instanceof EdibleCell && !e.isDead()) {
             float deposit = Settings.plantPheromoneDeposit * delta;
             Color cellColour = e.getColor();
 
-            int fieldX = toChemicalGridX(e.getPos().x);
-            int fieldY = toChemicalGridY(-e.getPos().y);
+            int fieldX = toChemicalGridX(worldX);
+            int fieldY = toChemicalGridY(worldY);
 
             chemicalPixmap.setColor(cellColour.r, cellColour.g, cellColour.b, deposit);
             chemicalPixmap.fillCircle(fieldX, fieldY, toChemicalGridXDist(e.getRadius()));
@@ -119,8 +129,8 @@ public class ChemicalSolution implements Serializable {
             Protozoan protozoan = (Protozoan) e;
 
             int size = toChemicalGridXDist(e.getRadius());
-            int x = toChemicalGridX(e.getPos().x);
-            int y = toChemicalGridY(-e.getPos().y);
+            int x = toChemicalGridX(worldX);
+            int y = toChemicalGridY(worldY);
             for (int i = -size; i <= size; i++) {
                 for (int j = -size; j <= size; j++) {
                     if (i*i + j*j <= size*size) {
@@ -143,7 +153,7 @@ public class ChemicalSolution implements Serializable {
                                 protozoan.addFood(Food.Type.Meat, extraction * tmpColour.r * 1e-5f);
 
                             tmpColour.a = Math.max(0, tmpColour.a - extraction);
-                            chemicalPixmap.drawPixel(x, y, tmpColour.toIntBits());
+                            chemicalPixmap.drawPixel(fieldX, fieldY, tmpColour.toIntBits());
                         }
                     }
                 }

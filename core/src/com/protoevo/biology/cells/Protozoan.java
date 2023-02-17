@@ -39,7 +39,7 @@ public class Protozoan extends Cell implements Evolvable
 	private final Collection<Cell> engulfedCells = new ArrayList<>(0);
 	private final Vector2 thrust = new Vector2();
 	private float thrustAngle = (float) (2 * Math.PI * Math.random());
-	private float thrustTurn, thrustMag;
+	private float thrustTurn = 0, thrustMag;
 
 	@Override
 	public void update(float delta)
@@ -57,9 +57,9 @@ public class Protozoan extends Cell implements Evolvable
 		engulfedCells.forEach(c -> eat((EdibleCell) c, delta));
 		engulfedCells.removeIf(c -> c.getHealth() < 0.1f);
 
-		if (shouldSplit() && hasNotBurst()) {
-			getEnv().requestBurst(this, Protozoan.class, this::createSplitChild);
-		}
+//		if (shouldSplit() && hasNotBurst()) {
+//			getEnv().requestBurst(this, Protozoan.class, this::createSplitChild);
+//		}
 
 		move(delta);
 	}
@@ -157,9 +157,13 @@ public class Protozoan extends Cell implements Evolvable
 	}
 
 	public void move(float delta) {
+		if (thrustMag <= 1e-12)
+			return;
+
 		thrustAngle += delta * thrustTurn;
 		thrust.set(thrustMag * (float) Math.cos(thrustAngle),
 				   thrustMag * (float) Math.sin(thrustAngle));
+
 		generateMovement(thrust);
 	}
 
@@ -180,10 +184,10 @@ public class Protozoan extends Cell implements Evolvable
 
 	@Override
 	public float getInteractionRange() {
-		return surfaceNodes.stream()
-				.map(SurfaceNode::getInteractionRange)
-				.max(Float::compare)
-				.orElse(0f);
+		float maxRange = 0;
+		for (SurfaceNode node : surfaceNodes)
+			maxRange = Math.max(maxRange, node.getInteractionRange());
+		return maxRange;
 	}
 
 	@Override

@@ -18,16 +18,18 @@ import com.protoevo.utils.FileIO;
 import com.protoevo.utils.Geometry;
 
 import java.io.Serializable;
+import java.sql.Time;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
 public class Environment implements Serializable
 {
 	private static final long serialVersionUID = 2804817237950199223L;
 	private transient World world;
-	private float elapsedTime;
+	private float elapsedTime, physicsStepTime;
 	private final Statistics stats = new Statistics();
 	private final Statistics debugStats = new Statistics();
 	public final ConcurrentHashMap<CauseOfDeath, Integer> causeOfDeathCounts =
@@ -87,15 +89,18 @@ public class Environment implements Serializable
 		if (world == null)  // on deserialisation
 			rebuildWorld();
 
-		cells.parallelStream().forEach(Particle::reset);
+		cells.forEach(Particle::reset);
 
 		elapsedTime += delta;
+		long startTime = System.nanoTime();
 		world.step(
 				delta,
 				SimulationSettings.physicsVelocityIterations,
 				SimulationSettings.physicsPositionIterations);
+		physicsStepTime = TimeUnit.SECONDS.convert(
+				System.nanoTime() - startTime, TimeUnit.NANOSECONDS);
 
-		handleCellUpdates(delta);
+  		handleCellUpdates(delta);
 		handleBirthsAndDeaths();
 		updateSpatialHashes();
 
@@ -111,10 +116,11 @@ public class Environment implements Serializable
 	}
 
 	private void handleBirthsAndDeaths() {
-		burstRequests.stream()
-				.filter(BurstRequest::canBurst)
-				.forEach(BurstRequest::burst);
+//		for (BurstRequest<? extends Cell> burstRequest : burstRequests)
+//			if (burstRequest.canBurst())
+//				burstRequest.burst();
 		burstRequests.clear();
+
 		flushEntitiesToAdd();
 
 		cells.forEach(this::handleDeadEntity);
@@ -428,6 +434,27 @@ public class Environment implements Serializable
 			if (count > 0)
 				debugStats.put("Died from " + cod.getReason(), (float) count);
 		}
+		return debugStats;
+	}
+
+	public Statistics getPhysicsDebugStats() {
+		debugStats.clear();
+
+		debugStats.putCount("Bodies", world.getBodyCount());
+		debugStats.putCount("Contacts", world.getContactCount());
+		debugStats.putCount("Joints", world.getJointCount());
+		debugStats.putCount("Fixtures", world.getFixtureCount());
+		debugStats.putCount("Proxies", world.getProxyCount());
+		debugStats.putTime("Physics Step Time", physicsStepTime);
+
+		int totalCells = cells.size();
+		int sleepCount = 0;
+		for (Cell cell : cells)
+			if (cell.getBody() != null && !cell.getBody().isAwake())
+				sleepCount++;
+
+		debugStats.putPercentage("Sleeping",  100f * sleepCount / totalCells);
+
 		return debugStats;
 	}
 

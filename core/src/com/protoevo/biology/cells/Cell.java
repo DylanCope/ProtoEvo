@@ -19,6 +19,7 @@ import com.protoevo.utils.Geometry;
 import java.io.Serial;
 import java.io.Serializable;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 import static com.protoevo.utils.Utils.lerp;
@@ -37,7 +38,7 @@ public abstract class Cell extends Particle implements Serializable
 	private float growthRate = 0.0f;
 	private float energyAvailable = SimulationSettings.startingAvailableCellEnergy;
 	private float constructionMassAvailable = SimulationSettings.startingAvailableConstructionMass;
-	private final Map<ComplexMolecule, Float> availableComplexMolecules = new HashMap<>(0);
+	private final Map<ComplexMolecule, Float> availableComplexMolecules = new ConcurrentHashMap<>(0);
 	private final ConcurrentLinkedQueue<JointsManager.JoinedParticles> attachedCells = new ConcurrentLinkedQueue<>();
 	private final Map<CellAdhesion.CAM, Float> surfaceCAMs = new HashMap<>(0);
 	private final Map<Food.Type, Float> foodDigestionRates = new HashMap<>(0);
@@ -53,7 +54,6 @@ public abstract class Cell extends Particle implements Serializable
 	private boolean fullyEngulfed = false;
 
 	public void update(float delta) {
-
 		if (health <= 0.05f && !super.isDead()) {
 			kill(CauseOfDeath.HEALTH_TOO_LOW);
 			return;
@@ -68,9 +68,6 @@ public abstract class Cell extends Particle implements Serializable
 		grow(delta);
 
 		organelles.forEach(organelle -> organelle.update(delta));
-
-//		resourceProduction(delta);
-//		progressConstructionProjects(delta);
 
 		attachedCells.removeIf(this::detachCellCondition);
 	}
@@ -184,6 +181,9 @@ public abstract class Cell extends Particle implements Serializable
 	}
 
 	public void digest(float delta) {
+		if (foodToDigest.isEmpty())
+			return;  // avoids creating iterator if there's nothing to digest
+
 		for (Food food : foodToDigest.values()) {
 			float rate = delta * SimulationSettings.digestionFactor * getDigestionRate(food.getType());
 			if (food.getSimpleMass() > 0) {
@@ -360,6 +360,7 @@ public abstract class Cell extends Particle implements Serializable
 	public float getKineticEnergyRequiredForThrust(Vector2 thrustVector) {
 		float speed = getSpeed();
 		float mass = getMass();
+		// This is surely not correct
 		return .5f * mass * (speed*speed - thrustVector.len2() / (mass * mass));
 	}
 
@@ -367,22 +368,25 @@ public abstract class Cell extends Particle implements Serializable
 		generateMovement(thrustVector, 0);
 	}
 
-	public void generateMovement(Vector2 thrustVector, float torque) {
+	public float generateMovement(Vector2 thrustVector, float torque) {
 		float work = getKineticEnergyRequiredForThrust(thrustVector);
-		// TODO: add torque to work
+		// TODO: add work to apply torque
 
 		if (enoughEnergyAvailable(work)) {
 			depleteEnergy(work);
 			applyImpulse(thrustVector);
 			applyTorque(torque);
+			return 1f;
 		}
-		else if (getEnergyAvailable() > 0) {
+		else {
 			// not accurate scaling of thrust and torque
-			thrustVector.scl(getEnergyAvailable() / work);
-			torque = torque * getEnergyAvailable() / work;
+			float p = getEnergyAvailable() / work;
+			thrustVector.scl(p);
+			torque = torque * p;
 			setEnergyAvailable(0);
 			applyImpulse(thrustVector);
 			applyTorque(torque);
+			return p;
 		}
 	}
 
@@ -393,6 +397,7 @@ public abstract class Cell extends Particle implements Serializable
 		stats.putCount("Generation", getGeneration());
 		stats.putEnergy("Available Energy", energyAvailable);
 		stats.putMass("Construction Mass", constructionMassAvailable);
+		stats.putMass("Construction Mass Limit", getConstructionMassCap());
 //		if (wasteMass > 0)
 //			stats.putMass("Waste Mass", wasteMass);
 
@@ -576,6 +581,8 @@ public abstract class Cell extends Particle implements Serializable
 	}
 
 	public void depleteConstructionMass(float mass) {
+		if (Float.isNaN(mass))
+			throw new IllegalArgumentException("Mass is NaN");
 		constructionMassAvailable = Math.max(0, constructionMassAvailable - mass);
 	}
 

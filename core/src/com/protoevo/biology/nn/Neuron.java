@@ -67,6 +67,7 @@ public class Neuron implements Comparable<Neuron>, Serializable {
     private boolean connectedToOutput = true;
     private final String label;
     private Object[] tags;
+    private boolean active;
 
     public Neuron(int id, Neuron[] inputs, float[] weights, Type type, Activation activation, String label)
     {
@@ -122,6 +123,14 @@ public class Neuron implements Comparable<Neuron>, Serializable {
     public Neuron setActivation(Activation activation) {
         this.activation = activation;
         return this;
+    }
+
+    public void deactivate() {
+        active = false;
+    }
+
+    public void activate() {
+        active = true;
     }
 
     public boolean isInput(Neuron neuron) {

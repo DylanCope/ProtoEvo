@@ -2,6 +2,7 @@ package com.protoevo.core;
 
 import com.badlogic.gdx.scenes.scene2d.ui.Window;
 import com.protoevo.ui.SimulationScreen;
+import scala.concurrent.impl.FutureConvertersImpl;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -112,11 +113,20 @@ public class REPL implements Runnable
 
     public Boolean printStats(Object[] args) {
         simulation.printStats();
+        if (args.length == 2 && args[1].equals("--debug")) {
+            simulation.getEnv().getDebugStats().forEach(
+                    stat -> System.out.println(stat.toString())
+            );
+            simulation.getEnv().getPhysicsDebugStats().forEach(
+                    stat -> System.out.println(stat.toString())
+            );
+        }
         return true;
     }
 
     public Boolean exit(Object[] args) {
         simulation.close();
+        System.exit(0);
         return true;
     }
 
@@ -156,7 +166,7 @@ public class REPL implements Runnable
                 System.out.print("> ");
                 line = bufferRead.readLine();
 
-                if (line.equals("\n")) {
+                if (line.equals("\n") || line.strip().equals("")) {
                     System.out.println();
                     continue;
                 }

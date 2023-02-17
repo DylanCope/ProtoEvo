@@ -28,8 +28,8 @@ public class Particle implements Shape {
     private transient Fixture dynamicsFixture, sensorFixture;
     private boolean dead = false, disposed = false;
     private float radius = SimulationSettings.minParticleRadius * (1 + 2 * (float) Math.random());
-    private final Vector2 pos = new Vector2(0, 0);
-    private float angle;
+    private final Vector2 pos = new Vector2(0, 0), impulseToApply = new Vector2(0, 0);
+    private float angle, torqueToApply = 0;
     private final Statistics stats = new Statistics();
     private final Collection<CollisionHandler.FixtureCollision> contacts = new ConcurrentLinkedQueue<>();
     private final Collection<Object> interactionObjects = new ConcurrentLinkedQueue<>();
@@ -155,8 +155,7 @@ public class Particle implements Shape {
     }
 
     public void applyImpulse(Vector2 impulse) {
-        if (body != null && !disposed)
-            body.applyLinearImpulse(impulse, body.getWorldCenter(), true);
+        impulseToApply.add(impulse);
     }
 
     public float getInteractionRange() {
@@ -196,6 +195,15 @@ public class Particle implements Shape {
     }
 
     public void reset() {
+
+        if (body != null)
+            body.applyTorque(torqueToApply, true);
+        torqueToApply = 0;
+
+        if (body != null)
+            body.applyLinearImpulse(impulseToApply, body.getWorldCenter(), true);
+        impulseToApply.set(0, 0);
+
         contacts.clear();
     }
 
@@ -414,8 +422,7 @@ public class Particle implements Shape {
     }
 
     public void applyTorque(float v) {
-        if (body != null)
-            body.applyTorque(v, true);
+        torqueToApply += v;
     }
 
     public void requestDestroyBody() {

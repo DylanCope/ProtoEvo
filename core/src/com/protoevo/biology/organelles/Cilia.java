@@ -25,30 +25,30 @@ public class Cilia extends OrganelleFunction {
 
     @Override
     public void update(float delta, float[] input) {
-        // semantics of the flagella attachment:
-        // input[0] controls generated thrust
-        // input[1] controls generated torque
-
-        Cell cell = organelle.getCell();
-        // smaller cilia generate less thrust and torque
-        float sizePenalty = cell.getRadius() / SimulationSettings.maxParticleRadius;
-
-        float thrust = MathUtils.clamp(input[0], -1f, 1f);
-        float turn = MathUtils.clamp(input[1], -1f, 1f);
-        angle += ProtozoaSettings.maxCiliaTurn * turn * delta;
-
-        float l = sizePenalty * thrust * ProtozoaSettings.maxFlagellumThrust;
-        thrustVector.set(l * MathUtils.cos(angle), l * MathUtils.sin(angle));
-
-        float work = getKineticEnergyRequired(thrustVector);
-        if (cell.enoughEnergyAvailable(work)) {
-            cell.depleteEnergy(work);
-            cell.applyImpulse(thrustVector);
-        }
-        else if (cell.getEnergyAvailable() > 0) {
-            thrustVector.scl(cell.getEnergyAvailable() / work);
-            cell.applyImpulse(thrustVector);
-        }
+//        // semantics of the flagella attachment:
+//        // input[0] controls generated thrust
+//        // input[1] controls generated torque
+//
+//        Cell cell = organelle.getCell();
+//        // smaller cilia generate less thrust and torque
+//        float sizePenalty = cell.getRadius() / SimulationSettings.maxParticleRadius;
+//
+//        float thrust = MathUtils.clamp(input[0], -1f, 1f);
+//        float turn = MathUtils.clamp(input[1], -1f, 1f);
+//        angle += ProtozoaSettings.maxCiliaTurn * turn * delta;
+//
+//        float l = sizePenalty * thrust * ProtozoaSettings.maxFlagellumThrust;
+//        thrustVector.set(l * MathUtils.cos(angle), l * MathUtils.sin(angle));
+//
+//        float work = getKineticEnergyRequired(thrustVector);
+//        if (cell.enoughEnergyAvailable(work)) {
+//            cell.depleteEnergy(work);
+//            cell.applyImpulse(thrustVector);
+//        }
+//        else if (cell.getEnergyAvailable() > 0) {
+//            thrustVector.scl(cell.getEnergyAvailable() / work);
+//            cell.applyImpulse(thrustVector);
+//        }
     }
 
     @Override

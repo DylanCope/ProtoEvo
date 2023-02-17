@@ -6,9 +6,11 @@ import com.protoevo.core.Simulation;
 import com.protoevo.settings.SimulationSettings;
 import com.protoevo.utils.Geometry;
 
+import java.io.Serializable;
 import java.util.function.Function;
 
-public class BurstRequest<T extends Cell> {
+public class BurstRequest<T extends Cell> implements Serializable {
+    public static final long serialVersionUID = 1L;
 
     private final Function<Float, T> createChild;
     private final Cell parent;

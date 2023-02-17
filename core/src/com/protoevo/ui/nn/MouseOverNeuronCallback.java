@@ -28,12 +28,12 @@ public class MouseOverNeuronCallback {
                                       SurfaceNode surfaceNode) {
         String label = "Node " + surfaceNode.getIndex() + ":";
         if (surfaceNode.getAttachment() != null)
-            label += " " + surfaceNode.getAttachment().getName() + ": ";
+            label += " " + surfaceNode.getAttachmentName();
 
         String displayName = geneNode.getDisplayName();
         if (displayName.contains(SurfaceNode.activationPrefix)) {
             String[] parts = displayName.split(SurfaceNode.activationPrefix);
-            label = getAttachmentIOString(surfaceNode, label, parts);
+            label += " " + getAttachmentIOString(surfaceNode, parts);
         } else {
             label += " " + displayName;
         }
@@ -41,20 +41,20 @@ public class MouseOverNeuronCallback {
         return label;
     }
 
-    private String getAttachmentIOString(SurfaceNode surfaceNode, String label, String[] parts) {
+    private String getAttachmentIOString(SurfaceNode surfaceNode, String[] parts) {
         int idx = Integer.parseInt(parts[1]);
-        if (parts[0].equals("Input")) {
-            if (surfaceNode.getAttachment() != null && surfaceNode.getAttachment().getInputMeaning(idx) != null)
-                label += " " + surfaceNode.getAttachment().getInputMeaning(idx);
+        boolean isInput = parts[0].contains("Input");
+        String dir = isInput ? "Input" : "Output";
+        if (surfaceNode.getAttachment() != null) {
+            String meaning;
+            if (isInput)
+                meaning = surfaceNode.getAttachment().getInputMeaning(idx);
             else
-                label += "Input " + idx;
+                meaning = surfaceNode.getAttachment().getOutputMeaning(idx);
+            return meaning == null ? "Unused" : meaning;
         } else {
-            if (surfaceNode.getAttachment() != null && surfaceNode.getAttachment().getOutputMeaning(idx) != null)
-                label += " " + surfaceNode.getAttachment().getOutputMeaning(idx);
-            else
-                label += "Output " + idx;
+            return dir + " " + idx;
         }
-        return label;
     }
 
     public String getNeuronLabel(Neuron neuron) {

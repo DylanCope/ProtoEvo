@@ -12,6 +12,7 @@ import com.protoevo.settings.SimulationSettings;
 import java.io.Serial;
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -94,34 +95,36 @@ public class SurfaceNode implements Evolvable.Element, Serializable {
                                 float moleculeEffectiveness) {
         float amount = moleculeEffectiveness * deltaTime;
 
-        if (amount <= 0 && !project.notFinished())
+        if (amount <= 0 || !project.notFinished())
             return;
 
-        float scale = 1f;
+        float progressionFactor = 1f;
 
         float availableEnergy = cell.getEnergyAvailable();
         float energyUsed = Math.min(availableEnergy, project.energyToMakeProgress(deltaTime));
-        scale *= energyUsed / project.energyToMakeProgress(deltaTime);
+        progressionFactor *= (1 + energyUsed) / (1 + project.energyToMakeProgress(deltaTime));
 
         float availableConstructionMass = cell.getConstructionMassAvailable();
         float massUsed = Math.min(availableConstructionMass, project.massToMakeProgress(deltaTime));
-        scale *= massUsed / project.massToMakeProgress(deltaTime);
+        progressionFactor *= (1 + massUsed) / (1 + project.massToMakeProgress(deltaTime));
 
         float moleculeUsed = 0;
         for (ComplexMolecule requiredMolecule : project.getRequiredMolecules()) {
             float thisMatch = moleculeFunctionalContext.getMatching(availableMolecule, requiredMolecule);
-            float amountRequired = thisMatch * project.complexMoleculesToMakeProgress(deltaTime, requiredMolecule);
-            float moleculeUsedHere =
-                    thisMatch * Math.min(cell.getComplexMoleculeAvailable(availableMolecule), amountRequired);
-            moleculeUsed += moleculeUsedHere;
-            scale *= moleculeUsedHere / amountRequired;
+            float amountRequired = project.complexMoleculesToMakeProgress(deltaTime, requiredMolecule);
+            float moleculeUsedHere = Math.min(cell.getComplexMoleculeAvailable(availableMolecule), amountRequired);
+            progressionFactor *= (1 + thisMatch * moleculeUsedHere) / (1 + thisMatch * amountRequired);
+            moleculeUsed += thisMatch * moleculeUsedHere;
         }
 
-        project.progress(amount * scale);
+        if (progressionFactor == 0)
+            return;
 
-        cell.depleteComplexMolecule(availableMolecule, scale * moleculeUsed);
-        cell.depleteEnergy(scale * energyUsed);
-        cell.depleteConstructionMass(scale * massUsed);
+        project.progress(amount * progressionFactor);
+
+        cell.depleteComplexMolecule(availableMolecule, progressionFactor * moleculeUsed);
+        cell.depleteEnergy(progressionFactor * energyUsed);
+        cell.depleteConstructionMass(progressionFactor * massUsed);
     }
 
 
@@ -150,6 +153,7 @@ public class SurfaceNode implements Evolvable.Element, Serializable {
     }
 
     public void update(float delta) {
+        Arrays.fill(outputActivation, 0);
         if (nodeExists) {
             handleAttachmentConstructionProjects(delta);
 
@@ -212,7 +216,7 @@ public class SurfaceNode implements Evolvable.Element, Serializable {
         inputActivation[0] = value;
     }
 
-    @GeneRegulator(name=outputActivationPrefix + "0")
+    @GeneRegulator(name=outputActivationPrefix + "0", min=-1, max=1)
     public float getActivation0() {
         return outputActivation[0];
     }
@@ -222,7 +226,7 @@ public class SurfaceNode implements Evolvable.Element, Serializable {
         inputActivation[1] = value;
     }
 
-    @GeneRegulator(name=outputActivationPrefix + "1")
+    @GeneRegulator(name=outputActivationPrefix + "1", min=-1, max=1)
     public float getActivation1() {
         return outputActivation[1];
     }
@@ -232,7 +236,7 @@ public class SurfaceNode implements Evolvable.Element, Serializable {
         inputActivation[2] = value;
     }
 
-    @GeneRegulator(name=outputActivationPrefix + "2")
+    @GeneRegulator(name=outputActivationPrefix + "2", min=-1, max=1)
     public float getActivation2() {
         return outputActivation[2];
     }

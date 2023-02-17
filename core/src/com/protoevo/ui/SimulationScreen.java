@@ -203,40 +203,52 @@ public class SimulationScreen {
         debugString += separator + "Zoom: " + ((int) (100 * camera.zoom)) / 100.f;
         debugString += separator + "Pos: " + Utils.numberToString(camera.position.x, 2)
                 + ", " + Utils.numberToString(camera.position.y, 2);
-        if (DebugMode.isDebugModePhysicsDebug()) {
-            debugString += separator + "Bodies: " + environment.getWorld().getBodyCount();
-            debugString += separator + "Contacts: " + environment.getWorld().getContactCount();
-            debugString += separator + "Joints: " + environment.getWorld().getJointCount();
-            debugString += separator + "Fixtures: " + environment.getWorld().getFixtureCount();
 
-            int totalCells = environment.getCells().size();
-            int sleepCount = totalCells - (int) environment.getCells().stream()
-                    .filter(cell -> cell.getBody() != null && cell.getBody().isAwake())
-                    .count();
-            debugString += separator + "Sleeping %: " + (int) (100f * sleepCount / totalCells);
-
-            ParticleTracker tracker = inputManager.getParticleTracker();
-            if (tracker.isTracking()) {
-                Particle trackedParticle = tracker.getTrackedParticle();
-                Statistics stats = trackedParticle.getDebugStats();
-                int lineNumber = 0;
-                int valueLength = 8;
-                for (Statistics.Stat entityStat : stats) {
-                    String valueStr = entityStat.getValueString();
-                    StringBuilder text = new StringBuilder(entityStat.getName() + ": ");
-                    for (int i = 0; i < valueLength - valueStr.length(); i++) {
-                        text.append(" ");
-                    }
-                    text.append(valueStr);
-                    layout.setText(debugFont, text.toString());
-                    float x = graphicsWidth - layout.width - textAwayFromEdge;
-                    debugFont.draw(uiBatch, text.toString(), x, getYPosRHS(lineNumber));
-                    lineNumber++;
-                }
-            }
-
+        ParticleTracker tracker = inputManager.getParticleTracker();
+        debugStats.clear();
+        if (tracker.isTracking()) {
+            Particle trackedParticle = tracker.getTrackedParticle();
+            debugStats.putAll(trackedParticle.getDebugStats());
         }
-        debugFont.draw(uiBatch, debugString, 2 * topBar.getPadding(), font.getLineHeight() + topBar.getPadding());
+        else if (DebugMode.isDebugModePhysicsDebug())
+            debugStats.putAll(environment.getPhysicsDebugStats());
+        else
+            debugStats.putAll(environment.getDebugStats());
+
+        int lineNumber = 0;
+        int maxLength = 0;
+        for (Statistics.Stat entityStat : debugStats) {
+            int statLen = entityStat.getValueString().length();
+            maxLength = Math.max(maxLength, statLen);
+        }
+        maxLength += 3;
+
+        for (Statistics.Stat entityStat : debugStats) {
+            String valueStr = entityStat.getValueString();
+            StringBuilder text = new StringBuilder(entityStat.getName() + ": ");
+            text.append(" ".repeat(Math.max(0, maxLength - valueStr.length())));
+            text.append(valueStr);
+            layout.setText(debugFont, text.toString());
+            float x = graphicsWidth - layout.width - textAwayFromEdge;
+            debugFont.draw(uiBatch, text.toString(), x, getYPosRHS(lineNumber));
+            lineNumber++;
+        }
+
+
+//        if (DebugMode.isDebugModePhysicsDebug()) {
+//            debugString += separator + "Bodies: " + environment.getWorld().getBodyCount();
+//            debugString += separator + "Contacts: " + environment.getWorld().getContactCount();
+//            debugString += separator + "Joints: " + environment.getWorld().getJointCount();
+//            debugString += separator + "Fixtures: " + environment.getWorld().getFixtureCount();
+//
+//            int totalCells = environment.getCells().size();
+//            int sleepCount = totalCells - (int) environment.getCells().stream()
+//                    .filter(cell -> cell.getBody() != null && cell.getBody().isAwake())
+//                    .count();
+//            debugString += separator + "Sleeping %: " + (int) (100f * sleepCount / totalCells);
+//        }
+        debugFont.draw(uiBatch, debugString,
+                2 * topBar.getPadding(), font.getLineHeight() + topBar.getPadding());
     }
 
     public float getYPosLHS(int i) {
@@ -389,12 +401,12 @@ public class SimulationScreen {
             pollStats();
         }
 
+        handleNetworkRenderer(delta);
+
         renderStats();
 
         if (renderingEnabled && DebugMode.isDebugMode())
             drawDebugInfo();
-
-        handleNetworkRenderer(delta);
 
         uiBatch.end();
 
@@ -407,9 +419,11 @@ public class SimulationScreen {
         if (renderingEnabled && particleTracker.isTracking()) {
             Particle particle = particleTracker.getTrackedParticle();
             if (particle instanceof Protozoan) {
-                NeuralNetwork grn = ((Protozoan) particle).getGeneExpressionFunction().getRegulatoryNetwork();
+                Protozoan protozoan = (Protozoan) particle;
+                NeuralNetwork grn = protozoan.getGeneExpressionFunction().getRegulatoryNetwork();
                 if (grn != null) {
                     networkRenderer.setNeuralNetwork(grn);
+                    mouseOverNeuronCallback.setGeneExpressionFunction(protozoan.getGeneExpressionFunction());
                     networkRenderer.render(delta);
                 }
             }

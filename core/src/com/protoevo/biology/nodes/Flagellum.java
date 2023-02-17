@@ -6,6 +6,7 @@ import com.protoevo.biology.cells.Cell;
 import com.protoevo.core.Statistics;
 import com.protoevo.settings.ProtozoaSettings;
 import com.protoevo.settings.SimulationSettings;
+import com.protoevo.utils.Utils;
 
 import java.io.Serial;
 import java.io.Serializable;
@@ -15,9 +16,9 @@ public class Flagellum extends NodeAttachment implements Serializable {
     @Serial
     private static final long serialVersionUID = 1L;
 
-    private final Vector2 thrustVector = new Vector2();
+    private final Vector2 thrustVector = new Vector2(), lastCellPos = new Vector2();
     private float torque;
-    private Statistics stats = new Statistics();
+    private final Statistics stats = new Statistics();
 
     public Flagellum(SurfaceNode node) {
         super(node);
@@ -59,7 +60,25 @@ public class Flagellum extends NodeAttachment implements Serializable {
 
         torque *= sizePenalty * ProtozoaSettings.maxFlagellumTorque;
 
-        cell.generateMovement(thrustVector, torque);
+        float p = cell.generateMovement(thrustVector, torque);
+        output[0] = Utils.linearRemap(p, 0, 1, -1, 1);
+
+        Vector2 currentCellPos = cell.getPos();
+        if (lastCellPos.isZero() || cell.getRadius() == 0) {
+            lastCellPos.set(currentCellPos);
+            output[1] = 0;
+            output[2] = 0;
+            return;
+        }
+
+        output[1] = (currentCellPos.x - lastCellPos.x) / cell.getRadius();
+        output[2] = (currentCellPos.y - lastCellPos.y) / cell.getRadius();
+        lastCellPos.set(currentCellPos);
+
+//        float dx = delta * (currentCellPos.x - lastCellPos.x) / cell.getRadius();
+//        float dy = delta * (currentCellPos.y - lastCellPos.y) / cell.getRadius();
+//        output[1] = Utils.linearRemap(dx, -delta, delta, -1, 1);
+//        output[2] = Utils.linearRemap(dy, -delta, delta, -1, 1);
     }
 
     @Override
@@ -78,6 +97,12 @@ public class Flagellum extends NodeAttachment implements Serializable {
 
     @Override
     public String getOutputMeaning(int index) {
+        if (index == 0)
+            return "Propulsion Success";
+        if (index == 1)
+            return "Speed X";
+        if (index == 2)
+            return "Speed Y";
         return null;  // no attachment output
     }
 

@@ -106,26 +106,29 @@ public class NetworkRenderer extends InputAdapter implements Renderer {
         Colour colour = new Colour();
         for (Neuron neuron : nn.getNeurons()) {
             if (!neuron.getType().equals(Neuron.Type.SENSOR) && neuron.isConnectedToOutput()) {
-
                 for (int i = 0; i < neuron.getInputs().length; i++) {
                     Neuron inputNeuron = neuron.getInputs()[i];
 
                     float weight = inputNeuron.getLastState() * neuron.getWeights()[i];
-                    if (Float.isNaN(weight) || Math.abs(weight) <= 1e-4)
-                        continue;
+                    if (Float.isNaN(weight))
+                        shapeRenderer.setColor(Color.BLUE);
+                    else {
+                        Color weightColor = weightGradient.getColour(colour, weight).getColor();
+                        if (mouseOverNeuron != null) {
+                            if ((neuron.equals(mouseOverNeuron) || inputNeuron.equals(mouseOverNeuron)))
+                                weightColor.set(weightColor.r, weightColor.g, weightColor.b, 0.5f + 0.5f * weightColor.a);
+                            else
+                                weightColor.set(weightColor.r, weightColor.g, weightColor.b, 0.1f);
+                        }
 
-                    Color weightColor = weightGradient.getColour(colour, weight).getColor();
-                    if (mouseOverNeuron != null
-                            && !(neuron.equals(mouseOverNeuron) || inputNeuron.equals(mouseOverNeuron)))
-                        weightColor.set(weightColor.r, weightColor.g, weightColor.b, 0.1f);
-
-                    shapeRenderer.setColor(weightColor);
+                        shapeRenderer.setColor(weightColor);
+                    }
 
                     if (neuron == inputNeuron) {
                         shapeRenderer.circle(
                                 neuron.getGraphicsX() - r,
                                 neuron.getGraphicsY() - r,
-                                3*r);
+                                2*r);
                     }
                     else if (inputNeuron.getDepth() == neuron.getDepth()) {
                         float w = boxWidth / (3 * networkDepth);
@@ -154,7 +157,7 @@ public class NetworkRenderer extends InputAdapter implements Renderer {
             float state = neuron.getLastState();
             Color stateColor;
             if (Float.isNaN(state))
-                stateColor = Color.BLUE;
+                stateColor = Color.BLUE.cpy();
             else
                 stateColor = stateGradient.getColour(colour, state).getColor();
 
@@ -164,8 +167,8 @@ public class NetworkRenderer extends InputAdapter implements Renderer {
                     !(neuron.equals(mouseOverNeuron)
                             || neuron.isInput(mouseOverNeuron) || mouseOverNeuron.isInput(neuron))) {
                 float t = 0.75f;
-                stateColor.lerp(Color.DARK_GRAY, t);
-                ringColor.lerp(Color.DARK_GRAY, 0.5f * t);
+                stateColor.lerp(Color.BLACK, t);
+                ringColor.lerp(Color.BLACK, t);
             }
 
             shapeRenderer.setColor(stateColor);
