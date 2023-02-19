@@ -27,7 +27,7 @@ public class Particle implements Shape {
     private transient Body body;
     private transient Fixture dynamicsFixture, sensorFixture;
     private boolean dead = false, disposed = false;
-    private float radius = SimulationSettings.minParticleRadius * (1 + 2 * (float) Math.random());
+    private double radius = SimulationSettings.minParticleRadius * (1 + 2 * Math.random());
     private final Vector2 pos = new Vector2(0, 0), impulseToApply = new Vector2(0, 0);
     private float angle, torqueToApply = 0;
     private final Statistics stats = new Statistics();
@@ -63,7 +63,7 @@ public class Particle implements Shape {
                 body.setLinearVelocity(0, 0);
                 body.setAwake(false);
             }
-            dynamicsFixture.getShape().setRadius(radius);
+            dynamicsFixture.getShape().setRadius((float) radius);
             float interactionRange = getInteractionRange();
             if (canPossiblyInteract() && interactionRange > getRadius())
                 sensorFixture.getShape().setRadius(interactionRange);
@@ -78,7 +78,7 @@ public class Particle implements Shape {
             return;
 
         CircleShape circle = new CircleShape();
-        circle.setRadius(radius);
+        circle.setRadius((float) radius);
 
         BodyDef bodyDef = new BodyDef();
         bodyDef.type = BodyDef.BodyType.DynamicBody;
@@ -111,7 +111,7 @@ public class Particle implements Shape {
         if (canPossiblyInteract()) {
             // Create the sensor fixture and attach it to the body
             CircleShape interactionCircle = new CircleShape();
-            interactionCircle.setRadius(radius / 2f);
+            interactionCircle.setRadius((float) radius / 2f);
 
             FixtureDef sensorFixtureDef = new FixtureDef();
             sensorFixtureDef.shape = interactionCircle;
@@ -211,16 +211,20 @@ public class Particle implements Shape {
         return contacts;
     }
 
-    public float getRadius() {
+    public double getRadiusDouble() {
         return radius;
     }
 
-    public void setRadius(float radius) {
+    public float getRadius() {
+        return (float) radius;
+    }
+
+    public void setRadius(double radius) {
         this.radius = Math.max(SimulationSettings.minParticleRadius, radius);
         this.radius = Math.min(SimulationSettings.maxParticleRadius, this.radius);
-        if (body != null && dynamicsFixture != null && !disposed) {
-            dynamicsFixture.getShape().getRadius();
-        }
+//        if (body != null && dynamicsFixture != null && !disposed) {
+//            dynamicsFixture.getShape().getRadius();
+//        }
     }
 
     public boolean isPointInside(Vector2 point) {
@@ -264,6 +268,10 @@ public class Particle implements Shape {
         return getMass(r, 0);
     }
 
+    public double getMass(double r) {
+        return Geometry.getCircleArea(r) * getMassDensity();
+    }
+
     public float getMass(float r, float extraMass) {
         return Geometry.getCircleArea(r) * getMassDensity() + extraMass;
     }
@@ -287,10 +295,11 @@ public class Particle implements Shape {
         Vector2 start = ray[0], end = ray[1];
         float dirX = end.x - start.x, dirY = end.y - start.y;
         Vector2 p = getPos();
+        float r = getRadius();
 
         float a = start.dst2(end);
         float b = 2 * (dirX*(start.x - p.x) + dirY*(start.y - p.y));
-        float c = p.len2() + start.len2() - getRadius() * getRadius() - 2 * p.dot(start);
+        float c = p.len2() + start.len2() - r*r - 2 * p.dot(start);
 
         float d = b*b - 4*a*c;
         if (d == 0)
@@ -341,14 +350,6 @@ public class Particle implements Shape {
                 return true;
         }
         return false;
-    }
-
-    public boolean isCollidingWith(Particle other)
-    {
-        if (other == this)
-            return false;
-        float r = getRadius() + other.getRadius();
-        return other.getPos().dst2(getPos()) < r*r;
     }
 
     public Statistics getStats() {

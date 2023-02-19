@@ -10,8 +10,8 @@ public class ProtozoaSettings {
     public static final float engulfForce = 500f;
     public static final float maxProtozoanSplitRadius = maxProtozoanBirthRadius * 3f;
     public static final float minProtozoanSplitRadius = maxProtozoanBirthRadius * 1.5f;
-    public static final float minProtozoanGrowthRate = 5e-6f;
-    public static final float maxProtozoanGrowthRate = 5e-5f;
+    public static final float minProtozoanGrowthRate = 0;
+    public static final float maxProtozoanGrowthRate = 1;
     public static final float spikeDamage = 3f;
     public static final float matingTime = 0.1f;
     public static final float protozoaLightRange = SimulationSettings.maxParticleRadius * 5f;

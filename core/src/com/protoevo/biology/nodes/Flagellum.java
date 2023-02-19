@@ -50,7 +50,7 @@ public class Flagellum extends NodeAttachment implements Serializable {
 
         Cell cell = node.getCell();
         // smaller flagella generate less thrust and torque
-        float sizePenalty = getConstructionProgress() * cell.getRadius() / SimulationSettings.maxParticleRadius;
+        float sizePenalty = (float) (getConstructionProgress() * cell.getRadius() / SimulationSettings.maxParticleRadius);
 
         float thrust = MathUtils.clamp(input[0], -1f, 1f);
         torque = getConstructionProgress() * MathUtils.clamp(input[1], -1f, 1f);
@@ -71,8 +71,8 @@ public class Flagellum extends NodeAttachment implements Serializable {
             return;
         }
 
-        output[1] = (currentCellPos.x - lastCellPos.x) / cell.getRadius();
-        output[2] = (currentCellPos.y - lastCellPos.y) / cell.getRadius();
+        output[1] = (currentCellPos.x - lastCellPos.x) / (float) cell.getRadius();
+        output[2] = (currentCellPos.y - lastCellPos.y) / (float) cell.getRadius();
         lastCellPos.set(currentCellPos);
 
 //        float dx = delta * (currentCellPos.x - lastCellPos.x) / cell.getRadius();

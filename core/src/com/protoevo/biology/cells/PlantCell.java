@@ -1,5 +1,6 @@
 package com.protoevo.biology.cells;
 
+import com.protoevo.biology.CauseOfDeath;
 import com.protoevo.biology.Food;
 import com.protoevo.core.Simulation;
 import com.protoevo.core.Statistics;
@@ -52,7 +53,7 @@ public class PlantCell extends EdibleCell {
     }
 
     private boolean shouldSplit() {
-        return hasNotBurst() && getRadius() >= maxRadius &&
+        return hasNotBurst() && getRadius() >= 0.99f * maxRadius &&
                 getHealth() > Settings.minHealthToSplit;
     }
 
@@ -83,8 +84,8 @@ public class PlantCell extends EdibleCell {
             return;
 
         updateCrowdingFactor();
-//        if (getGrowthRate() < 0f)
-//            damage(-Settings.plantRegen * delta * getGrowthRate());
+        if (getGrowthRate() < 0f)
+            damage(-PlantSettings.plantRegen * delta * getGrowthRate(), CauseOfDeath.OVERCROWDING);
 
         addConstructionMass(delta * Settings.plantConstructionRate);
         addAvailableEnergy(delta * Settings.plantEnergyRate);

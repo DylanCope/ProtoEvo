@@ -1,5 +1,6 @@
 package com.protoevo.env;
 
+import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.*;
 import com.google.common.collect.Streams;
@@ -18,8 +19,8 @@ import com.protoevo.utils.FileIO;
 import com.protoevo.utils.Geometry;
 
 import java.io.Serializable;
-import java.sql.Time;
 import java.util.*;
+import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.TimeUnit;
@@ -116,9 +117,9 @@ public class Environment implements Serializable
 	}
 
 	private void handleBirthsAndDeaths() {
-//		for (BurstRequest<? extends Cell> burstRequest : burstRequests)
-//			if (burstRequest.canBurst())
-//				burstRequest.burst();
+		for (BurstRequest<? extends Cell> burstRequest : burstRequests)
+			if (burstRequest.canBurst())
+				burstRequest.burst();
 		burstRequests.clear();
 
 		flushEntitiesToAdd();
@@ -358,8 +359,12 @@ public class Environment implements Serializable
 			int count = causeOfDeathCounts.getOrDefault(cod, 0);
 			causeOfDeathCounts.put(cod, count + 1);
 		}
-		if (Settings.enableChemicalField && (e instanceof Cell && !((Cell) e).isEngulfed()))
-			chemicalSolution.depositCircle(e.getPos(), e.getRadius() * 1.5f, e.getColor());
+		if (Settings.enableChemicalField && (e instanceof Cell && !((Cell) e).isEngulfed())) {
+			if (e instanceof Protozoan)
+				chemicalSolution.depositCircle(e.getPos(), e.getRadius() * 1.5f, Color.FIREBRICK);
+			else
+				chemicalSolution.depositCircle(e.getPos(), e.getRadius() * 1.5f, e.getColor());
+		}
 		e.dispose();
 	}
 

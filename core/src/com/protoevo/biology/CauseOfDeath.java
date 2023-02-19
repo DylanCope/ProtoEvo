@@ -15,7 +15,8 @@ public enum CauseOfDeath {
     DISPOSED("being disposed of", true),
     ENV_CAPACITY_EXCEEDED("exceeding environment capacity", true),
     HEALED_TO_DEATH("being healed to death?...", true),  // should never happen
-    FAILED_TO_CONSTRUCT("failure to construct", true);
+    FAILED_TO_CONSTRUCT("failure to construct", true),
+    OVERCROWDING("overcrowding", false);
 
     private String reason;
     private boolean debug;

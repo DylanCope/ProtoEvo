@@ -37,7 +37,8 @@ public abstract class Cell extends Particle implements Serializable
 	private float health = 1f;
 	private float growthRate = 0.0f;
 	private float energyAvailable = SimulationSettings.startingAvailableCellEnergy;
-	private float constructionMassAvailable = SimulationSettings.startingAvailableConstructionMass;
+	private double constructionMassAvailable = SimulationSettings.startingAvailableConstructionMass;
+	private double massChangeForGrowth = 0f;
 	private final Map<ComplexMolecule, Float> availableComplexMolecules = new ConcurrentHashMap<>(0);
 	private final ConcurrentLinkedQueue<JointsManager.JoinedParticles> attachedCells = new ConcurrentLinkedQueue<>();
 	private final Map<CellAdhesion.CAM, Float> surfaceCAMs = new HashMap<>(0);
@@ -114,7 +115,7 @@ public abstract class Cell extends Particle implements Serializable
 	public void progressProject(ConstructionProject project, float delta) {
 		if (delta > 0 && project.notFinished() && project.canMakeProgress(
 				energyAvailable,
-				constructionMassAvailable,
+				(float) constructionMassAvailable,
 				availableComplexMolecules,
 				delta)) {
 			depleteEnergy(project.energyToMakeProgress(delta));
@@ -251,27 +252,31 @@ public abstract class Cell extends Particle implements Serializable
 		if (constructionMassAvailable <= 0)
 			return;
 
-		float gr = getGrowthRate();
-		double dr = SimulationSettings.cellGrowthFactor * ((double) gr) * ((double) delta);
-		float newR = (float) ((double) getRadius() + dr);
-
-		if (newR == getRadius() || gr == 0)
-			return;
+		double gr = getGrowthRate();
+		double dr = SimulationSettings.cellGrowthFactor * gr * ((double) delta);
+		double currR = getRadiusDouble();
+		double newR = currR + dr;
 
 		if (newR > getMaxRadius())
 			newR = getMaxRadius();
+		else if (newR < getMinRadius())
+			newR = getMinRadius();
 
-		float massChange = getMass(newR) - getMass(super.getRadius());
+		if (newR == currR)
+			return;
 
-		if (massChange < constructionMassAvailable) {
-			newR = (newR - getRadius()) * constructionMassAvailable / massChange + getRadius();
-			massChange = constructionMassAvailable;
+		massChangeForGrowth = getMass(newR) - getMass(currR);
+
+		if (massChangeForGrowth > constructionMassAvailable) {
+			double dr2 = constructionMassAvailable / (Math.PI * getMassDensity());
+			newR = Math.sqrt(currR*currR + dr2);
+			massChangeForGrowth = constructionMassAvailable;
 		}
 
-		if (newR > SimulationSettings.minParticleRadius || gr > 0) {
+		if (newR > SimulationSettings.minParticleRadius && massChangeForGrowth <= constructionMassAvailable) {
 			setRadius(newR);
-			if (massChange > 0)
-				depleteConstructionMass(massChange);
+			if (massChangeForGrowth > 0)
+				depleteConstructionMass(massChangeForGrowth);
 		}
 		if (newR < getMinRadius())
 			kill(CauseOfDeath.GREW_TOO_SMALL);
@@ -396,7 +401,7 @@ public abstract class Cell extends Particle implements Serializable
 		stats.putPercentage("Health", 100 * getHealth());
 		stats.putCount("Generation", getGeneration());
 		stats.putEnergy("Available Energy", energyAvailable);
-		stats.putMass("Construction Mass", constructionMassAvailable);
+		stats.putMass("Construction Mass", (float) constructionMassAvailable);
 		stats.putMass("Construction Mass Limit", getConstructionMassCap());
 //		if (wasteMass > 0)
 //			stats.putMass("Waste Mass", wasteMass);
@@ -438,7 +443,8 @@ public abstract class Cell extends Particle implements Serializable
 
 	public Statistics getDebugStats() {
 		Statistics stats = super.getDebugStats();
-		stats.put("Num Attached Cells", (float) attachedCells.size());
+		stats.putCount("Num Attached Cells", attachedCells.size());
+		stats.putMass("Mass To Grow", (float) massChangeForGrowth);
 		return stats;
 	}
 	
@@ -565,14 +571,22 @@ public abstract class Cell extends Particle implements Serializable
 	}
 
 	public float getConstructionMassCap() {
-		return 2 * getMassDensity() * Geometry.getSphereVolume(getRadius() * 0.25f);
+		return 2 * getMassDensity() * Geometry.getCircleArea(getRadius() * 0.25f);
 	}
 
 	public void setAvailableConstructionMass(float mass) {
 		constructionMassAvailable = Math.min(mass, getConstructionMassCap());
 	}
 
+	public void setAvailableConstructionMass(double mass) {
+		constructionMassAvailable = Math.min(mass, getConstructionMassCap());
+	}
+
 	public float getConstructionMassAvailable() {
+		return (float) constructionMassAvailable;
+	}
+
+	public double getConstructionMassAvailableDouble() {
 		return constructionMassAvailable;
 	}
 
@@ -580,9 +594,15 @@ public abstract class Cell extends Particle implements Serializable
 		setAvailableConstructionMass(constructionMassAvailable + mass);
 	}
 
+	public void addConstructionMass(double mass) {
+		setAvailableConstructionMass(constructionMassAvailable + mass);
+	}
+
 	public void depleteConstructionMass(float mass) {
-		if (Float.isNaN(mass))
-			throw new IllegalArgumentException("Mass is NaN");
+		constructionMassAvailable = Math.max(0, constructionMassAvailable - mass);
+	}
+
+	public void depleteConstructionMass(double mass) {
 		constructionMassAvailable = Math.max(0, constructionMassAvailable - mass);
 	}
 
@@ -592,7 +612,7 @@ public abstract class Cell extends Particle implements Serializable
 
 	@Override
 	public float getMass() {
-		float extraMass = constructionMassAvailable;
+		float extraMass = (float) constructionMassAvailable;
 		for (float mass : availableComplexMolecules.values())
 			extraMass += mass;
 		return getMass(getRadius(), extraMass);
@@ -606,7 +626,7 @@ public abstract class Cell extends Particle implements Serializable
 		float percentRemoved = mass / getMass();
 		damage(percentRemoved, causeOfDeath);
 
-		float newR = (1 - percentRemoved) * getRadius();
+		double newR = (1 - percentRemoved) * getRadius();
 		if (newR < SimulationSettings.minParticleRadius * 0.5f)
 			kill(causeOfDeath);
 

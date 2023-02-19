@@ -57,9 +57,9 @@ public class Protozoan extends Cell implements Evolvable
 		engulfedCells.forEach(c -> eat((EdibleCell) c, delta));
 		engulfedCells.removeIf(c -> c.getHealth() < 0.1f);
 
-//		if (shouldSplit() && hasNotBurst()) {
-//			getEnv().requestBurst(this, Protozoan.class, this::createSplitChild);
-//		}
+		if (shouldSplit() && hasNotBurst()) {
+			getEnv().requestBurst(this, Protozoan.class, this::createSplitChild);
+		}
 
 		move(delta);
 	}
