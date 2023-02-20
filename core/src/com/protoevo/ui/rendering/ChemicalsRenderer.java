@@ -55,6 +55,7 @@ public class ChemicalsRenderer implements Renderer {
         chemicalBatch.begin();
         float x = -chemicalSolution.getFieldWidth() / 2;
         float y = -chemicalSolution.getFieldHeight() / 2;
+        chemicalBatch.setColor(1, 1, 1, 0.5f);
         chemicalBatch.draw(chemicalTexture, x, y,
                 chemicalSolution.getFieldWidth(), chemicalSolution.getFieldWidth());
         chemicalBatch.end();

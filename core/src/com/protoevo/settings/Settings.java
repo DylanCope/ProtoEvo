@@ -34,7 +34,7 @@ public final class Settings {
     public static final float chemicalUpdateTime = simulationUpdateDelta * 100f;
     public static final float chemicalDiffusionRate = 1f;
     public static final float pheromoneFlow = 0.05f;
-    public static final float plantPheromoneDeposit = 500f;
+    public static final float chemicalCellDeposit = 50f;
 
     // Protozoa settings
     public static final float minProtozoanBirthRadius = 3f / 100f;

@@ -110,4 +110,77 @@ public class Geometry {
         }
         return points;
     }
+
+    private static float positiveRootIntersect(float h, float r)
+    // returns the positive root of intersection of line y = h with circle centered at the origin and radius r
+    {
+//        assert(r >= 0); // assume r is positive, leads to some simplifications in the formula below (can factor out r from the square root)
+        return (h < r) ? (float) Math.sqrt(r * r - h * h) : 0f; // http://www.wolframalpha.com/input/?i=r+*+sin%28acos%28x+%2F+r%29%29+%3D+h
+    }
+
+    private static float indefIntCircleSeg(float x, float h, float r) // indefinite integral of circle segment
+    {
+        return (float) (.5f * (Math.sqrt(1 - x * x / (r * r)) * x * r + r * r * Math.asin(x / r) - 2 * h * x));
+        // http://www.wolframalpha.com/input/?i=r+*+sin%28acos%28x+%2F+r%29%29+-+h
+    }
+
+    private static float boxAndCircleIntersectionOverlap(float x0, float x1, float h, float r)
+    // area of intersection of an infinitely tall box with left edge at x0, right edge at x1, bottom edge at h
+    // and top edge at infinity, with circle centered at the origin with radius r
+    {
+        if(x0 > x1) {
+            float tmp = x0;
+            x0 = x1;
+            x1 = tmp;
+        }
+        float s = positiveRootIntersect(h, r);
+        return indefIntCircleSeg(Math.max(-s, Math.min(s, x1)), h, r) - indefIntCircleSeg(Math.max(-s, Math.min(s, x0)), h, r); // integrate the area
+    }
+
+    private static float boxAndCircleIntersectionOverlap(float x0, float x1, float y0, float y1, float r)
+    // area of the intersection of a finite box with a circle centered at the origin with radius r
+    {
+        if(y0 > y1) {
+            float tmp = y0;
+            y0 = y1;
+            y1 = tmp;
+        }
+
+        if(y0 < 0) {
+            if(y1 < 0)
+                return boxAndCircleIntersectionOverlap(x0, x1, -y0, -y1, r);
+            // the box is completely under, just flip it above and try again
+            else
+                return boxAndCircleIntersectionOverlap(x0, x1, 0, -y0, r)
+                        + boxAndCircleIntersectionOverlap(x0, x1, 0, y1, r);
+            // the box is both above and below, divide it to two boxes and go again
+        } else {
+//            assert(y1 >= 0); // y0 >= 0, which means that y1 >= 0 also (y1 >= y0) because of the swap at the beginning
+            return boxAndCircleIntersectionOverlap(x0, x1, y0, r)
+                    - boxAndCircleIntersectionOverlap(x0, x1, y1, r); // area of the lower box minus area of the higher box
+        }
+    }
+
+    /**
+     * Thank you "the swine":
+     * https://stackoverflow.com/questions/622287/area-of-intersection-between-circle-and-rectangle
+     * @param x0 the left edge of the box
+     * @param x1 the right edge of the box
+     * @param y0 the bottom edge of the box
+     * @param y1 the top edge of the box
+     * @param cx the x coordinate of the circle center
+     * @param cy the y coordinate of the circle center
+     * @param r the radius of the circle
+     * @return the area of the intersection of the box and the circle
+     */
+    public static float boxAndCircleIntersectionOverlap(
+            float x0, float x1, float y0, float y1, float cx, float cy, float r)
+    // area of the intersection of a general box with a general circle
+    {
+        x0 -= cx; x1 -= cx;
+        y0 -= cy; y1 -= cy;
+        // get rid of the circle center
+
+        return boxAndCircleIntersectionOverlap(x0, x1, y0, y1, r);
+    }
 }

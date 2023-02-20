@@ -60,6 +60,9 @@ public class Utils {
     }
 
     public static float linearRemap(float v, float vStart, float vEnd, float outStart, float outEnd) {
+        if (Math.abs(vEnd - vStart) < 1e-12)
+            return v < vStart ? outStart : outEnd;
+
         float value = outStart + (outEnd - outStart) * ((v - vStart) / (vEnd - vStart));
         if (outStart < outEnd) {
             return MathUtils.clamp(value, outStart, outEnd);

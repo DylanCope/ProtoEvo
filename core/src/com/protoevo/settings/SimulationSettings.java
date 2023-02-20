@@ -33,4 +33,5 @@ public class SimulationSettings {
     public static float maxMoleculeProductionRate = .01f;
     public static double deleteSynapseMutationRate = 0.1;
     public static double deleteNeuronMutationRate = 0.1;
+    public static float chemicalExtractionFactor = 5e-5f;
 }

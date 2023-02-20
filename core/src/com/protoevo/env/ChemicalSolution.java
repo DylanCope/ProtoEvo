@@ -2,6 +2,7 @@ package com.protoevo.env;
 
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Pixmap;
+import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector2;
 import com.protoevo.biology.cells.Cell;
 import com.protoevo.biology.cells.EdibleCell;
@@ -11,6 +12,7 @@ import com.protoevo.settings.PerformanceSettings;
 import com.protoevo.settings.Settings;
 import com.protoevo.settings.SimulationSettings;
 import com.protoevo.utils.DebugMode;
+import com.protoevo.utils.Geometry;
 import com.protoevo.utils.JCudaKernelRunner;
 import com.protoevo.utils.Utils;
 
@@ -31,7 +33,7 @@ public class ChemicalSolution implements Serializable {
     private float timeSinceUpdate = 0;
     private transient JCudaKernelRunner diffusionKernel;
     private Consumer<Pixmap> updateChemicalsTextureCallback;
-    private final transient Color tmpColour = new Color();
+    private final transient Color tmpColour = new Color(), tmpColour2 = new Color();
 
     public ChemicalSolution(Environment environment, int cells, float mapRadius) {
         this(environment, -mapRadius, mapRadius, -mapRadius, mapRadius, cells);
@@ -108,7 +110,7 @@ public class ChemicalSolution implements Serializable {
         return (int) Utils.linearRemap(y, yMin, yMax, 0, chemicalTextureHeight);
     }
 
-    public void depositChemicals(float delta, Cell e) {
+    public void cellChemicalIO(float delta, Cell e) {
         float worldX = e.getPos().x;
         float worldY = -e.getPos().y;
 
@@ -116,44 +118,58 @@ public class ChemicalSolution implements Serializable {
             return;
 
         if (e instanceof EdibleCell && !e.isDead()) {
-            float deposit = Settings.plantPheromoneDeposit * delta;
-            Color cellColour = e.getColor();
-
             int fieldX = toChemicalGridX(worldX);
             int fieldY = toChemicalGridY(worldY);
-
-            chemicalPixmap.setColor(cellColour.r, cellColour.g, cellColour.b, deposit);
+            Color cellColor = e.getColor();
+            chemicalPixmap.setColor(cellColor.r, cellColor.g, cellColor.b, 1);
             chemicalPixmap.fillCircle(fieldX, fieldY, toChemicalGridXDist(e.getRadius()));
         }
         else if (e instanceof Protozoan) {
-            Protozoan protozoan = (Protozoan) e;
+            protozoanIO(delta, (Protozoan) e);
+        }
+    }
 
-            int size = toChemicalGridXDist(e.getRadius());
-            int x = toChemicalGridX(worldX);
-            int y = toChemicalGridY(worldY);
-            for (int i = -size; i <= size; i++) {
-                for (int j = -size; j <= size; j++) {
-                    if (i*i + j*j <= size*size) {
-                        int fieldX = x + i;
-                        int fieldY = y + j;
+    private void protozoanIO(float delta, Protozoan protozoan) {
+        float worldX = protozoan.getPos().x;
+        float worldY = -protozoan.getPos().y;
 
-                        if (fieldX >= 0 && fieldX < chemicalTextureWidth &&
-                                fieldY >= 0 && fieldY < chemicalTextureHeight) {
-                            int colourRGBA8888 = chemicalPixmap.getPixel(fieldX, fieldY);
-                            tmpColour.set(colourRGBA8888);
-                            float amount = Utils.linearRemap(
-                                    i*i + j*j, size*size / 4f, size*size,
-                                    1, 0.1f);
-                            float extraction = (1 + delta) * amount * tmpColour.a;
+        int size = toChemicalGridXDist(protozoan.getRadius());
+        int x = toChemicalGridX(worldX);
+        int y = toChemicalGridY(worldY);
 
-                            if (tmpColour.g > 0.75f)
-                                protozoan.addFood(Food.Type.Plant, extraction * tmpColour.g * 1e-5f);
+        float cellWorldWidth = getFieldWidth() / chemicalTextureWidth;
+        float cellWorldHeight = getFieldHeight() / chemicalTextureHeight;
 
-                            if (tmpColour.r > 0.75f)
-                                protozoan.addFood(Food.Type.Meat, extraction * tmpColour.r * 1e-5f);
+        for (int i = -size; i <= size; i++) {
+            for (int j = -size; j <= size; j++) {
+                if (i*i + j*j <= size*size) {
+                    int fieldX = x + i;
+                    int fieldY = y + j;
 
-                            tmpColour.a = Math.max(0, tmpColour.a - extraction);
-                            chemicalPixmap.drawPixel(fieldX, fieldY, tmpColour.toIntBits());
+                    if (fieldX >= 0 && fieldX < chemicalTextureWidth &&
+                            fieldY >= 0 && fieldY < chemicalTextureHeight) {
+                        int colourRGBA8888 = chemicalPixmap.getPixel(fieldX, fieldY);
+                        tmpColour.set(colourRGBA8888);
+                        float cellX = xMin + fieldX * cellWorldWidth;
+                        float cellY = yMin + fieldY * cellWorldHeight;
+
+                        float overlapArea = Geometry.boxAndCircleIntersectionOverlap(
+                                cellX, cellX + cellWorldWidth,  cellY, cellY + cellWorldHeight,
+                                worldX, worldY, protozoan.getRadius()
+                        );
+                        float extraction = 500f * delta * overlapArea / (cellWorldWidth * cellWorldHeight);
+                        if (extraction > 0) {
+
+                            if (tmpColour.g > 0.5f)
+                                protozoan.addFood(Food.Type.Plant,
+                                        extraction * tmpColour.g * SimulationSettings.chemicalExtractionFactor);
+
+                            if (tmpColour.r > 0.5f)
+                                protozoan.addFood(Food.Type.Meat,
+                                        extraction * tmpColour.r * SimulationSettings.chemicalExtractionFactor);
+
+                            tmpColour.sub(extraction, extraction, extraction, extraction);
+                            chemicalPixmap.drawPixel(fieldX, fieldY, Color.rgba8888(tmpColour));
                         }
                     }
                 }
@@ -163,7 +179,7 @@ public class ChemicalSolution implements Serializable {
 
     public void deposit(float delta) {
         environment.getCells().parallelStream()
-                .forEach(e -> depositChemicals(delta, e));
+                .forEach(e -> cellChemicalIO(delta, e));
     }
 
     private void cudaDiffuse() {
