@@ -71,8 +71,8 @@ public class Flagellum extends NodeAttachment implements Serializable {
             return;
         }
 
-        output[1] = (currentCellPos.x - lastCellPos.x) / (float) cell.getRadius();
-        output[2] = (currentCellPos.y - lastCellPos.y) / (float) cell.getRadius();
+        output[1] = (currentCellPos.x - lastCellPos.x) / (20f * cell.getRadius());
+        output[2] = (currentCellPos.y - lastCellPos.y) / (20f * cell.getRadius());
         lastCellPos.set(currentCellPos);
 
 //        float dx = delta * (currentCellPos.x - lastCellPos.x) / cell.getRadius();

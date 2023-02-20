@@ -1,11 +1,11 @@
 package com.protoevo.biology.cells;
 
-import com.protoevo.biology.CauseOfDeath;
 import com.protoevo.biology.Food;
 import com.protoevo.core.Simulation;
 import com.protoevo.core.Statistics;
 import com.protoevo.env.CollisionHandler;
 import com.protoevo.env.Environment;
+import com.protoevo.env.JointsManager;
 import com.protoevo.settings.PlantSettings;
 import com.protoevo.settings.Settings;
 import com.protoevo.settings.SimulationSettings;
@@ -83,17 +83,42 @@ public class PlantCell extends EdibleCell {
         if (isDead())
             return;
 
-        updateCrowdingFactor();
-        if (getGrowthRate() < 0f)
-            damage(-PlantSettings.plantRegen * delta * getGrowthRate(), CauseOfDeath.OVERCROWDING);
+//        updateCrowdingFactor();
+//        if (getGrowthRate() < 0f)
+//            damage(-PlantSettings.plantRegen * delta * getGrowthRate(), CauseOfDeath.OVERCROWDING);
 
         addConstructionMass(delta * Settings.plantConstructionRate);
         addAvailableEnergy(delta * Settings.plantEnergyRate);
+
+        handleAttachments();
 
         if (shouldSplit()) {
             getEnv().requestBurst(
                 this, PlantCell.class, r -> new PlantCell(r, getEnv())
             );
+        }
+    }
+
+    public void attach(Cell otherCell) {
+        JointsManager.Joining joining = new JointsManager.Joining(this, otherCell);
+        JointsManager jointsManager = getEnv().getJointsManager();
+        jointsManager.createJoint(joining);
+        registerJoining(joining);
+        otherCell.registerJoining(joining);
+    }
+
+    public void handleAttachments() {
+        if (getNumAttachedCells() < 2) {
+            for (CollisionHandler.FixtureCollision collision : getContacts()) {
+                Object o = getOther(collision);
+                if (o instanceof PlantCell
+                        && ((PlantCell) o).getNumAttachedCells() < 2
+                        && !isAttachedTo((PlantCell) o)) {
+                    attach((PlantCell) o);
+                    if (getNumAttachedCells() >= 2)
+                        break;
+                }
+            }
         }
     }
 

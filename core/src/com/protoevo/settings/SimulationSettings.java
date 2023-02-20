@@ -23,7 +23,7 @@ public class SimulationSettings {
     public static final float maxMutationChance = 0.1f;
 
     public static final float cellGrowthFactor = 1e-2f;
-    public static final float digestionFactor = 2f;
+    public static final float digestionFactor = 10f;
     public static final float chemicalDiffusionInterval = simulationUpdateDelta * 20f;
     public static final int chemicalFieldResolution = 1024;
     public static final float chemicalFieldRadius = voidStartDistance;

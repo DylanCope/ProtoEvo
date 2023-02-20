@@ -3,6 +3,8 @@ package com.protoevo.utils;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector2;
 
+import java.util.Random;
+
 public class Geometry {
 
     public static final Vector2 ZERO = new Vector2(0, 0);
@@ -63,12 +65,25 @@ public class Geometry {
         return Geometry.fromAngle((float) (Math.random() * 2 * Math.PI));
     }
 
+    public static Vector2 randomUnit(Random random) {
+        return Geometry.fromAngle((float) (random.nextFloat() * 2 * Math.PI));
+    }
+
     public static Vector2 randomVector(float length) {
         return Geometry.randomUnit().scl(length);
     }
 
+    public static Vector2 randomVector(float length, Random random) {
+        return Geometry.randomUnit(random).scl(length);
+    }
+
     public static Vector2 randomPointInCircle(float circleR) {
         return Geometry.randomVector((float) Math.sqrt(Math.random() * circleR * circleR));
+    }
+
+    public static Vector2 randomPointInCircle(float circleR, Random random) {
+        float length = (float) Math.sqrt(random.nextFloat() * circleR * circleR);
+        return Geometry.randomVector(length, random);
     }
 
     public static float getCircleArea(float r) {

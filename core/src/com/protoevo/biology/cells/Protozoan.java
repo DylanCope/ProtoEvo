@@ -178,7 +178,10 @@ public class Protozoan extends Cell implements Evolvable
 		else
 			child = Evolvable.asexualClone(this);
 
+		child.setRadius(r);
 		child.setEnv(getEnv());
+		getChildren().add(child);
+
 		return child;
 	}
 

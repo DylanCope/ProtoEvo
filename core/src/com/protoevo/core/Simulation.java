@@ -266,8 +266,6 @@ public class Simulation implements Runnable
 
 	public Environment getEnv() { return environment; }
 
-	public long getGeneration() { return environment.getGeneration(); }
-
 	public float getElapsedTime() { return environment.getElapsedTime(); }
 
 	public float getTimeDilation() { return timeDilation; }

@@ -16,7 +16,7 @@ public class NodeRenderer {
     private static final Map<Class<? extends NodeAttachment>, Sprite> attachmentSprites =
             new HashMap<Class<? extends NodeAttachment>, Sprite>() {
                 {
-                    put(Spike.class, ImageUtils.loadSprite("cell/nodes/spike_node.png"));
+//                    put(Spike.class, ImageUtils.loadSprite("cell/nodes/spike_node.png"));
                     put(Photoreceptor.class, ImageUtils.loadSprite("cell/nodes/photoreceptor/base.png"));
                     put(AdhesionReceptor.class, ImageUtils.loadSprite("cell/nodes/binding_node.png"));
                     put(PhagocyticReceptor.class, ImageUtils.loadSprite("cell/nodes/phagoreceptor.png"));

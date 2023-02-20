@@ -8,11 +8,11 @@ import com.protoevo.biology.nodes.SurfaceNode;
 import com.protoevo.biology.organelles.Organelle;
 import com.protoevo.core.Particle;
 import com.protoevo.core.Statistics;
-import com.protoevo.settings.Settings;
-import com.protoevo.settings.SimulationSettings;
 import com.protoevo.env.CollisionHandler;
 import com.protoevo.env.JointsManager;
 import com.protoevo.env.Rock;
+import com.protoevo.settings.Settings;
+import com.protoevo.settings.SimulationSettings;
 import com.protoevo.utils.Colour;
 import com.protoevo.utils.Geometry;
 
@@ -20,7 +20,6 @@ import java.io.Serial;
 import java.io.Serializable;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentLinkedQueue;
 
 import static com.protoevo.utils.Utils.lerp;
 
@@ -40,7 +39,7 @@ public abstract class Cell extends Particle implements Serializable
 	private double constructionMassAvailable = SimulationSettings.startingAvailableConstructionMass;
 	private double massChangeForGrowth = 0f;
 	private final Map<ComplexMolecule, Float> availableComplexMolecules = new ConcurrentHashMap<>(0);
-	private final ConcurrentLinkedQueue<JointsManager.JoinedParticles> attachedCells = new ConcurrentLinkedQueue<>();
+	private final ConcurrentHashMap<Cell, JointsManager.Joining> attachedCells = new ConcurrentHashMap<>();
 	private final Map<CellAdhesion.CAM, Float> surfaceCAMs = new HashMap<>(0);
 	private final Map<Food.Type, Float> foodDigestionRates = new HashMap<>(0);
 	private final Map<Food.Type, Food> foodToDigest = new HashMap<>(0);
@@ -70,7 +69,7 @@ public abstract class Cell extends Particle implements Serializable
 
 		organelles.forEach(organelle -> organelle.update(delta));
 
-		attachedCells.removeIf(this::detachCellCondition);
+		attachedCells.entrySet().removeIf(this::detachCellCondition);
 	}
 
 	public void voidDamage(float delta) {
@@ -78,7 +77,7 @@ public abstract class Cell extends Particle implements Serializable
 			damage(delta * SimulationSettings.voidDamagePerSecond, CauseOfDeath.THE_VOID);
 	}
 
-	public void requestJointRemoval(JointsManager.JoinedParticles joining) {
+	public void requestJointRemoval(JointsManager.Joining joining) {
 		if (attachedCells.contains(joining)) {
 			getEnv().getJointsManager().requestJointRemoval(joining);
 			attachedCells.remove(joining);
@@ -86,16 +85,21 @@ public abstract class Cell extends Particle implements Serializable
 	}
 
 	public void requestJointRemoval(Cell other) {
-		JointsManager.JoinedParticles toRemove = null;
-		for (JointsManager.JoinedParticles joining : attachedCells) {
-			if (joining.getOther(this) == other) {
+		JointsManager.Joining toRemove = null;
+		for (Cell attached : attachedCells.keySet()) {
+			if (attached == other) {
+				JointsManager.Joining joining = attachedCells.get(attached);
 				getEnv().getJointsManager().requestJointRemoval(joining);
 				toRemove = joining;
 				break;
 			}
 		}
 		if (toRemove != null)
-			attachedCells.remove(toRemove);
+			attachedCells.remove(other);
+	}
+
+	public boolean isAttachedTo(Cell other) {
+		return attachedCells.containsKey(other);
 	}
 
 	public void setOrganelles(ArrayList<Organelle> organelles) {
@@ -221,7 +225,8 @@ public abstract class Cell extends Particle implements Serializable
 		return Settings.cellRepairRate * repairRate;
 	}
 
-	public boolean detachCellCondition(JointsManager.JoinedParticles joining) {
+	public boolean detachCellCondition(Map.Entry<Cell, JointsManager.Joining> entry) {
+		JointsManager.Joining joining = entry.getValue();
 		Cell other = (Cell) joining.getOther(this);
 
 		boolean detach = other.isDead();
@@ -232,8 +237,7 @@ public abstract class Cell extends Particle implements Serializable
 		}
 
 		float dist2 = joining.getAnchorA().dst2(joining.getAnchorB());
-		float idealLength = JointsManager.idealJointLength(this, other);
-		float maxDist = 1.2f * idealLength;
+		float maxDist = joining.getMaxLength();
 		detach = dist2 > maxDist*maxDist;
 
 		if (detach)
@@ -298,12 +302,16 @@ public abstract class Cell extends Particle implements Serializable
 		return growthRate;
 	}
 
-	public void registerJoining(JointsManager.JoinedParticles joining) {
-		attachedCells.add(joining);
+	public void registerJoining(JointsManager.Joining joining) {
+		Object other = joining.getOther(this);
+		if (other instanceof Cell)
+			attachedCells.put((Cell) other, joining);
 	}
 
-	public void deregisterJoining(JointsManager.JoinedParticles joining) {
-		attachedCells.remove(joining);
+	public void deregisterJoining(JointsManager.Joining joining) {
+		Object other = joining.getOther(this);
+		if (other instanceof Cell)
+			attachedCells.remove((Cell) other);
 	}
 
 	public Collection<CellAdhesion.CAM> getSurfaceCAMs() {
@@ -327,15 +335,15 @@ public abstract class Cell extends Particle implements Serializable
 	}
 
 	public boolean notBoundTo(Cell otherCell) {
-		for (JointsManager.JoinedParticles joining : attachedCells) {
-			if (joining.getOther(this) == otherCell)
-				return false;
-		}
-		for (JointsManager.JoinedParticles joining : otherCell.attachedCells) {
-			if (joining.getOther(otherCell) == this)
-				return false;
-		}
-		return true;
+//		for (JointsManager.JoinedParticles joining : attachedCells) {
+//			if (joining.getOther(this) == otherCell)
+//				return false;
+//		}
+//		for (JointsManager.JoinedParticles joining : otherCell.attachedCells) {
+//			if (joining.getOther(otherCell) == this)
+//				return false;
+//		}
+		return attachedCells.containsKey(otherCell) || otherCell.attachedCells.containsKey(this);
 	}
 	
 	public abstract boolean isEdible();
@@ -641,8 +649,12 @@ public abstract class Cell extends Particle implements Serializable
 		return foodToDigest;
 	}
 
-	public Collection<JointsManager.JoinedParticles> getAttachedCells() {
-		return attachedCells;
+	public Collection<Cell> getAttachedCells() {
+		return attachedCells.keySet();
+	}
+
+	public int getNumAttachedCells() {
+		return attachedCells.size();
 	}
 
 	public float getShieldFactor() {
@@ -679,5 +691,9 @@ public abstract class Cell extends Particle implements Serializable
 
 	public Collection<SurfaceNode> getSurfaceNodes() {
 		return null;
+	}
+
+	public boolean hasChildren() {
+		return !children.isEmpty();
 	}
 }

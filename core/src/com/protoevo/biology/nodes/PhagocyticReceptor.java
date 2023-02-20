@@ -2,9 +2,7 @@ package com.protoevo.biology.nodes;
 
 import com.badlogic.gdx.math.Vector2;
 import com.protoevo.biology.CauseOfDeath;
-import com.protoevo.biology.cells.Cell;
-import com.protoevo.biology.cells.EdibleCell;
-import com.protoevo.biology.cells.Protozoan;
+import com.protoevo.biology.cells.*;
 import com.protoevo.settings.SimulationSettings;
 import com.protoevo.env.CollisionHandler;
 
@@ -16,6 +14,8 @@ public class PhagocyticReceptor extends NodeAttachment implements Serializable {
     @Serial
     private static final long serialVersionUID = 1L;
     private final Vector2 tmp = new Vector2();
+    private Cell lastEngulfed;
+    private boolean engulfPlant, engulfMeat;
 
     public PhagocyticReceptor(SurfaceNode node) {
         super(node);
@@ -28,6 +28,19 @@ public class PhagocyticReceptor extends NodeAttachment implements Serializable {
             return;
         }
 
+        engulfPlant = input[0] > 0f;
+        engulfMeat = input[1] > 0f;
+
+        if (!((Protozoan) cell).getEngulfedCells().contains(lastEngulfed))
+            lastEngulfed = null;
+        if (lastEngulfed != null) {
+            output[0] = lastEngulfed.getHealth();
+            if (lastEngulfed instanceof PlantCell)
+                output[1] = 1f;
+            else if (lastEngulfed instanceof MeatCell)
+                output[2] = 1f;
+        }
+
         for (CollisionHandler.FixtureCollision contact : cell.getContacts()) {
             Object collided = cell.getOther(contact);
             if (collided instanceof Cell && engulfCondition((Cell) collided)) {
@@ -37,6 +50,10 @@ public class PhagocyticReceptor extends NodeAttachment implements Serializable {
     }
 
     private boolean engulfCondition(Cell other) {
+        if (other instanceof PlantCell && !engulfPlant)
+            return false;
+        if (other instanceof MeatCell && !engulfMeat)
+            return false;
         return other instanceof EdibleCell
                 && correctSizes(other) && notEngulfed(other)
                 && closeEnough(other) && roomFor(other);
@@ -68,6 +85,7 @@ public class PhagocyticReceptor extends NodeAttachment implements Serializable {
     }
 
     public void engulf(Cell cell) {
+        lastEngulfed = cell;
         cell.setEngulfer(node.getCell());
         cell.kill(CauseOfDeath.EATEN);
         ((Protozoan) node.getCell()).getEngulfedCells().add(cell);
@@ -80,11 +98,21 @@ public class PhagocyticReceptor extends NodeAttachment implements Serializable {
 
     @Override
     public String getInputMeaning(int index) {
+        if (index == 0)
+            return "Should Engulf Plant";
+        if (index == 1)
+            return "Should Engulf Meat";
         return null;
     }
 
     @Override
     public String getOutputMeaning(int index) {
+        if (index == 0)
+            return "Last Engulfed Health";
+        if (index == 1)
+            return "Is Last Engulfed Plant";
+        if (index == 2)
+            return "Is Last Engulfed Meat";
         return null;
     }
 }

@@ -71,9 +71,9 @@ public class EnvironmentRenderer implements Renderer {
             chemicalsRenderer = null;
     }
 
-    public void renderJoinedParticles(JointsManager.JoinedParticles joinedParticles) {
-        Particle p1 = joinedParticles.particleA;
-        Particle p2 = joinedParticles.particleB;
+    public void renderJoinedParticles(JointsManager.Joining joining) {
+        Particle p1 = joining.particleA;
+        Particle p2 = joining.particleB;
 
         if (circleNotVisible(p1.getPos(), p1.getRadius())
                 && circleNotVisible(p2.getPos(), p2.getRadius())) {
@@ -196,8 +196,7 @@ public class EnvironmentRenderer implements Renderer {
             if (particle instanceof Cell) {
                 Cell cell = (Cell) particle;
                 shapeRenderer.setColor(0, 0, 1, 1);
-                for (JointsManager.JoinedParticles joining : cell.getAttachedCells()) {
-                    Cell other = (Cell) joining.getOther(cell);
+                for (Cell other : cell.getAttachedCells()) {
                     Vector2 otherPos = other.getPos();
                     float otherR = other.getRadius();
                     shapeRenderer.setColor(Color.ORANGE);

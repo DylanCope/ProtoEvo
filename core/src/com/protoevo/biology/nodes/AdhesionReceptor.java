@@ -12,6 +12,7 @@ import java.util.Optional;
 public class AdhesionReceptor extends NodeAttachment {
 
     private SurfaceNode otherNode;
+    private JointsManager.Joining joining;
 
     public AdhesionReceptor(SurfaceNode node) {
         super(node);
@@ -26,7 +27,7 @@ public class AdhesionReceptor extends NodeAttachment {
         for (CollisionHandler.FixtureCollision contact : cell.getContacts()) {
             Object other = cell.getOther(contact);
             if (other instanceof Protozoan)
-                tryBindTo((Protozoan) other);
+                joining = tryBindTo((Protozoan) other);
         }
     }
 
@@ -84,14 +85,14 @@ public class AdhesionReceptor extends NodeAttachment {
         return true;
     }
 
-    private void tryBindTo(Protozoan otherCell) {
+    private JointsManager.Joining tryBindTo(Protozoan otherCell) {
         if (Math.random() < getConstructionProgress())
-            return;
+            return null;
 
         for (SurfaceNode otherNode : otherCell.getSurfaceNodes()) {
             if (createBindingCondition(otherNode)) {
                 Cell cell = node.getCell();
-                JointsManager.JoinedParticles joining = new JointsManager.JoinedParticles(
+                JointsManager.Joining joining = new JointsManager.Joining(
                         cell, otherCell, node.getAngle(), otherNode.getAngle());
 
                 JointsManager jointsManager = cell.getEnv().getJointsManager();
@@ -104,9 +105,11 @@ public class AdhesionReceptor extends NodeAttachment {
                 if (otherNode.getAttachment() != null && otherNode.getAttachment() instanceof AdhesionReceptor)
                     ((AdhesionReceptor) otherNode.getAttachment()).setOtherNode(node);
 
-                break;
+                return joining;
             }
         }
+
+        return null;
     }
 
     public Optional<SurfaceNode> getOtherNode() {
@@ -148,6 +151,8 @@ public class AdhesionReceptor extends NodeAttachment {
 
     @Override
     public String getOutputMeaning(int index) {
+        if (otherNode == null)
+            return null;
         return "Output: " + index;
     }
 }

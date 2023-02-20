@@ -40,7 +40,15 @@ public class Environment implements Serializable
 			= new HashMap<>(3, 1);
 	private final ChemicalSolution chemicalSolution;
 	private final List<Rock> rocks = new ArrayList<>();
-	private long generation = 1, protozoaBorn = 0, totalCellsAdded = 0, crossoverEvents = 0;
+	private final HashMap<Class<? extends Cell>, Long> bornCounts = new HashMap<>(3);
+	private final HashMap<Class<? extends Cell>, Long> generationCounts = new HashMap<>(3);
+	private final static HashMap<Class<? extends Cell>, String> cellClassNames = new HashMap<>(3);
+	static {
+		cellClassNames.put(Protozoan.class, "Protozoa");
+		cellClassNames.put(PlantCell.class, "Plants");
+		cellClassNames.put(MeatCell.class, "Meat");
+	}
+	private long crossoverEvents = 0;
 
 	private String genomeFile = null;
 	private final List<String> genomesToWrite = new ArrayList<>();
@@ -58,6 +66,7 @@ public class Environment implements Serializable
 		jointsManager = new JointsManager(this);
 		world = new World(new Vector2(0, 0), true);
 		world.setContinuousPhysics(false);
+		world.setAutoClearForces(true);
 		world.setContactListener(new CollisionHandler(this));
 
 		System.out.println("Creating chemicals solution... ");
@@ -73,7 +82,7 @@ public class Environment implements Serializable
 //		int plantCap = (int) Math.ceil(SimulationSettings.maxPlants / (float) (resolution * resolution));
 //		int meatCap = (int) Math.ceil(SimulationSettings.maxMeat / (float) (resolution * resolution));
 		int protozoaCap = 100;
-		int plantCap = 200;
+		int plantCap = 150;
 		int meatCap = 50;
 
 		spatialHashes = new ConcurrentHashMap<>(3, 1);
@@ -90,7 +99,7 @@ public class Environment implements Serializable
 		if (world == null)  // on deserialisation
 			rebuildWorld();
 
-		cells.forEach(Particle::reset);
+		cells.forEach(Particle::physicsUpdate);
 
 		elapsedTime += delta;
 		long startTime = System.nanoTime();
@@ -124,7 +133,12 @@ public class Environment implements Serializable
 
 		flushEntitiesToAdd();
 
-		cells.forEach(this::handleDeadEntity);
+		for (Cell cell : cells) {
+			if (cell.isDead()) {
+				dispose(cell);
+				depositOnDeath(cell);
+			}
+		}
 		cells.removeIf(Cell::isDead);
 	}
 
@@ -232,7 +246,7 @@ public class Environment implements Serializable
 	public void initialisePopulation(Vector2[] clusterCentres) {
 		if (clusterCentres != null) {
 			final float clusterR = WorldGenerationSettings.populationClusterRadius;
-			spawnPositionFns.put(PlantCell.class, r -> randomPosition(r, clusterCentres, 2*clusterR));
+			spawnPositionFns.put(PlantCell.class, r -> randomPosition(r, clusterCentres, 1.2f*clusterR));
 			spawnPositionFns.put(Protozoan.class, r -> randomPosition(r, clusterCentres, clusterR));
 		}
 		else {
@@ -270,8 +284,8 @@ public class Environment implements Serializable
 	public void initialisePopulation() {
 		Vector2[] clusterCentres = new Vector2[WorldGenerationSettings.numPopulationClusters];
 		for (int i = 0; i < clusterCentres.length; i++)
-			clusterCentres[i] = Geometry.randomVector(
-					Simulation.RANDOM.nextFloat(WorldGenerationSettings.environmentRadius));
+			clusterCentres[i] = Geometry.randomPointInCircle(
+					WorldGenerationSettings.environmentRadius, WorldGeneration.RANDOM);
 		initialisePopulation(clusterCentres);
 	}
 
@@ -290,8 +304,7 @@ public class Environment implements Serializable
 	public Vector2 randomPosition(float entityRadius, Vector2 centre, float clusterRadius) {
 		for (int i = 0; i < 20; i++) {
 			float r = Simulation.RANDOM.nextFloat(clusterRadius);
-			Vector2 pos = Geometry.randomVector(r*r);
-			pos.setLength((float) Math.sqrt(pos.len()));
+			Vector2 pos = Geometry.randomPointInCircle(r, WorldGeneration.RANDOM);
 			pos.add(centre);
 			Optional<? extends Shape> collision = getCollision(pos, entityRadius);
 			if (collision.isPresent() && collision.get() instanceof PlantCell) {
@@ -314,18 +327,27 @@ public class Environment implements Serializable
 		return randomPosition(entityRadius, Geometry.ZERO, WorldGenerationSettings.rockClusterRadius);
 	}
 
-	private void flushEntitiesToAdd() {
-		for (Cell cell : cellsToAdd) {
-			if (getLocalCount(cell) < getLocalCapacity(cell)) {
-				cells.add(cell);
-				// update local counts
-				spatialHashes.get(cell.getClass()).add(cell);
-			}
-			else {
-				cell.kill(CauseOfDeath.ENV_CAPACITY_EXCEEDED);
-				handleDeadEntity(cell);
-			}
+	public void add(Cell cell) {
+		if (getLocalCount(cell) < getLocalCapacity(cell)) {
+			cells.add(cell);
+			// update local counts
+			spatialHashes.get(cell.getClass()).add(cell);
+
+			bornCounts.put(cell.getClass(),
+					bornCounts.getOrDefault(cell.getClass(), 0L) + 1);
+			generationCounts.put(cell.getClass(),
+					Math.max(generationCounts.getOrDefault(cell.getClass(), 0L),
+							 cell.getGeneration()));
 		}
+		else {
+			cell.kill(CauseOfDeath.ENV_CAPACITY_EXCEEDED);
+			dispose(cell);
+		}
+	}
+
+	private void flushEntitiesToAdd() {
+		for (Cell cell : cellsToAdd)
+			add(cell);
 		cellsToAdd.clear();
 	}
 
@@ -351,27 +373,27 @@ public class Environment implements Serializable
 		return spatialHashes.get(cellClass).getTotalCapacity();
 	}
 
-	private void handleDeadEntity(Particle e) {
-		if (!e.isDead())
-			return;
+	private void dispose(Particle e) {
 		CauseOfDeath cod = e.getCauseOfDeath();
 		if (cod != null) {
 			int count = causeOfDeathCounts.getOrDefault(cod, 0);
 			causeOfDeathCounts.put(cod, count + 1);
 		}
-		if (Settings.enableChemicalField && (e instanceof Cell && !((Cell) e).isEngulfed())) {
-			if (e instanceof Protozoan)
-				chemicalSolution.depositCircle(e.getPos(), e.getRadius() * 1.5f, Color.FIREBRICK);
-			else
-				chemicalSolution.depositCircle(e.getPos(), e.getRadius() * 1.5f, e.getColor());
-		}
 		e.dispose();
 	}
 
-	private void handleNewProtozoa(Protozoan p) {
-		protozoaBorn++;
-		generation = Math.max(generation, p.getGeneration());
+	public void depositOnDeath(Cell cell) {
+		if (Settings.enableChemicalField) {
+			if (!cell.isEngulfed() && !cell.hasChildren()) {
+				if (cell instanceof Protozoan || cell instanceof MeatCell)
+					chemicalSolution.depositCircle(cell.getPos(), cell.getRadius() * 1.5f, Color.FIREBRICK);
+				else if (cell instanceof PlantCell)
+					chemicalSolution.depositCircle(cell.getPos(), cell.getRadius() * 1.5f, Color.FOREST);
+			}
+		}
+	}
 
+	private void handleNewProtozoa(Protozoan p) {
 //		if (genomeFile != null && Settings.writeGenomes) {
 //			String genomeLine = p.getGeneration() + "," + elapsedTime + "," + p.getGenome().toString();
 //			genomesToWrite.add(genomeLine);
@@ -394,29 +416,30 @@ public class Environment implements Serializable
 		return spatialHashes.get(cellType).getChunkCapacity();
 	}
 
-	public void add(Cell e) {
+	public void registerToAdd(Cell e) {
 		if (getLocalCount(e) >= getLocalCapacity(e)) {
 			e.kill(CauseOfDeath.ENV_CAPACITY_EXCEEDED);
-			handleDeadEntity(e);
+			dispose(e);
 		}
 
-		if (!cellsToAdd.contains(e)) {
-			totalCellsAdded++;
-			cellsToAdd.add(e);
-
-			if (e instanceof Protozoan)
-				handleNewProtozoa((Protozoan) e);
-		}
+		cellsToAdd.add(e);
 	}
 
 	public Statistics getStats(boolean includeProtozoaStats) {
 		Statistics stats = new Statistics();
+		stats.putTime("Time Elapsed", elapsedTime);
 		stats.putCount("Protozoa", numberOfProtozoa());
 		stats.putCount("Plants", getCount(PlantCell.class));
 		stats.putCount("Meat Pellets", getCount(MeatCell.class));
-		stats.putCount("Max Generation", (int) generation);
-		stats.putTime("Time Elapsed", elapsedTime);
-		stats.putCount("Protozoa Born", (int) protozoaBorn);
+
+		for (Class<? extends Cell> cellClass : generationCounts.keySet())
+			stats.putCount("Max " + cellClassNames.get(cellClass) + " Generation",
+							generationCounts.get(cellClass).intValue());
+
+		for (Class<? extends Cell> cellClass : bornCounts.keySet())
+			stats.putCount(cellClassNames.get(cellClass) + " Created",
+					bornCounts.get(cellClass).intValue());
+
 		stats.putCount("Crossover Events", (int) crossoverEvents);
 		for (CauseOfDeath cod : CauseOfDeath.values()) {
 			if (cod.isDebugDeath())
@@ -504,7 +527,7 @@ public class Environment implements Serializable
 
 
 	public long getGeneration() {
-		return generation;
+		return generationCounts.getOrDefault(Protozoan.class, 0L);
 	}
 
 	public Optional<? extends Shape> getCollision(Vector2 pos, float r) {
@@ -554,7 +577,7 @@ public class Environment implements Serializable
 		if (particle instanceof Cell) {
 			Cell cell = (Cell) particle;
 			if (!cells.contains(cell))
-				add(cell);
+				registerToAdd(cell);
 		}
 	}
 

@@ -7,16 +7,12 @@ import com.protoevo.biology.CauseOfDeath;
 import com.protoevo.env.CollisionHandler;
 import com.protoevo.env.Environment;
 import com.protoevo.env.Rock;
-import com.protoevo.settings.Settings;
 import com.protoevo.settings.SimulationSettings;
 import com.protoevo.utils.Colour;
 import com.protoevo.utils.Geometry;
 
 import java.util.Collection;
 import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 
@@ -28,7 +24,10 @@ public class Particle implements Shape {
     private transient Fixture dynamicsFixture, sensorFixture;
     private boolean dead = false, disposed = false;
     private double radius = SimulationSettings.minParticleRadius * (1 + 2 * Math.random());
-    private final Vector2 pos = new Vector2(0, 0), impulseToApply = new Vector2(0, 0);
+    private final Vector2 pos = new Vector2(0, 0);
+    private final Vector2 impulseToApply = new Vector2(0, 0);
+    private final Vector2 forceToApply = new Vector2(0, 0);
+    private final Vector2 vel = new Vector2(0, 0);
     private float angle, torqueToApply = 0;
     private final Statistics stats = new Statistics();
     private final Collection<CollisionHandler.FixtureCollision> contacts = new ConcurrentLinkedQueue<>();
@@ -55,20 +54,6 @@ public class Particle implements Shape {
     }
 
     public void update(float delta) {
-        if (body != null) {
-            pos.set(body.getPosition());
-            angle = body.getAngle();
-
-            if (getSpeed() < getRadius() / 50f) {
-                body.setLinearVelocity(0, 0);
-                body.setAwake(false);
-            }
-            dynamicsFixture.getShape().setRadius((float) radius);
-            float interactionRange = getInteractionRange();
-            if (canPossiblyInteract() && interactionRange > getRadius())
-                sensorFixture.getShape().setRadius(interactionRange);
-        }
-
         interactionObjects.removeIf(o -> (o instanceof Particle) && ((Particle) o).isDead());
         contacts.removeIf(c -> (getOther(c) instanceof Particle) && ((Particle) getOther(c)).isDead());
     }
@@ -150,8 +135,7 @@ public class Particle implements Shape {
     }
 
     public void applyForce(Vector2 force) {
-        if (body != null && !disposed)
-            body.applyForceToCenter(force, true);
+        forceToApply.add(force);
     }
 
     public void applyImpulse(Vector2 impulse) {
@@ -194,16 +178,32 @@ public class Particle implements Shape {
         return collision.objB;
     }
 
-    public void reset() {
+    public void physicsUpdate() {
+        if (body != null) {
+            if (forceToApply.len2() > 0)
+                body.applyForceToCenter(forceToApply, true);
+            if (impulseToApply.len2() > 0)
+                body.applyLinearImpulse(impulseToApply, body.getWorldCenter(), true);
+            if (torqueToApply != 0)
+                body.applyTorque(torqueToApply, true);
 
-        if (body != null)
-            body.applyTorque(torqueToApply, true);
+            vel.set(body.getLinearVelocity());
+            pos.set(body.getPosition());
+            angle = body.getAngle();
+
+            if (getSpeed() < getRadius() / 50f) {
+                body.setLinearVelocity(0, 0);
+                body.setAwake(false);
+            }
+
+            dynamicsFixture.getShape().setRadius((float) radius);
+            float interactionRange = getInteractionRange();
+            if (canPossiblyInteract() && interactionRange > getRadius())
+                sensorFixture.getShape().setRadius(interactionRange);
+        }
+
         torqueToApply = 0;
-
-        if (body != null)
-            body.applyLinearImpulse(impulseToApply, body.getWorldCenter(), true);
         impulseToApply.set(0, 0);
-
         contacts.clear();
     }
 
@@ -222,9 +222,6 @@ public class Particle implements Shape {
     public void setRadius(double radius) {
         this.radius = Math.max(SimulationSettings.minParticleRadius, radius);
         this.radius = Math.min(SimulationSettings.maxParticleRadius, this.radius);
-//        if (body != null && dynamicsFixture != null && !disposed) {
-//            dynamicsFixture.getShape().getRadius();
-//        }
     }
 
     public boolean isPointInside(Vector2 point) {
@@ -234,15 +231,12 @@ public class Particle implements Shape {
 
     public void setPos(Vector2 pos) {
         this.pos.set(pos);
-        if (body != null && !disposed) {
+        if (body != null)
             body.setTransform(pos, body.getAngle());
-        }
     }
 
     public float getAngle() {
-        if (body == null || disposed)
-            return 0;
-        return body.getAngle();
+        return angle;
     }
 
     @Override
@@ -251,9 +245,7 @@ public class Particle implements Shape {
     }
 
     public Vector2 getVel() {
-        if (body == null)
-            return Geometry.ZERO;
-        return body.getLinearVelocity();
+        return vel;
     }
 
     public float getSpeed() {

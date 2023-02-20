@@ -8,10 +8,7 @@ import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector2;
-import com.protoevo.biology.nodes.Flagellum;
-import com.protoevo.biology.nodes.NodeAttachment;
-import com.protoevo.biology.nodes.Photoreceptor;
-import com.protoevo.biology.nodes.SurfaceNode;
+import com.protoevo.biology.nodes.*;
 import com.protoevo.biology.cells.Protozoan;
 import com.protoevo.core.Particle;
 import com.protoevo.core.Simulation;
@@ -83,6 +80,7 @@ public class ProtozoaRenderer {
             {
                 put(Flagellum.class, FlagellumRenderer::new);
                 put(Photoreceptor.class, PhotoreceptorRenderer::new);
+                put(Spike.class, SpikeRenderer::new);
             }
         };
 

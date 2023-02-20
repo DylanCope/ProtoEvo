@@ -62,8 +62,12 @@ public class NeuralNetwork implements Serializable
 
     public int calculateDepth() {
         boolean[] visited = new boolean[neurons.length];
-        Arrays.fill(visited, false);
-        int depth = calculateDepth(outputNeurons, visited);
+//        int depth = calculateDepth(outputNeurons, visited);
+        int depth = 1;
+        for (Neuron n : outputNeurons) {
+            Arrays.fill(visited, false);
+            depth = Math.max(depth, computeDepth(n, visited));
+        }
 
         for (Neuron n : outputNeurons)
             n.setDepth(depth);
@@ -76,6 +80,23 @@ public class NeuralNetwork implements Serializable
                 n.setDepth(depth);
 
         return depth;
+    }
+
+    private int computeDepth(Neuron neuron, boolean[] visited) {
+        if (neuron.getDepth() != -1)
+            return neuron.getDepth();
+
+        visited[neuron.getId()] = true;
+        int maxDepth = 0;
+        for (Neuron input : neuron.getInputs()) {
+            if (visited[input.getId()])
+                continue;
+
+            int depth = computeDepth(input, visited);
+            maxDepth = Math.max(maxDepth, depth);
+        }
+        neuron.setDepth(maxDepth + 1);
+        return maxDepth + 1;
     }
 
     private int calculateDepth(Neuron[] explore, boolean[] visited) {
