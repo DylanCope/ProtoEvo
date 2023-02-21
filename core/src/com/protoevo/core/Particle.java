@@ -85,7 +85,7 @@ public class Particle implements Shape {
         dynamicsFixture.setUserData(this);
 
         body.setUserData(this);
-        body.setLinearDamping(5f);
+        body.setLinearDamping(10f);
         body.setAngularDamping(5f);
         body.setSleepingAllowed(true);
 
@@ -174,6 +174,10 @@ public class Particle implements Shape {
             contacts.add(collision);
     }
 
+    public void endContact(Object object) {
+        contacts.removeIf(c -> getOther(c).equals(object));
+    }
+
     public Object getOther(CollisionHandler.FixtureCollision collision) {
         return collision.objB;
     }
@@ -204,7 +208,19 @@ public class Particle implements Shape {
 
         torqueToApply = 0;
         impulseToApply.set(0, 0);
-        contacts.clear();
+
+        contacts.removeIf(this::removeCollision);
+    }
+
+    private boolean removeCollision(CollisionHandler.FixtureCollision collision) {
+        if (getOther(collision) == null)
+            return true;
+        if (getOther(collision) instanceof Particle) {
+            Particle other = (Particle) getOther(collision);
+            float rr = getRadius() + other.getRadius();
+            return other.isDead() || other.getPos().dst2(getPos()) > rr*rr;
+        }
+        return true;
     }
 
     public Collection<CollisionHandler.FixtureCollision> getContacts() {

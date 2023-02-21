@@ -1,5 +1,6 @@
 package com.protoevo.biology.cells;
 
+import com.protoevo.biology.CauseOfDeath;
 import com.protoevo.biology.Food;
 import com.protoevo.core.Simulation;
 import com.protoevo.core.Statistics;
@@ -23,7 +24,8 @@ public class PlantCell extends EdibleCell {
                                                   PlantSettings.maxPlantGrowth));
 
         maxRadius = Simulation.RANDOM.nextFloat(
-                2 * SimulationSettings.minParticleRadius, SimulationSettings.maxParticleRadius);
+                1.5f * SimulationSettings.minParticleRadius,
+                SimulationSettings.maxParticleRadius / 2f);
 
 //        Organelle organelle = new Organelle(this);
 //        organelle.setFunction(new PlantAdhesionOrganelle(organelle));
@@ -36,6 +38,8 @@ public class PlantCell extends EdibleCell {
                 darken * (10  + Simulation.RANDOM.nextInt(100)) / 255f,
                 1f)
         );
+
+        setDegradedColour(degradeColour(getHealthyColour(), 0.5f));
     }
 
     @Override
@@ -89,6 +93,17 @@ public class PlantCell extends EdibleCell {
 
         addConstructionMass(delta * Settings.plantConstructionRate);
         addAvailableEnergy(delta * Settings.plantEnergyRate);
+
+        int nProtozoaContacts = 0;
+        for (CollisionHandler.FixtureCollision collision : getContacts()) {
+            Object o = getOther(collision);
+            if (o instanceof Protozoan)
+                nProtozoaContacts++;
+        }
+        if (nProtozoaContacts > 1) {
+            float dps = PlantSettings.collisionDestructionRate * nProtozoaContacts;
+            removeMass(delta * dps, CauseOfDeath.OVERCROWDING);
+        }
 
         handleAttachments();
 

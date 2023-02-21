@@ -1,6 +1,7 @@
 package com.protoevo.utils;
 
 import com.badlogic.gdx.graphics.Color;
+import com.badlogic.gdx.math.MathUtils;
 
 import java.io.Serial;
 import java.io.Serializable;
@@ -72,10 +73,10 @@ public class Colour implements Serializable {
     private transient Color color = new Color();
 
     public Colour(float r, float g, float b, float a) {
-        this.r = r;
-        this.g = g;
-        this.b = b;
-        this.a = a;
+        this.r = MathUtils.clamp(r, 0, 1);
+        this.g = MathUtils.clamp(g, 0, 1);
+        this.b = MathUtils.clamp(b, 0, 1);
+        this.a = MathUtils.clamp(a, 0, 1);
     }
 
     public Colour(float r, float g, float b) {
@@ -101,18 +102,18 @@ public class Colour implements Serializable {
     }
 
     public Colour set(Colour c) {
-        this.r = c.r;
-        this.g = c.g;
-        this.b = c.b;
-        this.a = c.a;
+        this.r = MathUtils.clamp(c.r, 0, 1);
+        this.g = MathUtils.clamp(c.g, 0, 1);
+        this.b = MathUtils.clamp(c.b, 0, 1);
+        this.a = MathUtils.clamp(c.a, 0, 1);
         return this;
     }
 
     public Color set(Color c) {
-        c.r = r;
-        c.g = g;
-        c.b = b;
-        c.a = a;
+        c.r = MathUtils.clamp(r, 0, 1);
+        c.g = MathUtils.clamp(g, 0, 1);
+        c.b = MathUtils.clamp(b, 0, 1);
+        c.a = MathUtils.clamp(a, 0, 1);
         return c;
     }
 
@@ -124,10 +125,10 @@ public class Colour implements Serializable {
     }
 
     public Colour lerp(Colour c, float t) {
-        this.r = (1 - t) * this.r + t * c.r;
-        this.g = (1 - t) * this.g + t * c.g;
-        this.b = (1 - t) * this.b + t * c.b;
-        this.a = (1 - t) * this.a + t * c.a;
+        this.r = MathUtils.clamp((1 - t) * this.r + t * c.r, 0, 1);
+        this.g = MathUtils.clamp((1 - t) * this.g + t * c.g, 0, 1);
+        this.b = MathUtils.clamp((1 - t) * this.b + t * c.b, 0, 1);
+        this.a = MathUtils.clamp((1 - t) * this.a + t * c.a, 0, 1);
         return this;
     }
 }

@@ -19,10 +19,11 @@ public class MeatCell extends EdibleCell {
         float b = (25  + Simulation.RANDOM.nextInt(100)) / 255f;
         setHealthyColour(new Colour(r, g, b, 1f));
 //        setDegradedColour(new Color(158 / 255f, 121, 79, 1f));
+        setDegradedColour(degradeColour(getHealthyColour(), 0.5f));
     }
 
     public void age(float delta) {
-        float deathRate = getRadius() * delta * .1f;
+        float deathRate = getRadius() * delta * 20f;
         damage(getHealth() * deathRate, CauseOfDeath.OLD_AGE);
     }
 

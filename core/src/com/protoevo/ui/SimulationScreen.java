@@ -233,20 +233,6 @@ public class SimulationScreen {
             debugFont.draw(uiBatch, text.toString(), x, getYPosRHS(lineNumber));
             lineNumber++;
         }
-
-
-//        if (DebugMode.isDebugModePhysicsDebug()) {
-//            debugString += separator + "Bodies: " + environment.getWorld().getBodyCount();
-//            debugString += separator + "Contacts: " + environment.getWorld().getContactCount();
-//            debugString += separator + "Joints: " + environment.getWorld().getJointCount();
-//            debugString += separator + "Fixtures: " + environment.getWorld().getFixtureCount();
-//
-//            int totalCells = environment.getCells().size();
-//            int sleepCount = totalCells - (int) environment.getCells().stream()
-//                    .filter(cell -> cell.getBody() != null && cell.getBody().isAwake())
-//                    .count();
-//            debugString += separator + "Sleeping %: " + (int) (100f * sleepCount / totalCells);
-//        }
         debugFont.draw(uiBatch, debugString,
                 2 * topBar.getPadding(), font.getLineHeight() + topBar.getPadding());
     }

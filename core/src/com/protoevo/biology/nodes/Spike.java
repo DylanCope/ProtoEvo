@@ -1,10 +1,12 @@
 package com.protoevo.biology.nodes;
 
+import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector2;
 import com.protoevo.biology.CauseOfDeath;
 import com.protoevo.biology.cells.Cell;
 import com.protoevo.core.Simulation;
 import com.protoevo.settings.ProtozoaSettings;
+import com.protoevo.utils.Geometry;
 import com.protoevo.utils.Utils;
 
 import java.io.Serial;
@@ -15,7 +17,7 @@ public class Spike extends NodeAttachment implements Serializable {
     @Serial
     private static final long serialVersionUID = 1L;
 
-    private final Vector2 spikePoint = new Vector2();
+    private Vector2 spikePoint = new Vector2();
     private Cell cell;
     private final float attackFactor = 10f;
     private float extension = 1;
@@ -24,41 +26,47 @@ public class Spike extends NodeAttachment implements Serializable {
         super(node);
     }
 
-    public float getSpikeScalar() {
-        // TODO: update this to use the actual spike sprite size
-        // hard coded to according the 40 pixels of the spike sprite
-        // and the 128 pixels of the cell sprite
-        return extension * getConstructionProgress() * (1f + 70f / 128f);
-    }
-
     public float getSpikeLength() {
-        return node.getCell().getRadius() * getConstructionProgress() / 4f;
+        return node.getCell().getRadius() * getConstructionProgress() * .75f;
     }
 
     public float getSpikeExtension() {
         return extension;
     }
 
+    public Vector2 getSpikePoint() {
+        return spikePoint.set(node.getRelativePos())
+                .setLength(getSpikeLength() * extension)
+                .add(node.getWorldPosition());
+    }
+
     @Override
     public void update(float delta, float[] input, float[] output) {
-        cell = getNode().getCell();
+        cell = node.getCell();
+        if (cell == null)
+            return;
+
         extension = Utils.linearRemap(input[0], -1, 1, 0, 1);
-        spikePoint.set(node.getRelativePos())
-                .setLength(getSpikeLength() * extension)
-                .add(cell.getPos());
+        spikePoint = getSpikePoint();
 
         for (Object toInteract : cell.getInteractionQueue()) {
             if (toInteract instanceof Cell) {
                 Cell other = (Cell) toInteract;
-                if (other.isPointInside(spikePoint)) {
+                Vector2 dir = spikePoint.cpy().sub(node.getWorldPosition());
+                Vector2 start = node.getWorldPosition().cpy().sub(other.getPos());
+                float[] ts = Geometry.circleIntersectLineTs(dir, start, other.getRadius());
+                if (Geometry.lineIntersectCondition(ts)) {
                     output[0] = 1f;
 
-                    float r2 = other.getRadius() * other.getRadius();
-                    float woundDepth = 1f - other.getPos().dst2(spikePoint) / r2;
+//                    float r2 = other.getRadius() * other.getRadius();
+//                    float woundDepth = 1f - other.getPos().dst2(spikePoint) / r2;
+                    float woundDepth = MathUtils.clamp(
+                            Math.max(ts[0], ts[1]) - Math.min(ts[0], ts[1]),
+                            0, 1);
 
                     float myAttack = (
                             2*cell.getHealth() +
-                            ProtozoaSettings.spikeDamage * woundDepth +
+                            ProtozoaSettings.spikeDamage * woundDepth * getSpikeLength() / other.getRadius() +
                             2* Simulation.RANDOM.nextFloat()
                     );
                     float theirDefense = other.getShieldFactor() * (

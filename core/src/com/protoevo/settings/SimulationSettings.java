@@ -23,7 +23,7 @@ public class SimulationSettings {
     public static final float maxMutationChance = 0.1f;
 
     public static final float cellGrowthFactor = 1e-2f;
-    public static final float digestionFactor = 10f;
+    public static final float digestionFactor = 15f;
     public static final float chemicalDiffusionInterval = simulationUpdateDelta * 20f;
     public static final int chemicalFieldResolution = 1024;
     public static final float chemicalFieldRadius = voidStartDistance;
@@ -33,5 +33,6 @@ public class SimulationSettings {
     public static float maxMoleculeProductionRate = .01f;
     public static double deleteSynapseMutationRate = 0.1;
     public static double deleteNeuronMutationRate = 0.1;
-    public static float chemicalExtractionFactor = 5e-5f;
+    public static float chemicalExtractionFoodConversion = 5e-4f;
+    public static float chemicalExtractionFactor = 100f;  // colour removed per unit time
 }

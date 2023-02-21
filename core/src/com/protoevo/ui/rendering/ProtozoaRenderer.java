@@ -155,14 +155,13 @@ public class ProtozoaRenderer {
         Vector2 pos = protozoan.getPos();
         float x = pos.x - protozoan.getRadius();
         float y = pos.y - protozoan.getRadius();
-        float cellAngle = (float) Math.toDegrees(protozoan.getAngle());
         float size = protozoan.getRadius() * 2;
 
         Sprite cellSprite = CellTexture.getSprite();
 
-        for (InteriorElement element : interiorElements) {
-            element.draw(delta, camera, batch);
-        }
+//        for (InteriorElement element : interiorElements) {
+//            element.draw(delta, camera, batch);
+//        }
 
         nodeRenderers.entrySet().removeIf(e -> e.getValue().isStale());
         for (SurfaceNode node : protozoan.getSurfaceNodes()) {
@@ -170,7 +169,8 @@ public class ProtozoaRenderer {
                     .render(delta, batch);
         }
 
-        cellSprite.setColor(protozoan.getColor());
+        Color c = protozoan.getColor();
+        cellSprite.setColor(c.r, c.g, c.b, 1);
         cellSprite.setPosition(x, y);
         cellSprite.setSize(size, size);
         cellSprite.draw(batch);

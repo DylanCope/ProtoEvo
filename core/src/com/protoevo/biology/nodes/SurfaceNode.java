@@ -59,7 +59,7 @@ public class SurfaceNode implements Evolvable.Element, Serializable {
             float signature = i / (float) candidateAttachments.size();
             candidate.getRequiredComplexMolecules().put(
                     ComplexMolecule.fromSignature(signature),
-                    candidate.getRequiredMass() / 20f);
+                    candidate.getRequiredMass() / 10f);
             nodeFunctionSignatures.put(
                     (molecule, potency) -> constructCandidate(candidate, molecule, potency),
                     signature);

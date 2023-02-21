@@ -2,14 +2,12 @@ package com.protoevo.env;
 
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Pixmap;
-import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector2;
 import com.protoevo.biology.cells.Cell;
 import com.protoevo.biology.cells.EdibleCell;
 import com.protoevo.biology.Food;
 import com.protoevo.biology.cells.Protozoan;
 import com.protoevo.settings.PerformanceSettings;
-import com.protoevo.settings.Settings;
 import com.protoevo.settings.SimulationSettings;
 import com.protoevo.utils.DebugMode;
 import com.protoevo.utils.Geometry;
@@ -30,6 +28,7 @@ public class ChemicalSolution implements Serializable {
     private final int chemicalTextureWidth;
     private transient Pixmap chemicalPixmap, swapPixmap;
     private final byte[] swapBuffer;
+    private transient Color[][] colors;
     private float timeSinceUpdate = 0;
     private transient JCudaKernelRunner diffusionKernel;
     private Consumer<Pixmap> updateChemicalsTextureCallback;
@@ -64,6 +63,14 @@ public class ChemicalSolution implements Serializable {
         swapPixmap = new Pixmap(cells, cells, Pixmap.Format.RGBA8888);
 
         swapBuffer = new byte[cells * cells * 4];
+
+        colors = new Color[cells][cells];
+        for (int i = 0; i < cells; i++) {
+            for (int j = 0; j < cells; j++) {
+                colors[i][j] = new Color();
+            }
+        }
+
         chemicalPixmap.setBlending(Pixmap.Blending.None);
     }
 
@@ -121,7 +128,8 @@ public class ChemicalSolution implements Serializable {
             int fieldX = toChemicalGridX(worldX);
             int fieldY = toChemicalGridY(worldY);
             Color cellColor = e.getColor();
-            chemicalPixmap.setColor(cellColor.r, cellColor.g, cellColor.b, 1);
+            float h = e.getHealth();
+            chemicalPixmap.setColor(h * cellColor.r, h * cellColor.g, h * cellColor.b, 1);
             chemicalPixmap.fillCircle(fieldX, fieldY, toChemicalGridXDist(e.getRadius()));
         }
         else if (e instanceof Protozoan) {
@@ -149,7 +157,9 @@ public class ChemicalSolution implements Serializable {
                     if (fieldX >= 0 && fieldX < chemicalTextureWidth &&
                             fieldY >= 0 && fieldY < chemicalTextureHeight) {
                         int colourRGBA8888 = chemicalPixmap.getPixel(fieldX, fieldY);
-                        tmpColour.set(colourRGBA8888);
+                        Color color = colors[fieldX][fieldY];
+                        color.set(colourRGBA8888);
+
                         float cellX = xMin + fieldX * cellWorldWidth;
                         float cellY = yMin + fieldY * cellWorldHeight;
 
@@ -157,19 +167,21 @@ public class ChemicalSolution implements Serializable {
                                 cellX, cellX + cellWorldWidth,  cellY, cellY + cellWorldHeight,
                                 worldX, worldY, protozoan.getRadius()
                         );
-                        float extraction = 500f * delta * overlapArea / (cellWorldWidth * cellWorldHeight);
+                        float overlapP = overlapArea / (cellWorldWidth * cellWorldHeight);
+                        float extraction =
+                                SimulationSettings.chemicalExtractionFactor * delta * overlapP;
                         if (extraction > 0) {
 
-                            if (tmpColour.g > 0.5f)
+                            if (color.g > 0.5f && color.g > 1.5f * color.r && color.g > 1.5f * color.b)
                                 protozoan.addFood(Food.Type.Plant,
-                                        extraction * tmpColour.g * SimulationSettings.chemicalExtractionFactor);
+                                        extraction * color.g * color.g * SimulationSettings.chemicalExtractionFoodConversion);
 
-                            if (tmpColour.r > 0.5f)
+                            if (color.r > 0.5f && color.r > 1.5f * color.g && color.r > 1.5f * color.b)
                                 protozoan.addFood(Food.Type.Meat,
-                                        extraction * tmpColour.r * SimulationSettings.chemicalExtractionFactor);
+                                        extraction * color.r * color.r * SimulationSettings.chemicalExtractionFoodConversion);
 
-                            tmpColour.sub(extraction, extraction, extraction, extraction);
-                            chemicalPixmap.drawPixel(fieldX, fieldY, Color.rgba8888(tmpColour));
+                            color.sub(extraction, extraction, extraction, extraction);
+                            chemicalPixmap.drawPixel(fieldX, fieldY, Color.rgba8888(color));
                         }
                     }
                 }

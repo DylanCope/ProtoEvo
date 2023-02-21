@@ -98,22 +98,11 @@ public class EnvironmentRenderer implements Renderer {
     }
 
     public void render(float delta) {
-
         ScreenUtils.clear(0, 0.1f, 0.2f, .95f);
-
-//        Gdx.gl.glEnable(GL20.GL_BLEND);
-//        Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
-//        Gdx.gl.glBlendEquation(GL20.GL_FUNC_ADD);
-//        Gdx.gl.glEnable(GL20.GL_BLEND);
-////        Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
-//        Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE);
-//        Gdx.gl.glBlendEquation(GL20.GL_FUNC_ADD);
-//        Gdx.gl.glBlendFunc(GL20.GL_ONE, GL20.GL_ONE_MINUS_SRC_ALPHA);
 
         synchronized (environment) {
             if (chemicalsRenderer != null)
                 chemicalsRenderer.render(delta);
-
 
             batch.enableBlending();
             batch.setProjectionMatrix(camera.combined);
@@ -228,7 +217,6 @@ public class EnvironmentRenderer implements Renderer {
     }
 
     public void drawParticle(float delta, Particle p) {
-
         if (p instanceof Protozoan) {
             ProtozoaRenderer protozoanRenderer = protozoaRenderers
                     .computeIfAbsent((Protozoan) p, ProtozoaRenderer::new);
@@ -256,7 +244,8 @@ public class EnvironmentRenderer implements Renderer {
             float x = p.getPos().x - p.getRadius();
             float y = p.getPos().y - p.getRadius();
             float r = p.getRadius() * 2;
-            batch.setColor(p.getColor());
+            Color c = p.getColor();
+            batch.setColor(c.r, c.g, c.b, 1.0f);
             batch.draw(particleTexture, x, y, r, r);
         }
     }

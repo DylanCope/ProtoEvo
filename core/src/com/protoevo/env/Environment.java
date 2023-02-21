@@ -81,8 +81,8 @@ public class Environment implements Serializable
 //		int protozoaCap = (int) Math.ceil(SimulationSettings.maxProtozoa / (float) (resolution * resolution));
 //		int plantCap = (int) Math.ceil(SimulationSettings.maxPlants / (float) (resolution * resolution));
 //		int meatCap = (int) Math.ceil(SimulationSettings.maxMeat / (float) (resolution * resolution));
-		int protozoaCap = 100;
-		int plantCap = 150;
+		int protozoaCap = 300;
+		int plantCap = 75;
 		int meatCap = 50;
 
 		spatialHashes = new ConcurrentHashMap<>(3, 1);
@@ -386,9 +386,13 @@ public class Environment implements Serializable
 		if (Settings.enableChemicalField) {
 			if (!cell.isEngulfed() && !cell.hasChildren()) {
 				if (cell instanceof Protozoan || cell instanceof MeatCell)
-					chemicalSolution.depositCircle(cell.getPos(), cell.getRadius() * 1.5f, Color.FIREBRICK);
+					chemicalSolution.depositCircle(
+							cell.getPos(), cell.getRadius() * 1.5f,
+							Color.FIREBRICK.cpy().mul(0.25f + 0.75f * cell.getHealth()));
 				else if (cell instanceof PlantCell)
-					chemicalSolution.depositCircle(cell.getPos(), cell.getRadius() * 1.5f, Color.FOREST);
+					chemicalSolution.depositCircle(cell.getPos(),
+							cell.getRadius() * 1.5f,
+							Color.FOREST.cpy().mul(0.25f + 0.75f * cell.getHealth()));
 			}
 		}
 	}

@@ -38,15 +38,30 @@ public class SpikeRenderer extends NodeRenderer {
         spikeSprite.setColor(cell.getColor());
         ImageUtils.drawOnCircumference(
                 batch, spikeSprite, cell.getPos(),
-                0.98f * cell.getRadius() - spike.getSpikeExtension() * spikeLen,
+                0.98f * cell.getRadius() - (1 - spike.getSpikeExtension()) * spikeLen,
                 node.getAngle() + cell.getAngle(),
                 width);
     }
 
     @Override
     public void renderDebug(ShapeRenderer sr) {
-        if (node.getAttachment() == null)
+        if (node.getAttachment() == null || node.getCell() == null)
             return;
+
+        Cell cell = node.getCell();
+
+        Vector2 spikePoint = ((Spike) node.getAttachment()).getSpikePoint();
+        sr.setColor(1, 0, 0, 1);
+        sr.line(node.getWorldPosition(), spikePoint);
+
+        for (Object toInteract : cell.getInteractionQueue()) {
+            if (toInteract instanceof Cell) {
+                Cell other = (Cell) toInteract;
+                if (other.isPointInside(spikePoint)) {
+                    sr.circle(other.getPos().x, other.getPos().y, 1.15f * other.getRadius());
+                }
+            }
+        }
 
     }
 }

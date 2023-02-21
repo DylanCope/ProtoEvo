@@ -20,7 +20,7 @@ public class Geometry {
         return t;
     }
 
-    public static float[] circleIntersectLineCoefficients(Vector2 dir, Vector2 x, float r) {
+    public static float[] circleIntersectLineTs(Vector2 dir, Vector2 x, float r) {
         float a = dir.len2();
         float b = -2*dir.dot(x);
         float c = x.len2() - r*r;
@@ -34,18 +34,18 @@ public class Geometry {
         return new float[]{t1, t2};
     }
 
-    public static boolean lineIntersectCondition(float[] coefs) {
-        if (coefs == null)
+    public static boolean lineIntersectCondition(float[] ts) {
+        if (ts == null)
             return false;
-        float t1 = coefs[0], t2 = coefs[1];
-        float eps = 1e-3f;
+        float t1 = ts[0], t2 = ts[1];
+        float eps = 1e-9f;
         return (eps < t1 && t1 < 1 - eps) || (eps < t2 && t2 < 1 - eps);
     }
 
     public static boolean doesLineIntersectCircle(Vector2[] line, Vector2 circlePos, float circleR) {
         Vector2 dir = line[1].cpy().sub(line[0]);
         Vector2 x = circlePos.cpy().sub(line[0]);
-        float[] intersectionCoefs = circleIntersectLineCoefficients(dir, x, circleR);
+        float[] intersectionCoefs = circleIntersectLineTs(dir, x, circleR);
         return lineIntersectCondition(intersectionCoefs);
     }
 

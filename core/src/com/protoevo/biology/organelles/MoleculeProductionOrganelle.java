@@ -12,6 +12,8 @@ public class MoleculeProductionOrganelle extends OrganelleFunction implements Se
 
     public static long serialVersionUID = 1L;
     private float productionSignature = 0;
+    private float productionChangeCooldown = 3f;
+    private float productionChangeTimer = 0f;
     private ComplexMolecule productionMolecule;
     private float lastRate;
     private final Statistics stats = new Statistics();
@@ -28,13 +30,18 @@ public class MoleculeProductionOrganelle extends OrganelleFunction implements Se
      */
     @Override
     public void update(float delta, float[] input) {
-        if (input[0] != productionSignature || productionMolecule == null) {
+        if ((input[0] != productionSignature && productionChangeTimer <= 0) || productionMolecule == null) {
             int x = (int) Utils.linearRemap(
                     input[0], -1, 1,
                     0, possibleMolecules);
             productionSignature = x / (float) possibleMolecules;
-            productionMolecule = new ComplexMolecule(productionSignature, 1);
+            productionMolecule = new ComplexMolecule(productionSignature, 1e3f);
+            productionChangeTimer = productionChangeCooldown;
         }
+
+        if (productionChangeTimer > 0)
+            productionChangeTimer -= delta;
+
         float rate = SimulationSettings.maxMoleculeProductionRate *
                 Utils.linearRemap(input[1], -1, 1,0, 1);;
         lastRate = rate;

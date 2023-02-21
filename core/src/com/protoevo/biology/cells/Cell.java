@@ -495,6 +495,10 @@ public abstract class Cell extends Particle implements Serializable
 		return fullyDegradedColour;
 	}
 
+	public Colour degradeColour(Colour colour, float t) {
+		return lerp(colour, Colour.LIGHT_GRAY, t);
+	}
+
 	public int getGeneration() {
 		return generation;
 	}

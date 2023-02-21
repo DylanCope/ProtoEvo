@@ -236,6 +236,7 @@ public class GeneExpressionFunction implements Evolvable.Component, Serializable
     public static final long serialVersionUID = 1L;
     private ExpressionNodes expressionNodes;
     private float mutationChance = SimulationSettings.globalMutationChance;
+    private float grnMutationChance = SimulationSettings.globalMutationChance;
     private NetworkGenome grnGenome;
     private NeuralNetwork geneRegulatoryNetwork;
     private Regulators regulators;
@@ -251,10 +252,16 @@ public class GeneExpressionFunction implements Evolvable.Component, Serializable
         this(new ExpressionNodes(), regulators);
     }
 
-    @EvolvableFloat(name="Mutation Chance",
+    @EvolvableFloat(name="Trait Mutation Chance",
             min=SimulationSettings.minMutationChance, max=SimulationSettings.maxMutationChance)
     public void setMutationChance(float mutationChance) {
         this.mutationChance = mutationChance;
+    }
+
+    @EvolvableFloat(name="GRN Mutation Chance",
+            min=SimulationSettings.minMutationChance, max=SimulationSettings.maxMutationChance)
+    public void setGNRMutationChance(float mutationChance) {
+        this.grnMutationChance = mutationChance;
     }
 
     public void buildGeneRegulatoryNetwork() {
@@ -530,7 +537,9 @@ public class GeneExpressionFunction implements Evolvable.Component, Serializable
                 (regulator, regulationNode) -> newRegulators.put(regulator, regulationNode.copy()));
 
         if (grnGenome != null) {
+            // TODO: make sure new grn updates sensors and outputs
             newFn.grnGenome = new NetworkGenome(grnGenome);
+            newFn.grnGenome.setMutationChance(mutationChance * grnMutationChance);
             newFn.setMutationChance(mutationChance);
             newFn.grnGenome.mutate();
             newFn.geneRegulatoryNetwork = newFn.grnGenome.phenotype();

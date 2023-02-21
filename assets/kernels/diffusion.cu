@@ -32,7 +32,7 @@ __global__ void kernel(
             decay = 0.0;
         }
     } else {
-        decay = 0.9995;
+        decay = 0.95;
     }
 
     int alpha_channel = channels - 1;

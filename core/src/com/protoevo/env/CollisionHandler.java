@@ -12,7 +12,7 @@ public class CollisionHandler implements ContactListener, Serializable {
     public static class FixtureCollision {
 
         public Object objA, objB;
-        public Vector2 point, anchorA, anchorB;
+        public Vector2 point;
 
         public FixtureCollision(Object objA, Object objB, Vector2 point) {
             this.objA = objA;
@@ -76,6 +76,13 @@ public class CollisionHandler implements ContactListener, Serializable {
         Fixture fixtureB = contact.getFixtureB();
         Body bodyA = fixtureA.getBody();
         Body bodyB = fixtureB.getBody();
+
+        if (bodyA.getUserData() instanceof Particle)
+            ((Particle) bodyA.getUserData()).endContact(bodyB.getUserData());
+
+        if (bodyB.getUserData() instanceof Particle)
+            ((Particle) bodyB.getUserData()).endContact(bodyB.getUserData());
+
 
         if (fixtureA.isSensor() && bodyA.getUserData() instanceof Particle) {
             Particle particleA = (Particle) bodyA.getUserData();

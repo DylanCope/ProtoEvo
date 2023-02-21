@@ -78,7 +78,7 @@ public class CollectionTrait implements Trait<List<Evolvable>> {
 
         List<Evolvable> newCollection = new ArrayList<>();
 
-        int removeIdx = Simulation.RANDOM.nextInt(collection.size());
+        int removeIdx = removeRandom ? Simulation.RANDOM.nextInt(collection.size()) : -1;
         for (int i = 0; i < collection.size(); i++) {
             if (i == removeIdx && removeRandom) {
                 continue;

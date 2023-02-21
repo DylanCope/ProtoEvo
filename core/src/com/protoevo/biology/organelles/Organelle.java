@@ -2,6 +2,7 @@ package com.protoevo.biology.organelles;
 
 import com.protoevo.biology.cells.Cell;
 import com.protoevo.biology.evolution.Evolvable;
+import com.protoevo.biology.evolution.EvolvableFloat;
 import com.protoevo.biology.evolution.GeneExpressionFunction;
 import com.protoevo.biology.evolution.RegulatedFloat;
 import com.protoevo.core.Statistics;
@@ -60,12 +61,12 @@ public class Organelle implements Evolvable.Element {
         this.function = function;
     }
 
-    @RegulatedFloat(name = "Input/0")
+    @EvolvableFloat(name = "Input/0", min=-1, max=1)
     public void setInput0(float input) {
         inputs[0] = input;
     }
 
-    @RegulatedFloat(name = "Input/1")
+    @EvolvableFloat(name = "Input/1", min=-1, max=1)
     public void setInput1(float input) {
         inputs[1] = input;
     }

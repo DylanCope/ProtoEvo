@@ -32,15 +32,15 @@ public abstract class NodeAttachment implements Serializable, Constructable {
     public float getRequiredMass() {
         float density = SimulationSettings.basicParticleMassDensity;
         float area = Geometry.getCircleArea(SimulationSettings.maxParticleRadius);
-        return density * area / 50f;
+        return density * area / 40f;
     }
 
     public float getRequiredEnergy() {
-        return SimulationSettings.startingAvailableCellEnergy / 200f;
+        return 1 / 100f;
     }
 
     public float getTimeToComplete() {
-        return .5f;
+        return 5f;
     }
 
     public Map<ComplexMolecule, Float> getRequiredComplexMolecules() {
