@@ -82,6 +82,7 @@ allprojects {
         aiVersion = '1.8.2'
         gdxControllersVersion = '2.2.1'
         shapedrawerVersion = '2.5.0'
+        jacksonVersion = '2.14.2'
     }
 
     repositories {
@@ -218,5 +219,9 @@ project(":core") {
 //        implementation group: 'org.processing', name: 'core', version: '3.3.6'
 
         implementation "space.earlygrey:shapedrawer:$shapedrawerVersion"
+
+        api "com.fasterxml.jackson.core:jackson-core:${jacksonVersion}"
+        api "com.fasterxml.jackson.core:jackson-databind:${jacksonVersion}"
+        api "com.fasterxml.jackson.core:jackson-annotations:${jacksonVersion}"
     }
 }

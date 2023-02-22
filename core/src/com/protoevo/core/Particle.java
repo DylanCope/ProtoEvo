@@ -3,6 +3,10 @@ package com.protoevo.core;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.*;
 import com.badlogic.gdx.utils.Array;
+import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonIdentityInfo;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.ObjectIdGenerators;
 import com.protoevo.biology.CauseOfDeath;
 import com.protoevo.env.CollisionHandler;
 import com.protoevo.env.Environment;
@@ -15,10 +19,14 @@ import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
-
+@JsonIdentityInfo(
+        generator = ObjectIdGenerators.PropertyGenerator.class,
+        property = "id")
 public class Particle implements Shape {
+    public int id;
 
     private final Vector2[] boundingBox = new Vector2[]{new Vector2(), new Vector2()};
+    @JsonBackReference
     private Environment environment;
     private transient Body body;
     private transient Fixture dynamicsFixture, sensorFixture;
@@ -29,7 +37,9 @@ public class Particle implements Shape {
     private final Vector2 forceToApply = new Vector2(0, 0);
     private final Vector2 vel = new Vector2(0, 0);
     private float angle, torqueToApply = 0;
+    @JsonIgnore
     private final Statistics stats = new Statistics();
+    @JsonBackReference
     private final Collection<CollisionHandler.FixtureCollision> contacts = new ConcurrentLinkedQueue<>();
     private final Collection<Object> interactionObjects = new ConcurrentLinkedQueue<>();
     private CauseOfDeath causeOfDeath = null;

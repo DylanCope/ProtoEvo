@@ -1,11 +1,17 @@
 package com.protoevo.biology.evolution;
 
+import com.fasterxml.jackson.annotation.JsonIdentityInfo;
+import com.fasterxml.jackson.annotation.ObjectIdGenerators;
 import com.protoevo.core.Simulation;
 
 import java.io.Serializable;
 import java.util.Map;
 
+@JsonIdentityInfo(
+        generator = ObjectIdGenerators.PropertyGenerator.class,
+        property = "id")
 public class FloatTrait implements Trait<Float>, Serializable {
+    public int id;
 
     public static final long serialVersionUID = 1L;
 

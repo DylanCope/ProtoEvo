@@ -11,8 +11,8 @@ import com.badlogic.gdx.tools.texturepacker.TexturePacker;
 // Please note that on macOS your application needs to be started with the -XstartOnFirstThread JVM argument
 public class DesktopLauncher {
 
-	private static boolean windowed = false;
-//	private static boolean windowed = true;
+//	private static boolean windowed = false;
+	private static boolean windowed = true;
 
 	public static void main(String[] arg) {
 		Lwjgl3ApplicationConfiguration config = new Lwjgl3ApplicationConfiguration();

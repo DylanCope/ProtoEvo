@@ -30,6 +30,7 @@ public abstract class Cell extends Particle implements Serializable
 
 	private final Colour healthyColour = new Colour(Color.WHITE);
 	private final Colour fullyDegradedColour = new Colour(Color.WHITE);
+	private final Colour currentColour = new Colour();
 	private int generation = 1;
 	protected boolean hasHandledDeath = false;
 	private float timeAlive = 0f;
@@ -472,7 +473,7 @@ public abstract class Cell extends Particle implements Serializable
 	public Colour getColour() {
 		Colour healthyColour = getHealthyColour();
 		Colour degradedColour = getFullyDegradedColour();
-		return lerp(healthyColour, degradedColour, 1 - getHealth());
+		return currentColour.set(healthyColour).lerp(degradedColour, 1 - getHealth());
 	}
 
 	public Collection<Organelle> getOrganelles() {

@@ -3,6 +3,7 @@ package com.protoevo.env;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.math.Vector2;
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.protoevo.biology.cells.Cell;
 import com.protoevo.biology.cells.EdibleCell;
 import com.protoevo.biology.Food;
@@ -21,6 +22,7 @@ import java.util.stream.IntStream;
 public class ChemicalSolution implements Serializable {
     public static final long serialVersionUID = 1L;
 
+    @JsonBackReference
     private final Environment environment;
     private final float cellSizeX, cellSizeY;
     private final float xMin, yMin, xMax, yMax;

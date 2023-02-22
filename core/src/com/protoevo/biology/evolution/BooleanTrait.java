@@ -1,10 +1,16 @@
 package com.protoevo.biology.evolution;
 
+import com.fasterxml.jackson.annotation.JsonIdentityInfo;
+import com.fasterxml.jackson.annotation.ObjectIdGenerators;
 import com.protoevo.core.Simulation;
 
 import java.util.Map;
 
+@JsonIdentityInfo(
+        generator = ObjectIdGenerators.PropertyGenerator.class,
+        property = "id")
 public class BooleanTrait implements Trait<Boolean> {
+    public int id;
 
     private final boolean value;
     private final String geneName;

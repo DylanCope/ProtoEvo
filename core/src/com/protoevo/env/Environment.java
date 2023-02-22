@@ -3,6 +3,8 @@ package com.protoevo.env;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.*;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import com.google.common.collect.Streams;
 import com.protoevo.biology.*;
 import com.protoevo.biology.cells.Cell;
@@ -31,14 +33,19 @@ public class Environment implements Serializable
 	private static final long serialVersionUID = 2804817237950199223L;
 	private transient World world;
 	private float elapsedTime, physicsStepTime;
+	@JsonIgnore
 	private final Statistics stats = new Statistics();
+	@JsonIgnore
 	private final Statistics debugStats = new Statistics();
 	public final ConcurrentHashMap<CauseOfDeath, Integer> causeOfDeathCounts =
 			new ConcurrentHashMap<>(CauseOfDeath.values().length, 1);
+	@JsonIgnore
 	private final ConcurrentHashMap<Class<? extends Cell>, SpatialHash<Cell>> spatialHashes;
 	private final transient Map<Class<? extends Particle>, Function<Float, Vector2>> spawnPositionFns
 			= new HashMap<>(3, 1);
+	@JsonManagedReference
 	private final ChemicalSolution chemicalSolution;
+	@JsonManagedReference
 	private final List<Rock> rocks = new ArrayList<>();
 	private final HashMap<Class<? extends Cell>, Long> bornCounts = new HashMap<>(3);
 	private final HashMap<Class<? extends Cell>, Long> generationCounts = new HashMap<>(3);
@@ -51,14 +58,19 @@ public class Environment implements Serializable
 	private long crossoverEvents = 0;
 
 	private String genomeFile = null;
+	@JsonIgnore
 	private final List<String> genomesToWrite = new ArrayList<>();
-
+	@JsonIgnore
 	private final Set<Cell> cellsToAdd = new HashSet<>();
+
+	@JsonManagedReference
 	private final Set<Cell> cells = new HashSet<>();
 	private boolean hasInitialised;
 	private Vector2[] populationStartCentres;
 
+	@JsonManagedReference
 	private final JointsManager jointsManager;
+	@JsonIgnore
 	private final ConcurrentLinkedQueue<BurstRequest<? extends Cell>> burstRequests = new ConcurrentLinkedQueue<>();
 
 	public Environment()

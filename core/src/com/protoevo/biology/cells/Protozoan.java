@@ -22,7 +22,6 @@ public class Protozoan extends Cell implements Evolvable
 {
 	@Serial
 	private static final long serialVersionUID = 2314292760446370751L;
-	public transient int id = Simulation.RANDOM.nextInt();
 
 	private GeneExpressionFunction geneExpressionFunction;
 	private GeneExpressionFunction crossOverGenome;

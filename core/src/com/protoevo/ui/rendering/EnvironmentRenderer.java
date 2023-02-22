@@ -39,7 +39,8 @@ public class EnvironmentRenderer implements Renderer {
     private final Simulation simulation;
     private final SimulationInputManager inputManager;
     private final Renderer chemicalsRenderer;
-    private final Vector2 tmp = new Vector2();
+    private final Vector2 tmpVec = new Vector2();
+    private final Color tmpColor = new Color();
 
     public static Sprite loadSprite(String path) {
         Texture texture = new Texture(Gdx.files.internal(path), true);
@@ -90,9 +91,11 @@ public class EnvironmentRenderer implements Renderer {
         jointSprite.setSize(r, d);
         jointSprite.setOrigin(r / 2, r / 2);
 
-        float angle = 90 + tmp.set(particle1Position).sub(particle2Position).angleDeg();
+        float angle = 90 + tmpVec.set(particle1Position).sub(particle2Position).angleDeg();
         jointSprite.setRotation(angle);
-        jointSprite.setColor(lerp(p1.getColor(), p2.getColor(), .5f));
+
+        tmpColor.set(p1.getColor()).add(p2.getColor()).mul(.5f);
+        jointSprite.setColor(tmpColor);
 
         jointSprite.draw(batch);
     }
@@ -230,7 +233,7 @@ public class EnvironmentRenderer implements Renderer {
                     float y = cell.getPos().y - cell.getRadius();
                     float r = cell.getRadius() * 2;
 
-                    float d2 = tmp.set(p.getPos()).dst2(cell.getPos());
+                    float d2 = tmpVec.set(p.getPos()).dst2(cell.getPos());
                     float dInside = p.getRadius() - cell.getRadius();
                     float alpha = Utils.linearRemap(
                             d2, dInside * dInside, dInside * dInside * 0.75f * 0.75f,

@@ -134,7 +134,7 @@ public class Simulation implements Runnable
 	}
 
 	public Environment loadMostRecentEnv() {
-		Path dir = Paths.get("saves/" + name + "/env");
+		Path dir = Paths.get("assets/saves/" + name + "/env");
 		if (Files.exists(dir))
 			try (Stream<Path> pathStream = Files.list(dir)) {
 				Optional<String> lastFilePath = pathStream
@@ -142,7 +142,10 @@ public class Simulation implements Runnable
 						.max(Comparator.comparingLong(f -> f.toFile().lastModified()))
 						.map(path -> path.toString().replace(".dat", ""));
 
-				return lastFilePath.map(this::loadEnv).orElse(newDefaultEnv());
+				if (lastFilePath.isPresent())
+					return loadEnv(lastFilePath.get());
+				else
+					return newDefaultEnv();
 			} catch (IOException e) {
 				return newDefaultEnv();
 			}

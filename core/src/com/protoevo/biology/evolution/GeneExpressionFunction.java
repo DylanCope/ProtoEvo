@@ -1,5 +1,7 @@
 package com.protoevo.biology.evolution;
 
+import com.fasterxml.jackson.annotation.JsonIdentityInfo;
+import com.fasterxml.jackson.annotation.ObjectIdGenerators;
 import com.protoevo.biology.nn.NetworkGenome;
 import com.protoevo.biology.nn.NeuralNetwork;
 import com.protoevo.core.Simulation;
@@ -13,12 +15,21 @@ import java.lang.reflect.Method;
 import java.util.*;
 import java.util.function.Function;
 
+@JsonIdentityInfo(
+        generator = ObjectIdGenerators.PropertyGenerator.class,
+        property = "id")
 public class GeneExpressionFunction implements Evolvable.Component, Serializable {
+    public int id;
 
     public static class ExpressionNodes extends HashMap<String, ExpressionNode> {}
     public static class Regulators extends HashMap<String, RegulationNode> {}
 
+    @JsonIdentityInfo(
+            generator = ObjectIdGenerators.PropertyGenerator.class,
+            property = "id")
     public static abstract class Node {
+        public int id;
+
         public abstract Object getLastTarget();
         public abstract String getDisplayName();
     }

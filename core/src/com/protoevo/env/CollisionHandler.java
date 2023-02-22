@@ -2,6 +2,7 @@ package com.protoevo.env;
 
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.*;
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.protoevo.core.Particle;
 
 import java.io.Serializable;
@@ -11,6 +12,8 @@ public class CollisionHandler implements ContactListener, Serializable {
 
     public static class FixtureCollision {
 
+
+        @JsonBackReference
         public Object objA, objB;
         public Vector2 point;
 

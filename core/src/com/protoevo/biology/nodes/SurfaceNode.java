@@ -1,6 +1,8 @@
 package com.protoevo.biology.nodes;
 
 import com.badlogic.gdx.math.Vector2;
+import com.fasterxml.jackson.annotation.JsonIdentityInfo;
+import com.fasterxml.jackson.annotation.ObjectIdGenerators;
 import com.protoevo.biology.cells.Cell;
 import com.protoevo.biology.ComplexMolecule;
 import com.protoevo.biology.ConstructionProject;
@@ -16,7 +18,11 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
+@JsonIdentityInfo(
+        generator = ObjectIdGenerators.PropertyGenerator.class,
+        property = "id")
 public class SurfaceNode implements Evolvable.Element, Serializable {
+    public int id;
 
     @Serial
     private static final long serialVersionUID = 1L;

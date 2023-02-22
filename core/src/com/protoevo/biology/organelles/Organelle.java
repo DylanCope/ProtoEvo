@@ -1,5 +1,7 @@
 package com.protoevo.biology.organelles;
 
+import com.fasterxml.jackson.annotation.JsonIdentityInfo;
+import com.fasterxml.jackson.annotation.ObjectIdGenerators;
 import com.protoevo.biology.cells.Cell;
 import com.protoevo.biology.evolution.Evolvable;
 import com.protoevo.biology.evolution.EvolvableFloat;
@@ -7,7 +9,11 @@ import com.protoevo.biology.evolution.GeneExpressionFunction;
 import com.protoevo.biology.evolution.RegulatedFloat;
 import com.protoevo.core.Statistics;
 
+@JsonIdentityInfo(
+        generator = ObjectIdGenerators.PropertyGenerator.class,
+        property = "id")
 public class Organelle implements Evolvable.Element {
+    public int id;
 
     private GeneExpressionFunction geneExpressionFunction;
     private int index;

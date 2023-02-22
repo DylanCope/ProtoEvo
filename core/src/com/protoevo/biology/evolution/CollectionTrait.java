@@ -1,5 +1,7 @@
 package com.protoevo.biology.evolution;
 
+import com.fasterxml.jackson.annotation.JsonIdentityInfo;
+import com.fasterxml.jackson.annotation.ObjectIdGenerators;
 import com.protoevo.core.Simulation;
 
 import java.util.ArrayList;
@@ -7,7 +9,11 @@ import java.util.List;
 import java.util.Map;
 
 
+@JsonIdentityInfo(
+        generator = ObjectIdGenerators.PropertyGenerator.class,
+        property = "id")
 public class CollectionTrait implements Trait<List<Evolvable>> {
+    public int id;
 
     private final String name;
     private final List<Evolvable> collection;
@@ -78,7 +84,7 @@ public class CollectionTrait implements Trait<List<Evolvable>> {
 
     @Override
     public float getMutationRate() {
-        return 1f; //mutationRate;
+        return mutationRate;
     }
 
     @Override

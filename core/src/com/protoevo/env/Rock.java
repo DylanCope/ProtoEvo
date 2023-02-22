@@ -1,7 +1,8 @@
 package com.protoevo.env;
 
-import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.math.Vector2;
+import com.fasterxml.jackson.annotation.JsonIdentityInfo;
+import com.fasterxml.jackson.annotation.ObjectIdGenerators;
 import com.protoevo.core.Shape;
 import com.protoevo.core.Simulation;
 import com.protoevo.utils.Colour;
@@ -9,8 +10,12 @@ import com.protoevo.utils.Geometry;
 
 import java.io.Serializable;
 
+@JsonIdentityInfo(
+        generator = ObjectIdGenerators.PropertyGenerator.class,
+        property = "id")
 public class Rock implements Serializable, Shape {
     public static final long serialVersionUID = 1L;
+    public int id;
 
     private final Vector2[] points;
     private final Vector2[][] edges;

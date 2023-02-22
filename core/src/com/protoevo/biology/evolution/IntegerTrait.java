@@ -1,12 +1,18 @@
 package com.protoevo.biology.evolution;
 
+import com.fasterxml.jackson.annotation.JsonIdentityInfo;
+import com.fasterxml.jackson.annotation.ObjectIdGenerators;
 import com.protoevo.core.Simulation;
 
 import java.util.Map;
 
+@JsonIdentityInfo(
+        generator = ObjectIdGenerators.PropertyGenerator.class,
+        property = "id")
 public class IntegerTrait implements Trait<Integer> {
 
     public static final long serialVersionUID = 1L;
+    public int id;
 
     private final boolean canDisable;
     private boolean disabled;

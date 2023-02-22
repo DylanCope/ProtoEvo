@@ -1,11 +1,19 @@
 package com.protoevo.biology;
 
+import com.fasterxml.jackson.annotation.JsonIdentityInfo;
+import com.fasterxml.jackson.annotation.ObjectIdGenerators;
+
 import java.io.Serializable;
 
 /**
  * Complex molecules are required for the construction of specialised cell behaviour.
  */
+
+@JsonIdentityInfo(
+        generator = ObjectIdGenerators.PropertyGenerator.class,
+        property = "id")
 public class ComplexMolecule implements Serializable {
+    public int id;
     public static final long serialVersionUID = 1L;
 
     private final float signature, getProductionCost;
