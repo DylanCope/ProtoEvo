@@ -13,6 +13,7 @@ public class ProtozoaColourTrait implements Trait<Colour>, Serializable {
     public static final long serialVersionUID = -1821863048303900554L;
 
     private final Colour value;
+    private float mutationRate;
     private final String geneName;
 
     private final int minVal = 80;
@@ -62,6 +63,16 @@ public class ProtozoaColourTrait implements Trait<Colour>, Serializable {
     @Override
     public Trait<Colour> createNew(Colour value) {
         return new ProtozoaColourTrait(geneName, value);
+    }
+
+    @Override
+    public void setMutationRate(float rate) {
+        this.mutationRate = rate;
+    }
+
+    @Override
+    public float getMutationRate() {
+        return mutationRate;
     }
 
     @Override

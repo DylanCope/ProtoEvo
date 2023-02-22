@@ -11,15 +11,35 @@ public class NeuronGene implements Comparable<NeuronGene>, Serializable
 
     private final int id;
     private final Neuron.Type type;
-    private final Neuron.Activation activation;
+    private Neuron.Activation activation;
 
     private String label;
     private Object[] tags;
     private boolean disabled;
+    private float mutationRate = SimulationSettings.globalMutationChance;
+    private float mutationRateMin = SimulationSettings.minMutationChance;
+    private float mutationRateMax = SimulationSettings.maxMutationChance;
+    private int nMutations = 0;
+    private int nMutationRateMutations = 0;
+    private int genomeIdx = -1;
 
     public NeuronGene(int id, Neuron.Type type, Neuron.Activation activation)
     {
         this(id, type, activation, null);
+    }
+
+    public NeuronGene(NeuronGene other) {
+        this.id = other.id;
+        this.type = other.type;
+        this.activation = other.activation;
+        this.label = other.label;
+        this.tags = other.tags;
+        this.disabled = other.disabled;
+        this.mutationRate = other.mutationRate;
+        this.mutationRateMin = other.mutationRateMin;
+        this.mutationRateMax = other.mutationRateMax;
+        this.nMutations = other.nMutations;
+        this.nMutationRateMutations = other.nMutationRateMutations;
     }
 
     public NeuronGene(int id, Neuron.Type type, Neuron.Activation activation, String label)
@@ -31,11 +51,46 @@ public class NeuronGene implements Comparable<NeuronGene>, Serializable
         disabled = false;
     }
 
-    public NeuronGene mutate() {
-        Neuron.Activation newActivation = Neuron.Activation.randomActivation();
-        NeuronGene newGene = new NeuronGene(id, type, newActivation, label);
-        if (Math.random() < SimulationSettings.deleteNeuronMutationRate)
+    public void setMutationRange(float min, float max) {
+        mutationRateMin = min;
+        mutationRateMax = max;
+        mutationRate = Simulation.RANDOM.nextFloat(min, max);
+    }
+
+    public float getMinMutationRate() {
+        return mutationRateMin;
+    }
+
+    public float getMaxMutationRate() {
+        return mutationRateMax;
+    }
+
+    public float getMutationRate() {
+        return mutationRate;
+    }
+
+    public int getNumMutations() {
+        return nMutations;
+    }
+
+    public NeuronGene cloneWithMutation() {
+        NeuronGene newGene = new NeuronGene(this);
+        if (Math.random() > mutationRate)
+            return newGene;
+
+        nMutations++;
+
+        if (type == Neuron.Type.HIDDEN)
+            newGene.activation = Neuron.Activation.randomActivation();
+
+        if (Simulation.RANDOM.nextBoolean()) {
+            newGene.mutationRate = Simulation.RANDOM.nextFloat(mutationRateMin, mutationRateMax);
+            nMutationRateMutations++;
+        }
+
+        if (Math.random() < SimulationSettings.deleteNeuronMutationRate && type == Neuron.Type.HIDDEN)
             newGene.disable();
+
         return newGene;
     }
 
@@ -90,5 +145,17 @@ public class NeuronGene implements Comparable<NeuronGene>, Serializable
 
     public Object[] getTags() {
         return tags;
+    }
+
+    public boolean isGenomeIdxKnown() {
+        return genomeIdx != -1;
+    }
+
+    public int getGenomeIdx() {
+        return genomeIdx;
+    }
+
+    public void setGenomeIdx(int myIdx) {
+        genomeIdx = myIdx;
     }
 }

@@ -12,6 +12,7 @@ public class FloatTrait implements Trait<Float>, Serializable {
     private boolean regulated;
     private final float value, minValue, maxValue;
     private final String traitName;
+    private float mutationRate;
 
     public FloatTrait(String traitName, float minValue, float maxValue, float value) {
         this.traitName = traitName;
@@ -38,6 +39,16 @@ public class FloatTrait implements Trait<Float>, Serializable {
     @Override
     public Float getValue(Map<String, Object> dependencies) {
         return value;
+    }
+
+    @Override
+    public void setMutationRate(float rate) {
+        this.mutationRate = rate;
+    }
+
+    @Override
+    public float getMutationRate() {
+        return mutationRate;
     }
 
     @Override

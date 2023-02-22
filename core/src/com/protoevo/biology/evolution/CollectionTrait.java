@@ -15,6 +15,7 @@ public class CollectionTrait implements Trait<List<Evolvable>> {
     private GeneExpressionFunction geneExpressionFunction;
     private final int minSize, maxSize;
     private final static int nMutationTypes = 3;
+    private float mutationRate;
 
     public CollectionTrait(
             GeneExpressionFunction geneExpressionFunction,
@@ -68,6 +69,16 @@ public class CollectionTrait implements Trait<List<Evolvable>> {
     @Override
     public List<Evolvable> getValue(Map<String, Object> dependencies) {
         return collection;
+    }
+
+    @Override
+    public void setMutationRate(float rate) {
+        this.mutationRate = rate;
+    }
+
+    @Override
+    public float getMutationRate() {
+        return 1f; //mutationRate;
     }
 
     @Override

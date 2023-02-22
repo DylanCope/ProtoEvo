@@ -3,6 +3,7 @@ package com.protoevo.biology.evolution;
 import com.protoevo.biology.nn.NetworkGenome;
 import com.protoevo.biology.nn.NeuralNetwork;
 import com.protoevo.core.Simulation;
+import com.protoevo.settings.Settings;
 import com.protoevo.settings.SimulationSettings;
 
 import java.io.Serializable;
@@ -153,9 +154,9 @@ public class GeneExpressionFunction implements Evolvable.Component, Serializable
             return dependents;
         }
 
-        public ExpressionNode copy(float mutationChance) {
-            Trait<?> newTrait = Simulation.RANDOM.nextFloat() < mutationChance ? trait.mutate() : trait.copy();
-            return new ExpressionNode(name, newTrait, traitSetter, targetID, dependencies, dependents);
+        public ExpressionNode cloneWithMutation() {
+            return new ExpressionNode(
+                    name, trait.cloneWithMutation(), traitSetter, targetID, dependencies, dependents);
         }
 
         public Trait<?> getTrait() {
@@ -235,8 +236,6 @@ public class GeneExpressionFunction implements Evolvable.Component, Serializable
 
     public static final long serialVersionUID = 1L;
     private ExpressionNodes expressionNodes;
-    private float mutationChance = SimulationSettings.globalMutationChance;
-    private float grnMutationChance = SimulationSettings.globalMutationChance;
     private NetworkGenome grnGenome;
     private NeuralNetwork geneRegulatoryNetwork;
     private Regulators regulators;
@@ -252,20 +251,8 @@ public class GeneExpressionFunction implements Evolvable.Component, Serializable
         this(new ExpressionNodes(), regulators);
     }
 
-    @EvolvableFloat(name="Trait Mutation Chance",
-            min=SimulationSettings.minMutationChance, max=SimulationSettings.maxMutationChance)
-    public void setMutationChance(float mutationChance) {
-        this.mutationChance = mutationChance;
-    }
-
-    @EvolvableFloat(name="GRN Mutation Chance",
-            min=SimulationSettings.minMutationChance, max=SimulationSettings.maxMutationChance)
-    public void setGNRMutationChance(float mutationChance) {
-        this.grnMutationChance = mutationChance;
-    }
-
     public void buildGeneRegulatoryNetwork() {
-        grnGenome = GeneRegulatoryNetworkFactory.createNetworkGenome(this);
+        grnGenome = GRNFactory.createNetworkGenome(this);
         geneRegulatoryNetwork = grnGenome.phenotype();
 
         for (int i = 0; i < geneRegulatoryNetwork.getDepth() + 1; i++)
@@ -285,7 +272,7 @@ public class GeneExpressionFunction implements Evolvable.Component, Serializable
     private void setGRNInputs() {
         geneRegulatoryNetwork.setInput("Bias", 1f);
         for (String geneName : getTraitNames()) {
-            if (geneRegulatoryNetwork.hasSensor(GeneRegulatoryNetworkFactory.getInputName(geneName))) {
+            if (geneRegulatoryNetwork.hasSensor(GRNFactory.getInputName(geneName))) {
                 if (notDisabled(geneName)) {
                     Object geneValue = getGeneValue(geneName);
                     float value;
@@ -298,9 +285,9 @@ public class GeneExpressionFunction implements Evolvable.Component, Serializable
                     else
                         throw new RuntimeException("Could not cast gene " + geneName + " value to float.");
 
-                    geneRegulatoryNetwork.setInput(GeneRegulatoryNetworkFactory.getInputName(geneName), value);
+                    geneRegulatoryNetwork.setInput(GRNFactory.getInputName(geneName), value);
                 } else {
-                    geneRegulatoryNetwork.setInput(GeneRegulatoryNetworkFactory.getInputName(geneName), 0);
+                    geneRegulatoryNetwork.setInput(GRNFactory.getInputName(geneName), 0);
                 }
             }
         }
@@ -363,6 +350,7 @@ public class GeneExpressionFunction implements Evolvable.Component, Serializable
         float maxValue = regulatedFloat.max();
         RegulatedFloatTrait trait = new RegulatedFloatTrait(name, minValue, maxValue);
         trait.setGeneExpressionFunction(this);
+        trait.init();
         ExpressionNode node = new ExpressionNode(name, trait, method);
         addNode(name, node);
     }
@@ -379,6 +367,7 @@ public class GeneExpressionFunction implements Evolvable.Component, Serializable
 
         trait.setRegulated(evolvableFloat.regulated());
         trait.setGeneExpressionFunction(this);
+        trait.init();
         ExpressionNode node = new ExpressionNode(name, trait, method, evolvableFloat.geneDependencies());
         addNode(name, node);
     }
@@ -402,6 +391,7 @@ public class GeneExpressionFunction implements Evolvable.Component, Serializable
                     evolvableInteger.initValue());
 
         trait.setGeneExpressionFunction(this);
+        trait.init();
         addNode(name, new ExpressionNode(name, trait, method, evolvableInteger.geneDependencies()));
     }
 
@@ -436,6 +426,7 @@ public class GeneExpressionFunction implements Evolvable.Component, Serializable
         String geneClassName = evolvable.traitClass();
         Trait<?> trait = constructTrait(geneClassName, name);
         trait.setGeneExpressionFunction(this);
+        trait.init();
         addNode(name, new ExpressionNode(name, trait, method, evolvable.dependencies()));
     }
 
@@ -460,6 +451,7 @@ public class GeneExpressionFunction implements Evolvable.Component, Serializable
         CollectionTrait trait = new CollectionTrait(
                 geneExpressionFunction, elementClass, name, minSize, maxSize, initialSize);
         trait.setGeneExpressionFunction(this);
+        trait.init();
         addNode(name, new ExpressionNode(name, trait, method, evolvable.geneDependencies()));
     }
 
@@ -498,14 +490,14 @@ public class GeneExpressionFunction implements Evolvable.Component, Serializable
     public Object getTraitValue(String name) {
         if (hasGene(name)) {
             if (notDisabled(name) && geneRegulatoryNetwork != null
-                    && geneRegulatoryNetwork.hasOutput(GeneRegulatoryNetworkFactory.getOutputName(name))) {
-                float grnOutput = geneRegulatoryNetwork.getOutput(GeneRegulatoryNetworkFactory.getOutputName(name));
+                    && geneRegulatoryNetwork.hasOutput(GRNFactory.getOutputName(name))) {
+                float grnOutput = geneRegulatoryNetwork.getOutput(GRNFactory.getOutputName(name));
                 Trait<?> trait = getTraitGene(name);
                 return parseGRNOutput(trait, grnOutput);
             } else
                 return getGeneValue(name);
         }
-        throw new RuntimeException("Asked to get value for gene " + name + " that does not exist: " + this);
+        throw new RuntimeException("Asked to get value for trait " + name + " that does not exist: " + this);
     }
 
     private boolean notDisabled(String name) {
@@ -528,7 +520,7 @@ public class GeneExpressionFunction implements Evolvable.Component, Serializable
         GeneExpressionFunction newFn = new GeneExpressionFunction(newNodes, newRegulators);
 
         for (Map.Entry<String, ExpressionNode> entry : expressionNodes.entrySet()) {
-            ExpressionNode newNode = entry.getValue().copy(mutationChance);
+            ExpressionNode newNode = entry.getValue().cloneWithMutation();
             newNode.trait.setGeneExpressionFunction(newFn);
             newNodes.put(entry.getKey(), newNode);
         }
@@ -537,10 +529,7 @@ public class GeneExpressionFunction implements Evolvable.Component, Serializable
                 (regulator, regulationNode) -> newRegulators.put(regulator, regulationNode.copy()));
 
         if (grnGenome != null) {
-            // TODO: make sure new grn updates sensors and outputs
-            newFn.grnGenome = new NetworkGenome(grnGenome);
-            newFn.grnGenome.setMutationChance(mutationChance * grnMutationChance);
-            newFn.setMutationChance(mutationChance);
+            newFn.grnGenome = GRNFactory.createIO(new NetworkGenome(grnGenome), newFn);
             newFn.grnGenome.mutate();
             newFn.geneRegulatoryNetwork = newFn.grnGenome.phenotype();
         }
@@ -548,8 +537,8 @@ public class GeneExpressionFunction implements Evolvable.Component, Serializable
         return newFn;
     }
 
-    public float getMutationRate() {
-        return mutationChance;
+    public float getMeanMutationRate() {
+        return 0;
     }
 
     public boolean hasGene(String geneName) {

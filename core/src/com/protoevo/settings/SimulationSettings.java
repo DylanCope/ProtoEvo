@@ -19,8 +19,13 @@ public class SimulationSettings {
     public static final float startingAvailableCellEnergy = 1f;
     public static final float startingAvailableConstructionMass = 10e-3f;
     public static final float globalMutationChance = 0.05f;
+    public static final float initialGRNMutations = 3;
     public static final float minMutationChance = 0.001f;
     public static final float maxMutationChance = 0.1f;
+    public static final float minTraitMutationChance = 0.001f;
+    public static final float maxTraitMutationChance = 0.1f;
+    public static final float minRegulationMutationChance = 0.0001f;
+    public static final float maxRegulationMutationChance = 0.001f;
 
     public static final float cellGrowthFactor = 1e-2f;
     public static final float digestionFactor = 15f;

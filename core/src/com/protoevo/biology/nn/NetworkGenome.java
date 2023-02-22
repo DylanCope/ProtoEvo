@@ -17,9 +17,7 @@ public class NetworkGenome implements Serializable
 	private int nNeuronGenes;
 	private SynapseGene[] synapseGenes;
 	private Random random = Simulation.RANDOM;
-	private float mutationChance = SimulationSettings.globalMutationChance;
-	private float fitness = 0.0f;
-	private int numMutations = 0, nSensors, nOutputs;
+	private int numStructuralMutations = 0, nSensors, nOutputs;
 
 	public NetworkGenome(NetworkGenome other) {
 		setProperties(other);
@@ -27,21 +25,33 @@ public class NetworkGenome implements Serializable
 
 	public void setProperties(NetworkGenome other)
 	{
-		sensorNeuronGenes = other.sensorNeuronGenes;
-		outputNeuronGenes = other.outputNeuronGenes;
-		hiddenNeuronGenes = other.hiddenNeuronGenes;
-		synapseGenes = other.synapseGenes;
+		sensorNeuronGenes = copy(other.sensorNeuronGenes);
+		outputNeuronGenes = copy(other.outputNeuronGenes);
+		hiddenNeuronGenes = copy(other.hiddenNeuronGenes);
+		synapseGenes = copy(other.synapseGenes);
 		nNeuronGenes = other.nNeuronGenes;
 		random = other.random;
-		mutationChance = other.mutationChance;
-		fitness = other.fitness;
-		numMutations = other.numMutations;
+		numStructuralMutations = other.numStructuralMutations;
 		nSensors = other.nSensors;
 		nOutputs = other.nOutputs;
 	}
 
 	public NetworkGenome() {
 		this(0, 0);
+	}
+
+	private NeuronGene[] copy(NeuronGene[] neuronGenes) {
+		NeuronGene[] newGenes = new NeuronGene[neuronGenes.length];
+		for (int i = 0; i < neuronGenes.length; i++)
+			newGenes[i] = new NeuronGene(neuronGenes[i]);
+		return newGenes;
+	}
+
+	private SynapseGene[] copy(SynapseGene[] synapseGenes) {
+		SynapseGene[] newGenes = new SynapseGene[synapseGenes.length];
+		for (int i = 0; i < synapseGenes.length; i++)
+			newGenes[i] = new SynapseGene(synapseGenes[i]);
+		return newGenes;
 	}
 
 	public NetworkGenome(int numInputs, int numOutputs)
@@ -140,13 +150,14 @@ public class NetworkGenome implements Serializable
 			synapseGenes[originalLen + i] = new SynapseGene(sensorNeuronGenes[i], n);
 	}
 
-	public void addSynapse(NeuronGene in, NeuronGene out, float w) {
+	public SynapseGene addSynapse(NeuronGene in, NeuronGene out, float w) {
 		synapseGenes = Arrays.copyOf(synapseGenes, synapseGenes.length + 1);
 		synapseGenes[synapseGenes.length - 1] = new SynapseGene(in, out, w);
+		return synapseGenes[synapseGenes.length - 1];
 	}
 
-	public void addSynapse(NeuronGene in, NeuronGene out) {
-		addSynapse(in, out, Simulation.RANDOM.nextFloat(-1, 1));
+	public SynapseGene addSynapse(NeuronGene in, NeuronGene out) {
+		return addSynapse(in, out, Simulation.RANDOM.nextFloat(-1, 1));
 	}
 
 	private void createHiddenBetween(SynapseGene g) {
@@ -155,11 +166,16 @@ public class NetworkGenome implements Serializable
 			nNeuronGenes++, Neuron.Type.HIDDEN, Neuron.Activation.randomActivation()
 		);
 
+		n.setMutationRange(
+				SimulationSettings.minRegulationMutationChance,
+				SimulationSettings.maxRegulationMutationChance);
+
 		hiddenNeuronGenes = Arrays.copyOf(hiddenNeuronGenes, hiddenNeuronGenes.length + 1);
 		hiddenNeuronGenes[hiddenNeuronGenes.length - 1] = n;
 
 		SynapseGene inConnection = new SynapseGene(g.getIn(), n, 1f);
 		SynapseGene outConnection = new SynapseGene(n, g.getOut(), g.getWeight());
+
 
 		synapseGenes = Arrays.copyOf(synapseGenes, synapseGenes.length + 2);
 		synapseGenes[synapseGenes.length - 2] = inConnection;
@@ -177,20 +193,25 @@ public class NetworkGenome implements Serializable
 				return i;
 			}
 		}
+
 		return -1;
 	}
 
 	private int getNeuronGeneIndex(NeuronGene gene) {
-		for (int i = 0; i < sensorNeuronGenes.length; i++)
-			if (sensorNeuronGenes[i].equals(gene))
-				return i;
-		for (int i = 0; i < outputNeuronGenes.length; i++)
-			if (outputNeuronGenes[i].equals(gene))
-				return i;
-		for (int i = 0; i < hiddenNeuronGenes.length; i++)
-			if (hiddenNeuronGenes[i].equals(gene))
-				return i;
-		return -1;
+		if (gene.isGenomeIdxKnown())
+			return gene.getGenomeIdx();
+
+		for (int i = 0; i < sensorNeuronGenes.length; i++) {
+			sensorNeuronGenes[i].setGenomeIdx(i);
+		}
+		for (int i = 0; i < outputNeuronGenes.length; i++) {
+			outputNeuronGenes[i].setGenomeIdx(i);
+		}
+		for (int i = 0; i < hiddenNeuronGenes.length; i++) {
+			hiddenNeuronGenes[i].setGenomeIdx(i);
+		}
+
+		return gene.getGenomeIdx();
 	}
 
 	public NeuronGene getNeuronGene(String name) {
@@ -207,65 +228,84 @@ public class NetworkGenome implements Serializable
 	}
 	
 	private void mutateConnection(NeuronGene in, NeuronGene out) {
-		numMutations++;
+		numStructuralMutations++;
 
-		int geneIndex = getSynapseGeneIndex(in, out);
+		int idx = getSynapseGeneIndex(in, out);
 
-		if (geneIndex == -1) {  // synapse doesn't exist - create a new one
+		if (idx == -1) {  // synapse doesn't exist - create a new one
 			synapseGenes = Arrays.copyOf(synapseGenes, synapseGenes.length + 1);
 			synapseGenes[synapseGenes.length - 1] = new SynapseGene(in, out);
 		} else {  // synapse does exist
-			SynapseGene g = synapseGenes[geneIndex];
-			if (random.nextBoolean())   // create new hidden neuron
+			SynapseGene g = synapseGenes[idx];
+			synapseGenes[idx] = g.cloneWithMutation();
+			if (Math.random() < g.getMutationRate())   // create new hidden neuron
 				createHiddenBetween(g);
-			else  // or randomly change the synapse weight
-				synapseGenes[geneIndex] = new SynapseGene(in, out, SynapseGene.randomInitialWeight(), g.getInnovation());
 		}
 	}
 
-	private void mutateSensor(NeuronGene neuronGene) {
+	/**
+	 * The only valid kind of sensor mutation is creating a connection to a hidden or output neuron.
+	 * @param sensorGene the neuron to mutate
+	 */
+	private void mutateSensor(NeuronGene sensorGene) {
+		int myIdx = getNeuronGeneIndex(sensorGene);
+		sensorNeuronGenes[myIdx] = sensorGene.cloneWithMutation();
+
 		if (hiddenNeuronGenes.length + outputNeuronGenes.length == 0)
 			return;
-		int otherIdx = random.nextInt(hiddenNeuronGenes.length + outputNeuronGenes.length);
-		if (otherIdx < outputNeuronGenes.length)
-			mutateConnection(neuronGene, outputNeuronGenes[otherIdx]);
-		else
-			mutateConnection(neuronGene, hiddenNeuronGenes[otherIdx - outputNeuronGenes.length]);
+
+		if (Math.random() < sensorGene.getMutationRate()) {
+			int otherIdx = random.nextInt(hiddenNeuronGenes.length + outputNeuronGenes.length);
+			if (otherIdx < outputNeuronGenes.length)
+				mutateConnection(sensorGene, outputNeuronGenes[otherIdx]);
+			else
+				mutateConnection(sensorGene, hiddenNeuronGenes[otherIdx - outputNeuronGenes.length]);
+		}
 	}
 
-	private void mutateOutput(NeuronGene neuronGene) {
+	/**
+	 * The only valid kind of output mutation is creating a connection to a hidden or sensor neuron.
+	 * @param outputGene the neuron to mutate
+	 */
+	private void mutateOutput(NeuronGene outputGene) {
+		int myIdx = getNeuronGeneIndex(outputGene);
+		outputNeuronGenes[myIdx] = outputGene.cloneWithMutation();
+
 		if (hiddenNeuronGenes.length + sensorNeuronGenes.length == 0)
 			return;
-		int otherIdx = random.nextInt(hiddenNeuronGenes.length + sensorNeuronGenes.length);
-		if (otherIdx < sensorNeuronGenes.length)
-			mutateConnection(sensorNeuronGenes[otherIdx], neuronGene);
-		else
-			mutateConnection(hiddenNeuronGenes[otherIdx - sensorNeuronGenes.length], neuronGene);
+
+		if (Math.random() < outputGene.getMutationRate()) {
+			int otherIdx = random.nextInt(hiddenNeuronGenes.length + sensorNeuronGenes.length);
+			if (otherIdx < sensorNeuronGenes.length)
+				mutateConnection(sensorNeuronGenes[otherIdx], outputGene);
+			else
+				mutateConnection(hiddenNeuronGenes[otherIdx - sensorNeuronGenes.length], outputGene);
+		}
 	}
 
-	private void mutateHidden(NeuronGene neuronGene) {
-		if (!neuronGene.getType().equals(Neuron.Type.HIDDEN))
-			throw new IllegalArgumentException("Neuron must be hidden");
+	/**
+	 * There are two kinds of hidden neuron mutations: creating a connection to any other neuron,
+	 * or changing the activation function.
+	 * @param hiddenGene the neuron to mutate
+	 */
+	private void mutateHidden(NeuronGene hiddenGene) {
+		int myIdx = getNeuronGeneIndex(hiddenGene);
+		hiddenNeuronGenes[myIdx] = hiddenGene.cloneWithMutation();
 
-		if (Simulation.RANDOM.nextBoolean() && hiddenNeuronGenes.length + outputNeuronGenes.length > 0) {
+		if (Math.random() < hiddenGene.getMutationRate()
+				&& hiddenNeuronGenes.length + outputNeuronGenes.length > 0) {
 			// random connection mutation involving this neuron
 			int otherIdx = random.nextInt(
 					hiddenNeuronGenes.length +
 					outputNeuronGenes.length);
 			if (otherIdx < hiddenNeuronGenes.length)
-				mutateConnection(neuronGene, hiddenNeuronGenes[otherIdx]);
+				mutateConnection(hiddenGene, hiddenNeuronGenes[otherIdx]);
 			else
-				mutateConnection(neuronGene, outputNeuronGenes[otherIdx - hiddenNeuronGenes.length]);
-		}
-		else {  // mutate the node itself (activation function)
-			int myIdx = getNeuronGeneIndex(neuronGene);
-			hiddenNeuronGenes[myIdx] = neuronGene.mutate();
+				mutateConnection(hiddenGene, outputNeuronGenes[otherIdx - hiddenNeuronGenes.length]);
 		}
 	}
 
 	public void mutateNeuronGene(NeuronGene neuronGene) {
-		numMutations++;
-
 		if (neuronGene.getType() == Neuron.Type.SENSOR) {
 			mutateSensor(neuronGene);
 			return;
@@ -280,27 +320,25 @@ public class NetworkGenome implements Serializable
 	}
 
 	public void mutateSynapseGene(int idx) {
-		numMutations++;
 		if (Simulation.RANDOM.nextBoolean())
-			synapseGenes[idx] = synapseGenes[idx].mutate();
-		else
+			synapseGenes[idx] = synapseGenes[idx].cloneWithMutation();
+		else if (Math.random() < synapseGenes[idx].getMutationRate())
 			createHiddenBetween(synapseGenes[idx]);
 	}
 	
 	public void mutate()
 	{
-		iterateNeuronGenes()
-				.forEachRemaining(neuronGene -> {
-					if (Math.random() < mutationChance) {
-						mutateNeuronGene(neuronGene);
-					}
-				});
+		for (NeuronGene n : sensorNeuronGenes)
+			mutateSensor(n);
 
-		for (int i = 0; i < synapseGenes.length; i++) {
-			if (Math.random() < mutationChance) {
-				mutateSynapseGene(i);
-			}
-		}
+		for (NeuronGene n : outputNeuronGenes)
+			mutateOutput(n);
+
+		for (NeuronGene n : hiddenNeuronGenes)
+			mutateHidden(n);
+
+		for (int i = 0; i < synapseGenes.length; i++)
+			mutateSynapseGene(i);
 	}
 	
 	public NetworkGenome crossover(NetworkGenome other)
@@ -451,8 +489,8 @@ public class NetworkGenome implements Serializable
 		return synapseGenes;
 	}
 
-	public int getNumMutations() {
-		return numMutations;
+	public int getNumStructuralMutations() {
+		return numStructuralMutations;
 	}
 
 	public int numberOfSensors() {
@@ -461,6 +499,13 @@ public class NetworkGenome implements Serializable
 
 	public boolean hasSensor(String label) {
 		for (NeuronGene gene : sensorNeuronGenes)
+			if (gene.getLabel().equals(label))
+				return true;
+		return false;
+	}
+
+	public boolean hasOutput(String label) {
+		for (NeuronGene gene : outputNeuronGenes)
 			if (gene.getLabel().equals(label))
 				return true;
 		return false;
@@ -476,9 +521,5 @@ public class NetworkGenome implements Serializable
 
 	public Iterator<SynapseGene> iterateSynapseGenes() {
 		return Iterators.forArray(synapseGenes);
-	}
-
-	public void setMutationChance(float mutationChance) {
-		this.mutationChance = mutationChance;
 	}
 }

@@ -1,6 +1,7 @@
 package com.protoevo.biology.evolution;
 
 import com.protoevo.core.Simulation;
+import com.protoevo.settings.SimulationSettings;
 
 import java.io.Serializable;
 import java.util.HashMap;
@@ -19,7 +20,27 @@ public interface Trait<T> extends Evolvable.Component, Serializable {
 
     Trait<T> createNew(T value);
 
-    default Trait<T> mutate() {
+    void setMutationRate(float rate);
+    float getMutationRate();
+
+    default void init() {
+        mutateMutationRate();
+    }
+
+    default void mutateMutationRate() {
+        setMutationRate(Simulation.RANDOM.nextFloat(
+                SimulationSettings.minTraitMutationChance,
+                SimulationSettings.maxTraitMutationChance
+        ));
+    }
+
+    default Trait<T> cloneWithMutation() {
+        if (Math.random() > getMutationRate())
+            return copy();
+
+        if (Simulation.RANDOM.nextBoolean())
+            mutateMutationRate();
+
         Trait<T> newTrait = createNew(newRandomValue());
         if (newTrait == null)
             throw new RuntimeException(
@@ -54,7 +75,7 @@ public interface Trait<T> extends Evolvable.Component, Serializable {
             return other;
     }
 
-    default Trait<?> copy() {
+    default Trait<T> copy() {
         return createNew(getValue());
     }
 }

@@ -2,6 +2,7 @@ package com.protoevo.biology.nn;
 
 import java.io.Serializable;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -14,6 +15,7 @@ public class NeuralNetwork implements Serializable
     private final Neuron[] inputNeurons;
     private final float[] outputs;
     private final Neuron[] neurons;
+    private final HashSet<String> outputLabels = new HashSet<>(), inputLabels = new HashSet<>();
     private final int depth;
     private final int nInputs;
     private boolean computedGraphics = false;
@@ -210,10 +212,16 @@ public class NeuralNetwork implements Serializable
     }
 
     public boolean hasSensor(String label) {
-        for (Neuron n : neurons)
-            if (n.hasLabel() && n.getLabel().equals(label))
-                return true;
-        return false;
+        if (inputLabels.contains(label))
+            return true;
+
+        for (Neuron n : neurons) {
+            if (n.hasLabel() && n.getLabel().equals(label)) {
+                inputLabels.add(label);
+            }
+        }
+
+        return inputLabels.contains(label);
     }
 
     public void setInput(String label, float value) {
@@ -232,9 +240,15 @@ public class NeuralNetwork implements Serializable
     }
 
     public boolean hasOutput(String outputName) {
-        for (Neuron n : neurons)
-            if (n.hasLabel() && n.getLabel().equals(outputName))
-                return true;
-        return false;
+        if (outputLabels.contains(outputName))
+            return true;
+
+        for (Neuron n : neurons) {
+            if (n.hasLabel() && n.getLabel().equals(outputName)) {
+                outputLabels.add(outputName);
+            }
+        }
+
+        return outputLabels.contains(outputName);
     }
 }

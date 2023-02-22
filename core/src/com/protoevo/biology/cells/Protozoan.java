@@ -299,7 +299,7 @@ public class Protozoan extends Cell implements Evolvable
 		}
 
 		stats.put("Herbivore Factor", herbivoreFactor);
-		stats.putPercentage("Mutation Chance", 100 * geneExpressionFunction.getMutationRate());
+//		stats.putPercentage("Mutation Chance", 100 * geneExpressionFunction.getMutationRate());
 
 		return stats;
 	}

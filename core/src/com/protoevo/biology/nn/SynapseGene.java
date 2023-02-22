@@ -14,17 +14,36 @@ public class SynapseGene implements Comparable<SynapseGene>, Serializable
     private NeuronGene in, out;
     private float weight;
     private boolean disabled;
+    private float mutationRate = SimulationSettings.globalMutationChance;
+    private float mutationRateMin = SimulationSettings.minMutationChance;
+    private float mutationRateMax = SimulationSettings.maxMutationChance;
+    private int nMutations, nMutationRateMutations;
 
     public SynapseGene(NeuronGene in, NeuronGene out, float weight, int innovation) {
         this.in = in;
         this.out = out;
         disabled = false;
         this.weight = weight;
-        this.innovation =  innovation;
+        this.innovation = innovation;
+    }
+
+    public SynapseGene(SynapseGene other) {
+        this.in = other.in;
+        this.out = other.out;
+        this.weight = other.weight;
+        this.innovation = other.innovation;
+        this.disabled = other.disabled;
+        this.mutationRate = other.mutationRate;
+        this.mutationRateMin = other.mutationRateMin;
+        this.mutationRateMax = other.mutationRateMax;
     }
 
     public SynapseGene(NeuronGene in, NeuronGene out, float weight) {
         this(in, out, weight, globalInnovation++);
+
+        setMutationRange(
+                Math.min(in.getMinMutationRate(), out.getMinMutationRate()),
+                Math.max(in.getMaxMutationRate(), out.getMaxMutationRate()));
     }
 
     public static float randomInitialWeight() {
@@ -52,11 +71,33 @@ public class SynapseGene implements Comparable<SynapseGene>, Serializable
         return false;
     }
 
-    public SynapseGene mutate() {
-        float newWeight = randomInitialWeight();
-        SynapseGene newGene = new SynapseGene(in, out, newWeight, innovation);
+    public float getMutationRate() {
+        return mutationRate;
+    }
+
+    public void setMutationRange(float min, float max) {
+        mutationRateMin = min;
+        mutationRateMax = max;
+        mutationRate = Simulation.RANDOM.nextFloat(min, max);
+    }
+
+    public SynapseGene cloneWithMutation() {
+        SynapseGene newGene = new SynapseGene(this);
+        if (Math.random() > mutationRate)
+            return newGene;
+
+        nMutations++;
+
+        newGene.weight = randomInitialWeight();
+
+        if (Simulation.RANDOM.nextBoolean()) {
+            newGene.mutationRate = Simulation.RANDOM.nextFloat(mutationRateMin, mutationRateMax);
+            nMutationRateMutations++;
+        }
+
         if (Math.random() < SimulationSettings.deleteSynapseMutationRate)
             newGene.setDisabled(true);
+
         return newGene;
     }
 

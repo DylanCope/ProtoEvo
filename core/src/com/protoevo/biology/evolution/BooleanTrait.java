@@ -8,6 +8,7 @@ public class BooleanTrait implements Trait<Boolean> {
 
     private final boolean value;
     private final String geneName;
+    private float mutationRate;
 
     public BooleanTrait(String geneName) {
         this.geneName = geneName;
@@ -36,6 +37,16 @@ public class BooleanTrait implements Trait<Boolean> {
     @Override
     public Trait<Boolean> createNew(Boolean value) {
         return new BooleanTrait(geneName, value);
+    }
+
+    @Override
+    public void setMutationRate(float rate) {
+        mutationRate = rate;
+    }
+
+    @Override
+    public float getMutationRate() {
+        return mutationRate;
     }
 
     @Override

@@ -13,6 +13,7 @@ public class IntegerTrait implements Trait<Integer> {
     private final int value, minValue, maxValue, maxIncrement, disableValue;
     private final String geneName;
     private final EvolvableInteger.MutationMethod mutationMethod;
+    private float mutationRate;
 
     public IntegerTrait(String geneName, int minValue, int maxValue,
                         EvolvableInteger.MutationMethod mutationMethod, int maxIncrement,
@@ -56,6 +57,16 @@ public class IntegerTrait implements Trait<Integer> {
                 return disableValue;
         }
         return value;
+    }
+
+    @Override
+    public void setMutationRate(float rate) {
+        this.mutationRate = rate;
+    }
+
+    @Override
+    public float getMutationRate() {
+        return mutationRate;
     }
 
     @Override
