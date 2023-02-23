@@ -153,6 +153,10 @@ public class REPL implements Runnable
         }
     }
 
+    public String stripWhitespace(String s) {
+        return s.replaceAll("\\s+", "");
+    }
+
     @Override
     public void run() {
         System.out.println("Starting REPL...\nType 'help' for a list of commands.");
@@ -166,7 +170,7 @@ public class REPL implements Runnable
                 System.out.print("> ");
                 line = bufferRead.readLine();
 
-                if (line.equals("\n") || line.strip().equals("")) {
+                if (line.equals("\n") || stripWhitespace(line).equals("")) {
                     System.out.println();
                     continue;
                 }

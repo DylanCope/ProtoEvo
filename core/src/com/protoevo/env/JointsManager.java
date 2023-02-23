@@ -132,7 +132,7 @@ public class JointsManager implements Serializable {
         }
 
         public float getMaxLength() {
-            return getIdealLength() * 1.2f;
+            return getIdealLength() * 1.5f;
         }
     }
 

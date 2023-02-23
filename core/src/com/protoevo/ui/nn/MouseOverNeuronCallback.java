@@ -5,6 +5,7 @@ import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.GlyphLayout;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.protoevo.biology.evolution.GeneExpressionFunction;
+import com.protoevo.biology.nn.ActivationFn;
 import com.protoevo.biology.nn.GRNTag;
 import com.protoevo.biology.nn.Neuron;
 import com.protoevo.biology.nodes.SurfaceNode;
@@ -75,7 +76,7 @@ public class MouseOverNeuronCallback {
             return neuron.getLabel() + " = " +
                     Utils.numberToString(neuron.getLastState(), 2);
 
-        return Neuron.Activation.toString(neuron.getActivation()) + "(z) = "
+        return neuron.getActivation() + "(z) = "
                 + Utils.numberToString(neuron.getLastState(), 2);
     }
 

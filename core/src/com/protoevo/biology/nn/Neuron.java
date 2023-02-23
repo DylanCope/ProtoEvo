@@ -6,7 +6,6 @@ import com.protoevo.env.Environment;
 
 import java.io.Serializable;
 import java.util.Comparator;
-import java.util.function.Function;
 
 /**
  * Created by Dylan on 26/05/2017.
@@ -16,36 +15,6 @@ import java.util.function.Function;
         generator = ObjectIdGenerators.IntSequenceGenerator.class,
         scope = Environment.class)
 public class Neuron implements Comparable<Neuron>, Serializable {
-
-    public interface Activation extends Function<Float, Float>, Serializable {
-        Activation SIGMOID = z -> 1 / (1 + (float) Math.exp(-z));
-        Activation LINEAR = z -> z;
-        Activation TANH = z -> (float) Math.tanh(z);
-        Activation STEP = z -> z > 0 ? 1f : 0f;
-        Activation RELU = z -> z > 0 ? z : 0f;
-
-        Activation[] activationFunctions = new Activation[] {
-                SIGMOID, LINEAR, TANH, STEP, RELU
-        };
-
-        static String toString(Activation activation) {
-            if (activation.equals(SIGMOID))
-                return "Sigmoid";
-            if (activation.equals(LINEAR))
-                return "Linear";
-            if (activation.equals(TANH))
-                return "Tanh";
-            if (activation.equals(STEP))
-                return "Step";
-            if (activation.equals(RELU))
-                return "ReLU";
-            return null;
-        }
-
-        static Activation randomActivation() {
-            return activationFunctions[(int) (Math.random() * activationFunctions.length)];
-        }
-    }
 
     public enum Type implements Serializable {
         SENSOR("SENSOR"), HIDDEN("HIDDEN"), OUTPUT("OUTPUT");
@@ -69,7 +38,7 @@ public class Neuron implements Comparable<Neuron>, Serializable {
     private final int id;
     private float state = 0, lastState = 0, nextState = 0;
     private float learningRate = 0;
-    private Activation activation;
+    private ActivationFn activation;
     private int depth = -1;
     private float graphicsX = -1;
     private float graphicsY = -1;
@@ -78,7 +47,7 @@ public class Neuron implements Comparable<Neuron>, Serializable {
     private Object[] tags;
     private boolean active;
 
-    public Neuron(int id, Neuron[] inputs, float[] weights, Type type, Activation activation, String label)
+    public Neuron(int id, Neuron[] inputs, float[] weights, Type type, ActivationFn activation, String label)
     {
         this.id = id;
         this.inputs = inputs;
@@ -129,7 +98,7 @@ public class Neuron implements Comparable<Neuron>, Serializable {
         return this;
     }
 
-    public Neuron setActivation(Activation activation) {
+    public Neuron setActivation(ActivationFn activation) {
         this.activation = activation;
         return this;
     }
@@ -150,7 +119,7 @@ public class Neuron implements Comparable<Neuron>, Serializable {
     }
 
 
-    public Activation getActivation() {
+    public ActivationFn getActivation() {
         return activation;
     }
 

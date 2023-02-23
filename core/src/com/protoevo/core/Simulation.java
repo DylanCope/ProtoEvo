@@ -142,7 +142,7 @@ public class Simulation implements Runnable
 				lastFilePath = pathStream
 						.filter(f -> !Files.isDirectory(f))
 						.max(Comparator.comparingLong(f -> f.toFile().lastModified()))
-						.map(path -> path.toString().replace(".dat", ""));
+						.map(path -> path.toString().replace(".env", ""));
 			} catch (IOException e) {
 				throw new RuntimeException("Invalid input directory: " + dir, e);
 			}

@@ -20,6 +20,8 @@ import org.nustaq.serialization.FSTObjectInput;
 import org.nustaq.serialization.FSTObjectOutput;
 
 import java.io.*;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 
 public class EnvFileIO {
     private static final FSTConfiguration singletonConf = FSTConfiguration.createDefaultConfiguration();
@@ -96,7 +98,7 @@ public class EnvFileIO {
     public static void serialize(Environment object, String filename)
     {
         try (FileOutputStream fileOut =
-                     new FileOutputStream(filename + ".dat");
+                     new FileOutputStream(filename + ".env");
              FSTObjectOutput out = new FSTObjectOutput(fileOut))
         {
             out.writeObject(object, Environment.class);
@@ -105,8 +107,26 @@ public class EnvFileIO {
         }
     }
 
+    public static void saveCell(Cell object, String cellName)
+    {
+        try {
+            Files.createDirectories(Paths.get("saved-cells"));
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+
+        try (FileOutputStream fileOut =
+                     new FileOutputStream("saved-cells/" + cellName + ".cell");
+             FSTObjectOutput out = new FSTObjectOutput(fileOut))
+        {
+            out.writeObject(object, Cell.class);
+        } catch(IOException i) {
+            i.printStackTrace();
+        }
+    }
+
     public static Environment deserialize(String filename) throws Exception {
-        try (FileInputStream fileIn = new FileInputStream(filename + ".dat");
+        try (FileInputStream fileIn = new FileInputStream(filename + ".env");
              FSTObjectInput in = new FSTObjectInput(fileIn))
         {
             return (Environment) in.readObject(Environment.class);

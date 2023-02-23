@@ -18,7 +18,7 @@ public class NeuronGene implements Comparable<NeuronGene>, Serializable
 
     private final int id;
     private final Neuron.Type type;
-    private Neuron.Activation activation;
+    private ActivationFn activation;
 
     private String label;
     private Object[] tags;
@@ -30,7 +30,7 @@ public class NeuronGene implements Comparable<NeuronGene>, Serializable
     private int nMutationRateMutations = 0;
     private int genomeIdx = -1;
 
-    public NeuronGene(int id, Neuron.Type type, Neuron.Activation activation)
+    public NeuronGene(int id, Neuron.Type type, ActivationFn activation)
     {
         this(id, type, activation, null);
     }
@@ -49,7 +49,7 @@ public class NeuronGene implements Comparable<NeuronGene>, Serializable
         this.nMutationRateMutations = other.nMutationRateMutations;
     }
 
-    public NeuronGene(int id, Neuron.Type type, Neuron.Activation activation, String label)
+    public NeuronGene(int id, Neuron.Type type, ActivationFn activation, String label)
     {
         this.id = id;
         this.type = type;
@@ -88,7 +88,7 @@ public class NeuronGene implements Comparable<NeuronGene>, Serializable
         nMutations++;
 
         if (type == Neuron.Type.HIDDEN)
-            newGene.activation = Neuron.Activation.randomActivation();
+            newGene.activation = ActivationFn.randomActivation();
 
         if (Simulation.RANDOM.nextBoolean()) {
             newGene.mutationRate = MathUtils.random(mutationRateMin, mutationRateMax);
@@ -136,7 +136,7 @@ public class NeuronGene implements Comparable<NeuronGene>, Serializable
 
     public int getId() { return id; }
     public Neuron.Type getType() { return type; }
-    public Neuron.Activation getActivation() { return activation; }
+    public ActivationFn getActivation() { return activation; }
 
     public String getLabel() {
         return label;

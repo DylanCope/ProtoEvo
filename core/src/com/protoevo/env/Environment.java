@@ -456,9 +456,11 @@ public class Environment implements Serializable
 		stats.putCount("Plants", getCount(PlantCell.class));
 		stats.putCount("Meat Pellets", getCount(MeatCell.class));
 
-		for (Class<? extends Cell> cellClass : generationCounts.keySet())
-			stats.putCount("Max " + cellClassNames.get(cellClass) + " Generation",
-							generationCounts.get(cellClass).intValue());
+		stats.putCount("Max Protozoa Generation",
+						generationCounts.get(Protozoan.class).intValue());
+
+		stats.putCount("Max Plant Generation",
+				generationCounts.get(PlantCell.class).intValue());
 
 		for (Class<? extends Cell> cellClass : bornCounts.keySet())
 			stats.putCount(cellClassNames.get(cellClass) + " Created",

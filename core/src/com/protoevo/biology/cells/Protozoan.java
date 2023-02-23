@@ -185,6 +185,9 @@ public class Protozoan extends Cell implements Evolvable
 
 	@Override
 	public float getInteractionRange() {
+		if (surfaceNodes == null)
+			return 0;
+
 		float maxRange = 0;
 		for (SurfaceNode node : surfaceNodes)
 			maxRange = Math.max(maxRange, node.getInteractionRange());

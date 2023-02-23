@@ -17,7 +17,7 @@ public class GRNFactory {
         if (gene.isRegulated()) {
             NeuronGene output = networkGenome.addOutput(
                     getOutputName(trait),
-                    z -> Utils.linearRemap(z, -1, 1, min, max),
+                    ActivationFn.getOutputMapper(min, max),
                     (GRNTag) fn -> fn.getExpressionNode(node.getName())
             );
             createBiasExpressionConnection(networkGenome, output);
@@ -77,7 +77,7 @@ public class GRNFactory {
 
         NeuronGene output = networkGenome.addOutput(
                 getOutputName(trait),
-                z -> Utils.linearRemap(z, -1, 1, getMax.get(), getMin.get()),
+                ActivationFn.getOutputMapper(getMax.get(), getMin.get()),
                 (GRNTag) fn -> fn.getExpressionNode(node.getName())
         );
         createBiasExpressionConnection(networkGenome, output);
@@ -113,7 +113,7 @@ public class GRNFactory {
         String trait = node.getName();
         NeuronGene output = networkGenome.addOutput(
                 getOutputName(trait),
-                z -> (z < 0) ? -1f : 1f,
+                ActivationFn.getBooleanInputMapper(),
                 (GRNTag) fn -> fn.getExpressionNode(node.getName())
         );
         createBiasExpressionConnection(networkGenome, output);
@@ -133,7 +133,7 @@ public class GRNFactory {
             float max = regulatedFloatTrait.getMaxValue();
             NeuronGene outputGene = networkGenome.addOutput(
                     getOutputName(name),
-                    z -> Utils.linearRemap(z, -1, 1, min, max),
+                    ActivationFn.getOutputMapper(min, max),
                     (GRNTag) fn -> fn.getExpressionNode(node.getName())
             );
             for (String regulator : regulators.keySet()) {

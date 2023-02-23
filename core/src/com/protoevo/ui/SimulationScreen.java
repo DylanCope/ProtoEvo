@@ -10,22 +10,19 @@ import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator;
 import com.badlogic.gdx.scenes.scene2d.EventListener;
+import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.Touchable;
-import com.badlogic.gdx.scenes.scene2d.ui.Dialog;
-import com.badlogic.gdx.scenes.scene2d.ui.ImageButton;
-import com.badlogic.gdx.scenes.scene2d.ui.SelectBox;
-import com.badlogic.gdx.scenes.scene2d.ui.Skin;
+import com.badlogic.gdx.scenes.scene2d.ui.*;
 import com.badlogic.gdx.scenes.scene2d.utils.Drawable;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
+import com.protoevo.biology.cells.Cell;
 import com.protoevo.biology.nn.NeuralNetwork;
 import com.protoevo.biology.nodes.SurfaceNode;
 import com.protoevo.biology.cells.Protozoan;
 import com.protoevo.biology.organelles.Organelle;
-import com.protoevo.core.Application;
-import com.protoevo.core.Particle;
-import com.protoevo.core.Simulation;
-import com.protoevo.core.Statistics;
+import com.protoevo.core.*;
+import com.protoevo.input.SaveCellTextListener;
 import com.protoevo.settings.WorldGenerationSettings;
 import com.protoevo.env.Environment;
 import com.protoevo.input.ParticleTracker;
@@ -40,6 +37,9 @@ import com.protoevo.utils.DebugMode;
 import com.protoevo.utils.ImageUtils;
 import com.protoevo.utils.Utils;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
@@ -68,6 +68,8 @@ public class SimulationScreen {
     private final Map<String, Callable<Statistics>> statGetters = new HashMap<>();
     private final Statistics debugStats = new Statistics();
     private Particle trackedParticle;
+    private final ImageButton saveTrackedParticleButton;
+    private final TextField saveTrackedParticleTextField;
 
     private final SelectBox<String> selectBox;
 
@@ -95,6 +97,12 @@ public class SimulationScreen {
         this.environment = simulation.getEnv();
         stage = new Stage();
         uiBatch = new SpriteBatch();
+
+        stage.getRoot().addCaptureListener(event -> {
+            if (!(event.getTarget() instanceof TextField))
+                stage.setKeyboardFocus(null);
+            return false;
+        });
 
         infoTextSize = (int) (graphicsHeight / 50f);
         textAwayFromEdge = (int) (graphicsWidth / 60);
@@ -135,6 +143,22 @@ public class SimulationScreen {
             return true;
         });
         topBar.addLeft(homeButton);
+
+        saveTrackedParticleTextField = new TextField("", UIStyle.getUISkin());
+        stage.addActor(saveTrackedParticleTextField);
+        saveTrackedParticleTextField.setVisible(false);
+        saveTrackedParticleTextField.setMessageText("Save as...");
+
+        saveTrackedParticleButton = createImageButton(
+                "icons/save.png", topBar.getButtonSize(), topBar.getButtonSize(), event -> {
+            if (event.toString().equals("touchDown")) {
+                if (trackedParticle != null) {
+                    EnvFileIO.saveCell((Cell) trackedParticle,  saveTrackedParticleTextField.getText());
+                }
+            }
+            return true;
+        });
+        saveTrackedParticleButton.setVisible(false);
 
         Skin skin = UIStyle.getUISkin();
 
@@ -271,6 +295,20 @@ public class SimulationScreen {
                 statGetters.put("Protozoan Stats", particle::getStats);
                 getStats = particle::getStats;
 
+                graphicsStatsYOffset = saveTrackedParticleButton.getHeight() * 1.3f;
+
+                saveTrackedParticleButton.setVisible(true);
+                saveTrackedParticleButton.setPosition(
+                        2 * textAwayFromEdge, titleY - saveTrackedParticleButton.getHeight() * 2f
+                );
+                saveTrackedParticleTextField.setVisible(true);
+                saveTrackedParticleTextField.setBounds(
+                        2 * textAwayFromEdge + saveTrackedParticleButton.getWidth() * 1.8f,
+                        saveTrackedParticleButton.getY(),
+                        8f * saveTrackedParticleButton.getWidth(),
+                        saveTrackedParticleButton.getHeight()
+                );
+
                 layout.setText(selectBox.getStyle().font, "Protozoan Stats");
                 float maxWidth = layout.width;
 
@@ -306,9 +344,12 @@ public class SimulationScreen {
                             maxWidth, selectBox.getStyle().font.getLineHeight());
                     selectBox.setItems(statOptions.toArray(new String[0]));
                 }
+
             } else if (!(particle instanceof Protozoan)) {
                 getStats = particle::getStats;
                 selectBox.setVisible(false);
+                saveTrackedParticleButton.setVisible(false);
+                saveTrackedParticleTextField.setVisible(false);
             }
 
             if (selectBox.getSelected() != null && selectBox.isVisible())
@@ -320,6 +361,8 @@ public class SimulationScreen {
             trackedParticle = particle;
         }
         else {
+            saveTrackedParticleButton.setVisible(false);
+            saveTrackedParticleTextField.setVisible(false);
             getStats = statGetters.get("Env");
             selectBox.setVisible(false);
             graphicsStatsYOffset = 0;

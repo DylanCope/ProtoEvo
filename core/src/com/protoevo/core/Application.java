@@ -17,9 +17,9 @@ public class Application extends ApplicationAdapter {
 
 	@Override
 	public void create() {
-		System.out.println("Current JVM version - " + System.getProperty("java.version"));
+		System.out.println("Current JVM version: " + System.getProperty("java.version"));
 
-		simulation = new Simulation(0, "chronos-tentacool-nam");
+		simulation = new Simulation(0, "chaos-nidoking-iure");
 //		simulation = new Simulation();
 		simulationScreen = new SimulationScreen(this, simulation);
 		simulation.setSimulationScreen(simulationScreen);

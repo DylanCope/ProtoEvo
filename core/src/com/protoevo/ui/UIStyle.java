@@ -7,6 +7,7 @@ import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator;
 import com.badlogic.gdx.scenes.scene2d.ui.*;
+import com.protoevo.utils.CursorUtils;
 
 public class UIStyle {
 
@@ -58,8 +59,18 @@ public class UIStyle {
         selectBoxStyle.listStyle.font = skin.getFont("default");
         selectBoxStyle.listStyle.fontColorSelected = Color.WHITE;
         selectBoxStyle.listStyle.fontColorUnselected = new Color(0.7f, 0.7f, 0.7f, 1);
-        selectBoxStyle.listStyle.selection = skin.newDrawable("white",  new Color(0, 0, 0.8f, 0.95f));
+        Color selectionColor = new Color(0, 0, 0.8f, 0.95f);
+        selectBoxStyle.listStyle.selection = skin.newDrawable("white",  selectionColor);
         skin.add("default", selectBoxStyle);
+
+        TextField.TextFieldStyle textFieldStyle = new TextField.TextFieldStyle();
+        textFieldStyle.font = skin.getFont("default");
+        textFieldStyle.fontColor = Color.WHITE;
+        textFieldStyle.background = skin.newDrawable("white", new Color(0.3f, 0.3f, 0.3f, 0.95f));
+        textFieldStyle.disabledFontColor = Color.GRAY;
+        textFieldStyle.cursor = skin.newDrawable("white", Color.WHITE);
+        textFieldStyle.selection = skin.newDrawable("white", selectionColor);
+        skin.add("default", textFieldStyle);
 
         return skin;
     }
