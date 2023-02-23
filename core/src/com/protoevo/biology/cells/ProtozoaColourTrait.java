@@ -62,7 +62,7 @@ public class ProtozoaColourTrait implements Trait<Colour>, Serializable {
 
     @Override
     public Trait<Colour> createNew(Colour value) {
-        return new ProtozoaColourTrait(geneName, value);
+        return new ProtozoaColourTrait(geneName, value.cpy());
     }
 
     @Override

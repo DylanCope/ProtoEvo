@@ -3,7 +3,6 @@ package com.protoevo.utils;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.math.MathUtils;
 
-
 import java.io.Serializable;
 
 public class Colour implements Serializable {
@@ -101,11 +100,23 @@ public class Colour implements Serializable {
         return color.set(r, g, b, a);
     }
 
+    public int getRGBA8888() {
+        return Color.rgba8888(getColor());
+    }
+
+    public Colour set(int rgba8888) {
+        r = ((rgba8888 & 0xff000000) >>> 24) / 255f;
+        g = ((rgba8888 & 0x00ff0000) >>> 16) / 255f;
+        b = ((rgba8888 & 0x0000ff00) >>> 8) / 255f;
+        a = ((rgba8888 & 0x000000ff)) / 255f;
+        return this;
+    }
+
     public Colour set(Colour c) {
-        this.r = MathUtils.clamp(c.r, 0, 1);
-        this.g = MathUtils.clamp(c.g, 0, 1);
-        this.b = MathUtils.clamp(c.b, 0, 1);
-        this.a = MathUtils.clamp(c.a, 0, 1);
+        r = MathUtils.clamp(c.r, 0, 1);
+        g = MathUtils.clamp(c.g, 0, 1);
+        b = MathUtils.clamp(c.b, 0, 1);
+        a = MathUtils.clamp(c.a, 0, 1);
         return this;
     }
 
@@ -117,11 +128,12 @@ public class Colour implements Serializable {
         return c;
     }
 
-    public void set(float r, float g, float b, float a) {
+    public Colour set(float r, float g, float b, float a) {
         this.r = r;
         this.g = g;
         this.b = b;
         this.a = a;
+        return this;
     }
 
     public Colour lerp(Colour c, float t) {
@@ -130,5 +142,45 @@ public class Colour implements Serializable {
         this.b = MathUtils.clamp((1 - t) * this.b + t * c.b, 0, 1);
         this.a = MathUtils.clamp((1 - t) * this.a + t * c.a, 0, 1);
         return this;
+    }
+
+    public Colour sub(float r, float g, float b, float a) {
+        this.r = MathUtils.clamp(this.r - r, 0, 1);
+        this.g = MathUtils.clamp(this.g - g, 0, 1);
+        this.b = MathUtils.clamp(this.b - b, 0, 1);
+        this.a = MathUtils.clamp(this.a - a, 0, 1);
+        return this;
+    }
+
+    public Colour sub(float x) {
+        return sub(x, x, x, x);
+    }
+
+    public Colour add(float r, float g, float b, float a) {
+        this.r = MathUtils.clamp(this.r + r, 0, 1);
+        this.g = MathUtils.clamp(this.g + g, 0, 1);
+        this.b = MathUtils.clamp(this.b + b, 0, 1);
+        this.a = MathUtils.clamp(this.a + a, 0, 1);
+        return this;
+    }
+
+    public Colour add(float x) {
+        return add(x, x, x, x);
+    }
+
+    public Colour mul(float r, float g, float b, float a) {
+        this.r = MathUtils.clamp(this.r * r, 0, 1);
+        this.g = MathUtils.clamp(this.g * g, 0, 1);
+        this.b = MathUtils.clamp(this.b * b, 0, 1);
+        this.a = MathUtils.clamp(this.a * a, 0, 1);
+        return this;
+    }
+
+    public Colour mul(float x) {
+        return mul(x, x, x, x);
+    }
+
+    public Colour cpy() {
+        return new Colour(this);
     }
 }

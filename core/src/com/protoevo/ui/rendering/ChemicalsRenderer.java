@@ -8,21 +8,36 @@ import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.glutils.ShaderProgram;
 import com.protoevo.env.ChemicalSolution;
 import com.protoevo.env.Environment;
+import com.protoevo.utils.Colour;
 import com.protoevo.utils.DebugMode;
+
+import java.util.stream.IntStream;
 
 public class ChemicalsRenderer implements Renderer {
     private final Environment environment;
+    private final ChemicalSolution chemicalSolution;
     private final SpriteBatch chemicalBatch;
     private final ShaderProgram chemicalShader;
     private final Texture chemicalTexture;
+    private Pixmap chemicalPixmap;
     private final OrthographicCamera camera;
 
     public ChemicalsRenderer(OrthographicCamera camera, Environment environment) {
         this.environment = environment;
         this.camera = camera;
 
-        ChemicalSolution chemicalSolution = environment.getChemicalSolution();
-        chemicalTexture = new Texture(chemicalSolution.getChemicalPixmap());
+        chemicalSolution = environment.getChemicalSolution();
+        int w = chemicalSolution.getNXCells();
+        int h = chemicalSolution.getNYCells();
+
+        chemicalPixmap = new Pixmap(w, h, Pixmap.Format.RGBA8888);
+        chemicalPixmap.setBlending(Pixmap.Blending.None);
+
+        chemicalTexture = new Texture(chemicalPixmap);
+
+        chemicalSolution.setUpdateChemicalCallback((x, y, c) -> {
+            chemicalPixmap.drawPixel(x, y, c.getRGBA8888());
+        });
 
         chemicalBatch = new SpriteBatch();
         chemicalShader = new ShaderProgram(
@@ -39,7 +54,6 @@ public class ChemicalsRenderer implements Renderer {
         if (chemicalSolution == null || chemicalTexture == null)
             return;
 
-        Pixmap chemicalPixmap = chemicalSolution.getChemicalPixmap();
         chemicalTexture.draw(chemicalPixmap, 0, 0);
 
         chemicalBatch.enableBlending();

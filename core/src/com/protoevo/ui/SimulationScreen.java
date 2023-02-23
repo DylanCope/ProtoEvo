@@ -9,6 +9,7 @@ import com.badlogic.gdx.graphics.g2d.GlyphLayout;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator;
+import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.scenes.scene2d.EventListener;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.Stage;
@@ -295,17 +296,21 @@ public class SimulationScreen {
                 statGetters.put("Protozoan Stats", particle::getStats);
                 getStats = particle::getStats;
 
-                graphicsStatsYOffset = saveTrackedParticleButton.getHeight() * 1.3f;
 
                 saveTrackedParticleButton.setVisible(true);
-                saveTrackedParticleButton.setPosition(
-                        2 * textAwayFromEdge, titleY - saveTrackedParticleButton.getHeight() * 2f
-                );
+                float fieldWidthMul = 8f;
+
+                Vector2 pos = topBar.nextLeftButtonPosition();
+                saveTrackedParticleButton.setPosition(pos.x, pos.y);
+//                saveTrackedParticleButton.setPosition(
+//                        graphicsWidth - 2 * textAwayFromEdge - 1.1f * (1 + fieldWidthMul) * saveTrackedParticleButton.getWidth(),
+//                        saveTrackedParticleButton.getHeight() * 2f
+//                );
                 saveTrackedParticleTextField.setVisible(true);
                 saveTrackedParticleTextField.setBounds(
-                        2 * textAwayFromEdge + saveTrackedParticleButton.getWidth() * 1.8f,
+                        saveTrackedParticleButton.getX() + saveTrackedParticleButton.getWidth() * 1.8f,
                         saveTrackedParticleButton.getY(),
-                        8f * saveTrackedParticleButton.getWidth(),
+                        fieldWidthMul * saveTrackedParticleButton.getWidth(),
                         saveTrackedParticleButton.getHeight()
                 );
 

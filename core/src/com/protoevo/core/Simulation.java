@@ -14,6 +14,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class Simulation implements Runnable
@@ -201,15 +202,22 @@ public class Simulation implements Runnable
 		if (isPaused())
 			return;
 
-//		float delta = timeDilation * Settings.simulationUpdateDelta;
-		synchronized (environment) {
-			environment.update(delta);
+		delta *= timeDilation;
+		try {
+			synchronized (environment) {
+				environment.update(delta);
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+			System.out.println("Error occurred during simulation. Saving and exiting.");
+			save();
+			throw e;
 		}
 
 		timeSinceSave += delta;
 		if (timeSinceSave > Settings.timeBetweenSaves) {
 			timeSinceSave = 0;
-			saveTank();
+			save();
 		}
 
 		timeSinceSnapshot += delta;
@@ -227,10 +235,10 @@ public class Simulation implements Runnable
 		simulate = false;
 		System.out.println();
 		System.out.println("Closing simulation.");
-		saveTank();
+		save();
 	}
 
-	public void saveTank() {
+	public void save() {
 		String timeStamp = new SimpleDateFormat("yyyy-MM-dd-HH-mm-ss").format(new Date());
 		String fileName = "saves/" + name + "/env/" + timeStamp;
 //		FileIO.writeJson(environment, fileName);
@@ -238,24 +246,24 @@ public class Simulation implements Runnable
 	}
 
 	public void makeHistorySnapshot() {
-//		Statistics stats = environment.getStats(true);
-//
-//		if (statsNames == null) {
-//			statsNames = new ArrayList<>();
-//			for (Statistics.Stat stat : stats.getStats())
-//				statsNames.add(stat.getName());
-//
-//			String statsCsvHeader = String.join(",", statsNames);
-//			FileIO.appendLine(historyFile, statsCsvHeader);
-//		}
-//
-//		Map<String, Statistics.Stat> statMap = stats.getStatsMap();
-//
-//		String statsString = statsNames.stream()
-//				.map(k -> statMap.get(k).getValueString())
-//				.collect(Collectors.joining(","));
-//
-//		FileIO.appendLine(historyFile, statsString);
+		Statistics stats = environment.getStats(true);
+
+		if (statsNames == null) {
+			statsNames = new ArrayList<>();
+			for (Statistics.Stat stat : stats.getStats())
+				statsNames.add(stat.getName());
+
+			String statsCsvHeader = String.join(",", statsNames);
+			FileIO.appendLine(historyFile, statsCsvHeader);
+		}
+
+		Map<String, Statistics.Stat> statMap = stats.getStatsMap();
+
+		String statsString = statsNames.stream()
+				.map(k -> statMap.get(k).getValueString())
+				.collect(Collectors.joining(","));
+
+		FileIO.appendLine(historyFile, statsString);
 	}
 
 	public void toggleDebug() {

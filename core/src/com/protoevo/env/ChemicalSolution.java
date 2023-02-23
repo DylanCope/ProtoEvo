@@ -1,7 +1,5 @@
 package com.protoevo.env;
 
-import com.badlogic.gdx.graphics.Color;
-import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.math.Vector2;
 import com.fasterxml.jackson.annotation.JsonIdentityInfo;
 import com.fasterxml.jackson.annotation.ObjectIdGenerators;
@@ -10,10 +8,7 @@ import com.protoevo.biology.cells.Cell;
 import com.protoevo.biology.cells.Protozoan;
 import com.protoevo.settings.PerformanceSettings;
 import com.protoevo.settings.SimulationSettings;
-import com.protoevo.utils.DebugMode;
-import com.protoevo.utils.Geometry;
-import com.protoevo.utils.JCudaKernelRunner;
-import com.protoevo.utils.Utils;
+import com.protoevo.utils.*;
 
 import java.io.Serializable;
 import java.util.function.Consumer;
@@ -31,13 +26,16 @@ public class ChemicalSolution implements Serializable {
     private float xMin, yMin, xMax, yMax;
     private int chemicalTextureHeight;
     private int chemicalTextureWidth;
-    private transient Pixmap chemicalPixmap, swapPixmap;
     private transient boolean initialised = false;
-    private byte[] swapBuffer;
-    private transient Color[][] colors;
+    private transient byte[] byteBuffer;
+    private Colour[][] colours;
     private float timeSinceUpdate = 0;
     private transient JCudaKernelRunner diffusionKernel;
-    private Consumer<Pixmap> updateChemicalsTextureCallback;
+
+    public interface ChemicalUpdatedCallback {
+        void onChemicalUpdated(int i, int j, Colour colour);
+    }
+    private ChemicalUpdatedCallback updateChemicalCallback;
 
     public ChemicalSolution() {}
 
@@ -65,22 +63,19 @@ public class ChemicalSolution implements Serializable {
         initialise();
     }
 
+    public void setUpdateChemicalCallback(ChemicalUpdatedCallback updateChemicalCallback) {
+        this.updateChemicalCallback = updateChemicalCallback;
+    }
+
     public void initialise() {
-
         if (!initialised) {
-            chemicalPixmap = new Pixmap(chemicalTextureWidth, chemicalTextureHeight, Pixmap.Format.RGBA8888);
-            swapPixmap = new Pixmap(chemicalTextureWidth, chemicalTextureHeight, Pixmap.Format.RGBA8888);
-
-            swapBuffer = new byte[chemicalTextureWidth * chemicalTextureHeight * 4];
-
-            colors = new Color[chemicalTextureWidth][chemicalTextureHeight];
+            byteBuffer = new byte[chemicalTextureWidth * chemicalTextureHeight * 4];
+            colours = new Colour[chemicalTextureWidth][chemicalTextureHeight];
             for (int i = 0; i < chemicalTextureWidth; i++) {
                 for (int j = 0; j < chemicalTextureHeight; j++) {
-                    colors[i][j] = new Color();
+                    colours[i][j] = new Colour();
                 }
             }
-
-            chemicalPixmap.setBlending(Pixmap.Blending.None);
 
             initialised = true;
         }
@@ -127,6 +122,30 @@ public class ChemicalSolution implements Serializable {
         return (int) Utils.linearRemap(y, yMin, yMax, 0, chemicalTextureHeight);
     }
 
+    public void set(int x, int y, Colour colour) {
+        if (!inBounds(x, y))
+            return;
+        colours[x][y].set(colour);
+        if (updateChemicalCallback != null)
+            updateChemicalCallback.onChemicalUpdated(x, y, colour);
+    }
+
+    public void set(int x, int y, float r, float g, float b, float a) {
+        if (!inBounds(x, y))
+            return;
+        colours[x][y].set(r, g, b, a);
+        if (updateChemicalCallback != null)
+            updateChemicalCallback.onChemicalUpdated(x, y, colours[x][y]);
+    }
+
+    public void set(int x, int y, int rgba8888) {
+        if (!inBounds(x, y))
+            return;
+        colours[x][y].set(rgba8888);
+        if (updateChemicalCallback != null)
+            updateChemicalCallback.onChemicalUpdated(x, y, colours[x][y]);
+    }
+
     public void cellChemicalIO(float delta, Cell e) {
         float worldX = e.getPos().x;
         float worldY = -e.getPos().y;
@@ -135,12 +154,11 @@ public class ChemicalSolution implements Serializable {
             return;
 
         if (e.isEdible() && !e.isDead()) {
-            int fieldX = toChemicalGridX(worldX);
-            int fieldY = toChemicalGridY(worldY);
-            Color cellColor = e.getColor();
+            Colour cellColour = e.getColour();
             float h = e.getHealth();
-            chemicalPixmap.setColor(h * cellColor.r, h * cellColor.g, h * cellColor.b, 1);
-            chemicalPixmap.fillCircle(fieldX, fieldY, toChemicalGridXDist(e.getRadius()));
+            depositCircle(
+                    e.getPos(), e.getRadius(),
+                    h * cellColour.r, h * cellColour.g, h * cellColour.b, 1);
         }
         else if (e instanceof Protozoan) {
             protozoanIO(delta, (Protozoan) e);
@@ -166,9 +184,7 @@ public class ChemicalSolution implements Serializable {
 
                     if (fieldX >= 0 && fieldX < chemicalTextureWidth &&
                             fieldY >= 0 && fieldY < chemicalTextureHeight) {
-                        int colourRGBA8888 = chemicalPixmap.getPixel(fieldX, fieldY);
-                        Color color = colors[fieldX][fieldY];
-                        color.set(colourRGBA8888);
+                        Colour colour = colours[fieldX][fieldY];
 
                         float cellX = xMin + fieldX * cellWorldWidth;
                         float cellY = yMin + fieldY * cellWorldHeight;
@@ -182,16 +198,16 @@ public class ChemicalSolution implements Serializable {
                                 SimulationSettings.chemicalExtractionFactor * delta * overlapP;
                         if (extraction > 0) {
 
-                            if (color.g > 0.5f && color.g > 1.5f * color.r && color.g > 1.5f * color.b)
+                            if (colour.g > 0.5f && colour.g > 1.5f * colour.r && colour.g > 1.5f * colour.b)
                                 protozoan.addFood(Food.Type.Plant,
-                                        extraction * color.g * color.g * SimulationSettings.chemicalExtractionFoodConversion);
+                                        extraction * colour.g * colour.g * SimulationSettings.chemicalExtractionFoodConversion);
 
-                            if (color.r > 0.5f && color.r > 1.5f * color.g && color.r > 1.5f * color.b)
+                            if (colour.r > 0.5f && colour.r > 1.5f * colour.g && colour.r > 1.5f * colour.b)
                                 protozoan.addFood(Food.Type.Meat,
-                                        extraction * color.r * color.r * SimulationSettings.chemicalExtractionFoodConversion);
+                                        extraction * colour.r * colour.r * SimulationSettings.chemicalExtractionFoodConversion);
 
-                            color.sub(extraction, extraction, extraction, extraction);
-                            chemicalPixmap.drawPixel(fieldX, fieldY, Color.rgba8888(color));
+                            colour.sub(extraction);
+                            set(fieldX, fieldY, colour);
                         }
                     }
                 }
@@ -204,25 +220,45 @@ public class ChemicalSolution implements Serializable {
                 .forEach(e -> cellChemicalIO(delta, e));
     }
 
-    private void cudaDiffuse() {
+    private void loadIntoByteBuffer() {
         IntStream.range(0, chemicalTextureWidth * chemicalTextureHeight).parallel()
                 .forEach(i -> {
                     int x = i % chemicalTextureWidth;
                     int y = i / chemicalTextureWidth;
-                    int colourRGBA8888 = chemicalPixmap.getPixel(x, y);
+                    int colourRGBA8888 = colours[x][y].getRGBA8888();
 
-                    swapBuffer[4*i] = (byte) ((colourRGBA8888 & 0xff000000) >>> 24);
-                    swapBuffer[4*i + 1] = (byte) ((colourRGBA8888 & 0x00ff0000) >>> 16);
-                    swapBuffer[4*i + 2] = (byte) ((colourRGBA8888 & 0x0000ff00) >>> 8);
-                    swapBuffer[4*i + 3] = (byte) ((colourRGBA8888 & 0x000000ff));
+                    byteBuffer[4*i] = (byte) ((colourRGBA8888 & 0xff000000) >>> 24);
+                    byteBuffer[4*i + 1] = (byte) ((colourRGBA8888 & 0x00ff0000) >>> 16);
+                    byteBuffer[4*i + 2] = (byte) ((colourRGBA8888 & 0x0000ff00) >>> 8);
+                    byteBuffer[4*i + 3] = (byte) ((colourRGBA8888 & 0x000000ff));
                 });
+    }
+
+    private void unloadFromByteBuffer() {
+        IntStream.range(0, chemicalTextureWidth * chemicalTextureHeight).parallel()
+                .forEach(i -> {
+                    int x = i % chemicalTextureWidth;
+                    int y = i / chemicalTextureWidth;
+                    int r = byteBuffer[4*i] & 0xFF;
+                    int g = byteBuffer[4*i + 1] & 0xFF;
+                    int b = byteBuffer[4*i + 2] & 0xFF;
+                    int a = byteBuffer[4*i + 3] & 0xFF;
+                    int colour = (r << 24) | (g << 16) | (b << 8) | a;
+
+                    set(x, y, colour);
+                });
+    }
+
+    private void cudaDiffuse() {
+
+        loadIntoByteBuffer();
 
         try {
             if (diffusionKernel == null)
                 initialise();
 
             diffusionKernel.processImage(
-                    swapBuffer, chemicalTextureWidth, chemicalTextureHeight);
+                    byteBuffer, chemicalTextureWidth, chemicalTextureHeight);
         }
         catch (Exception e) {
             if (e.getMessage().contains("CUDA_ERROR_INVALID_CONTEXT") ||
@@ -235,102 +271,91 @@ public class ChemicalSolution implements Serializable {
             }
         }
 
-        IntStream.range(0, chemicalTextureWidth * chemicalTextureHeight).parallel()
-                .forEach(i -> {
-                    int x = i % chemicalTextureWidth;
-                    int y = i / chemicalTextureWidth;
-                    int r = swapBuffer[4*i] & 0xFF;
-                    int g = swapBuffer[4*i + 1] & 0xFF;
-                    int b = swapBuffer[4*i + 2] & 0xFF;
-                    int a = swapBuffer[4*i + 3] & 0xFF;
-                    int colour = (r << 24) | (g << 16) | (b << 8) | a;
-
-                    chemicalPixmap.drawPixel(x, y, colour);
-                });
+        unloadFromByteBuffer();
     }
 
     public void cpuDiffuse() {
-        IntStream.range(0, chemicalTextureWidth * chemicalTextureHeight).parallel()
-                .forEach(idx -> {
-                    int x = idx % chemicalTextureWidth;
-                    int y = idx / chemicalTextureWidth;
-
-                    // See voidStartDistance in SimulationSettings
-                    float world_radius = 30.0f;
-
-                    int width = this.chemicalTextureWidth;
-                    int height = this.chemicalTextureHeight;
-                    float cellSizeX = 2 * world_radius / ((float) width);
-                    float cellSizeY = 2 * world_radius / ((float) height);
-                    float world_x = -world_radius + cellSizeX * x;
-                    float world_y = -world_radius + cellSizeY * y;
-                    float dist2_to_world_centre = world_x*world_x + world_y*world_y;
-
-                    // set alpha decay to zero as we approach the void
-                    float decay = 0.0f;
-
-                    float void_p = 0.9f;
-                    if (dist2_to_world_centre > void_p * void_p * world_radius * world_radius) {
-                        float dist_to_world_centre = (float) Math.sqrt(dist2_to_world_centre);
-                        // lerp from 1.0 to 0.0 for distance between void_p*world_radius and world_radius
-                        decay = 0.9995f * (1.0f - (dist_to_world_centre - void_p * world_radius) / ((1.0f - void_p) * world_radius));
-                        if (decay < 0.0) {
-                            decay = 0.0f;
-                        }
-                    } else {
-                        decay = 0.9995f;
-                    }
-                    int channels = 4;
-                    int FILTER_SIZE = 3;
-                    int alpha_channel = channels - 1;
-                    float final_alpha = 0.0f;
-                    int radius = (FILTER_SIZE - 1) / 2;
-
-                    Color color = new Color(), tmpColour = new Color();
-                    for (int i = -radius; i <= radius; i++) {
-                        for (int j = -radius; j <= radius; j++) {
-                            int x_ = x + i, y_ = y + j;
-                            if (x_ < 0 || x_ >= width || y_ < 0 || y_ >= height) {
-                                continue;
-                            }
-                            Color.rgba8888ToColor(color, chemicalPixmap.getPixel(x_, y_));
-                            final_alpha += color.a;
-                        }
-                    }
-                    final_alpha = decay * final_alpha / ((float) (FILTER_SIZE*FILTER_SIZE));
-                    color.a = final_alpha;
-
-                    if (final_alpha < 5.0 / 255.0) {
-                        chemicalPixmap.setColor(0);
-                        return;
-                    }
-
-                    float[] tmp = new float[channels - 1];
-                    for (int i = -radius; i <= radius; i++) {
-                        for (int j = -radius; j <= radius; j++) {
-                            int x_ = x + i, y_ = y + j;
-                            if (x_ < 0 || x_ >= width || y_ < 0 || y_ >= height) {
-                                continue;
-                            }
-                            Color.rgba8888ToColor(tmpColour, chemicalPixmap.getPixel(x_, y_));
-                            tmp[0] += decay * tmpColour.r * tmpColour.a;
-                            tmp[1] += decay * tmpColour.g * tmpColour.a;
-                            tmp[2] += decay * tmpColour.b * tmpColour.a;
-                        }
-                        tmp[0] = tmp[0] / ((float) (FILTER_SIZE*FILTER_SIZE)) * decay / final_alpha;
-                        tmp[1] = tmp[1] / ((float) (FILTER_SIZE*FILTER_SIZE)) * decay / final_alpha;
-                        tmp[2] = tmp[2] / ((float) (FILTER_SIZE*FILTER_SIZE)) * decay / final_alpha;
-                    }
-                    color.r = tmp[0];
-                    color.g = tmp[1];
-                    color.b = tmp[2];
-
-                    swapPixmap.drawPixel(x, y, Color.rgba8888(color));
-                });
-
-        Pixmap tmp = chemicalPixmap;
-        chemicalPixmap = swapPixmap;
-        swapPixmap = tmp;
+//        IntStream.range(0, chemicalTextureWidth * chemicalTextureHeight).parallel()
+//                .forEach(idx -> {
+//                    int x = idx % chemicalTextureWidth;
+//                    int y = idx / chemicalTextureWidth;
+//
+//                    // See voidStartDistance in SimulationSettings
+//                    float world_radius = 30.0f;
+//
+//                    int width = this.chemicalTextureWidth;
+//                    int height = this.chemicalTextureHeight;
+//                    float cellSizeX = 2 * world_radius / ((float) width);
+//                    float cellSizeY = 2 * world_radius / ((float) height);
+//                    float world_x = -world_radius + cellSizeX * x;
+//                    float world_y = -world_radius + cellSizeY * y;
+//                    float dist2_to_world_centre = world_x*world_x + world_y*world_y;
+//
+//                    // set alpha decay to zero as we approach the void
+//                    float decay = 0.0f;
+//
+//                    float void_p = 0.9f;
+//                    if (dist2_to_world_centre > void_p * void_p * world_radius * world_radius) {
+//                        float dist_to_world_centre = (float) Math.sqrt(dist2_to_world_centre);
+//                        // lerp from 1.0 to 0.0 for distance between void_p*world_radius and world_radius
+//                        decay = 0.9995f * (1.0f - (dist_to_world_centre - void_p * world_radius) / ((1.0f - void_p) * world_radius));
+//                        if (decay < 0.0) {
+//                            decay = 0.0f;
+//                        }
+//                    } else {
+//                        decay = 0.9995f;
+//                    }
+//                    int channels = 4;
+//                    int FILTER_SIZE = 3;
+//                    int alpha_channel = channels - 1;
+//                    float final_alpha = 0.0f;
+//                    int radius = (FILTER_SIZE - 1) / 2;
+//
+//                    Color color = new Color(), tmpColour = new Color();
+//                    for (int i = -radius; i <= radius; i++) {
+//                        for (int j = -radius; j <= radius; j++) {
+//                            int x_ = x + i, y_ = y + j;
+//                            if (x_ < 0 || x_ >= width || y_ < 0 || y_ >= height) {
+//                                continue;
+//                            }
+//                            Color.rgba8888ToColor(color, chemicalPixmap.getPixel(x_, y_));
+//                            final_alpha += color.a;
+//                        }
+//                    }
+//                    final_alpha = decay * final_alpha / ((float) (FILTER_SIZE*FILTER_SIZE));
+//                    color.a = final_alpha;
+//
+//                    if (final_alpha < 5.0 / 255.0) {
+//                        chemicalPixmap.setColor(0);
+//                        return;
+//                    }
+//
+//                    float[] tmp = new float[channels - 1];
+//                    for (int i = -radius; i <= radius; i++) {
+//                        for (int j = -radius; j <= radius; j++) {
+//                            int x_ = x + i, y_ = y + j;
+//                            if (x_ < 0 || x_ >= width || y_ < 0 || y_ >= height) {
+//                                continue;
+//                            }
+//                            Color.rgba8888ToColor(tmpColour, chemicalPixmap.getPixel(x_, y_));
+//                            tmp[0] += decay * tmpColour.r * tmpColour.a;
+//                            tmp[1] += decay * tmpColour.g * tmpColour.a;
+//                            tmp[2] += decay * tmpColour.b * tmpColour.a;
+//                        }
+//                        tmp[0] = tmp[0] / ((float) (FILTER_SIZE*FILTER_SIZE)) * decay / final_alpha;
+//                        tmp[1] = tmp[1] / ((float) (FILTER_SIZE*FILTER_SIZE)) * decay / final_alpha;
+//                        tmp[2] = tmp[2] / ((float) (FILTER_SIZE*FILTER_SIZE)) * decay / final_alpha;
+//                    }
+//                    color.r = tmp[0];
+//                    color.g = tmp[1];
+//                    color.b = tmp[2];
+//
+//                    swapPixmap.drawPixel(x, y, Color.rgba8888(color));
+//                });
+//
+//        Pixmap tmp = chemicalPixmap;
+//        chemicalPixmap = swapPixmap;
+//        swapPixmap = tmp;
     }
 
     public void diffuse() {
@@ -349,25 +374,23 @@ public class ChemicalSolution implements Serializable {
         if (timeSinceUpdate > SimulationSettings.chemicalDiffusionInterval) {
             diffuse();
             timeSinceUpdate = 0;
-            if (updateChemicalsTextureCallback != null)
-                updateChemicalsTextureCallback.accept(chemicalPixmap);
         }
         deposit(delta);
     }
 
-    public Pixmap getChemicalPixmap() {
+    public Colour[][] getImage() {
         if (!initialised) {
             initialise();
         }
 
-        return chemicalPixmap;
+        return colours;
     }
 
-    public int getNYChunks() {
+    public int getNYCells() {
         return chemicalTextureHeight;
     }
 
-    public int getNXChunks() {
+    public int getNXCells() {
         return chemicalTextureWidth;
     }
 
@@ -380,11 +403,9 @@ public class ChemicalSolution implements Serializable {
     public float getGreenDensity(int i, int j) {
         if (i < 0 || i >= chemicalTextureWidth || j < 0 || j >= chemicalTextureHeight)
             return 0;
-
-        int chemicalColour = chemicalPixmap.getPixel(i, j);
-        Color tmpColour = colors[i][j];
-        Color.rgba8888ToColor(tmpColour, chemicalColour);
-        return tmpColour.g * tmpColour.a;
+;
+        Colour c = colours[i][j];
+        return c.g * c.a;
     }
 
     public float getMinX() {
@@ -403,19 +424,35 @@ public class ChemicalSolution implements Serializable {
         return yMax;
     }
 
-    public void depositCircle(Vector2 pos, float r, Color c) {
-        int i = toChemicalGridX(pos.x);
-        int j = toChemicalGridY(-pos.y);
+    public void depositCircle(Vector2 pos, float r, Colour c) {
+        int x = toChemicalGridX(pos.x);
+        int y = toChemicalGridY(-pos.y);
         int rc = toChemicalGridXDist(r);
-        chemicalPixmap.setColor(c);
-        chemicalPixmap.fillCircle(i, j, rc);
+        for (int i = -rc; i <= rc; i++) {
+            for (int j = -rc; j <= rc; j++) {
+                if (i*i + j*j > rc*rc)
+                    continue;
+                int x_ = x + i, y_ = y + j;
+                set(x_, y_, c);
+            }
+        }
+    }
+
+    public void depositCircle(Vector2 pos, float rad, float r, float g, float b, float a) {
+        int x = toChemicalGridX(pos.x);
+        int y = toChemicalGridY(-pos.y);
+        int rc = toChemicalGridXDist(rad);
+        for (int i = -rc; i <= rc; i++) {
+            for (int j = -rc; j <= rc; j++) {
+                if (i*i + j*j > rc*rc)
+                    continue;
+                int x_ = x + i, y_ = y + j;
+                set(x_, y_, r, g, b, a);
+            }
+        }
     }
 
     public float getCellSize() {
         return cellSizeX;
-    }
-
-    public void setUpdateCallback(Consumer<Pixmap> updateChemicalsTextureCallback) {
-        this.updateChemicalsTextureCallback = updateChemicalsTextureCallback;
     }
 }

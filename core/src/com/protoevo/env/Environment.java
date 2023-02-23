@@ -19,6 +19,7 @@ import com.protoevo.core.Shape;
 import com.protoevo.settings.WorldGenerationSettings;
 import com.protoevo.settings.Settings;
 import com.protoevo.settings.SimulationSettings;
+import com.protoevo.utils.Colour;
 import com.protoevo.utils.FileIO;
 import com.protoevo.utils.Geometry;
 
@@ -402,17 +403,20 @@ public class Environment implements Serializable
 		e.dispose();
 	}
 
+	private final Colour meatColourDeposit = new Colour(Color.FIREBRICK);
+	private final Colour plantColourDeposit = new Colour(Color.FOREST);
+
 	public void depositOnDeath(Cell cell) {
 		if (Settings.enableChemicalField) {
 			if (!cell.isEngulfed() && !cell.hasChildren()) {
 				if (cell instanceof Protozoan || cell instanceof MeatCell)
 					chemicalSolution.depositCircle(
 							cell.getPos(), cell.getRadius() * 1.5f,
-							Color.FIREBRICK.cpy().mul(0.25f + 0.75f * cell.getHealth()));
+							meatColourDeposit.cpy().mul(0.25f + 0.75f * cell.getHealth()));
 				else if (cell instanceof PlantCell)
 					chemicalSolution.depositCircle(cell.getPos(),
 							cell.getRadius() * 1.5f,
-							Color.FOREST.cpy().mul(0.25f + 0.75f * cell.getHealth()));
+							plantColourDeposit.cpy().mul(0.25f + 0.75f * cell.getHealth()));
 			}
 		}
 	}
