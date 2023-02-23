@@ -7,14 +7,14 @@ import com.protoevo.core.Statistics;
 import com.protoevo.settings.SimulationSettings;
 import com.protoevo.utils.Geometry;
 
-import java.io.Serial;
+
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 
 public abstract class NodeAttachment implements Serializable, Constructable {
 
-    @Serial
+    
     private static final long serialVersionUID = 1L;
 
     public static Class<NodeAttachment>[] possibleAttachments = new Class[]{

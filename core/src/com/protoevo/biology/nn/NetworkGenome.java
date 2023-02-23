@@ -1,5 +1,6 @@
 package com.protoevo.biology.nn;
 
+import com.badlogic.gdx.math.MathUtils;
 import com.google.common.collect.Iterators;
 import com.protoevo.core.Simulation;
 import com.protoevo.settings.SimulationSettings;
@@ -157,7 +158,7 @@ public class NetworkGenome implements Serializable
 	}
 
 	public SynapseGene addSynapse(NeuronGene in, NeuronGene out) {
-		return addSynapse(in, out, Simulation.RANDOM.nextFloat(-1, 1));
+		return addSynapse(in, out, MathUtils.random(-1, 1));
 	}
 
 	private void createHiddenBetween(SynapseGene g) {
@@ -255,7 +256,7 @@ public class NetworkGenome implements Serializable
 			return;
 
 		if (Math.random() < sensorGene.getMutationRate()) {
-			int otherIdx = random.nextInt(hiddenNeuronGenes.length + outputNeuronGenes.length);
+			int otherIdx = MathUtils.random(hiddenNeuronGenes.length + outputNeuronGenes.length - 1);
 			if (otherIdx < outputNeuronGenes.length)
 				mutateConnection(sensorGene, outputNeuronGenes[otherIdx]);
 			else
@@ -275,7 +276,7 @@ public class NetworkGenome implements Serializable
 			return;
 
 		if (Math.random() < outputGene.getMutationRate()) {
-			int otherIdx = random.nextInt(hiddenNeuronGenes.length + sensorNeuronGenes.length);
+			int otherIdx = MathUtils.random(hiddenNeuronGenes.length + sensorNeuronGenes.length - 1);
 			if (otherIdx < sensorNeuronGenes.length)
 				mutateConnection(sensorNeuronGenes[otherIdx], outputGene);
 			else
@@ -295,9 +296,9 @@ public class NetworkGenome implements Serializable
 		if (Math.random() < hiddenGene.getMutationRate()
 				&& hiddenNeuronGenes.length + outputNeuronGenes.length > 0) {
 			// random connection mutation involving this neuron
-			int otherIdx = random.nextInt(
+			int otherIdx = MathUtils.random(
 					hiddenNeuronGenes.length +
-					outputNeuronGenes.length);
+					outputNeuronGenes.length - 1);
 			if (otherIdx < hiddenNeuronGenes.length)
 				mutateConnection(hiddenGene, hiddenNeuronGenes[otherIdx]);
 			else
@@ -362,7 +363,7 @@ public class NetworkGenome implements Serializable
 				g = Simulation.RANDOM.nextBoolean() ?
 						myConnections.get(innovation) :
 						theirConnections.get(innovation);
-				if (g.isDisabled() && Simulation.RANDOM.nextFloat() < SimulationSettings.globalMutationChance)
+				if (g.isDisabled() && MathUtils.random() < SimulationSettings.globalMutationChance)
 					g.setDisabled(false);
 				childSynapses.add(g);
 				continue;

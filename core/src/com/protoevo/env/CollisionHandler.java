@@ -2,7 +2,6 @@ package com.protoevo.env;
 
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.*;
-import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.protoevo.core.Particle;
 
 import java.io.Serializable;
@@ -10,14 +9,13 @@ import java.io.Serializable;
 public class CollisionHandler implements ContactListener, Serializable {
     public static long serialVersionUID = 1L;
 
-    public static class FixtureCollision {
-
-
-        @JsonBackReference
+    public static class Collision implements Serializable {
+        public static long serialVersionUID = 1L;
+        
         public Object objA, objB;
         public Vector2 point;
 
-        public FixtureCollision(Object objA, Object objB, Vector2 point) {
+        public Collision(Object objA, Object objB, Vector2 point) {
             this.objA = objA;
             this.objB = objB;
             this.point = point;
@@ -60,7 +58,7 @@ public class CollisionHandler implements ContactListener, Serializable {
     }
 
     private void onContact(Contact contact, Particle particle, Body body) {
-        FixtureCollision collision = new FixtureCollision(
+        Collision collision = new Collision(
                 particle,
                 body.getUserData(),
                 contact.getWorldManifold().getPoints()[0]);

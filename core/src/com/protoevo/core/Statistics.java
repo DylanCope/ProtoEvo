@@ -1,12 +1,12 @@
 package com.protoevo.core;
 
-import java.io.Serial;
+
 import java.io.Serializable;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class Statistics implements Serializable, Iterable<Statistics.Stat> {
-    @Serial
+    
     private static final long serialVersionUID = 1L;
 
     public enum StatType {
@@ -90,7 +90,7 @@ public class Statistics implements Serializable, Iterable<Statistics.Stat> {
 
     public static class ComplexUnit implements Serializable {
 
-        @Serial
+        
         private static final long serialVersionUID = 1L;
 
         public static final ComplexUnit COUNT = new ComplexUnit(BaseUnit.COUNT);
@@ -217,7 +217,7 @@ public class Statistics implements Serializable, Iterable<Statistics.Stat> {
     }
 
     public static class Stat implements Serializable {
-        @Serial
+        
         private static final long serialVersionUID = 1L;
 
         private final String name;

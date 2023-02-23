@@ -6,14 +6,14 @@ import com.protoevo.biology.cells.Cell;
 import com.protoevo.biology.evolution.Evolvable;
 import com.protoevo.biology.evolution.EvolvableFloat;
 import com.protoevo.biology.evolution.GeneExpressionFunction;
-import com.protoevo.biology.evolution.RegulatedFloat;
 import com.protoevo.core.Statistics;
+import com.protoevo.env.Environment;
 
 @JsonIdentityInfo(
-        generator = ObjectIdGenerators.PropertyGenerator.class,
-        property = "id")
+        generator = ObjectIdGenerators.IntSequenceGenerator.class,
+        scope = Environment.class)
 public class Organelle implements Evolvable.Element {
-    public int id;
+
 
     private GeneExpressionFunction geneExpressionFunction;
     private int index;

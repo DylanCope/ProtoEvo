@@ -8,12 +8,12 @@ import com.protoevo.settings.ProtozoaSettings;
 import com.protoevo.settings.SimulationSettings;
 import com.protoevo.utils.Utils;
 
-import java.io.Serial;
+
 import java.io.Serializable;
 
 public class Flagellum extends NodeAttachment implements Serializable {
 
-    @Serial
+    
     private static final long serialVersionUID = 1L;
 
     private final Vector2 thrustVector = new Vector2(), lastCellPos = new Vector2();

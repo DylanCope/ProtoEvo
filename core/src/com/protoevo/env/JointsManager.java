@@ -1,34 +1,41 @@
 package com.protoevo.env;
 
 import com.badlogic.gdx.math.Vector2;
-import com.badlogic.gdx.physics.box2d.*;
+import com.badlogic.gdx.physics.box2d.Body;
+import com.badlogic.gdx.physics.box2d.Joint;
+import com.badlogic.gdx.physics.box2d.JointDef;
+import com.badlogic.gdx.physics.box2d.JointEdge;
 import com.badlogic.gdx.physics.box2d.joints.RopeJoint;
 import com.badlogic.gdx.physics.box2d.joints.RopeJointDef;
 import com.badlogic.gdx.utils.Array;
-import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonIdentityInfo;
 import com.fasterxml.jackson.annotation.ObjectIdGenerators;
 import com.protoevo.biology.cells.Cell;
 import com.protoevo.core.Particle;
 
 import java.io.Serializable;
-import java.util.*;
+import java.util.Collection;
+import java.util.HashSet;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
+@JsonIdentityInfo(
+        generator = ObjectIdGenerators.IntSequenceGenerator.class,
+        scope = Environment.class)
 public class JointsManager implements Serializable {
     public static long serialVersionUID = 1L;
 
     @JsonIdentityInfo(
-            generator = ObjectIdGenerators.PropertyGenerator.class,
-            property = "id")
+            generator = ObjectIdGenerators.IntSequenceGenerator.class,
+            scope = Environment.class)
     public static class Joining implements Serializable {
         public static long serialVersionUID = 1L;
-        public int id;
 
         public Particle particleA, particleB;
         public float anchorAngleA, anchorAngleB;
         public boolean anchoredA, anchoredB;
-        private final Vector2 anchorA = new Vector2(), anchorB = new Vector2();
+        private Vector2 anchorA = new Vector2(), anchorB = new Vector2();
+
+        public Joining() {}
 
         public Joining(Particle particleA, Particle particleB) {
             this.particleA = particleA;
@@ -129,11 +136,12 @@ public class JointsManager implements Serializable {
         }
     }
 
-    @JsonBackReference
-    private final Environment environment;
+    private Environment environment;
     private final Collection<Joining> jointsToAdd = new ConcurrentLinkedQueue<>();
     private final Collection<Joining> jointRemovalRequests = new ConcurrentLinkedQueue<>();
     private final Collection<Joining> particleBindings = new HashSet<>();
+
+    public JointsManager() {}
 
     public JointsManager(Environment environment) {
         this.environment = environment;
@@ -141,6 +149,11 @@ public class JointsManager implements Serializable {
 
     public Collection<Joining> getParticleBindings() {
         return particleBindings;
+    }
+
+    public void rebuild() {
+        jointsToAdd.addAll(particleBindings);
+        flushJoints();
     }
 
     private boolean jointDefIsStale(JointDef jointDef) {

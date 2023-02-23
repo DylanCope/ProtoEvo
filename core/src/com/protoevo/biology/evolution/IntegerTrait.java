@@ -1,18 +1,20 @@
 package com.protoevo.biology.evolution;
 
+import com.badlogic.gdx.math.MathUtils;
 import com.fasterxml.jackson.annotation.JsonIdentityInfo;
 import com.fasterxml.jackson.annotation.ObjectIdGenerators;
 import com.protoevo.core.Simulation;
+import com.protoevo.env.Environment;
 
 import java.util.Map;
 
 @JsonIdentityInfo(
-        generator = ObjectIdGenerators.PropertyGenerator.class,
-        property = "id")
+        generator = ObjectIdGenerators.IntSequenceGenerator.class,
+        scope = Environment.class)
 public class IntegerTrait implements Trait<Integer> {
 
     public static final long serialVersionUID = 1L;
-    public int id;
+
 
     private final boolean canDisable;
     private boolean disabled;
@@ -88,7 +90,7 @@ public class IntegerTrait implements Trait<Integer> {
             minNewValue = minValue;
             maxNewValue = maxValue;
         }
-        return Simulation.RANDOM.nextInt(maxNewValue - minNewValue) + minNewValue;
+        return MathUtils.random(maxNewValue - minNewValue - 1) + minNewValue;
     }
 
     public EvolvableInteger.MutationMethod getMutationMethod() {

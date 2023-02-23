@@ -10,6 +10,8 @@ import com.badlogic.gdx.graphics.glutils.ShaderProgram;
 import com.protoevo.ui.FrameBufferManager;
 import com.protoevo.ui.rendering.Renderer;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 public class ShaderLayers implements Renderer {
@@ -23,7 +25,8 @@ public class ShaderLayers implements Renderer {
 
     public ShaderLayers(Renderer baseLayer, ShaderLayer... shaderLayers) {
         this.baseRenderer = baseLayer;
-        layers = List.of(shaderLayers);
+        layers = Arrays.asList(shaderLayers);
+
         if (!layers.isEmpty()) {
             camera = layers.get(0).getCamera();
             fbo = new FrameBuffer(Pixmap.Format.RGBA8888,

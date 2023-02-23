@@ -9,9 +9,9 @@ import com.protoevo.biology.ConstructionProject;
 import com.protoevo.biology.MoleculeFunctionalContext;
 import com.protoevo.biology.evolution.*;
 import com.protoevo.core.Statistics;
+import com.protoevo.env.Environment;
 import com.protoevo.settings.SimulationSettings;
 
-import java.io.Serial;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -19,12 +19,12 @@ import java.util.HashMap;
 import java.util.Map;
 
 @JsonIdentityInfo(
-        generator = ObjectIdGenerators.PropertyGenerator.class,
-        property = "id")
+        generator = ObjectIdGenerators.IntSequenceGenerator.class,
+        scope = Environment.class)
 public class SurfaceNode implements Evolvable.Element, Serializable {
-    public int id;
 
-    @Serial
+
+    
     private static final long serialVersionUID = 1L;
 
     public static final String activationPrefix = "Activation/";
@@ -297,13 +297,13 @@ public class SurfaceNode implements Evolvable.Element, Serializable {
             stats.putTime("Required Time", attachment.getTimeToComplete());
             for (ComplexMolecule molecule : attachment.getRequiredComplexMolecules().keySet()) {
                 stats.putMass(
-                        "Required Molecule %.2f".formatted(molecule.getSignature()),
+                        String.format("Required Molecule %.2f", molecule.getSignature()),
                         attachment.getConstructionProject().getRequiredComplexMoleculeAmount(molecule));
             }
 
             for (ComplexMolecule molecule : cell.getComplexMolecules())
                 if (cell.getComplexMoleculeAvailable(molecule) > 0)
-                    stats.putMass("Molecule %.2f Available".formatted(molecule.getSignature()),
+                    stats.putMass(String.format("Molecule %.2f Available", molecule.getSignature()),
                             cell.getComplexMoleculeAvailable(molecule));
 
             Statistics attachmentStats = attachment.getStats();

@@ -226,7 +226,8 @@ public class SimulationScreen {
         for (Statistics.Stat entityStat : debugStats) {
             String valueStr = entityStat.getValueString();
             StringBuilder text = new StringBuilder(entityStat.getName() + ": ");
-            text.append(" ".repeat(Math.max(0, maxLength - valueStr.length())));
+            for (int i = 0; i < Math.max(0, maxLength - valueStr.length()); i++)
+                text.append(" ");
             text.append(valueStr);
             layout.setText(debugFont, text.toString());
             float x = graphicsWidth - layout.width - textAwayFromEdge;
@@ -332,8 +333,11 @@ public class SimulationScreen {
     public void loadingString(String text) {
         uiBatch.begin();
         float x = 4 * topBar.getPadding() + topBar.getHeight();
-        String textWithDots = text + ".".repeat(Math.max(0, (int) (elapsedTime * 2) % 4));
-        font.draw(uiBatch, textWithDots, x, x);
+        StringBuilder textWithDots = new StringBuilder(text);
+        for (int i = 0; i < Math.max(0, (int) (elapsedTime * 2) % 4); i++)
+            textWithDots.append(".");
+
+        font.draw(uiBatch, textWithDots.toString(), x, x);
         uiBatch.end();
     }
 

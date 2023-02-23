@@ -1,8 +1,10 @@
 package com.protoevo.biology.evolution;
 
+import com.badlogic.gdx.math.MathUtils;
 import com.fasterxml.jackson.annotation.JsonIdentityInfo;
 import com.fasterxml.jackson.annotation.ObjectIdGenerators;
 import com.protoevo.core.Simulation;
+import com.protoevo.env.Environment;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -10,10 +12,10 @@ import java.util.Map;
 
 
 @JsonIdentityInfo(
-        generator = ObjectIdGenerators.PropertyGenerator.class,
-        property = "id")
+        generator = ObjectIdGenerators.IntSequenceGenerator.class,
+        scope = Environment.class)
 public class CollectionTrait implements Trait<List<Evolvable>> {
-    public int id;
+
 
     private final String name;
     private final List<Evolvable> collection;
@@ -95,7 +97,7 @@ public class CollectionTrait implements Trait<List<Evolvable>> {
 
         List<Evolvable> newCollection = new ArrayList<>();
 
-        int removeIdx = removeRandom ? Simulation.RANDOM.nextInt(collection.size()) : -1;
+        int removeIdx = removeRandom ? MathUtils.random(collection.size() - 1) : -1;
         for (int i = 0; i < collection.size(); i++) {
             if (i == removeIdx && removeRandom) {
                 continue;

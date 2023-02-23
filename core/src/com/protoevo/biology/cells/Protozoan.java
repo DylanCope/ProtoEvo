@@ -6,21 +6,20 @@ import com.protoevo.biology.evolution.*;
 import com.protoevo.biology.nn.NeuralNetwork;
 import com.protoevo.biology.nodes.*;
 import com.protoevo.biology.organelles.Organelle;
-import com.protoevo.core.Simulation;
 import com.protoevo.core.Statistics;
 import com.protoevo.settings.ProtozoaSettings;
 import com.protoevo.settings.Settings;
 import com.protoevo.settings.SimulationSettings;
 import com.protoevo.utils.Colour;
 
-import java.io.Serial;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
 public class Protozoan extends Cell implements Evolvable
 {
-	@Serial
+	
 	private static final long serialVersionUID = 2314292760446370751L;
 
 	private GeneExpressionFunction geneExpressionFunction;
@@ -53,7 +52,7 @@ public class Protozoan extends Cell implements Evolvable
 		age(delta);
 		surfaceNodes.forEach(n -> n.update(delta));
 
-		engulfedCells.forEach(c -> eat((EdibleCell) c, delta));
+		engulfedCells.forEach(c -> eat(c, delta));
 		engulfedCells.removeIf(c -> c.getHealth() < 0.1f);
 
 		if (shouldSplit() && hasNotBurst()) {
@@ -208,7 +207,7 @@ public class Protozoan extends Cell implements Evolvable
 		super.kill(causeOfDeath);
 	}
 
-	private void handleEngulfing(EdibleCell e, float delta) {
+	private void handleEngulfing(Cell e, float delta) {
 		// Move engulfed cell towards the centre of this cell
 		Vector2 vel = tmp.set(getPos()).sub(e.getPos());
 		float d2 = vel.len2();
@@ -243,7 +242,7 @@ public class Protozoan extends Cell implements Evolvable
 	}
 
 	@Override
-	public void eat(EdibleCell e, float delta)
+	public void eat(Cell e, float delta)
 	{
 		handleEngulfing(e, delta);
 

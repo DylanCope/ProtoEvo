@@ -1,17 +1,19 @@
 package com.protoevo.biology.evolution;
 
+import com.badlogic.gdx.math.MathUtils;
 import com.fasterxml.jackson.annotation.JsonIdentityInfo;
 import com.fasterxml.jackson.annotation.ObjectIdGenerators;
 import com.protoevo.core.Simulation;
+import com.protoevo.env.Environment;
 
 import java.io.Serializable;
 import java.util.Map;
 
 @JsonIdentityInfo(
-        generator = ObjectIdGenerators.PropertyGenerator.class,
-        property = "id")
+        generator = ObjectIdGenerators.IntSequenceGenerator.class,
+        scope = Environment.class)
 public class FloatTrait implements Trait<Float>, Serializable {
-    public int id;
+
 
     public static final long serialVersionUID = 1L;
 
@@ -59,7 +61,7 @@ public class FloatTrait implements Trait<Float>, Serializable {
 
     @Override
     public Float newRandomValue() {
-        return Simulation.RANDOM.nextFloat(minValue, maxValue);
+        return MathUtils.random(minValue, maxValue);
     }
 
     @Override

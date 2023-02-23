@@ -9,16 +9,16 @@ import com.protoevo.settings.SimulationSettings;
 import com.protoevo.utils.Colour;
 import com.protoevo.utils.Utils;
 
-import java.io.Serial;
+
 import java.io.Serializable;
 
 public class Photoreceptor extends NodeAttachment implements Serializable {
 
-    @Serial
+    
     private static final long serialVersionUID = 1L;
     private final Vector2[] ray = new Vector2[]{new Vector2(), new Vector2()};
-    private final Shape.Collision[] collisions =
-            new Shape.Collision[]{new Shape.Collision(), new Shape.Collision()};
+    private final Shape.Intersection[] intersections =
+            new Shape.Intersection[]{new Shape.Intersection(), new Shape.Intersection()};
     private final Vector2 tmp = new Vector2(), tmp2 = new Vector2();
     private final Vector2 attachmentRelPos = new Vector2();
     private float interactionRange = 0;
@@ -72,7 +72,7 @@ public class Photoreceptor extends NodeAttachment implements Serializable {
             Cell cell = node.getCell();
             for (Object o : cell.getInteractionQueue())
                 if (o instanceof Shape)
-                    handleCollidable((Shape) o);
+                    computeIntersections((Shape) o);
         }
 
         colour.set(r / (nRays + 1), g / (nRays + 1), b / (nRays + 1), 1);
@@ -90,17 +90,17 @@ public class Photoreceptor extends NodeAttachment implements Serializable {
 		return false;
 	}
 
-    public Shape.Collision[] handleCollidable(Shape o) {
-        collisions[0].didCollide = false;
-        collisions[1].didCollide = false;
-        boolean anyCollision = o.rayCollisions(ray, collisions);
+    public Shape.Intersection[] computeIntersections(Shape o) {
+        intersections[0].didCollide = false;
+        intersections[1].didCollide = false;
+        boolean anyCollision = o.rayCollisions(ray, intersections);
         if (!anyCollision)
-            return collisions;
+            return intersections;
 
         float sqLen = Float.MAX_VALUE;
-        for (Shape.Collision collision : collisions)
-            if (collision.didCollide)
-                sqLen = Math.min(sqLen, collision.point.dst2(ray[0]));
+        for (Shape.Intersection intersection : intersections)
+            if (intersection.didCollide)
+                sqLen = Math.min(sqLen, intersection.point.dst2(ray[0]));
 
         if (sqLen < minSqLen) {
             minSqLen = sqLen;
@@ -110,7 +110,7 @@ public class Photoreceptor extends NodeAttachment implements Serializable {
             b += o.getColor().b * w;
         }
 
-        return collisions;
+        return intersections;
     }
 
     public void reset() {

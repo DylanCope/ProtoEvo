@@ -94,7 +94,8 @@ public class EnvironmentRenderer implements Renderer {
         float angle = 90 + tmpVec.set(particle1Position).sub(particle2Position).angleDeg();
         jointSprite.setRotation(angle);
 
-        tmpColor.set(p1.getColor()).add(p2.getColor()).mul(.5f);
+        tmpColor.set(p1.getColor()).lerp(p2.getColor(), .5f);
+        tmpColor.a = 1f;
         jointSprite.setColor(tmpColor);
 
         jointSprite.draw(batch);
@@ -175,7 +176,7 @@ public class EnvironmentRenderer implements Renderer {
                     particle.getPos().y - maxDistance, 0,
                     2*maxDistance, 2*maxDistance, 0);
 
-            for (CollisionHandler.FixtureCollision contact : particle.getContacts()) {
+            for (CollisionHandler.Collision contact : particle.getContacts()) {
                 Object other = particle.getOther(contact);
                 if (other instanceof Particle) {
                     Vector2 otherPos = ((Particle) other).getPos();

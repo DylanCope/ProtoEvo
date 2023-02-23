@@ -9,12 +9,12 @@ import com.protoevo.settings.ProtozoaSettings;
 import com.protoevo.utils.Geometry;
 import com.protoevo.utils.Utils;
 
-import java.io.Serial;
+
 import java.io.Serializable;
 
 public class Spike extends NodeAttachment implements Serializable {
 
-    @Serial
+    
     private static final long serialVersionUID = 1L;
 
     private Vector2 spikePoint = new Vector2();
@@ -67,11 +67,11 @@ public class Spike extends NodeAttachment implements Serializable {
                     float myAttack = (
                             2*cell.getHealth() +
                             ProtozoaSettings.spikeDamage * woundDepth * getSpikeLength() / other.getRadius() +
-                            2* Simulation.RANDOM.nextFloat()
+                            2* MathUtils.random()
                     );
                     float theirDefense = other.getShieldFactor() * (
                             2*other.getHealth() +
-                            2*Simulation.RANDOM.nextFloat()
+                            2*MathUtils.random()
                     );
 
                     if (myAttack > theirDefense) {

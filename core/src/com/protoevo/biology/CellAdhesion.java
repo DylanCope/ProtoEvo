@@ -1,5 +1,6 @@
 package com.protoevo.biology;
 
+import com.badlogic.gdx.math.MathUtils;
 import com.protoevo.biology.cells.Cell;
 import com.protoevo.settings.Settings;
 import com.protoevo.core.Simulation;
@@ -57,7 +58,7 @@ public class CellAdhesion implements Serializable  {
                 junctionTypes.add(CHANNEL_FORMING);
             if (Settings.enableSignalRelayBinding)
                 junctionTypes.add(SIGNAL_RELAYING);
-            int idx = Simulation.RANDOM.nextInt(junctionTypes.size());
+            int idx = MathUtils.random(junctionTypes.size() - 1);
             return junctionTypes.get(idx);
         }
     }
@@ -190,7 +191,7 @@ public class CellAdhesion implements Serializable  {
     private static int randomExistingBindingSignature() {
         ConcurrentHashMap.KeySetView<Integer, CAM> keySet = existingCAMs.keySet();
         if (keySet.size() > 0) {
-            int selectedIdx = Simulation.RANDOM.nextInt(keySet.size());
+            int selectedIdx = MathUtils.random(keySet.size() - 1);
             int i = 0;
             for (Integer signature : keySet) {
                 if (i == selectedIdx)
@@ -202,7 +203,7 @@ public class CellAdhesion implements Serializable  {
     }
 
     private static int randomBindingSignature() {
-        return Simulation.RANDOM.nextInt(Settings.numPossibleCAMs);
+        return MathUtils.random(Settings.numPossibleCAMs - 1);
     }
 
 }

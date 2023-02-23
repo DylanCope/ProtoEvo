@@ -67,11 +67,11 @@ public class ProtozoaRenderer {
         }
 
         public Texture randomTexture() {
-            return textures[Simulation.RANDOM.nextInt(0, textures.length)];
+            return textures[MathUtils.random(0, textures.length - 1)];
         }
 
         public float randomScale() {
-            return Simulation.RANDOM.nextFloat(minScale, maxScale);
+            return MathUtils.random(minScale, maxScale);
         }
     }
 
@@ -124,9 +124,6 @@ public class ProtozoaRenderer {
 
     private static final Sprite spikeTexture = new Sprite(new Texture("cell/spike.png"));
     private final Protozoan protozoan;
-//    private Sprite detailedSprite = null;
-//    private BufferedImage protozoanImage = null;
-//    private boolean isGeneratingImage = false;
     private final Map<SurfaceNode, NodeRenderer> nodeRenderers;
     private final ArrayList<InteriorElement> interiorElements = new ArrayList<>();
 
@@ -134,9 +131,8 @@ public class ProtozoaRenderer {
         this.protozoan = protozoan;
         nodeRenderers = new HashMap<>(protozoan.getSurfaceNodes().size());
 
-        Random random = new Random();
         for (InteriorTexture type : InteriorTexture.values()) {
-            int count = random.nextInt(type.getMinCount(),  type.getMaxCount() + 1);
+            int count = MathUtils.random(type.getMinCount(),  type.getMaxCount());
             for (int i = 0; i < count; i++) {
                 interiorElements.add(new InteriorElement(type, protozoan));
             }

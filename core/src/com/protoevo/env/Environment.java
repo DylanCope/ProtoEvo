@@ -1,10 +1,12 @@
 package com.protoevo.env;
 
 import com.badlogic.gdx.graphics.Color;
+import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.*;
+import com.fasterxml.jackson.annotation.JsonIdentityInfo;
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonManagedReference;
+import com.fasterxml.jackson.annotation.ObjectIdGenerators;
 import com.google.common.collect.Streams;
 import com.protoevo.biology.*;
 import com.protoevo.biology.cells.Cell;
@@ -28,10 +30,14 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
+@JsonIdentityInfo(
+		generator = ObjectIdGenerators.IntSequenceGenerator.class,
+		scope = Environment.class)
 public class Environment implements Serializable
 {
 	private static final long serialVersionUID = 2804817237950199223L;
 	private transient World world;
+	private transient boolean initialised = false;
 	private float elapsedTime, physicsStepTime;
 	@JsonIgnore
 	private final Statistics stats = new Statistics();
@@ -41,11 +47,10 @@ public class Environment implements Serializable
 			new ConcurrentHashMap<>(CauseOfDeath.values().length, 1);
 	@JsonIgnore
 	private final ConcurrentHashMap<Class<? extends Cell>, SpatialHash<Cell>> spatialHashes;
-	private final transient Map<Class<? extends Particle>, Function<Float, Vector2>> spawnPositionFns
-			= new HashMap<>(3, 1);
-	@JsonManagedReference
+
+	private transient Map<Class<? extends Particle>, Function<Float, Vector2>> spawnPositionFns;
+
 	private final ChemicalSolution chemicalSolution;
-	@JsonManagedReference
 	private final List<Rock> rocks = new ArrayList<>();
 	private final HashMap<Class<? extends Cell>, Long> bornCounts = new HashMap<>(3);
 	private final HashMap<Class<? extends Cell>, Long> generationCounts = new HashMap<>(3);
@@ -63,23 +68,18 @@ public class Environment implements Serializable
 	@JsonIgnore
 	private final Set<Cell> cellsToAdd = new HashSet<>();
 
-	@JsonManagedReference
 	private final Set<Cell> cells = new HashSet<>();
 	private boolean hasInitialised;
 	private Vector2[] populationStartCentres;
 
-	@JsonManagedReference
 	private final JointsManager jointsManager;
 	@JsonIgnore
 	private final ConcurrentLinkedQueue<BurstRequest<? extends Cell>> burstRequests = new ConcurrentLinkedQueue<>();
 
 	public Environment()
 	{
+		buildWorld();
 		jointsManager = new JointsManager(this);
-		world = new World(new Vector2(0, 0), true);
-		world.setContinuousPhysics(false);
-		world.setAutoClearForces(true);
-		world.setContactListener(new CollisionHandler(this));
 
 		System.out.println("Creating chemicals solution... ");
 		if (Settings.enableChemicalField) {
@@ -106,11 +106,25 @@ public class Environment implements Serializable
 		hasInitialised = false;
 	}
 
+	public void buildWorld() {
+		world = new World(new Vector2(0, 0), true);
+		world.setContinuousPhysics(false);
+		world.setAutoClearForces(true);
+		world.setContactListener(new CollisionHandler(this));
+	}
+
+	public void rebuildWorld() {
+		buildWorld();
+		buildSpawners();
+		createRockFixtures();
+		for (Cell cell : cells) {
+			cell.createBody();
+		}
+		jointsManager.rebuild();
+	}
+
 	public void update(float delta)
 	{
-		if (world == null)  // on deserialisation
-			rebuildWorld();
-
 		cells.forEach(Particle::physicsUpdate);
 
 		elapsedTime += delta;
@@ -169,8 +183,10 @@ public class Environment implements Serializable
 			Vector2 centre = WorldGeneration.randomPosition(minR, maxR);
 			clusterCentres[i] = centre;
 
-			int nRings = WorldGeneration.RANDOM.nextInt(1, 3);
-			float radiusRange = WorldGeneration.RANDOM.nextFloat(8.f) * WorldGenerationSettings.rockClusterRadius;
+			int nRings = WorldGeneration.RANDOM.nextInt(WorldGenerationSettings.numRingClusters - 1) + 1;
+			float radiusRange =
+					.8f * WorldGenerationSettings.environmentRadius +
+							WorldGeneration.RANDOM.nextFloat() * WorldGenerationSettings.rockClusterRadius;
 			WorldGeneration.generateClustersOfRocks(this, centre, nRings, radiusRange);
 		}
 
@@ -198,24 +214,14 @@ public class Environment implements Serializable
 		}
 	}
 
-	public void rebuildWorld() {
-		world = new World(new Vector2(0, 0), true);
-		world.setContinuousPhysics(false);
-		world.setContactListener(new CollisionHandler(this));
-		createRockFixtures();
-		for (Cell cell : cells) {
-			cell.createBody();
-		}
-	}
-
 	public void initialise() {
 		System.out.println("Commencing world generation... ");
-		populationStartCentres = createRocks();
+		createRocks();
 
 		// random shuffle population start centres
-		List<Vector2> populationStartCentresList = Arrays.asList(populationStartCentres);
-		Collections.shuffle(populationStartCentresList);
-		populationStartCentres = populationStartCentresList.toArray(new Vector2[0]);
+//		List<Vector2> populationStartCentresList = Arrays.asList(populationStartCentres);
+//		Collections.shuffle(populationStartCentresList);
+//		populationStartCentres = populationStartCentresList.toArray(new Vector2[0]);
 
 //		if (populationStartCentres.length > 0)
 //			initialisePopulation(Arrays.copyOfRange(
@@ -255,16 +261,26 @@ public class Environment implements Serializable
 		return hasInitialised;
 	}
 
-	public void initialisePopulation(Vector2[] clusterCentres) {
-		if (clusterCentres != null) {
+	private void buildSpawners() {
+		spawnPositionFns = new HashMap<>(3, 1);
+		if (populationStartCentres != null) {
 			final float clusterR = WorldGenerationSettings.populationClusterRadius;
-			spawnPositionFns.put(PlantCell.class, r -> randomPosition(r, clusterCentres, 1.2f*clusterR));
-			spawnPositionFns.put(Protozoan.class, r -> randomPosition(r, clusterCentres, clusterR));
+			spawnPositionFns.put(PlantCell.class, r -> randomPosition(r, populationStartCentres, 1.2f*clusterR));
+			spawnPositionFns.put(Protozoan.class, r -> randomPosition(r, populationStartCentres, clusterR));
 		}
 		else {
 			spawnPositionFns.put(PlantCell.class, this::randomPosition);
 			spawnPositionFns.put(Protozoan.class, this::randomPosition);
 		}
+	}
+
+	public void initialisePopulation() {
+		populationStartCentres = new Vector2[WorldGenerationSettings.numPopulationStartClusters];
+		for (int i = 0; i < populationStartCentres.length; i++)
+			populationStartCentres[i] = Geometry.randomPointInCircle(
+					WorldGenerationSettings.environmentRadius, WorldGeneration.RANDOM);
+
+		buildSpawners();
 
 		System.out.println("Creating initial plant population...");
 		for (int i = 0; i < WorldGenerationSettings.numInitialPlantPellets; i++) {
@@ -280,7 +296,7 @@ public class Environment implements Serializable
 		System.out.println("Creating initial protozoan population...");
 		for (int i = 0; i < WorldGenerationSettings.numInitialProtozoa; i++) {
 			Protozoan p = Evolvable.createNew(Protozoan.class);
-			p.setEnv(this);
+			p.addToEnv(this);
 			if (p.isDead()) {
 				System.out.println(
 					"Failed to find position for protozoan. " +
@@ -293,29 +309,21 @@ public class Environment implements Serializable
 			p.applyImpulse(Geometry.randomVector(.01f));
 	}
 
-	public void initialisePopulation() {
-		Vector2[] clusterCentres = new Vector2[WorldGenerationSettings.numPopulationClusters];
-		for (int i = 0; i < clusterCentres.length; i++)
-			clusterCentres[i] = Geometry.randomPointInCircle(
-					WorldGenerationSettings.environmentRadius, WorldGeneration.RANDOM);
-		initialisePopulation(clusterCentres);
-	}
-
 	public Vector2 randomPosition(float entityRadius, Vector2[] clusterCentres) {
-		int clusterIdx = Simulation.RANDOM.nextInt(clusterCentres.length);
+		int clusterIdx = MathUtils.random(clusterCentres.length - 1);
 		Vector2 clusterCentre = clusterCentres[clusterIdx];
 		return randomPosition(entityRadius, clusterCentre, WorldGenerationSettings.populationClusterRadius);
 	}
 
 	public Vector2 randomPosition(float entityRadius, Vector2[] clusterCentres, float clusterRadius) {
-		int clusterIdx = Simulation.RANDOM.nextInt(clusterCentres.length);
+		int clusterIdx = MathUtils.random(clusterCentres.length - 1);
 		Vector2 clusterCentre = clusterCentres[clusterIdx];
 		return randomPosition(entityRadius, clusterCentre, clusterRadius);
 	}
 
 	public Vector2 randomPosition(float entityRadius, Vector2 centre, float clusterRadius) {
 		for (int i = 0; i < 20; i++) {
-			float r = Simulation.RANDOM.nextFloat(clusterRadius);
+			float r = WorldGeneration.RANDOM.nextFloat() * clusterRadius;
 			Vector2 pos = Geometry.randomPointInCircle(r, WorldGeneration.RANDOM);
 			pos.add(centre);
 			Optional<? extends Shape> collision = getCollision(pos, entityRadius);
@@ -323,7 +331,7 @@ public class Environment implements Serializable
 				PlantCell plant = (PlantCell) collision.get();
 				plant.kill(CauseOfDeath.ENV_CAPACITY_EXCEEDED);
 				return pos;
-			} else if (collision.isEmpty())
+			} else if (!collision.isPresent())
 				return pos;
 		}
 

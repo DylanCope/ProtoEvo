@@ -1,16 +1,24 @@
 package com.protoevo.biology;
 
+import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector2;
+import com.fasterxml.jackson.annotation.JsonIdentityInfo;
+import com.fasterxml.jackson.annotation.ObjectIdGenerators;
 import com.protoevo.biology.cells.Cell;
 import com.protoevo.core.Simulation;
+import com.protoevo.env.Environment;
 import com.protoevo.settings.SimulationSettings;
 import com.protoevo.utils.Geometry;
 
 import java.io.Serializable;
 import java.util.function.Function;
 
+@JsonIdentityInfo(
+        generator = ObjectIdGenerators.IntSequenceGenerator.class,
+        scope = Environment.class)
 public class BurstRequest<T extends Cell> implements Serializable {
     public static final long serialVersionUID = 1L;
+
 
     private final Function<Float, T> createChild;
     private final Cell parent;
@@ -52,12 +60,12 @@ public class BurstRequest<T extends Cell> implements Serializable {
         if (maxChildren > 2) {
             int chances = parent.burstMultiplier();
             for (int i = 0; i < chances; i++)
-                nChildren = Math.max(nChildren, Simulation.RANDOM.nextInt(2, maxChildren));
+                nChildren = Math.max(nChildren, MathUtils.random(2, maxChildren));
         }
 
         for (int i = 0; i < nChildren; i++) {
             Vector2 dir = new Vector2((float) Math.cos(angle), (float) Math.sin(angle));
-            float p = (float) (0.3 + 0.7 * Simulation.RANDOM.nextDouble() / nChildren);
+            float p = 0.3f + 0.7f * MathUtils.random() / nChildren;
 
             T child = createChild.apply(parent.getRadius() * p);
             child.setPos(parent.getPos().cpy().add(dir.scl(2 * child.getRadius())));
@@ -76,8 +84,8 @@ public class BurstRequest<T extends Cell> implements Serializable {
         for (ComplexMolecule molecule : parent.getComplexMolecules())
             child.setComplexMoleculeAvailable(molecule, p * parent.getComplexMoleculeAvailable(molecule));
 
-        for (CellAdhesion.CAM cam : parent.getSurfaceCAMs())
-            child.setCAMAvailable(cam, p * parent.getCAMAvailable(cam));
+//        for (CellAdhesion.CAM cam : parent.getSurfaceCAMs())
+//            child.setCAMAvailable(cam, p * parent.getCAMAvailable(cam));
 
         for (Food.Type foodType : parent.getFoodToDigest().keySet()) {
             Food oldFood = parent.getFoodToDigest().get(foodType);

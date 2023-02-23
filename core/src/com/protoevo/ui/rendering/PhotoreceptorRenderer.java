@@ -39,10 +39,10 @@ public class PhotoreceptorRenderer extends NodeRenderer {
         sr.line(ray[0], ray[1]);
         for (Object o : cell.getInteractionQueue()) {
             if (o instanceof Shape) {
-                Shape.Collision[] collisions = attachment.handleCollidable((Shape) o);
-                for (Shape.Collision collision : collisions) {
-                    if (collision.didCollide)
-                        sr.circle(collision.point.x, collision.point.y,
+                Shape.Intersection[] intersections = attachment.computeIntersections((Shape) o);
+                for (Shape.Intersection intersection : intersections) {
+                    if (intersection.didCollide)
+                        sr.circle(intersection.point.x, intersection.point.y,
                                 cell.getRadius() / 15f, 15);
                 }
             }

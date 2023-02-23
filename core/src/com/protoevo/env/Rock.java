@@ -1,5 +1,6 @@
 package com.protoevo.env;
 
+import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector2;
 import com.fasterxml.jackson.annotation.JsonIdentityInfo;
 import com.fasterxml.jackson.annotation.ObjectIdGenerators;
@@ -11,19 +12,21 @@ import com.protoevo.utils.Geometry;
 import java.io.Serializable;
 
 @JsonIdentityInfo(
-        generator = ObjectIdGenerators.PropertyGenerator.class,
-        property = "id")
+        generator = ObjectIdGenerators.IntSequenceGenerator.class,
+        scope = Environment.class)
 public class Rock implements Serializable, Shape {
     public static final long serialVersionUID = 1L;
-    public int id;
 
-    private final Vector2[] points;
-    private final Vector2[][] edges;
-    private final boolean[] edgeAttachStates;
-    private final Vector2 centre;
-    private final Vector2[] normals;
-    private final Vector2[] boundingBox;
-    private final Colour colour;
+    private Vector2[] points;
+    private Vector2[][] edges;
+    private boolean[] edgeAttachStates;
+    private Vector2 centre;
+    private Vector2[] normals;
+    private Vector2[] boundingBox;
+    private Colour colour;
+    private float size;
+
+    public Rock() {}
 
     public Rock(Vector2 p1, Vector2 p2, Vector2 p3) {
         points = new Vector2[]{p1, p2, p3};
@@ -37,6 +40,7 @@ public class Rock implements Serializable, Shape {
         normals = computeNormals();
         colour = randomRockColour();
         boundingBox = computeBounds();
+        size = centre.dst(points[0]);
     }
 
     private Vector2 computeCentre() {
@@ -52,6 +56,10 @@ public class Rock implements Serializable, Shape {
         float maxX = Math.max(points[0].x, Math.max(points[1].x, points[2].x));
         float maxY = Math.max(points[0].y, Math.max(points[1].y, points[2].y));
         return new Vector2[]{new Vector2(minX, minY), new Vector2(maxX, maxY)};
+    }
+
+    public float getSize() {
+        return size;
     }
 
     public Vector2[] getBoundingBox() {
@@ -125,7 +133,7 @@ public class Rock implements Serializable, Shape {
 
     private final float[] intersectTs = new float[2];
     @Override
-    public boolean rayCollisions(Vector2[] ray, Shape.Collision[] collisions) {
+    public boolean rayCollisions(Vector2[] ray, Intersection[] intersections) {
         Vector2 dirRay = ray[1].cpy().sub(ray[0]);
         int numCollisions = 0;
         for (int i = 0; i < edges.length; i++) {
@@ -136,10 +144,10 @@ public class Rock implements Serializable, Shape {
             Vector2 dirEdge = edge[1].cpy().sub(edge[0]);
             float[] coefs = edgesIntersectCoef(ray[0], dirRay, edge[0], dirEdge, intersectTs);
             if (coefs != null && edgeIntersectCondition(coefs)) {
-                collisions[numCollisions].point.set(ray[0].cpy().add(dirRay.cpy().scl(coefs[0])));
-                collisions[numCollisions].didCollide = true;
+                intersections[numCollisions].point.set(ray[0].cpy().add(dirRay.cpy().scl(coefs[0])));
+                intersections[numCollisions].didCollide = true;
                 numCollisions++;
-                if (numCollisions == collisions.length)
+                if (numCollisions == intersections.length)
                     break;
             }
         }
@@ -208,8 +216,8 @@ public class Rock implements Serializable, Shape {
 
     public static Colour randomRockColour() {
         float darkener = 0.75f;
-        int tone = 80 + Simulation.RANDOM.nextInt(20);
-        int yellowing = Simulation.RANDOM.nextInt(20);
+        int tone = 80 + MathUtils.random(20);
+        int yellowing = MathUtils.random(20);
         return new Colour(
                 darkener * (tone + yellowing) / 255.f,
                 darkener * (tone + yellowing) / 255.f,

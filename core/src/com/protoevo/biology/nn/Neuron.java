@@ -1,5 +1,9 @@
 package com.protoevo.biology.nn;
 
+import com.fasterxml.jackson.annotation.JsonIdentityInfo;
+import com.fasterxml.jackson.annotation.ObjectIdGenerators;
+import com.protoevo.env.Environment;
+
 import java.io.Serializable;
 import java.util.Comparator;
 import java.util.function.Function;
@@ -7,7 +11,12 @@ import java.util.function.Function;
 /**
  * Created by Dylan on 26/05/2017.
  */
+
+@JsonIdentityInfo(
+        generator = ObjectIdGenerators.IntSequenceGenerator.class,
+        scope = Environment.class)
 public class Neuron implements Comparable<Neuron>, Serializable {
+
     public interface Activation extends Function<Float, Float>, Serializable {
         Activation SIGMOID = z -> 1 / (1 + (float) Math.exp(-z));
         Activation LINEAR = z -> z;

@@ -5,13 +5,13 @@ import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.math.Vector2;
 import com.protoevo.utils.Colour;
 
-import java.io.Serial;
+
 import java.io.Serializable;
 
 public interface Shape {
 
-    class Collision implements Serializable {
-        @Serial
+    class Intersection implements Serializable {
+        
         private static final long serialVersionUID = 1L;
 
         public final Vector2 point = new Vector2();
@@ -20,7 +20,7 @@ public interface Shape {
 
     boolean pointInside(Vector2 p);
     boolean rayIntersects(Vector2 start, Vector2 end);
-    boolean rayCollisions(Vector2[] ray, Collision[] collisions);
+    boolean rayCollisions(Vector2[] ray, Intersection[] intersections);
 
     Colour getColour();
 

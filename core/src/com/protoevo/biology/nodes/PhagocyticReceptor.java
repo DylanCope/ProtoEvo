@@ -6,12 +6,12 @@ import com.protoevo.biology.cells.*;
 import com.protoevo.settings.SimulationSettings;
 import com.protoevo.env.CollisionHandler;
 
-import java.io.Serial;
+
 import java.io.Serializable;
 
 public class PhagocyticReceptor extends NodeAttachment implements Serializable {
 
-    @Serial
+    
     private static final long serialVersionUID = 1L;
     private final Vector2 tmp = new Vector2();
     private Cell lastEngulfed;
@@ -41,7 +41,7 @@ public class PhagocyticReceptor extends NodeAttachment implements Serializable {
                 output[2] = 1f;
         }
 
-        for (CollisionHandler.FixtureCollision contact : cell.getContacts()) {
+        for (CollisionHandler.Collision contact : cell.getContacts()) {
             Object collided = cell.getOther(contact);
             if (collided instanceof Cell && engulfCondition((Cell) collided)) {
                 engulf((Cell) collided);
@@ -54,7 +54,7 @@ public class PhagocyticReceptor extends NodeAttachment implements Serializable {
             return false;
         if (other instanceof MeatCell && !engulfMeat)
             return false;
-        return other instanceof EdibleCell
+        return other.isEdible()
                 && correctSizes(other) && notEngulfed(other)
                 && closeEnough(other) && roomFor(other);
     }

@@ -3,7 +3,7 @@ package com.protoevo.utils;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.math.MathUtils;
 
-import java.io.Serial;
+
 import java.io.Serializable;
 
 public class Colour implements Serializable {
@@ -66,7 +66,7 @@ public class Colour implements Serializable {
     public static Colour LIGHT_GRAY = new Colour(0.75f, 0.75f, 0.75f, 1);
     public static Colour DARK_GRAY = new Colour(0.25f, 0.25f, 0.25f, 1);
 
-    @Serial
+    
     private static final long serialVersionUID = 1L;
 
     public float r, g, b, a;

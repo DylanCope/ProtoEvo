@@ -3,6 +3,9 @@ package com.protoevo.biology.cells;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector2;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonSubTypes;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.protoevo.biology.*;
 import com.protoevo.biology.nodes.SurfaceNode;
 import com.protoevo.biology.organelles.Organelle;
@@ -16,16 +19,20 @@ import com.protoevo.settings.SimulationSettings;
 import com.protoevo.utils.Colour;
 import com.protoevo.utils.Geometry;
 
-import java.io.Serial;
 import java.io.Serializable;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static com.protoevo.utils.Utils.lerp;
 
-public abstract class Cell extends Particle implements Serializable
-{
-	@Serial
+@JsonIgnoreProperties(ignoreUnknown = true)
+@JsonTypeInfo(use = JsonTypeInfo.Id.NAME)
+@JsonSubTypes({
+		@JsonSubTypes.Type(value = Protozoan.class, name = "Protozoan"),
+		@JsonSubTypes.Type(value = PlantCell.class, name = "PlantCell"),
+		@JsonSubTypes.Type(value = MeatCell.class, name = "MeatCell")
+})
+public abstract class Cell extends Particle implements Serializable {
 	private static final long serialVersionUID = 1L;
 
 	private final Colour healthyColour = new Colour(Color.WHITE);
@@ -40,15 +47,15 @@ public abstract class Cell extends Particle implements Serializable
 	private double constructionMassAvailable = SimulationSettings.startingAvailableConstructionMass;
 	private double massChangeForGrowth = 0f;
 	private final Map<ComplexMolecule, Float> availableComplexMolecules = new ConcurrentHashMap<>(0);
-	private final ConcurrentHashMap<Cell, JointsManager.Joining> attachedCells = new ConcurrentHashMap<>();
-	private final Map<CellAdhesion.CAM, Float> surfaceCAMs = new HashMap<>(0);
+	private final Map<Cell, JointsManager.Joining> attachedCells = new ConcurrentHashMap<>();
+	//	private final Map<CellAdhesion.CAM, Float> surfaceCAMs = new HashMap<>(0);
 	private final Map<Food.Type, Float> foodDigestionRates = new HashMap<>(0);
 	private final Map<Food.Type, Food> foodToDigest = new HashMap<>(0);
 	private final Set<ConstructionProject> constructionProjects = new HashSet<>(0);
-	private final Map<CellAdhesion.CAM, Float> camProductionRates = new HashMap<>(0);
+	//	private final Map<CellAdhesion.CAM, Float> camProductionRates = new HashMap<>(0);
 	private final ArrayList<Cell> children = new ArrayList<>();
 	private ArrayList<Organelle> organelles = new ArrayList<>();
-	private boolean hasBurst= false;
+	private boolean hasBurst = false;
 	private float repairRate = 1f;
 
 	private Cell engulfer = null;
@@ -79,9 +86,10 @@ public abstract class Cell extends Particle implements Serializable
 	}
 
 	public void requestJointRemoval(JointsManager.Joining joining) {
-		if (attachedCells.contains(joining)) {
+		Cell other = (Cell) joining.getOther(this);
+		if (attachedCells.containsKey(other)){
 			getEnv().getJointsManager().requestJointRemoval(joining);
-			attachedCells.remove(joining);
+			attachedCells.remove(other);
 		}
 	}
 
@@ -134,19 +142,6 @@ public abstract class Cell extends Particle implements Serializable
 		}
 	}
 
-	public void resourceProduction(float delta) {
-		for (CellAdhesion.CAM cam : camProductionRates.keySet()) {
-			float producedMass = delta * camProductionRates.getOrDefault(cam, 0f);
-			float requiredEnergy = cam.getProductionCost() * producedMass;
-			if (producedMass > 0 && constructionMassAvailable > producedMass && energyAvailable > requiredEnergy) {
-				float currentAmount = surfaceCAMs.getOrDefault(cam, 0f);
-				surfaceCAMs.put(cam, currentAmount + producedMass);
-				depleteConstructionMass(producedMass);
-				depleteEnergy(requiredEnergy);
-			}
-		}
-	}
-
 	public float getDigestionRate(Food.Type foodType) {
 		return foodDigestionRates.getOrDefault(foodType, 0f);
 	}
@@ -155,9 +150,12 @@ public abstract class Cell extends Particle implements Serializable
 		foodDigestionRates.put(foodType, rate);
 	}
 
-	public void eat(EdibleCell cell, float extraction) {
+	public void eat(Cell cell, float extraction) {
 
-		Food.Type foodType = cell.getFoodType();
+		if (!(cell instanceof PlantCell || cell instanceof MeatCell))
+			return;
+
+		Food.Type foodType = cell instanceof PlantCell ? Food.Type.Plant : Food.Type.Meat;
 		float extractedMass = cell.getMass() * extraction;
 		cell.removeMass(Settings.foodExtractionWasteMultiplier * extractedMass, CauseOfDeath.EATEN);
 
@@ -239,7 +237,7 @@ public abstract class Cell extends Particle implements Serializable
 
 		float dist2 = joining.getAnchorA().dst2(joining.getAnchorB());
 		float maxDist = joining.getMaxLength();
-		detach = dist2 > maxDist*maxDist;
+		detach = dist2 > maxDist * maxDist;
 
 		if (detach)
 			requestJointRemoval(joining);
@@ -251,7 +249,8 @@ public abstract class Cell extends Particle implements Serializable
 		constructionProjects.add(project);
 	}
 
-	public void handleInteractions(float delta) {}
+	public void handleInteractions(float delta) {
+	}
 
 	public void grow(float delta) {
 		if (constructionMassAvailable <= 0)
@@ -274,7 +273,7 @@ public abstract class Cell extends Particle implements Serializable
 
 		if (massChangeForGrowth > constructionMassAvailable) {
 			double dr2 = constructionMassAvailable / (Math.PI * getMassDensity());
-			newR = Math.sqrt(currR*currR + dr2);
+			newR = Math.sqrt(currR * currR + dr2);
 			massChangeForGrowth = constructionMassAvailable;
 		}
 
@@ -315,12 +314,12 @@ public abstract class Cell extends Particle implements Serializable
 			attachedCells.remove((Cell) other);
 	}
 
-	public Collection<CellAdhesion.CAM> getSurfaceCAMs() {
-		return surfaceCAMs.keySet();
-	}
+//	public Collection<CellAdhesion.CAM> getSurfaceCAMs() {
+//		return surfaceCAMs.keySet();
+//	}
 
 	@Override
-	public void onCollision(CollisionHandler.FixtureCollision contact, Rock rock) {
+	public void onCollision(CollisionHandler.Collision contact, Rock rock) {
 		super.onCollision(contact, rock);
 		if (rock.pointInside(getPos())) {
 			kill(CauseOfDeath.SUFFOCATION);
@@ -328,7 +327,7 @@ public abstract class Cell extends Particle implements Serializable
 	}
 
 	@Override
-	public void onCollision(CollisionHandler.FixtureCollision contact, Particle other) {
+	public void onCollision(CollisionHandler.Collision contact, Particle other) {
 		super.onCollision(contact, other);
 		if (other.isPointInside(getPos())) {
 			kill(CauseOfDeath.SUFFOCATION);
@@ -346,17 +345,16 @@ public abstract class Cell extends Particle implements Serializable
 //		}
 		return attachedCells.containsKey(otherCell) || otherCell.attachedCells.containsKey(this);
 	}
-	
+
 	public abstract boolean isEdible();
 
 	public void heal(float h) {
 		damage(-h, CauseOfDeath.HEALED_TO_DEATH);
 	}
 
-	public void damage(float d, CauseOfDeath cause)
-	{
+	public void damage(float d, CauseOfDeath cause) {
 		health -= d;
-		if (health > 1) 
+		if (health > 1)
 			health = 1;
 
 		if (health < 0.05)
@@ -375,7 +373,7 @@ public abstract class Cell extends Particle implements Serializable
 		float speed = getSpeed();
 		float mass = getMass();
 		// This is surely not correct
-		return .5f * mass * (speed*speed - thrustVector.len2() / (mass * mass));
+		return .5f * mass * (speed * speed - thrustVector.len2() / (mass * mass));
 	}
 
 	public void generateMovement(Vector2 thrustVector) {
@@ -391,8 +389,7 @@ public abstract class Cell extends Particle implements Serializable
 			applyImpulse(thrustVector);
 			applyTorque(torque);
 			return 1f;
-		}
-		else {
+		} else {
 			// not accurate scaling of thrust and torque
 			float p = getEnergyAvailable() / work;
 			thrustVector.scl(p);
@@ -421,20 +418,20 @@ public abstract class Cell extends Particle implements Serializable
 
 		for (ComplexMolecule molecule : availableComplexMolecules.keySet())
 			if (availableComplexMolecules.get(molecule) > 0)
-				stats.putMass("Molecule %.2f Available".formatted(molecule.getSignature()),
+				stats.putMass(String.format("Molecule %.2f Available", molecule.getSignature()),
 						availableComplexMolecules.get(molecule));
 
 		if (attachedCells.size() > 0)
 			stats.putCount("Num Cell Bindings", attachedCells.size());
 
-		for (CellAdhesion.CAMJunctionType junctionType : CellAdhesion.CAMJunctionType.values()) {
-			float camMass = 0;
-			for (CellAdhesion.CAM molecule : surfaceCAMs.keySet())
-				if (molecule.getJunctionType().equals(junctionType))
-					camMass += surfaceCAMs.get(molecule);
-			if (camMass > 0)
-				stats.putMass(junctionType + " CAM Mass", camMass);
-		}
+//		for (CellAdhesion.CAMJunctionType junctionType : CellAdhesion.CAMJunctionType.values()) {
+//			float camMass = 0;
+//			for (CellAdhesion.CAM molecule : surfaceCAMs.keySet())
+//				if (molecule.getJunctionType().equals(junctionType))
+//					camMass += surfaceCAMs.get(molecule);
+//			if (camMass > 0)
+//				stats.putMass(junctionType + " CAM Mass", camMass);
+//		}
 
 		stats.putBoolean("Being Engulfed", engulfer != null);
 
@@ -456,7 +453,7 @@ public abstract class Cell extends Particle implements Serializable
 		stats.putMass("Mass To Grow", (float) massChangeForGrowth);
 		return stats;
 	}
-	
+
 	public float getHealth() {
 		return MathUtils.clamp(health, 0, 1);
 	}
@@ -524,13 +521,13 @@ public abstract class Cell extends Particle implements Serializable
 		return children;
 	}
 
-	public float getCAMAvailable(CellAdhesion.CAM cam) {
-		return surfaceCAMs.getOrDefault(cam, 0f);
-	}
-
-	public void setCAMAvailable(CellAdhesion.CAM cam, float amount) {
-		surfaceCAMs.put(cam, amount);
-	}
+//	public float getCAMAvailable(CellAdhesion.CAM cam) {
+//		return surfaceCAMs.getOrDefault(cam, 0f);
+//	}
+//
+//	public void setCAMAvailable(CellAdhesion.CAM cam, float amount) {
+//		surfaceCAMs.put(cam, amount);
+//	}
 
 	public boolean enoughEnergyAvailable(float work) {
 		return work < energyAvailable;
@@ -541,7 +538,7 @@ public abstract class Cell extends Particle implements Serializable
 	}
 
 	public void addAvailableEnergy(float energy) {
-		energyAvailable = Math.min(energyAvailable + energy, getAvailableEnergyCap()) ;
+		energyAvailable = Math.min(energyAvailable + energy, getAvailableEnergyCap());
 	}
 
 	private float getAvailableEnergyCap() {
@@ -619,9 +616,9 @@ public abstract class Cell extends Particle implements Serializable
 		constructionMassAvailable = Math.max(0, constructionMassAvailable - mass);
 	}
 
-	public void setCAMProductionRate(CellAdhesion.CAM cam, float rate) {
-		camProductionRates.put(cam, rate);
-	}
+//	public void setCAMProductionRate(CellAdhesion.CAM cam, float rate) {
+//		camProductionRates.put(cam, rate);
+//	}
 
 	@Override
 	public float getMass() {
@@ -633,6 +630,7 @@ public abstract class Cell extends Particle implements Serializable
 
 	/**
 	 * Changes the radius of the cell to remove the given amount of mass
+	 *
 	 * @param mass mass to remove
 	 */
 	public void removeMass(float mass, CauseOfDeath causeOfDeath) {

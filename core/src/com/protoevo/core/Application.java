@@ -17,21 +17,15 @@ public class Application extends ApplicationAdapter {
 
 	@Override
 	public void create() {
-		simulation = new Simulation();
+		System.out.println("Current JVM version - " + System.getProperty("java.version"));
+
+		simulation = new Simulation(0, "chronos-tentacool-nam");
+//		simulation = new Simulation();
 		simulationScreen = new SimulationScreen(this, simulation);
 		simulation.setSimulationScreen(simulationScreen);
-//		if (SimulationSettings.simulationOnSeparateThread) {
-//			simulationThread = new Thread(simulation);
-//			new Thread(() -> {
-//				simulation.prepare();
-//				simulationThread.start();
-//			}).start();
-//		} else {
 		new Thread(() -> {
 			simulation.prepare();
 		}).start();
-//		}
-//		simulation.prepare();
 	}
 
 	@Override

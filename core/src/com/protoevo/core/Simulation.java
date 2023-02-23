@@ -14,7 +14,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.text.SimpleDateFormat;
 import java.util.*;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class Simulation implements Runnable
@@ -120,12 +119,14 @@ public class Simulation implements Runnable
 	public Environment loadEnv(String filename)
 	{
 		try {
-			Environment env = (Environment) FileIO.load(filename);
+			Environment env = EnvFileIO.deserialize(filename);
+			env.rebuildWorld();
 			System.out.println("Loaded tank at: " + filename);
+			initialised = true;
 			return env;
-		} catch (IOException | ClassNotFoundException e) {
-			System.out.println("Unable to load environment at " + filename + " because: " + e.getMessage());
-			return newDefaultEnv();
+		} catch (Exception e) {
+			System.err.println("Unable to load environment at " + filename + " because: " + e.getMessage());
+			throw new RuntimeException(e);
 		}
 	}
 
@@ -134,22 +135,22 @@ public class Simulation implements Runnable
 	}
 
 	public Environment loadMostRecentEnv() {
-		Path dir = Paths.get("assets/saves/" + name + "/env");
+		Path dir = Paths.get("saves/" + name + "/env");
+		Optional<String> lastFilePath = Optional.empty();
 		if (Files.exists(dir))
 			try (Stream<Path> pathStream = Files.list(dir)) {
-				Optional<String> lastFilePath = pathStream
+				lastFilePath = pathStream
 						.filter(f -> !Files.isDirectory(f))
 						.max(Comparator.comparingLong(f -> f.toFile().lastModified()))
 						.map(path -> path.toString().replace(".dat", ""));
-
-				if (lastFilePath.isPresent())
-					return loadEnv(lastFilePath.get());
-				else
-					return newDefaultEnv();
 			} catch (IOException e) {
-				return newDefaultEnv();
+				throw new RuntimeException("Invalid input directory: " + dir, e);
 			}
-		return newDefaultEnv();
+
+		if (lastFilePath.isPresent())
+			return loadEnv(lastFilePath.get());
+		else
+			throw new RuntimeException("No environment files found in " + dir);
 	}
 
 	public void prepare()
@@ -158,12 +159,13 @@ public class Simulation implements Runnable
 			environment.initialise();
 			makeHistorySnapshot();
 			initialised = true;
-			if (simulationScreen != null) {
-				simulationScreen.notifySimulationLoaded();
-			}
-			repl = new REPL(this, simulationScreen);
-			replThread = new Thread(repl);
-			replThread.start();
+		}
+		repl = new REPL(this, simulationScreen);
+		replThread = new Thread(repl);
+		replThread.start();
+
+		if (simulationScreen != null) {
+			simulationScreen.notifySimulationLoaded();
 		}
 	}
 
@@ -231,7 +233,8 @@ public class Simulation implements Runnable
 	public void saveTank() {
 		String timeStamp = new SimpleDateFormat("yyyy-MM-dd-HH-mm-ss").format(new Date());
 		String fileName = "saves/" + name + "/env/" + timeStamp;
-		FileIO.save(environment, fileName);
+//		FileIO.writeJson(environment, fileName);
+		EnvFileIO.serialize(environment, fileName);
 	}
 
 	public void makeHistorySnapshot() {

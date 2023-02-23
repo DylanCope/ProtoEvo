@@ -87,7 +87,7 @@ For a general guide to running LibGDX projects, see [this article](https://libgd
 **Options for Improving Performance**
 
 There are a number of parameters that can be changed for improving the performance of the simulation.
-The most taxing part of the simulation is the physics engine, which slows down according to the number of collisions
+The most taxing part of the simulation is the physics engine, which slows down according to the number of intersections
 that it needs to handle. Therefore, the most important parameter to change is the number of cells in the simulation.
 You can change the `maxProtozoa`, `maxPlants`, and `maxMeat` parameters in the `protoevo.core.settings.SimulationsSettings` file.
 However, you will likely want to change other parameters as well because having fewer cells will likely result in

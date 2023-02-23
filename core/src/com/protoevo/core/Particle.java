@@ -3,30 +3,45 @@ package com.protoevo.core;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.*;
 import com.badlogic.gdx.utils.Array;
-import com.fasterxml.jackson.annotation.JsonBackReference;
-import com.fasterxml.jackson.annotation.JsonIdentityInfo;
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.ObjectIdGenerators;
+import com.fasterxml.jackson.annotation.*;
 import com.protoevo.biology.CauseOfDeath;
+import com.protoevo.biology.cells.Cell;
+import com.protoevo.biology.cells.MeatCell;
+import com.protoevo.biology.cells.PlantCell;
+import com.protoevo.biology.cells.Protozoan;
 import com.protoevo.env.CollisionHandler;
 import com.protoevo.env.Environment;
 import com.protoevo.env.Rock;
 import com.protoevo.settings.SimulationSettings;
 import com.protoevo.utils.Colour;
 import com.protoevo.utils.Geometry;
+import com.protoevo.utils.file.ParticleKeyDeserializer;
 
+import java.io.Serializable;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 @JsonIdentityInfo(
-        generator = ObjectIdGenerators.PropertyGenerator.class,
-        property = "id")
-public class Particle implements Shape {
-    public int id;
+        generator = ParticleKeyDeserializer.IdGenerator.class,
+//        generator = ObjectIdGenerators.PropertyGenerator.class,
+        scope = Environment.class)
+@JsonIgnoreProperties(ignoreUnknown = true)
+@JsonTypeInfo(use = JsonTypeInfo.Id.NAME)
+@JsonSubTypes({
+        @JsonSubTypes.Type(value = Cell.class, name = "Cell"),
+        @JsonSubTypes.Type(value = Protozoan.class, name = "Protozoan"),
+        @JsonSubTypes.Type(value = PlantCell.class, name = "PlantCell"),
+        @JsonSubTypes.Type(value = MeatCell.class, name = "MeatCell")
+})
+public class Particle implements Shape, Serializable {
+    public static long serialVersionUID = 1L;
+
+    public static int nextId = 0; // make sure restored on deserialization
+    protected int hashCode = nextId++;
 
     private final Vector2[] boundingBox = new Vector2[]{new Vector2(), new Vector2()};
-    @JsonBackReference
+
     private Environment environment;
     private transient Body body;
     private transient Fixture dynamicsFixture, sensorFixture;
@@ -39,8 +54,7 @@ public class Particle implements Shape {
     private float angle, torqueToApply = 0;
     @JsonIgnore
     private final Statistics stats = new Statistics();
-    @JsonBackReference
-    private final Collection<CollisionHandler.FixtureCollision> contacts = new ConcurrentLinkedQueue<>();
+    private final Collection<CollisionHandler.Collision> contacts = new ConcurrentLinkedQueue<>();
     private final Collection<Object> interactionObjects = new ConcurrentLinkedQueue<>();
     private CauseOfDeath causeOfDeath = null;
     private boolean requestedDestroyBody = false;
@@ -51,14 +65,18 @@ public class Particle implements Shape {
         return environment;
     }
 
-    public void setEnv(Environment environment) {
-        this.environment = environment;
+    public void addToEnv(Environment environment) {
         Vector2 pos = environment.getRandomPosition(this);
         if (pos == null) {
             kill(CauseOfDeath.FAILED_TO_CONSTRUCT);
             return;
         }
         this.pos.set(pos);
+        setEnv(environment);
+    }
+
+    public void setEnv(Environment environment) {
+        this.environment = environment;
         createBody();
         environment.ensureAddedToEnvironment(this);
     }
@@ -174,12 +192,12 @@ public class Particle implements Shape {
 
     public void interact(List<Object> interactions) {}
 
-    public void onCollision(CollisionHandler.FixtureCollision collision, Particle other) {
+    public void onCollision(CollisionHandler.Collision collision, Particle other) {
         if (getOther(collision) != null)
             contacts.add(collision);
     }
 
-    public void onCollision(CollisionHandler.FixtureCollision collision, Rock rock) {
+    public void onCollision(CollisionHandler.Collision collision, Rock rock) {
         if (getOther(collision) != null)
             contacts.add(collision);
     }
@@ -188,7 +206,7 @@ public class Particle implements Shape {
         contacts.removeIf(c -> getOther(c).equals(object));
     }
 
-    public Object getOther(CollisionHandler.FixtureCollision collision) {
+    public Object getOther(CollisionHandler.Collision collision) {
         return collision.objB;
     }
 
@@ -222,7 +240,7 @@ public class Particle implements Shape {
         contacts.removeIf(this::removeCollision);
     }
 
-    private boolean removeCollision(CollisionHandler.FixtureCollision collision) {
+    private boolean removeCollision(CollisionHandler.Collision collision) {
         if (getOther(collision) == null)
             return true;
         if (getOther(collision) instanceof Particle) {
@@ -233,7 +251,7 @@ public class Particle implements Shape {
         return true;
     }
 
-    public Collection<CollisionHandler.FixtureCollision> getContacts() {
+    public Collection<CollisionHandler.Collision> getContacts() {
         return contacts;
     }
 
@@ -309,7 +327,7 @@ public class Particle implements Shape {
     }
 
     @Override
-    public boolean rayCollisions(Vector2[] ray, Collision[] collision) {
+    public boolean rayCollisions(Vector2[] ray, Intersection[] intersection) {
         Vector2 start = ray[0], end = ray[1];
         float dirX = end.x - start.x, dirY = end.y - start.y;
         Vector2 p = getPos();
@@ -328,13 +346,13 @@ public class Particle implements Shape {
 
         boolean anyCollisions = false;
         if (0 <= t1 && t1 <= 1) {
-            collision[0].point.set(start).lerp(end, t1);
-            collision[0].didCollide = true;
+            intersection[0].point.set(start).lerp(end, t1);
+            intersection[0].didCollide = true;
             anyCollisions = true;
         }
         if (0 <= t2 && t2 <= 1) {
-            collision[1].point.set(start).lerp(end, t2);
-            collision[1].didCollide = true;
+            intersection[1].point.set(start).lerp(end, t2);
+            intersection[1].didCollide = true;
             anyCollisions = true;
         }
         return anyCollisions;
@@ -397,7 +415,7 @@ public class Particle implements Shape {
     }
 
     public void destroyBody() {
-        if (body != null) {
+        if (body != null && environment != null) {
             environment.getWorld().destroyBody(body);
             body = null;
         }
@@ -450,5 +468,10 @@ public class Particle implements Shape {
 
     public boolean didRequestDestroyBody() {
         return requestedDestroyBody;
+    }
+
+    @Override
+    public int hashCode() {
+        return hashCode;
     }
 }

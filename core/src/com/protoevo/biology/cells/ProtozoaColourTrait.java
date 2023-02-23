@@ -39,14 +39,14 @@ public class ProtozoaColourTrait implements Trait<Colour>, Serializable {
         Colour colour = getValue();
         if (colour == null)
             return new Colour(
-                    (minVal + Simulation.RANDOM.nextInt(maxVal)) / 255f,
-                    (minVal + Simulation.RANDOM.nextInt(maxVal)) / 255f,
-                    (minVal + Simulation.RANDOM.nextInt(maxVal)) / 255f,
+                    (minVal + MathUtils.random(maxVal - 1)) / 255f,
+                    (minVal + MathUtils.random(maxVal - 1)) / 255f,
+                    (minVal + MathUtils.random(maxVal - 1)) / 255f,
                     1f
             );
 
-        float p = Simulation.RANDOM.nextFloat();
-        float valChange = (-15 + Simulation.RANDOM.nextInt(30)) / 255f;
+        float p = MathUtils.random();
+        float valChange = (-15 + MathUtils.random(30)) / 255f;
 
         if (p < 1 / 3f) {
             float v = MathUtils.clamp(colour.r + valChange, maxVal, minVal);

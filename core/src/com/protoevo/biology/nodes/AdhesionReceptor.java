@@ -24,7 +24,7 @@ public class AdhesionReceptor extends NodeAttachment {
             handleResourceExchange(delta);
         }
         Cell cell = node.getCell();
-        for (CollisionHandler.FixtureCollision contact : cell.getContacts()) {
+        for (CollisionHandler.Collision contact : cell.getContacts()) {
             Object other = cell.getOther(contact);
             if (other instanceof Protozoan)
                 joining = tryBindTo((Protozoan) other);

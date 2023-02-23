@@ -1,12 +1,19 @@
 package com.protoevo.biology.nn;
 
 
+import com.badlogic.gdx.math.MathUtils;
+import com.fasterxml.jackson.annotation.JsonIdentityInfo;
+import com.fasterxml.jackson.annotation.ObjectIdGenerators;
 import com.protoevo.core.Simulation;
+import com.protoevo.env.Environment;
 import com.protoevo.settings.SimulationSettings;
 
 import java.io.Serializable;
 import java.util.Objects;
 
+@JsonIdentityInfo(
+        generator = ObjectIdGenerators.IntSequenceGenerator.class,
+        scope = Environment.class)
 public class SynapseGene implements Comparable<SynapseGene>, Serializable
 {
     private static int globalInnovation = 0;
@@ -78,7 +85,7 @@ public class SynapseGene implements Comparable<SynapseGene>, Serializable
     public void setMutationRange(float min, float max) {
         mutationRateMin = min;
         mutationRateMax = max;
-        mutationRate = Simulation.RANDOM.nextFloat(min, max);
+        mutationRate = MathUtils.random(min, max);
     }
 
     public SynapseGene cloneWithMutation() {
@@ -91,7 +98,7 @@ public class SynapseGene implements Comparable<SynapseGene>, Serializable
         newGene.weight = randomInitialWeight();
 
         if (Simulation.RANDOM.nextBoolean()) {
-            newGene.mutationRate = Simulation.RANDOM.nextFloat(mutationRateMin, mutationRateMax);
+            newGene.mutationRate = MathUtils.random(mutationRateMin, mutationRateMax);
             nMutationRateMutations++;
         }
 

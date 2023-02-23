@@ -1,5 +1,6 @@
 package com.protoevo.env;
 
+import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector2;
 import com.protoevo.settings.WorldGenerationSettings;
 import com.protoevo.utils.Geometry;
@@ -49,9 +50,8 @@ public class WorldGeneration {
         for (float angle = 0; angle < 2*Math.PI; angle += angleDelta) {
             if (breakProb > 0 && RANDOM.nextFloat() < breakProb) {
                 currentRock = null;
-                angle += RANDOM.nextFloat(
-                        WorldGenerationSettings.ringBreakAngleMinSkip,
-                        WorldGenerationSettings.ringBreakAngleMaxSkip);
+                angle += WorldGenerationSettings.ringBreakAngleMinSkip +
+                        RANDOM.nextFloat() * (WorldGenerationSettings.ringBreakAngleMaxSkip - WorldGenerationSettings.ringBreakAngleMinSkip);
             }
             if (currentRock == null || currentRock.allEdgesAttached()) {
                 currentRock = newCircumferenceRockAtAngle(ringCentre, ringRadius, angle);
@@ -134,8 +134,15 @@ public class WorldGeneration {
     }
 
     public static Rock newAttachedRock(Rock toAttach, int edgeIdx, List<Rock> rocks) {
-        float sizeRange = (WorldGenerationSettings.maxRockSize - WorldGenerationSettings.minRockSize);
-        float rockSize = WorldGenerationSettings.minRockSize + sizeRange * RANDOM.nextFloat();
+        float attachedSize = toAttach.getSize();
+        float sizeMin = Math.max(
+                WorldGenerationSettings.minRockSize,
+                attachedSize * (1 - WorldGenerationSettings.attachedRockSizeChange));
+        float sizeMax = Math.min(
+                WorldGenerationSettings.maxRockSize,
+                attachedSize * (1 + WorldGenerationSettings.attachedRockSizeChange));
+        float sizeRange = (sizeMax - sizeMin);
+        float rockSize = sizeMin + sizeRange * RANDOM.nextFloat();
         return newAttachedRock(toAttach, edgeIdx, rocks, rockSize);
     }
 
@@ -214,21 +221,17 @@ public class WorldGeneration {
         float sizeRange = (WorldGenerationSettings.maxRockSize - WorldGenerationSettings.minRockSize);
         float rockSize = WorldGenerationSettings.minRockSize + sizeRange * RANDOM.nextFloat();
 
-        float k1 = 0.95f + 0.1f * RANDOM.nextFloat();
-        Vector2 p1 = centre.cpy().add(dir.cpy().setLength(k1 * rockSize));
-//(417.3416,-608.31537)
-        float tMin = WorldGenerationSettings.minRockSpikiness;
-        float tMax = (float) (2*Math.PI / 3);
-        float t1 = tMin + (tMax - 2*tMin) * RANDOM.nextFloat();
-        float k2 = 0.95f + 0.1f * RANDOM.nextFloat();
+        Vector2 p1 = centre.cpy().add(dir.cpy().setLength(rockSize));
 
-        dir.rotateRad(t1);
-        Vector2 p2 = centre.cpy().add(dir.cpy().setLength(k2 * rockSize));
-//(702.7173,224.46463)
+        float dt = WorldGenerationSettings.minRockSpikiness / 2f;
+        float tMin = 2 * MathUtils.PI / 3 - dt;
+        float tMax = 2 * MathUtils.PI / 3 + dt;
+
+        float t1 = tMin + (tMax - tMin) * RANDOM.nextFloat();
+        Vector2 p2 = centre.cpy().add(dir.cpy().rotateRad(t1).setLength(rockSize));
+
         float t2 = tMin + (tMax - tMin) * RANDOM.nextFloat();
-        float l3 = WorldGenerationSettings.minRockSize + sizeRange * RANDOM.nextFloat();
-        dir.rotateRad(t2);
-        Vector2 p3 = centre.cpy().add(dir.cpy().setLength(l3));
+        Vector2 p3 = centre.cpy().add(dir.cpy().rotateRad(t1 + t2).setLength(rockSize));
 
         return new Rock(p1, p2, p3);
 

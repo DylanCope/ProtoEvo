@@ -220,8 +220,12 @@ project(":core") {
 
         implementation "space.earlygrey:shapedrawer:$shapedrawerVersion"
 
-        api "com.fasterxml.jackson.core:jackson-core:${jacksonVersion}"
-        api "com.fasterxml.jackson.core:jackson-databind:${jacksonVersion}"
-        api "com.fasterxml.jackson.core:jackson-annotations:${jacksonVersion}"
+        api "com.fasterxml.jackson.core:jackson-core:$jacksonVersion"
+        api "com.fasterxml.jackson.core:jackson-databind:$jacksonVersion"
+        api "com.fasterxml.jackson.core:jackson-annotations:$jacksonVersion"
+        api "com.fasterxml.jackson.dataformat:jackson-dataformat-smile:$jacksonVersion"
+
+//        api 'de.ruedigermoeller:fst:3.0.3'
+        api 'de.ruedigermoeller:fst:2.56'
     }
 }

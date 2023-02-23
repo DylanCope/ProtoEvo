@@ -3,10 +3,10 @@ package com.protoevo.env;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.math.Vector2;
-import com.fasterxml.jackson.annotation.JsonBackReference;
-import com.protoevo.biology.cells.Cell;
-import com.protoevo.biology.cells.EdibleCell;
+import com.fasterxml.jackson.annotation.JsonIdentityInfo;
+import com.fasterxml.jackson.annotation.ObjectIdGenerators;
 import com.protoevo.biology.Food;
+import com.protoevo.biology.cells.Cell;
 import com.protoevo.biology.cells.Protozoan;
 import com.protoevo.settings.PerformanceSettings;
 import com.protoevo.settings.SimulationSettings;
@@ -19,22 +19,27 @@ import java.io.Serializable;
 import java.util.function.Consumer;
 import java.util.stream.IntStream;
 
+@JsonIdentityInfo(
+        generator = ObjectIdGenerators.IntSequenceGenerator.class,
+        scope = Environment.class)
 public class ChemicalSolution implements Serializable {
     public static final long serialVersionUID = 1L;
 
-    @JsonBackReference
-    private final Environment environment;
-    private final float cellSizeX, cellSizeY;
-    private final float xMin, yMin, xMax, yMax;
-    private final int chemicalTextureHeight;
-    private final int chemicalTextureWidth;
+
+    private Environment environment;
+    private float cellSizeX, cellSizeY;
+    private float xMin, yMin, xMax, yMax;
+    private int chemicalTextureHeight;
+    private int chemicalTextureWidth;
     private transient Pixmap chemicalPixmap, swapPixmap;
-    private final byte[] swapBuffer;
+    private transient boolean initialised = false;
+    private byte[] swapBuffer;
     private transient Color[][] colors;
     private float timeSinceUpdate = 0;
     private transient JCudaKernelRunner diffusionKernel;
     private Consumer<Pixmap> updateChemicalsTextureCallback;
-    private final transient Color tmpColour = new Color(), tmpColour2 = new Color();
+
+    public ChemicalSolution() {}
 
     public ChemicalSolution(Environment environment, int cells, float mapRadius) {
         this(environment, -mapRadius, mapRadius, -mapRadius, mapRadius, cells);
@@ -51,32 +56,35 @@ public class ChemicalSolution implements Serializable {
         this.yMin = yMin;
         this.yMax = yMax;
 
-        if (!PerformanceSettings.useGPU) {
-            cells /= 4;
-        }
-
         this.chemicalTextureWidth = cells;
         this.chemicalTextureHeight = cells;
 
         this.cellSizeX = cells / (xMax - xMin);
         this.cellSizeY = cells / (yMax - yMin);
 
-        chemicalPixmap = new Pixmap(cells, cells, Pixmap.Format.RGBA8888);
-        swapPixmap = new Pixmap(cells, cells, Pixmap.Format.RGBA8888);
-
-        swapBuffer = new byte[cells * cells * 4];
-
-        colors = new Color[cells][cells];
-        for (int i = 0; i < cells; i++) {
-            for (int j = 0; j < cells; j++) {
-                colors[i][j] = new Color();
-            }
-        }
-
-        chemicalPixmap.setBlending(Pixmap.Blending.None);
+        initialise();
     }
 
     public void initialise() {
+
+        if (!initialised) {
+            chemicalPixmap = new Pixmap(chemicalTextureWidth, chemicalTextureHeight, Pixmap.Format.RGBA8888);
+            swapPixmap = new Pixmap(chemicalTextureWidth, chemicalTextureHeight, Pixmap.Format.RGBA8888);
+
+            swapBuffer = new byte[chemicalTextureWidth * chemicalTextureHeight * 4];
+
+            colors = new Color[chemicalTextureWidth][chemicalTextureHeight];
+            for (int i = 0; i < chemicalTextureWidth; i++) {
+                for (int j = 0; j < chemicalTextureHeight; j++) {
+                    colors[i][j] = new Color();
+                }
+            }
+
+            chemicalPixmap.setBlending(Pixmap.Blending.None);
+
+            initialised = true;
+        }
+
         if (PerformanceSettings.useGPU) {
             // has to be called on the same thread running the simulation
             if (DebugMode.isDebugMode())
@@ -126,7 +134,7 @@ public class ChemicalSolution implements Serializable {
         if (!inBounds(worldX, worldY))
             return;
 
-        if (e instanceof EdibleCell && !e.isDead()) {
+        if (e.isEdible() && !e.isDead()) {
             int fieldX = toChemicalGridX(worldX);
             int fieldY = toChemicalGridY(worldY);
             Color cellColor = e.getColor();
@@ -333,9 +341,8 @@ public class ChemicalSolution implements Serializable {
     }
 
     public void update(float delta) {
-        if (chemicalPixmap == null) {
-            chemicalPixmap = new Pixmap(chemicalTextureWidth, chemicalTextureHeight, Pixmap.Format.RGBA8888);
-            swapPixmap = new Pixmap(chemicalTextureWidth, chemicalTextureHeight, Pixmap.Format.RGBA8888);
+        if (!initialised) {
+            initialise();
         }
 
         timeSinceUpdate += delta;
@@ -349,6 +356,10 @@ public class ChemicalSolution implements Serializable {
     }
 
     public Pixmap getChemicalPixmap() {
+        if (!initialised) {
+            initialise();
+        }
+
         return chemicalPixmap;
     }
 
@@ -360,17 +371,18 @@ public class ChemicalSolution implements Serializable {
         return chemicalTextureWidth;
     }
 
-    public float getPlantPheromoneDensity(float x, float y) {
+    public float getGreenDensity(float x, float y) {
         int i = toChemicalGridX(x);
         int j = toChemicalGridY(y);
-        return getPlantPheromoneDensity(i, j);
+        return getGreenDensity(i, j);
     }
 
-    public float getPlantPheromoneDensity(int i, int j) {
+    public float getGreenDensity(int i, int j) {
         if (i < 0 || i >= chemicalTextureWidth || j < 0 || j >= chemicalTextureHeight)
             return 0;
 
         int chemicalColour = chemicalPixmap.getPixel(i, j);
+        Color tmpColour = colors[i][j];
         Color.rgba8888ToColor(tmpColour, chemicalColour);
         return tmpColour.g * tmpColour.a;
     }
