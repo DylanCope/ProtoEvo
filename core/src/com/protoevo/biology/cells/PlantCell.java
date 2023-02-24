@@ -113,9 +113,13 @@ public class PlantCell extends Cell {
 
         if (shouldSplit()) {
             getEnv().requestBurst(
-                this, PlantCell.class, r -> new PlantCell(r, getEnv())
+                this, PlantCell.class, this::createChild
             );
         }
+    }
+
+    public PlantCell createChild(float r) {
+        return new PlantCell(r, getEnv());
     }
 
     public void attach(Cell otherCell) {

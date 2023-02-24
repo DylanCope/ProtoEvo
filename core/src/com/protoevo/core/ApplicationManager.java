@@ -9,7 +9,7 @@ import com.protoevo.utils.DebugMode;
 
 public class ApplicationManager {
 
-    private static boolean windowed = false;
+    private static boolean windowed = true;
     private volatile boolean headless = false, applicationRunning = true;
     private Simulation simulation;
     private GraphicsAdapter graphics;
@@ -34,8 +34,8 @@ public class ApplicationManager {
     }
 
     public void createSimulation() {
-//        simulation = new Simulation(0, "chaos-nidoran-nobis");
-        simulation = new Simulation();
+        simulation = new Simulation(0, "erebus-tangela-omnis");
+//        simulation = new Simulation();
         simulation.setManager(this);
 
         if (!headless) {
