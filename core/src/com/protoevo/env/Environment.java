@@ -14,6 +14,8 @@ import com.protoevo.biology.cells.MeatCell;
 import com.protoevo.biology.cells.PlantCell;
 import com.protoevo.biology.evolution.Evolvable;
 import com.protoevo.biology.cells.Protozoan;
+import com.protoevo.biology.nodes.SurfaceNode;
+import com.protoevo.biology.organelles.Organelle;
 import com.protoevo.core.*;
 import com.protoevo.core.Shape;
 import com.protoevo.settings.WorldGenerationSettings;
@@ -514,10 +516,20 @@ public class Environment implements Serializable
 		return debugStats;
 	}
 
-	public Statistics getProtozoaSummaryStats(boolean computeLogStats, boolean removeMoleculeStats) {
+	public Statistics getProtozoaSummaryStats(boolean computeLogStats, boolean removeMoleculeStats, boolean allStats) {
 		Iterator<Statistics> protozoaStats = cells.stream()
 				.filter(cell -> cell instanceof Protozoan)
-				.map(Cell::getStats)
+				.map(p -> {
+					if (allStats) {
+						Statistics stats = new Statistics(p.getStats());
+						for (SurfaceNode node : p.getSurfaceNodes())
+							stats.putAll("Node " + node.getIndex() +": ", node.getStats());
+						for (Organelle organelle : p.getOrganelles())
+							stats.putAll("Organelle " + organelle.getIndex() +": ", organelle.getStats());
+						return stats;
+					}
+					return p.getStats();
+				})
 				.iterator();
 		Statistics stats = Statistics.computeSummaryStatistics(protozoaStats, computeLogStats);
 		final int protozoaCount = numberOfProtozoa();
@@ -531,7 +543,7 @@ public class Environment implements Serializable
 	}
 
 	public Statistics getProtozoaSummaryStats() {
-		return getProtozoaSummaryStats(false, true);
+		return getProtozoaSummaryStats(false, true, false);
 	}
 
 	public int numberOfProtozoa() {

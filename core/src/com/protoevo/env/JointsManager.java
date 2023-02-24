@@ -8,8 +8,6 @@ import com.badlogic.gdx.physics.box2d.JointEdge;
 import com.badlogic.gdx.physics.box2d.joints.RopeJoint;
 import com.badlogic.gdx.physics.box2d.joints.RopeJointDef;
 import com.badlogic.gdx.utils.Array;
-import com.fasterxml.jackson.annotation.JsonIdentityInfo;
-import com.fasterxml.jackson.annotation.ObjectIdGenerators;
 import com.protoevo.biology.cells.Cell;
 import com.protoevo.core.Particle;
 
@@ -18,22 +16,23 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
-@JsonIdentityInfo(
-        generator = ObjectIdGenerators.IntSequenceGenerator.class,
-        scope = Environment.class)
 public class JointsManager implements Serializable {
     public static long serialVersionUID = 1L;
 
-    @JsonIdentityInfo(
-            generator = ObjectIdGenerators.IntSequenceGenerator.class,
-            scope = Environment.class)
+    @FunctionalInterface
+    public interface JoiningListener extends Serializable {
+        void onDestroyed(Joining joining);
+    }
+
     public static class Joining implements Serializable {
         public static long serialVersionUID = 1L;
 
         public Particle particleA, particleB;
         public float anchorAngleA, anchorAngleB;
         public boolean anchoredA, anchoredB;
-        private Vector2 anchorA = new Vector2(), anchorB = new Vector2();
+        public JoiningListener listener;
+        private final Vector2 anchorA = new Vector2();
+        private final Vector2 anchorB = new Vector2();
 
         public Joining() {}
 
@@ -115,6 +114,8 @@ public class JointsManager implements Serializable {
 
         public void destroy() {
             Environment env = particleA.getEnv();
+            if (listener != null)
+                listener.onDestroyed(this);
             Joint joint = getJoint();
             while (joint != null) {
                 env.getWorld().destroyJoint(joint);

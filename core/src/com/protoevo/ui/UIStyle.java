@@ -66,10 +66,13 @@ public class UIStyle {
         TextField.TextFieldStyle textFieldStyle = new TextField.TextFieldStyle();
         textFieldStyle.font = skin.getFont("default");
         textFieldStyle.fontColor = Color.WHITE;
-        textFieldStyle.background = skin.newDrawable("white", new Color(0.3f, 0.3f, 0.3f, 0.95f));
+        textFieldStyle.background = skin.newDrawable("white", new Color(0.3f, 0.3f, 0.3f, 0.5f));
         textFieldStyle.disabledFontColor = Color.GRAY;
         textFieldStyle.cursor = skin.newDrawable("white", Color.WHITE);
         textFieldStyle.selection = skin.newDrawable("white", selectionColor);
+        textFieldStyle.background.setLeftWidth(textFieldStyle.background.getLeftWidth() + 10);
+        textFieldStyle.background.setRightWidth(textFieldStyle.background.getRightWidth() + 10);
+
         skin.add("default", textFieldStyle);
 
         return skin;

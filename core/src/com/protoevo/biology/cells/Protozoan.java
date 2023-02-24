@@ -117,6 +117,7 @@ public class Protozoan extends Cell implements Evolvable
 					 traitClass ="com.protoevo.biology.cells.ProtozoaColourTrait")
 	public void setColour(Colour colour) {
 		setHealthyColour(colour);
+		setDegradedColour(degradeColour(colour, 0.3f));
 	}
 
 	@EvolvableFloat(name="Growth Rate",
@@ -309,9 +310,18 @@ public class Protozoan extends Cell implements Evolvable
 		if (numLSN > 0) {
 			stats.putCount("Light Sensitive Nodes", numLSN);
 		}
+		int numEngulfed = engulfedCells.size();
+		if (numEngulfed > 0) {
+			stats.putCount("Num Engulfed", numEngulfed);
+		}
+		int numBindings = getNumAttachedCells();
+		if (numBindings > 0) {
+			stats.putCount("Num Cell Bindings", numBindings);
+		}
 
 		stats.put("Herbivore Factor", herbivoreFactor);
-//		stats.putPercentage("Mutation Chance", 100 * geneExpressionFunction.getMutationRate());
+		stats.putPercentage("Mean Mutation Chance", 100 * geneExpressionFunction.getMeanMutationRate());
+		stats.putCount("Num Mutations", geneExpressionFunction.getMutationCount());
 
 		return stats;
 	}

@@ -1,10 +1,12 @@
 package com.protoevo.core;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.javafaker.Faker;
 import com.protoevo.settings.Settings;
 import com.protoevo.settings.SimulationSettings;
 import com.protoevo.env.Environment;
 import com.protoevo.ui.GraphicsAdapter;
+import com.protoevo.utils.FileIO;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -84,6 +86,8 @@ public class Simulation implements Runnable
 		try {
 			Files.createDirectories(Paths.get("saves/" + name));
 			Files.createDirectories(Paths.get("saves/" + name + "/env"));
+			Files.createDirectories(Paths.get("saves/" + name + "/stats"));
+			Files.createDirectories(Paths.get("saves/" + name + "/stats/summaries"));
 
 			Path genomePath = Paths.get(genomeFile);
 			if (!Files.exists(genomePath))
@@ -229,16 +233,24 @@ public class Simulation implements Runnable
 		repl.close();
 	}
 
+	public String getTimeStampString() {
+		return new SimpleDateFormat("yyyy-MM-dd-HH-mm-ss").format(new Date());
+	}
+
 	public String save() {
-		String timeStamp = new SimpleDateFormat("yyyy-MM-dd-HH-mm-ss").format(new Date());
+		String timeStamp = getTimeStampString();
 		String fileName = "saves/" + name + "/env/" + timeStamp;
 		EnvFileIO.serialize(environment, fileName);
 		return fileName;
 	}
 
 	public void makeHistorySnapshot() {
-//		Statistics stats = environment.getStats();
-//
+		Statistics stats = new Statistics(environment.getStats());
+		stats.putAll(environment.getDebugStats());
+		stats.putAll(environment.getPhysicsDebugStats());
+		stats.putAll(environment.getProtozoaSummaryStats(true, false, true));
+
+		FileIO.writeJson(stats, "saves/" + name + "/stats/summaries/" + getTimeStampString());
 //		if (statsNames == null) {
 //			statsNames = new ArrayList<>();
 //			for (Statistics.Stat stat : stats.getStats())
@@ -291,5 +303,20 @@ public class Simulation implements Runnable
 
 	public boolean isReady() {
 		return initialised;
+	}
+
+	public String getSaveFolder() {
+		return "saves/" + name;
+	}
+
+	public void toggleTimeDilation() {
+		if (timeDilation <= 1f)
+			timeDilation = 2f;
+		else if (timeDilation <= 2f)
+			timeDilation = 5f;
+//		else if (timeDilation <= 5f)
+//			timeDilation = 10f;
+		else
+			timeDilation = 1f;
 	}
 }

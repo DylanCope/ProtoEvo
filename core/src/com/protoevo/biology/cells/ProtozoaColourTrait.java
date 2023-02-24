@@ -18,14 +18,17 @@ public class ProtozoaColourTrait implements Trait<Colour>, Serializable {
 
     private final int minVal = 80;
     private final int maxVal = 150;
+    private int mutationCount = 0;
 
     public ProtozoaColourTrait(String geneName) {
         this.geneName = geneName;
         value = newRandomValue();
     }
 
-    public ProtozoaColourTrait(String geneName, Colour value) {
-        this.geneName = geneName;
+    public ProtozoaColourTrait(ProtozoaColourTrait other, Colour value) {
+        this.geneName = other.geneName;
+        this.mutationCount = other.mutationCount;
+        this.mutationRate = other.mutationRate;
         this.value = value;
     }
 
@@ -62,7 +65,7 @@ public class ProtozoaColourTrait implements Trait<Colour>, Serializable {
 
     @Override
     public Trait<Colour> createNew(Colour value) {
-        return new ProtozoaColourTrait(geneName, value.cpy());
+        return new ProtozoaColourTrait(this, value.cpy());
     }
 
     @Override
@@ -73,6 +76,16 @@ public class ProtozoaColourTrait implements Trait<Colour>, Serializable {
     @Override
     public float getMutationRate() {
         return mutationRate;
+    }
+
+    @Override
+    public int getMutationCount() {
+        return mutationCount;
+    }
+
+    @Override
+    public void incrementMutationCount() {
+        mutationCount++;
     }
 
     @Override

@@ -328,15 +328,7 @@ public abstract class Cell extends Particle implements Serializable {
 	}
 
 	public boolean notBoundTo(Cell otherCell) {
-//		for (JointsManager.JoinedParticles joining : attachedCells) {
-//			if (joining.getOther(this) == otherCell)
-//				return false;
-//		}
-//		for (JointsManager.JoinedParticles joining : otherCell.attachedCells) {
-//			if (joining.getOther(otherCell) == this)
-//				return false;
-//		}
-		return attachedCells.containsKey(otherCell) || otherCell.attachedCells.containsKey(this);
+		return !(attachedCells.containsKey(otherCell) || otherCell.attachedCells.containsKey(this));
 	}
 
 	public abstract boolean isEdible();

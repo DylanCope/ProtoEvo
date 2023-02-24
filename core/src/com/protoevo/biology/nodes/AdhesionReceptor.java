@@ -26,8 +26,15 @@ public class AdhesionReceptor extends NodeAttachment {
         Cell cell = node.getCell();
         for (CollisionHandler.Collision contact : cell.getContacts()) {
             Object other = cell.getOther(contact);
-            if (other instanceof Protozoan)
+            if (other instanceof Protozoan && joining == null)
                 joining = tryBindTo((Protozoan) other);
+        }
+    }
+
+    public void unbind(JointsManager.Joining joining) {
+        if (this.joining == joining) {
+            otherNode = null;
+            this.joining = null;
         }
     }
 
@@ -86,7 +93,7 @@ public class AdhesionReceptor extends NodeAttachment {
     }
 
     private JointsManager.Joining tryBindTo(Protozoan otherCell) {
-        if (Math.random() < getConstructionProgress())
+        if (Math.random() > getConstructionProgress())
             return null;
 
         for (SurfaceNode otherNode : otherCell.getSurfaceNodes()) {
@@ -105,6 +112,8 @@ public class AdhesionReceptor extends NodeAttachment {
                 if (otherNode.getAttachment() != null && otherNode.getAttachment() instanceof AdhesionReceptor)
                     ((AdhesionReceptor) otherNode.getAttachment()).setOtherNode(node);
 
+                joining.listener = this::unbind;
+
                 return joining;
             }
         }
@@ -121,13 +130,14 @@ public class AdhesionReceptor extends NodeAttachment {
     }
 
     private boolean createBindingCondition(SurfaceNode otherNode) {
-        return otherNode.exists() && notAlreadyBound(otherNode) && otherIsBinding(otherNode) && isCloseEnough(otherNode);
+        return otherNode.exists() && notAlreadyBound(otherNode)
+                && otherIsBinding(otherNode) && isCloseEnough(otherNode);
     }
 
     private boolean notAlreadyBound(SurfaceNode otherNode) {
         Cell otherCell = otherNode.getCell();
         Cell cell = node.getCell();
-        return otherCell.notBoundTo(cell) && cell.notBoundTo(otherCell);
+        return otherCell.notBoundTo(cell);
     }
 
     private boolean otherIsBinding(SurfaceNode otherNode) {
@@ -135,7 +145,8 @@ public class AdhesionReceptor extends NodeAttachment {
     }
 
     private boolean isCloseEnough(SurfaceNode otherNode) {
-        float d = JointsManager.idealJointLength(otherNode.getCell(), node.getCell());
+        float d = JointsManager.idealJointLength(otherNode.getCell(), node.getCell())
+                + otherNode.getCell().getRadius() + node.getCell().getRadius();
         return node.getWorldPosition().dst2(otherNode.getWorldPosition()) < d*d;
     }
 

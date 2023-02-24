@@ -13,6 +13,7 @@ import com.badlogic.gdx.scenes.scene2d.EventListener;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.Touchable;
 import com.badlogic.gdx.scenes.scene2d.ui.*;
+import com.badlogic.gdx.scenes.scene2d.ui.TextField;
 import com.badlogic.gdx.scenes.scene2d.utils.Drawable;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 import com.protoevo.biology.cells.Cell;
@@ -35,6 +36,9 @@ import com.protoevo.utils.DebugMode;
 import com.protoevo.utils.ImageUtils;
 import com.protoevo.utils.Utils;
 
+import java.awt.*;
+import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
@@ -129,8 +133,7 @@ public class SimulationScreen {
         topBar.addLeft(pauseButton);
 
         ImageButton toggleRenderingButton = createBarImageButton("icons/fast_forward.png", event -> {
-            toggleEnvironmentRendering();
-            graphics.toggleReducedRendering();
+            simulation.toggleTimeDilation();
             return true;
         });
         topBar.addLeft(toggleRenderingButton);
@@ -141,6 +144,22 @@ public class SimulationScreen {
             return true;
         });
         topBar.addLeft(homeButton);
+
+        ImageButton folderButton = createBarImageButton("icons/folder.png", event -> {
+            try {
+                Desktop.getDesktop().open(new File(simulation.getSaveFolder()));
+            } catch (IOException e) {
+                System.out.println("\nFailed to open folder: " + e.getMessage() + "\n");
+            }
+            return true;
+        });
+        topBar.addLeft(folderButton);
+
+        ImageButton replButton = createBarImageButton("icons/terminal.png", event -> {
+            graphics.switchToHeadlessMode();
+            return true;
+        });
+        topBar.addLeft(replButton);
 
         saveTrackedParticleTextField = new TextField("", skin);
         stage.addActor(saveTrackedParticleTextField);
@@ -290,7 +309,7 @@ public class SimulationScreen {
         saveTrackedParticleButton.setPosition(pos.x, pos.y);
         saveTrackedParticleTextField.setVisible(true);
         saveTrackedParticleTextField.setBounds(
-                saveTrackedParticleButton.getX() + saveTrackedParticleButton.getWidth() * 1.8f,
+                saveTrackedParticleButton.getX() + saveTrackedParticleButton.getWidth() * 1.3f,
                 saveTrackedParticleButton.getY(),
                 fieldWidthMul * saveTrackedParticleButton.getWidth(),
                 saveTrackedParticleButton.getHeight()

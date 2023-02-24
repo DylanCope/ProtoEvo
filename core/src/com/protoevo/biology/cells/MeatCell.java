@@ -20,7 +20,7 @@ public class MeatCell extends Cell {
         float g = (25  + MathUtils.random(100)) / 255f;
         float b = (25  + MathUtils.random(100)) / 255f;
         setHealthyColour(new Colour(r, g, b, 1f));
-        setDegradedColour(degradeColour(getHealthyColour(), 0.5f));
+        setDegradedColour(degradeColour(getHealthyColour(), 0.3f));
     }
 
     public void age(float delta) {

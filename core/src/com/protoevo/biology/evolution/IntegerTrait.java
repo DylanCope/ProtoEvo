@@ -22,6 +22,21 @@ public class IntegerTrait implements Trait<Integer> {
     private final String geneName;
     private final EvolvableInteger.MutationMethod mutationMethod;
     private float mutationRate;
+    private int mutationCount = 0;
+
+    public IntegerTrait(IntegerTrait other, int value) {
+        this.geneName = other.geneName;
+        this.minValue = other.minValue;
+        this.maxValue = other.maxValue;
+        this.mutationMethod = other.mutationMethod;
+        this.maxIncrement = other.maxIncrement;
+        this.canDisable = other.canDisable;
+        this.disableValue = other.disableValue;
+        this.disabled = other.disabled;
+        this.mutationRate = other.mutationRate;
+        this.mutationCount = other.mutationCount;
+        this.value = value;
+    }
 
     public IntegerTrait(String geneName, int minValue, int maxValue,
                         EvolvableInteger.MutationMethod mutationMethod, int maxIncrement,
@@ -36,6 +51,30 @@ public class IntegerTrait implements Trait<Integer> {
         this.disabled = disabled;
 
         this.value = value;
+    }
+
+    public IntegerTrait(EvolvableInteger evolvableInteger, int value) {
+        this.geneName = evolvableInteger.name();
+        this.minValue = evolvableInteger.min();
+        this.maxValue = evolvableInteger.max();
+        this.mutationMethod = evolvableInteger.mutateMethod();
+        this.maxIncrement = evolvableInteger.maxIncrement();
+        this.canDisable = evolvableInteger.canDisable();
+        this.disableValue = evolvableInteger.disableValue();
+        this.disabled = false;
+        this.value = value;
+    }
+
+    public IntegerTrait(EvolvableInteger evolvableInteger) {
+        this.geneName = evolvableInteger.name();
+        this.minValue = evolvableInteger.min();
+        this.maxValue = evolvableInteger.max();
+        this.mutationMethod = evolvableInteger.mutateMethod();
+        this.maxIncrement = evolvableInteger.maxIncrement();
+        this.canDisable = evolvableInteger.canDisable();
+        this.disableValue = evolvableInteger.disableValue();
+        this.disabled = false;
+        this.value = newRandomValue();
     }
 
     public IntegerTrait(String geneName, int minValue, int maxValue,
@@ -78,6 +117,16 @@ public class IntegerTrait implements Trait<Integer> {
     }
 
     @Override
+    public int getMutationCount() {
+        return mutationCount;
+    }
+
+    @Override
+    public void incrementMutationCount() {
+        mutationCount++;
+    }
+
+    @Override
     public Integer newRandomValue() {
         int maxNewValue, minNewValue;
         if (mutationMethod.equals(EvolvableInteger.MutationMethod.INCREMENT_ONLY_UP)) {
@@ -111,8 +160,7 @@ public class IntegerTrait implements Trait<Integer> {
 
     @Override
     public Trait<Integer> createNew(Integer value) {
-        return new IntegerTrait(geneName, minValue, maxValue, mutationMethod,
-                maxIncrement, canDisable, disableValue, disabled, value);
+        return new IntegerTrait(this, value);
     }
 
     @Override

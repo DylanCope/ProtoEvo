@@ -1,6 +1,10 @@
 package com.protoevo.test;
 
+import com.badlogic.gdx.utils.Json;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.protoevo.core.Statistics;
+import com.protoevo.utils.FileIO;
 
 public class TestStats {
 
@@ -22,5 +26,12 @@ public class TestStats {
         statistics.putBoolean("Test Boolean", true);
 
         statistics.forEach(System.out::println);
+
+        ObjectMapper mapper = FileIO.getJsonMapper();
+        try {
+            System.out.println(mapper.writeValueAsString(statistics));
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException(e);
+        }
     }
 }

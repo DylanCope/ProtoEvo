@@ -9,25 +9,24 @@ import java.util.Map;
 
 public class CollectionTrait implements Trait<List<Evolvable>> {
 
-
     private final String name;
-    private final List<Evolvable> collection;
+    private List<Evolvable> collection;
     private final Class<Evolvable.Element> collectionType;
     private GeneExpressionFunction geneExpressionFunction;
     private final int minSize, maxSize;
     private final static int nMutationTypes = 3;
     private float mutationRate;
+    private int mutationCount;
 
-    public CollectionTrait(
-            GeneExpressionFunction geneExpressionFunction,
-            Class<Evolvable.Element> collectionType, List<Evolvable> collection,
-            String name, int minSize, int maxSize) {
-        this.geneExpressionFunction = geneExpressionFunction;
-        this.minSize = minSize;
-        this.maxSize = maxSize;
+    public CollectionTrait(CollectionTrait other, List<Evolvable> collection) {
+        this.geneExpressionFunction = other.geneExpressionFunction;
+        this.minSize = other.minSize;
+        this.maxSize = other.maxSize;
         this.collection = collection;
-        this.collectionType = collectionType;
-        this.name = name;
+        this.collectionType = other.collectionType;
+        this.name = other.name;
+        this.mutationRate = other.mutationRate;
+        this.mutationCount = other.mutationCount;
     }
 
     public CollectionTrait(
@@ -83,6 +82,16 @@ public class CollectionTrait implements Trait<List<Evolvable>> {
     }
 
     @Override
+    public int getMutationCount() {
+        return mutationCount;
+    }
+
+    @Override
+    public void incrementMutationCount() {
+        mutationCount++;
+    }
+
+    @Override
     public List<Evolvable> newRandomValue() {
         double p = Math.random();
         boolean removeRandom = collection.size() > minSize && p < 1.0 / nMutationTypes;
@@ -108,8 +117,7 @@ public class CollectionTrait implements Trait<List<Evolvable>> {
 
     @Override
     public Trait<List<Evolvable>> createNew(List<Evolvable> value) {
-        return new CollectionTrait(
-                geneExpressionFunction, collectionType, value, name, minSize, maxSize);
+        return new CollectionTrait(this, value);
     }
 
     private List<Evolvable> copyCollection() {

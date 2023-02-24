@@ -9,6 +9,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 public interface Trait<T> extends Evolvable.Component, Serializable {
+    // TODO: should be abstract class not interface - lots of unnecessary repeated logic
 
     HashMap<String, Object> NO_DEPS = new HashMap<>();
 
@@ -35,6 +36,9 @@ public interface Trait<T> extends Evolvable.Component, Serializable {
         ));
     }
 
+    int getMutationCount();
+    void incrementMutationCount();
+
     default Trait<T> cloneWithMutation() {
         if (Math.random() > getMutationRate())
             return copy();
@@ -43,6 +47,8 @@ public interface Trait<T> extends Evolvable.Component, Serializable {
             mutateMutationRate();
 
         Trait<T> newTrait = createNew(newRandomValue());
+        newTrait.incrementMutationCount();
+
         if (newTrait == null)
             throw new RuntimeException(
                 "Failed to mutate " + getTraitName() + ": received null. "  +

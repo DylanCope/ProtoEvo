@@ -4,6 +4,8 @@ import com.fasterxml.jackson.annotation.JsonIdentityInfo;
 import com.fasterxml.jackson.annotation.ObjectIdGenerators;
 import com.protoevo.biology.nn.NetworkGenome;
 import com.protoevo.biology.nn.NeuralNetwork;
+import com.protoevo.biology.nn.NeuronGene;
+import com.protoevo.biology.nn.SynapseGene;
 import com.protoevo.core.Simulation;
 import com.protoevo.env.Environment;
 import com.protoevo.settings.Settings;
@@ -386,21 +388,12 @@ public class GeneExpressionFunction implements Evolvable.Component, Serializable
 
     public void addEvolvableInteger(EvolvableInteger evolvableInteger, Method method) {
         String name = evolvableInteger.name();
-        int minValue = evolvableInteger.min();
-        int maxValue = evolvableInteger.max();
-        EvolvableInteger.MutationMethod mutMethod = evolvableInteger.mutateMethod();
-        int maxInc = evolvableInteger.maxIncrement();
-        boolean canDisable = evolvableInteger.canDisable();
-        int disableValue = evolvableInteger.disableValue();
 
         IntegerTrait trait;
         if (evolvableInteger.randomInitialValue())
-            trait = new IntegerTrait(
-                    name, minValue, maxValue, mutMethod, maxInc, canDisable, disableValue, false);
+            trait = new IntegerTrait(evolvableInteger);
         else
-            trait = new IntegerTrait(
-                    name, minValue, maxValue, mutMethod, maxInc, canDisable, disableValue, false,
-                    evolvableInteger.initValue());
+            trait = new IntegerTrait(evolvableInteger, evolvableInteger.initValue());
 
         trait.setGeneExpressionFunction(this);
         trait.init();
@@ -550,7 +543,33 @@ public class GeneExpressionFunction implements Evolvable.Component, Serializable
     }
 
     public float getMeanMutationRate() {
-        return 0;
+        int count = 0;
+        float sum = 0;
+        for (ExpressionNode node : expressionNodes.values()) {
+            sum += node.getTrait().getMutationRate();
+            count++;
+        }
+        if (grnGenome != null) {
+            for (Iterator<NeuronGene> it = grnGenome.iterateNeuronGenes(); it.hasNext(); ) {
+                NeuronGene gene = it.next();
+                sum += gene.getMutationRate();
+                count++;
+            }
+            for (Iterator<SynapseGene> it = grnGenome.iterateSynapseGenes(); it.hasNext(); ) {
+                SynapseGene gene = it.next();
+                sum += gene.getMutationRate();
+                count++;
+            }
+        }
+        return sum / count;
+    }
+
+    public int getMutationCount() {
+        int mutationCount = 0;
+        for (ExpressionNode node : expressionNodes.values()) {
+            mutationCount += node.getTrait().getMutationCount();
+        }
+        return mutationCount;
     }
 
     public boolean hasGene(String geneName) {

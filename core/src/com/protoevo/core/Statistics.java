@@ -1,7 +1,8 @@
 package com.protoevo.core;
 
 
-import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.utils.Json;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import java.io.Serializable;
 import java.util.*;
@@ -14,7 +15,7 @@ public class Statistics implements Serializable, Iterable<Statistics.Stat> {
     public enum StatType {
         BOOLEAN(Boolean.class),
         INTEGER(Integer.class),
-        FLOAT(Float.class),
+        DOUBLE(Double.class),
         STRING(String.class);
 
         final Class<?> clazz;
@@ -225,9 +226,10 @@ public class Statistics implements Serializable, Iterable<Statistics.Stat> {
         private final String name;
         private final StatType type;
         private Object value;
-        private float error;
+        private double error;
         private ComplexUnit unit;
-        private Map<BaseUnit, Float> unitMultipliers;
+        @JsonIgnore
+        private Map<BaseUnit, Double> unitMultipliers;
 
         public Stat(String name, StatType type) {
             this.name = name;
@@ -244,6 +246,7 @@ public class Statistics implements Serializable, Iterable<Statistics.Stat> {
             this.value = stat.value;
             this.unit = stat.unit;
             this.unitMultipliers = stat.unitMultipliers;
+            this.error = stat.error;
         }
 
         public void setValue(Object value) {
@@ -276,11 +279,11 @@ public class Statistics implements Serializable, Iterable<Statistics.Stat> {
             return unit;
         }
 
-        public void setUnitMultipliers(Map<BaseUnit, Float> unitMultipliers) {
+        public void setUnitMultipliers(Map<BaseUnit, Double> unitMultipliers) {
             this.unitMultipliers = unitMultipliers;
         }
 
-        public int getStandardExponent(float number) {
+        public int getStandardExponent(double number) {
             if (number == 0) {
                 return 0;
             }
@@ -290,26 +293,26 @@ public class Statistics implements Serializable, Iterable<Statistics.Stat> {
             return exp - 1;
         }
 
-        public float getStandardMantissa(float number) {
+        public double getStandardMantissa(double number) {
             int exp = getStandardExponent(number);
-            return number / (float) Math.pow(1000, exp / 3);
+            return number / (double) Math.pow(1000, exp / 3);
         }
 
         public boolean canBeNumeric() {
             return isNumeric() || type.equals(StatType.BOOLEAN);
         }
 
-        public float getFloat() {
+        public double getDouble() {
             if (type.equals(StatType.BOOLEAN))
                 return ((Boolean) value) ? 1 : 0;
 
-            return ((Number) value).floatValue();
+            return ((Number) value).doubleValue();
         }
 
-        public float getMultipliedFloat() {
-            float number = getFloat();
+        public double getMultipliedDouble() {
+            double number = getDouble();
             if (unit != null) {
-                for (Map.Entry<BaseUnit, Float> entry : unitMultipliers.entrySet()) {
+                for (Map.Entry<BaseUnit, Double> entry : unitMultipliers.entrySet()) {
                     if (unit.getExponent(entry.getKey()) != 0)
                         number *= Math.pow(entry.getValue(),
                                 unit.getExponent(entry.getKey()));
@@ -319,14 +322,14 @@ public class Statistics implements Serializable, Iterable<Statistics.Stat> {
         }
 
         public boolean isNumeric() {
-            return type.equals(StatType.FLOAT) || type.equals(StatType.INTEGER);
+            return type.equals(StatType.DOUBLE) || type.equals(StatType.INTEGER);
         }
 
         public Stat add(Number n) {
             if (type.equals(StatType.INTEGER)) {
                 value = ((Integer) value) + n.intValue();
-            } else if (type.equals(StatType.FLOAT)) {
-                value = ((Float) value) + n.floatValue();
+            } else if (type.equals(StatType.DOUBLE)) {
+                value = ((Double) value) + n.doubleValue();
             }
             return this;
         }
@@ -334,8 +337,8 @@ public class Statistics implements Serializable, Iterable<Statistics.Stat> {
         public Stat add(Stat stat) {
             if (type.equals(StatType.INTEGER)) {
                 value = ((Integer) value) + ((Integer) stat.value);
-            } else if (type.equals(StatType.FLOAT)) {
-                value = ((Float) value) + ((Float) stat.value);
+            } else if (type.equals(StatType.DOUBLE)) {
+                value = ((Double) value) + ((Double) stat.value);
             }
             return this;
         }
@@ -343,8 +346,8 @@ public class Statistics implements Serializable, Iterable<Statistics.Stat> {
         public Stat sub(Number n) {
             if (type.equals(StatType.INTEGER)) {
                 value = ((Integer) value) - n.intValue();
-            } else if (type.equals(StatType.FLOAT)) {
-                value = ((Float) value) - n.floatValue();
+            } else if (type.equals(StatType.DOUBLE)) {
+                value = ((Double) value) - n.doubleValue();
             }
             return this;
         }
@@ -352,8 +355,8 @@ public class Statistics implements Serializable, Iterable<Statistics.Stat> {
         public Stat sub(Stat stat) {
             if (type.equals(StatType.INTEGER)) {
                 value = ((Integer) value) - ((Integer) stat.value);
-            } else if (type.equals(StatType.FLOAT)) {
-                value = ((Float) value) - ((Float) stat.value);
+            } else if (type.equals(StatType.DOUBLE)) {
+                value = ((Double) value) - ((Double) stat.value);
             }
             return this;
         }
@@ -361,8 +364,8 @@ public class Statistics implements Serializable, Iterable<Statistics.Stat> {
         public Stat mul(Number n) {
             if (type.equals(StatType.INTEGER)) {
                 value = ((Integer) value) * n.intValue();
-            } else if (type.equals(StatType.FLOAT)) {
-                value = ((Float) value) * n.floatValue();
+            } else if (type.equals(StatType.DOUBLE)) {
+                value = ((Double) value) * n.doubleValue();
             }
             return this;
         }
@@ -370,8 +373,8 @@ public class Statistics implements Serializable, Iterable<Statistics.Stat> {
         public Stat mul(Stat stat) {
             if (type.equals(StatType.INTEGER)) {
                 value = ((Integer) value) * ((Integer) stat.value);
-            } else if (type.equals(StatType.FLOAT)) {
-                value = ((Float) value) * ((Float) stat.value);
+            } else if (type.equals(StatType.DOUBLE)) {
+                value = ((Double) value) * ((Double) stat.value);
             }
             return this;
         }
@@ -379,8 +382,8 @@ public class Statistics implements Serializable, Iterable<Statistics.Stat> {
         public Stat div(Number n) {
             if (type.equals(StatType.INTEGER)) {
                 value = ((Integer) value) / n.intValue();
-            } else if (type.equals(StatType.FLOAT)) {
-                value = ((Float) value) / n.floatValue();
+            } else if (type.equals(StatType.DOUBLE)) {
+                value = ((Double) value) / n.doubleValue();
             }
             return this;
         }
@@ -388,16 +391,16 @@ public class Statistics implements Serializable, Iterable<Statistics.Stat> {
         public Stat div(Stat stat) {
             if (type.equals(StatType.INTEGER)) {
                 value = ((Integer) value) / ((Integer) stat.value);
-            } else if (type.equals(StatType.FLOAT)) {
-                value = ((Float) value) / ((Float) stat.value);
+            } else if (type.equals(StatType.DOUBLE)) {
+                value = ((Double) value) / ((Double) stat.value);
             }
             return this;
         }
 
         public String getValueString() {
             if (isNumeric()) {
-                float number = getMultipliedFloat();
-                float mantissa = getStandardMantissa(number);
+                double number = getMultipliedDouble();
+                double mantissa = getStandardMantissa(number);
                 int exp = getStandardExponent(number);
 
                 if (exp <= BaseUnit.getMinimumOrderOfMagnitude())
@@ -406,7 +409,7 @@ public class Statistics implements Serializable, Iterable<Statistics.Stat> {
                 String unitStr = BaseUnit.getPrefix(exp);
                 unitStr += unit != null ? unit.toString() : "";
 
-                String valueStr = String.format("%.2f", mantissa);
+                String valueStr = String.format("%.2f", (float) mantissa);
                 if (valueStr.endsWith(".00"))
                     valueStr = valueStr.substring(0, valueStr.length() - 3);
 
@@ -432,14 +435,19 @@ public class Statistics implements Serializable, Iterable<Statistics.Stat> {
     }
 
     private final Map<String, Stat> stats = new ConcurrentHashMap<>();
-    private final Map<BaseUnit, Float> unitMultipliers = new HashMap<>();
+    private final Map<BaseUnit, Double> unitMultipliers = new HashMap<>();
 
     public Statistics() {
         setUnitMultiplier(BaseUnit.DISTANCE, 1e-6f);
         setUnitMultiplier(BaseUnit.MASS, 1e-3f);
     }
 
-    public void setUnitMultiplier(BaseUnit unit, float multiplier) {
+    public Statistics(Statistics other) {
+        putAll(other);
+        unitMultipliers.putAll(other.unitMultipliers);
+    }
+
+    public void setUnitMultiplier(BaseUnit unit, double multiplier) {
         unitMultipliers.put(unit, multiplier);
     }
 
@@ -455,8 +463,8 @@ public class Statistics implements Serializable, Iterable<Statistics.Stat> {
         stats.put(stat.getName(), stat);
     }
 
-    public Stat put(String name, float value) {
-        return put(name, StatType.FLOAT, value);
+    public Stat put(String name, double value) {
+        return put(name, StatType.DOUBLE, value);
     }
 
     public Stat put(String name, int value) {
@@ -477,61 +485,61 @@ public class Statistics implements Serializable, Iterable<Statistics.Stat> {
         return stat;
     }
 
-    public Stat put(String name, float value, ComplexUnit unit) {
-        Stat stat = put(name, StatType.FLOAT, value);
+    public Stat put(String name, double value, ComplexUnit unit) {
+        Stat stat = put(name, StatType.DOUBLE, value);
         stat.setUnit(unit);
         return stat;
     }
 
-    public Stat putRadian(String name, float value) {
-        return put(name, (float) Math.toDegrees(value), ComplexUnit.ANGLE);
+    public Stat putRadian(String name, double value) {
+        return put(name, (double) Math.toDegrees(value), ComplexUnit.ANGLE);
     }
 
-    public Stat putPercentage(String name, float percentage) {
+    public Stat putPercentage(String name, double percentage) {
         return put(name, percentage, ComplexUnit.PERCENTAGE);
     }
 
-    public Stat putDistance(String name, float distance) {
+    public Stat putDistance(String name, double distance) {
         return put(name, distance, ComplexUnit.DISTANCE);
     }
 
-    public Stat putTime(String name, float time) {
+    public Stat putTime(String name, double time) {
         return put(name, time, ComplexUnit.TIME);
     }
 
-    public Stat putRate(String name, float rate) {
+    public Stat putRate(String name, double rate) {
         return put(name, rate, ComplexUnit.FREQUENCY);
     }
 
-    public Stat putVolume(String name, float volume) {
+    public Stat putVolume(String name, double volume) {
         return put(name, volume, ComplexUnit.VOLUME);
     }
 
-    public Stat putMass(String name, float mass) {
+    public Stat putMass(String name, double mass) {
         return put(name, mass, ComplexUnit.MASS);
     }
 
-    public Stat putMassDensity(String name, float mass) {
+    public Stat putMassDensity(String name, double mass) {
         return put(name, mass, ComplexUnit.MASS_DENSITY);
     }
 
-    public Stat putArea(String name, float area) {
+    public Stat putArea(String name, double area) {
         return put(name, area, ComplexUnit.AREA);
     }
 
-    public Stat putEnergy(String name, float energy) {
+    public Stat putEnergy(String name, double energy) {
         return put(name, energy, ComplexUnit.ENERGY);
     }
 
-    public Stat putSpeed(String name, float speed) {
+    public Stat putSpeed(String name, double speed) {
         return put(name, speed, ComplexUnit.SPEED);
     }
 
-    public Stat putAcceleration(String name, float acceleration) {
+    public Stat putAcceleration(String name, double acceleration) {
         return put(name, acceleration, ComplexUnit.ACCELERATION);
     }
 
-    public Stat putForce(String name, float force) {
+    public Stat putForce(String name, double force) {
         return put(name, force, ComplexUnit.FORCE);
     }
 
@@ -565,6 +573,11 @@ public class Statistics implements Serializable, Iterable<Statistics.Stat> {
             put(new Stat(stat));
     }
 
+    public void putAll(String prefix, Statistics other) {
+        for (Stat stat : other)
+            put(new Stat(prefix + stat.name, stat));
+    }
+
     public static Statistics computeSummaryStatistics(Iterator<Statistics> iterator) {
         return computeSummaryStatistics(iterator, false);
     }
@@ -590,23 +603,23 @@ public class Statistics implements Serializable, Iterable<Statistics.Stat> {
                     summaryStats.stats.get(stat.name + " Count").add(1);
                     Stat meanStat = summaryStats.stats.get(stat.name + " Mean");
 
-                    float newValue = stat.getFloat();
-                    float mean = summaryStats.stats.get(stat.name + " Mean").getFloat();
-                    float delta = newValue - mean;
-                    int count = (int) summaryStats.stats.get(stat.name + " Count").getFloat();
+                    double newValue = stat.getDouble();
+                    double mean = summaryStats.stats.get(stat.name + " Mean").getDouble();
+                    double delta = newValue - mean;
+                    int count = (int) summaryStats.stats.get(stat.name + " Count").getDouble();
                     mean += delta / count;
-                    float delta2 = newValue - mean;
+                    double delta2 = newValue - mean;
 
                     meanStat.setValue(mean);
                     meanStat.error += delta * delta2;
 
                     if (computeLogSummaries) {
-                        float logValue = (float) Math.log(newValue);
+                        double logValue = (double) Math.log(newValue);
                         Stat logMeanStat = summaryStats.stats.get(stat.name + " Log Mean");
-                        float logMean = logMeanStat.getFloat();
-                        float logDelta = logValue - logMean;
+                        double logMean = logMeanStat.getDouble();
+                        double logDelta = logValue - logMean;
                         logMean += logDelta / count;
-                        float logDelta2 = logValue - logMean;
+                        double logDelta2 = logValue - logMean;
 
                         logMeanStat.setValue(logMean);
                         logMeanStat.error += logDelta * logDelta2;
@@ -616,13 +629,13 @@ public class Statistics implements Serializable, Iterable<Statistics.Stat> {
         }
 
         for (String name : statNames) {
-            int count = (int) summaryStats.stats.get(name + " Count").getFloat();
+            int count = (int) summaryStats.stats.get(name + " Count").getDouble();
             Stat meanStat = summaryStats.stats.get(name + " Mean");
             if (count > 1) {
-                meanStat.error = (float) Math.sqrt(meanStat.error / count);
+                meanStat.error = (double) Math.sqrt(meanStat.error / count);
                 if (computeLogSummaries) {
                     Stat logMeanStat = summaryStats.stats.get(name + " Log Mean");
-                    logMeanStat.error = (float) Math.sqrt(logMeanStat.error / count);
+                    logMeanStat.error = (double) Math.sqrt(logMeanStat.error / count);
                 }
             } else {
                 meanStat.error = 0;
@@ -634,5 +647,11 @@ public class Statistics implements Serializable, Iterable<Statistics.Stat> {
         }
 
         return summaryStats;
+    }
+
+    public Json toJson() {
+        Json json = new Json();
+        json.toJson(this, Statistics.class);
+        return json;
     }
 }

@@ -53,7 +53,7 @@ public class FileIO
 
 	public static void writeJson(Object object, String filename)
 	{
-		String filePath = filename + ".json";
+		String filePath = filename.endsWith(".json") ? filename : filename + ".json";
 		File file = new File(filePath);
 		ObjectMapper mapper = getJsonMapper();
 		try {

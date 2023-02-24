@@ -142,12 +142,6 @@ public class REPL implements Runnable
     public void close() {
         System.out.println("\nClosing REPL...");
         running = false;
-        try {
-            input.close();
-            bufferRead.close();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
     }
 
     public String stripWhitespace(String s) {

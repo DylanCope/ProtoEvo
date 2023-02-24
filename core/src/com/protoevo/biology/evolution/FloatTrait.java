@@ -21,6 +21,16 @@ public class FloatTrait implements Trait<Float>, Serializable {
     private final float value, minValue, maxValue;
     private final String traitName;
     private float mutationRate;
+    private int mutationCount = 0;
+
+    public FloatTrait(FloatTrait other, float value) {
+        this.traitName = other.traitName;
+        this.minValue = other.minValue;
+        this.maxValue = other.maxValue;
+        this.mutationRate = other.mutationRate;
+        this.mutationCount = other.mutationCount;
+        this.value = value;
+    }
 
     public FloatTrait(String traitName, float minValue, float maxValue, float value) {
         this.traitName = traitName;
@@ -60,13 +70,23 @@ public class FloatTrait implements Trait<Float>, Serializable {
     }
 
     @Override
+    public int getMutationCount() {
+        return mutationCount;
+    }
+
+    @Override
+    public void incrementMutationCount() {
+        mutationCount++;
+    }
+
+    @Override
     public Float newRandomValue() {
         return MathUtils.random(minValue, maxValue);
     }
 
     @Override
     public Trait<Float> createNew(Float value) {
-        return new FloatTrait(traitName, minValue, maxValue, value);
+        return new FloatTrait(this, value);
     }
 
     @Override
