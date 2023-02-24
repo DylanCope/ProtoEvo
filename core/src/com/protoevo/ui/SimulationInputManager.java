@@ -50,22 +50,22 @@ public class SimulationInputManager {
         MoveParticle moveParticle = new MoveParticle(simulationScreen, moveParticleButton, particleTracker);
         CursorUpdater cursorUpdater = new CursorUpdater(simulationScreen, this);
 
-        ImageButton jediButton = simulationScreen.createBarImageButton("icons/jedi_on.png", event -> {
-            moveParticle.toggleJediMode();
-            ImageButton button = (ImageButton) event.getListenerActor();
-            Drawable tmp = button.getStyle().imageUp;
-            button.getStyle().imageUp = button.getStyle().imageDown;
-            button.getStyle().imageDown = tmp;
-            return true;
-        });
-        TextureRegion region = new TextureRegion(ImageUtils.getTexture("icons/jedi_off.png"));
-        jediButton.getStyle().imageDown = new TextureRegionDrawable(region);
+//        ImageButton jediButton = simulationScreen.createBarImageButton("icons/jedi_on.png", event -> {
+//            moveParticle.toggleJediMode();
+//            ImageButton button = (ImageButton) event.getListenerActor();
+//            Drawable tmp = button.getStyle().imageUp;
+//            button.getStyle().imageUp = button.getStyle().imageDown;
+//            button.getStyle().imageDown = tmp;
+//            return true;
+//        });
+//        TextureRegion region = new TextureRegion(ImageUtils.getTexture("icons/jedi_off.png"));
+//        jediButton.getStyle().imageDown = new TextureRegionDrawable(region);
 
         inputLayers.addLayers(cursorUpdater, spawnParticleInput, moveParticle, particleTracker);
         inputLayers.addLayer(panZoomCameraInput);
 
         topBar.addLeft(moveParticleButton);
-        topBar.addLeft(jediButton);
+//        topBar.addLeft(jediButton);
         topBar.addLeft(lightningButton);
     }
 
@@ -83,5 +83,10 @@ public class SimulationInputManager {
 
     public Vector2 getMousePos() {
         return inputLayers.getMousePos();
+    }
+
+    public void dispose() {
+        MoveParticleButton.dispose();
+        LightningButton.dispose();
     }
 }

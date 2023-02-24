@@ -38,7 +38,7 @@ public class JCudaKernelRunner {
         CUcontext context = new CUcontext();
         cuCtxCreate(context, 0, device);
 
-        String kernelPath = Gdx.files.external("kernels/" + kernelName + ".cu").path();
+        String kernelPath = "kernels/" + kernelName + ".cu";
         try {
             String ptxFile = JCudaUtils.preparePtxFile(kernelPath);
 

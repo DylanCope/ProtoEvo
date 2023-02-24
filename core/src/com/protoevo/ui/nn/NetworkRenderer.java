@@ -30,7 +30,6 @@ public class NetworkRenderer extends InputAdapter implements Renderer {
 //    private final ShapeRenderer shapeRenderer;
     private final ShapeDrawer shapeRenderer;
     private final SpriteBatch batch;
-    private final GlyphLayout layout = new GlyphLayout();
     private final BitmapFont font;
     private MouseOverNeuronCallback mouseOverNeuronCallback;
     private final Colour.Gradient weightGradient =
@@ -238,27 +237,6 @@ public class NetworkRenderer extends InputAdapter implements Renderer {
 
     @Override
     public void dispose() {
-
+        font.dispose();
     }
-
-//    @Override
-//    public void setPosition(Vector2 pos) {
-//        boxXStart = (int) pos.getX();
-//        boxYStart = (int) pos.getY();
-//    }
-//
-//    @Override
-//    public Vector2 getPosition() {
-//        return new Vector2(boxXStart, boxYStart);
-//    }
-//
-//    @Override
-//    public int getWidth() {
-//        return boxWidth;
-//    }
-//
-//    @Override
-//    public int getHeight() {
-//        return boxHeight;
-//    }
 }

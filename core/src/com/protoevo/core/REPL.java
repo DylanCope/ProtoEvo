@@ -1,37 +1,27 @@
 package com.protoevo.core;
 
-import com.badlogic.gdx.scenes.scene2d.ui.Window;
-import com.protoevo.ui.SimulationScreen;
-import scala.concurrent.impl.FutureConvertersImpl;
-
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Function;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 public class REPL implements Runnable
 {
     private final Simulation simulation;
-    private boolean running = true;
+    private volatile boolean running = true;
     private BufferedReader bufferRead;
     private InputStreamReader input;
-    private final SimulationScreen screen;
+    private ApplicationManager manager;
 
     private final Map<String, Function<Object[], Boolean>> commands = new HashMap<>();
 
-    public REPL(Simulation simulation, SimulationScreen screen)
+    public REPL(Simulation simulation)
     {
         this.simulation = simulation;
-        this.screen = screen;
 
         commands.put("toggleui", this::toggleUI);
         commands.put("ui", this::toggleUI);
@@ -125,31 +115,38 @@ public class REPL implements Runnable
     }
 
     public Boolean exit(Object[] args) {
-        simulation.close();
-        System.exit(0);
-        return true;
+        System.out.println("Exit triggered...");
+        if (manager != null) {
+            running = false;
+            manager.exit();
+        } else {
+            simulation.close();
+            System.exit(0);
+        }
+        return false;
     }
 
     public Boolean toggleUI(Object[] args) {
-        if (screen == null) {
-            System.out.println("No UI to toggle.");
-        } else {
+        if (manager != null) {
             System.out.println("Toggling UI.");
             synchronized (simulation) {
-                simulation.toggleUpdateDelay();
-                screen.toggleEnvironmentRendering();
+                manager.toggleGraphics();
             }
+            return true;
+        } else {
+            System.out.println("No UI to toggle.");
         }
         return false;
     }
 
     public void close() {
+        System.out.println("\nClosing REPL...");
         running = false;
         try {
             input.close();
             bufferRead.close();
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            e.printStackTrace();
         }
     }
 
@@ -187,5 +184,9 @@ public class REPL implements Runnable
                 System.out.println(e.getMessage());
             }
         }
+    }
+
+    public void setManager(ApplicationManager manager) {
+        this.manager = manager;
     }
 }

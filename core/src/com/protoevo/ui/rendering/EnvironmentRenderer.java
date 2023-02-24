@@ -255,8 +255,16 @@ public class EnvironmentRenderer implements Renderer {
     }
 
     public void dispose() {
+        CellTexture.dispose();
+        ProtozoaRenderer.InteriorTexture.dispose();
+        NodeRenderer.dispose();
+        PhotoreceptorRenderer.disposeStaticSprite();
+        SpikeRenderer.disposeStaticSprite();
+        FlagellumRenderer.disposeAnimation();
         batch.dispose();
         particleTexture.dispose();
+        debugRenderer.dispose();
         shapeRenderer.dispose();
+        chemicalsRenderer.dispose();
     }
 }

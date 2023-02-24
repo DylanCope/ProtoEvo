@@ -11,8 +11,21 @@ import com.protoevo.core.Shape;
 import com.protoevo.utils.ImageUtils;
 
 public class PhotoreceptorRenderer extends NodeRenderer {
-    private static final Sprite photoreceptorSprite =
-            ImageUtils.loadSprite("cell/nodes/photoreceptor/light_patch.png");
+    private static Sprite photoreceptorSprite = null;
+
+    public static Sprite getPhotoreceptorSprite() {
+        if (photoreceptorSprite == null) {
+            photoreceptorSprite = ImageUtils.loadSprite("cell/nodes/photoreceptor/light_patch.png");
+        }
+        return photoreceptorSprite;
+    }
+
+    public static void disposeStaticSprite() {
+        if (photoreceptorSprite != null) {
+            photoreceptorSprite.getTexture().dispose();
+            photoreceptorSprite = null;
+        }
+    }
 
     public PhotoreceptorRenderer(SurfaceNode node) {
         super(node);
@@ -20,17 +33,23 @@ public class PhotoreceptorRenderer extends NodeRenderer {
 
     @Override
     public Sprite getSprite(float delta) {
-        return nodeEmptySprite;
+        return getNodeEmptySprite();
     }
 
     @Override
     public void render(float delta, SpriteBatch batch) {
-        super.render(delta, batch);
+
+        Cell cell = node.getCell();
+        Sprite emptySprite = getNodeEmptySprite();
+        emptySprite.setColor(cell.getColor());
+        drawAtNode(batch, emptySprite);
+
         if (node.getAttachment() != null &&
                 node.getAttachment() instanceof Photoreceptor) {
             Photoreceptor attachment = (Photoreceptor) node.getAttachment();
-            photoreceptorSprite.setColor(attachment.getColour().getColor());
-            drawAtNode(batch, photoreceptorSprite);
+            Sprite lightPatchSprite = getPhotoreceptorSprite();
+            lightPatchSprite.setColor(attachment.getColour().getColor());
+            drawAtNode(batch, lightPatchSprite);
         }
     }
 

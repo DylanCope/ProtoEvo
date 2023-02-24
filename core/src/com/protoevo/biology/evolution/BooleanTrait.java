@@ -1,15 +1,9 @@
 package com.protoevo.biology.evolution;
 
-import com.fasterxml.jackson.annotation.JsonIdentityInfo;
-import com.fasterxml.jackson.annotation.ObjectIdGenerators;
 import com.protoevo.core.Simulation;
-import com.protoevo.env.Environment;
 
 import java.util.Map;
 
-@JsonIdentityInfo(
-        generator = ObjectIdGenerators.IntSequenceGenerator.class,
-        scope = Environment.class)
 public class BooleanTrait implements Trait<Boolean> {
 
 

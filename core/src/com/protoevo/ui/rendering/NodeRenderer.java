@@ -12,16 +12,27 @@ import java.util.Map;
 import java.util.Optional;
 
 public class NodeRenderer {
-    protected static final Sprite nodeEmptySprite = ImageUtils.loadSprite("cell/nodes/node_empty.png");
-    private static final Map<Class<? extends NodeAttachment>, Sprite> attachmentSprites =
-            new HashMap<Class<? extends NodeAttachment>, Sprite>() {
+    private static Sprite nodeEmptySprite = null;
+
+    protected static Sprite getNodeEmptySprite() {
+        if (nodeEmptySprite == null)
+            nodeEmptySprite = ImageUtils.loadSprite("cell/nodes/node_empty.png");
+        return nodeEmptySprite;
+    }
+
+    private static Map<Class<? extends NodeAttachment>, Sprite> attachmentSprites = null;
+
+    public static Map<Class<? extends NodeAttachment>, Sprite> getAttachmentSprites() {
+        if (attachmentSprites == null)
+            attachmentSprites = new HashMap<Class<? extends NodeAttachment>, Sprite>() {
                 {
-//                    put(Spike.class, ImageUtils.loadSprite("cell/nodes/spike_node.png"));
                     put(Photoreceptor.class, ImageUtils.loadSprite("cell/nodes/photoreceptor/base.png"));
                     put(AdhesionReceptor.class, ImageUtils.loadSprite("cell/nodes/binding_node.png"));
                     put(PhagocyticReceptor.class, ImageUtils.loadSprite("cell/nodes/phagoreceptor.png"));
                 }
-            } ;
+            };
+        return attachmentSprites;
+    }
 
     protected SurfaceNode node;
     private final Optional<Class<? extends NodeAttachment>> attachmentClass;
@@ -37,22 +48,22 @@ public class NodeRenderer {
     }
 
     public Sprite getSprite(float delta) {
-        return Optional.ofNullable(node.getAttachment())
-                .map(NodeAttachment::getClass)
-                .map(attachmentSprites::get)
-                .orElse(nodeEmptySprite);
+        return getAttachmentSprites().get(node.getAttachment().getClass());
+    }
+
+    public boolean skipRenderCondition() {
+        return !node.exists() || node.getAttachment() == null || node.getCell() == null
+                || !getAttachmentSprites().containsKey(node.getAttachment().getClass())
+                || (node.getAttachment() instanceof AdhesionReceptor
+                && ((AdhesionReceptor) node.getAttachment()).getOtherNode().isPresent());
     }
 
     public void render(float delta, SpriteBatch batch) {
-        if (!node.exists())
+        if (skipRenderCondition())
             return;
 
-        if (node.getAttachment() instanceof AdhesionReceptor
-                && ((AdhesionReceptor) node.getAttachment()).getOtherNode().isPresent())
-            return;
-
-        Cell cell = node.getCell();
         Sprite sprite = getSprite(delta);
+        Cell cell = node.getCell();
         sprite.setColor(cell.getColor());
         drawAtNode(batch, sprite);
     }
@@ -84,7 +95,13 @@ public class NodeRenderer {
 
     public void renderDebug(ShapeRenderer sr) {}
 
-    public void dispose() {
-
+    public static void dispose() {
+        if (nodeEmptySprite != null)
+            nodeEmptySprite.getTexture().dispose();
+        if (attachmentSprites != null)
+            for (Sprite attachmentSprite : attachmentSprites.values())
+                attachmentSprite.getTexture().dispose();
+        nodeEmptySprite = null;
+        attachmentSprites = null;
     }
 }

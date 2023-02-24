@@ -16,6 +16,14 @@ public class FrameBufferManager {
         return instance;
     }
 
+    public static void dispose() {
+        if (instance != null)
+            for (FrameBuffer buffer : instance.stack) {
+                buffer.dispose();
+            }
+        instance = null;
+    }
+
     public void begin(FrameBuffer buffer) {
         if (!stack.isEmpty()) {
             stack.peek().end();

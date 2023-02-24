@@ -56,4 +56,13 @@ public class LightningButton extends ImageButton {
             return cannotStrikeImage;
         }
     }
+
+    public static void dispose() {
+        if (canStrikeImage != null)
+            ((TextureRegionDrawable) canStrikeImage).getRegion().getTexture().dispose();
+        if (cannotStrikeImage != null)
+            ((TextureRegionDrawable) cannotStrikeImage).getRegion().getTexture().dispose();
+        canStrikeImage = null;
+        cannotStrikeImage = null;
+    }
 }

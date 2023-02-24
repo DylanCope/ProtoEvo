@@ -17,18 +17,19 @@ public class FlagellumRenderer extends NodeRenderer {
 
     private static Sprite[] animationFrames;
 
-    private static Sprite[] getAnimationFrames() {
+    public static Sprite[] getAnimationFrames() {
         if (animationFrames == null) {
-//            BufferedImage[] frames = ImageUtils.loadAnimationFrames("cell/flagella/");
-//            animationFrames = new Sprite[frames.length * 2];
-//            for (int i = 0; i < frames.length; i++) {
-//                animationFrames[frames.length - i - 1] = ImageUtils.convertToSprite(frames[i]);
-//                animationFrames[i + frames.length] =
-//                        ImageUtils.convertToSprite(ImageUtils.flipImageHorizontally(frames[i]));
-//            }
             animationFrames = ImageUtils.loadSpriteAnimationFrames("cell/nodes/flagella/");
         }
         return animationFrames;
+    }
+
+    public static void disposeAnimation() {
+        if (animationFrames != null) {
+            for (Sprite frame : animationFrames)
+                frame.getTexture().dispose();
+            animationFrames = null;
+        }
     }
 
     private float animationTime;

@@ -3,10 +3,10 @@ package com.protoevo.biology.cells;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector2;
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.annotation.JsonSubTypes;
-import com.fasterxml.jackson.annotation.JsonTypeInfo;
-import com.protoevo.biology.*;
+import com.protoevo.biology.CauseOfDeath;
+import com.protoevo.biology.ComplexMolecule;
+import com.protoevo.biology.ConstructionProject;
+import com.protoevo.biology.Food;
 import com.protoevo.biology.nodes.SurfaceNode;
 import com.protoevo.biology.organelles.Organelle;
 import com.protoevo.core.Particle;
@@ -25,13 +25,6 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import static com.protoevo.utils.Utils.lerp;
 
-@JsonIgnoreProperties(ignoreUnknown = true)
-@JsonTypeInfo(use = JsonTypeInfo.Id.NAME)
-@JsonSubTypes({
-		@JsonSubTypes.Type(value = Protozoan.class, name = "Protozoan"),
-		@JsonSubTypes.Type(value = PlantCell.class, name = "PlantCell"),
-		@JsonSubTypes.Type(value = MeatCell.class, name = "MeatCell")
-})
 public abstract class Cell extends Particle implements Serializable {
 	private static final long serialVersionUID = 1L;
 

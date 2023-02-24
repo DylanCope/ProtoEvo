@@ -3,37 +3,20 @@ package com.protoevo.core;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.*;
 import com.badlogic.gdx.utils.Array;
-import com.fasterxml.jackson.annotation.*;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.protoevo.biology.CauseOfDeath;
-import com.protoevo.biology.cells.Cell;
-import com.protoevo.biology.cells.MeatCell;
-import com.protoevo.biology.cells.PlantCell;
-import com.protoevo.biology.cells.Protozoan;
 import com.protoevo.env.CollisionHandler;
 import com.protoevo.env.Environment;
 import com.protoevo.env.Rock;
 import com.protoevo.settings.SimulationSettings;
 import com.protoevo.utils.Colour;
 import com.protoevo.utils.Geometry;
-import com.protoevo.utils.file.ParticleKeyDeserializer;
 
 import java.io.Serializable;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
-@JsonIdentityInfo(
-        generator = ParticleKeyDeserializer.IdGenerator.class,
-//        generator = ObjectIdGenerators.PropertyGenerator.class,
-        scope = Environment.class)
-@JsonIgnoreProperties(ignoreUnknown = true)
-@JsonTypeInfo(use = JsonTypeInfo.Id.NAME)
-@JsonSubTypes({
-        @JsonSubTypes.Type(value = Cell.class, name = "Cell"),
-        @JsonSubTypes.Type(value = Protozoan.class, name = "Protozoan"),
-        @JsonSubTypes.Type(value = PlantCell.class, name = "PlantCell"),
-        @JsonSubTypes.Type(value = MeatCell.class, name = "MeatCell")
-})
 public class Particle implements Shape, Serializable {
     public static long serialVersionUID = 1L;
 

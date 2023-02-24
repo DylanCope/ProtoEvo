@@ -13,8 +13,21 @@ import com.protoevo.core.Shape;
 import com.protoevo.utils.ImageUtils;
 
 public class SpikeRenderer extends NodeRenderer {
-    private static final Sprite spikeSprite =
-            ImageUtils.loadSprite("cell/nodes/spike_node.png");
+    private static Sprite spikeSprite = null;
+
+    public static Sprite getSpikeSprite() {
+        if (spikeSprite == null) {
+            spikeSprite = ImageUtils.loadSprite("cell/nodes/spike_node.png");
+        }
+        return spikeSprite;
+    }
+
+    public static void disposeStaticSprite() {
+        if (spikeSprite != null) {
+            spikeSprite.getTexture().dispose();
+            spikeSprite = null;
+        }
+    }
 
     public SpikeRenderer(SurfaceNode node) {
         super(node);
@@ -22,7 +35,7 @@ public class SpikeRenderer extends NodeRenderer {
 
     @Override
     public Sprite getSprite(float delta) {
-        return nodeEmptySprite;
+        return getNodeEmptySprite();
     }
 
     @Override
@@ -34,10 +47,11 @@ public class SpikeRenderer extends NodeRenderer {
 
         Spike spike = (Spike) attachment;
         float spikeLen = spike.getSpikeLength();
-        float width = spikeLen * spikeSprite.getWidth() / spikeSprite.getHeight();
-        spikeSprite.setColor(cell.getColor());
+        Sprite sprite = getSpikeSprite();
+        float width = spikeLen * sprite.getWidth() / sprite.getHeight();
+        sprite.setColor(cell.getColor());
         ImageUtils.drawOnCircumference(
-                batch, spikeSprite, cell.getPos(),
+                batch, sprite, cell.getPos(),
                 0.98f * cell.getRadius() - (1 - spike.getSpikeExtension()) * spikeLen,
                 node.getAngle() + cell.getAngle(),
                 width);

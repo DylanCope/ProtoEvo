@@ -38,6 +38,7 @@ import com.protoevo.utils.Utils;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.Callable;
 
 public class SimulationScreen {
@@ -47,6 +48,7 @@ public class SimulationScreen {
     private final SimulationInputManager inputManager;
     private final Renderer renderer;
     private final SpriteBatch uiBatch;
+    private final Skin skin;
     private final Stage stage;
     private final GlyphLayout layout = new GlyphLayout();
     private final OrthographicCamera camera;
@@ -65,6 +67,7 @@ public class SimulationScreen {
     private Particle trackedParticle;
     private final ImageButton saveTrackedParticleButton;
     private final TextField saveTrackedParticleTextField;
+    private final Set<ImageButton> buttons = new java.util.HashSet<>();
 
     private final SelectBox<String> statsSelectBox;
 
@@ -72,11 +75,10 @@ public class SimulationScreen {
     private final float graphicsWidth;
     private boolean uiHidden = false, renderingEnabled = false, simLoaded = false;
 
-    public SimulationScreen(Application app, Simulation simulation) {
+    public SimulationScreen(GraphicsAdapter graphics, Simulation simulation) {
         CursorUtils.setDefaultCursor();
 
-        statGetters.put("Env", () -> simulation.getEnv().getStats());
-        getStats = statGetters.get("Env");
+        getStats = simulation.getEnv()::getStats;
 
         graphicsHeight = Gdx.graphics.getHeight();
         graphicsWidth = Gdx.graphics.getWidth();
@@ -93,6 +95,8 @@ public class SimulationScreen {
         stage = new Stage();
         uiBatch = new SpriteBatch();
 
+        skin = UIStyle.getUISkin();
+
         stage.getRoot().addCaptureListener(event -> {
             if (stage.getKeyboardFocus() instanceof TextField
                     && !(event.getTarget() instanceof TextField))
@@ -104,7 +108,7 @@ public class SimulationScreen {
         textAwayFromEdge = (int) (graphicsWidth / 60);
 
         font = UIStyle.createFiraCode(infoTextSize);
-        font.setColor(Color.WHITE.mul(.9f));
+        font.setColor(Color.WHITE.cpy().mul(.9f));
         debugFont = UIStyle.createFiraCode(infoTextSize);
         debugFont.setColor(Color.GOLD);
 
@@ -113,9 +117,7 @@ public class SimulationScreen {
         topBar = new TopBar(this, font.getLineHeight());
 
         ImageButton closeButton = createBarImageButton("icons/x-button.png", event -> {
-            simulation.close();
-            Gdx.app.exit();
-            System.exit(0);
+            graphics.exitApplication();
             return true;
         });
         topBar.addRight(closeButton);
@@ -128,7 +130,7 @@ public class SimulationScreen {
 
         ImageButton toggleRenderingButton = createBarImageButton("icons/fast_forward.png", event -> {
             toggleEnvironmentRendering();
-            app.toggleSeparateThread();
+            graphics.toggleReducedRendering();
             return true;
         });
         topBar.addLeft(toggleRenderingButton);
@@ -140,7 +142,7 @@ public class SimulationScreen {
         });
         topBar.addLeft(homeButton);
 
-        saveTrackedParticleTextField = new TextField("", UIStyle.getUISkin());
+        saveTrackedParticleTextField = new TextField("", skin);
         stage.addActor(saveTrackedParticleTextField);
         saveTrackedParticleTextField.setVisible(false);
         saveTrackedParticleTextField.setMessageText("Save as...");
@@ -155,8 +157,6 @@ public class SimulationScreen {
             return true;
         });
         saveTrackedParticleButton.setVisible(false);
-
-        Skin skin = UIStyle.getUISkin();
 
         statsSelectBox = new SelectBox<>(skin);
         statsSelectBox.getStyle().font = titleFont;
@@ -191,6 +191,7 @@ public class SimulationScreen {
         button.setTouchable(Touchable.enabled);
         button.addListener(listener);
         stage.addActor(button);
+        buttons.add(button);
         return button;
     }
 
@@ -511,8 +512,15 @@ public class SimulationScreen {
         stage.dispose();
         uiBatch.dispose();
         font.dispose();
+        titleFont.dispose();
+        debugFont.dispose();
         topBar.dispose();
         renderer.dispose();
+        networkRenderer.dispose();
+        skin.dispose();
+        inputManager.dispose();
+        for (ImageButton button : buttons)
+            ((TextureRegionDrawable) button.getImage().getDrawable()).getRegion().getTexture().dispose();
     }
 
     public boolean overOnScreenControls(int screenX, int screenY) {

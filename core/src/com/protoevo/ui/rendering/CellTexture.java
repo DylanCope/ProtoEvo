@@ -15,34 +15,51 @@ import java.io.IOException;
 
 public class CellTexture {
 
-    private static TextureAtlas textureAtlas;
-
-    private static Sprite particleSprite;
-    private static Texture particleTexture;
-    private static Pixmap particleBasePixmap;
-    private static BufferedImage particleImage;
+    private TextureAtlas textureAtlas;
+    private Sprite particleSprite;
+    private Texture particleTexture;
+    private Pixmap particleBasePixmap;
     private static final String pathToFile = "cell/particle_base_512x512.png";
 
+    private static final CellTexture instance = new CellTexture();
+
+    private CellTexture() {}
+
+    public static void dispose() {
+        if (instance.textureAtlas != null)
+            instance.textureAtlas.dispose();
+        instance.textureAtlas = null;
+        if (instance.particleSprite != null)
+            instance.particleSprite.getTexture().dispose();
+        instance.particleSprite = null;
+        if (instance.particleTexture != null)
+           instance.particleTexture.dispose();
+        instance.particleTexture = null;
+        if (instance.particleBasePixmap != null)
+            instance.particleBasePixmap.dispose();
+        instance.particleBasePixmap = null;
+    }
+
     public static TextureAtlas getTextureAtlas() {
-        if (textureAtlas == null) {
-            textureAtlas = new TextureAtlas(Gdx.files.internal("textures/cell.atlas"));
+        if (instance.textureAtlas == null) {
+            instance.textureAtlas = new TextureAtlas(Gdx.files.internal("textures/cell.atlas"));
         }
-        return textureAtlas;
+        return instance.textureAtlas;
     }
 
     public static Sprite getSprite() {
-        if (particleSprite == null) {
-            particleSprite = new Sprite(getTexture());
+        if (instance.particleSprite == null) {
+            instance.particleSprite = new Sprite(getTexture());
         }
-        return particleSprite;
+        return instance.particleSprite;
     }
 
     public static Texture getTexture() {
-        if (particleTexture == null) {
-            particleTexture = ImageUtils.getTexture(pathToFile);
+        if (instance.particleTexture == null) {
+            instance.particleTexture = ImageUtils.getTexture(pathToFile);
         }
 
-        return particleTexture;
+        return instance.particleTexture;
     }
 
     public static Pixmap loadPixmap() {
@@ -51,20 +68,9 @@ public class CellTexture {
     }
 
     public static Pixmap getPixmap() {
-        if (particleBasePixmap == null) {
-            particleBasePixmap = loadPixmap();
+        if (instance.particleBasePixmap == null) {
+            instance.particleBasePixmap = loadPixmap();
         }
-        return particleBasePixmap;
-    }
-
-    public static BufferedImage getBufferedImage() {
-        if (particleImage == null) {
-            try {
-                particleImage = ImageIO.read(new File(pathToFile));
-            } catch (IOException e) {
-                throw new RuntimeException("Particle image not found: " + pathToFile + "\n" + e);
-            }
-        }
-        return particleImage;
+        return instance.particleBasePixmap;
     }
 }

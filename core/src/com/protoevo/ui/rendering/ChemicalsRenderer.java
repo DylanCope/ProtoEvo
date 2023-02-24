@@ -77,7 +77,10 @@ public class ChemicalsRenderer implements Renderer {
 
     @Override
     public void dispose() {
+        chemicalSolution.setUpdateChemicalCallback(null);
         chemicalTexture.dispose();
         chemicalBatch.dispose();
+        chemicalPixmap.dispose();
+        chemicalShader.dispose();
     }
 }

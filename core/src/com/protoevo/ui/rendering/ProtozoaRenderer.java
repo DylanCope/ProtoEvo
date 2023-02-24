@@ -38,8 +38,10 @@ public class ProtozoaRenderer {
                 "microfilament_1", "microfilament_2", "microfilament_3");
 
         private final Texture[] textures;
+        private final String[] textureNames;
         private final int minCount, maxCount;
         private final float minScale, maxScale;
+        private boolean createdTextures = false;
 
         InteriorTexture(
                 int minCount, int maxCount,
@@ -50,12 +52,18 @@ public class ProtozoaRenderer {
             this.minScale = minScale;
             this.maxScale = maxScale;
             textures = new Texture[textureNames.length];
+            this.textureNames = textureNames;
+            createTextures();
+        }
+
+        private void createTextures() {
             for (int i = 0; i < textureNames.length; i++) {
                 textures[i] = new Texture(
                         "cell/cell_interior/" + textureNames[i] + ".png");
                 textures[i].setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Linear);
                 textures[i].setAnisotropicFilter(16);
             }
+            createdTextures = true;
         }
 
         public int getMaxCount() {
@@ -67,11 +75,23 @@ public class ProtozoaRenderer {
         }
 
         public Texture randomTexture() {
+            if (!createdTextures)
+                createTextures();
             return textures[MathUtils.random(0, textures.length - 1)];
         }
 
         public float randomScale() {
             return MathUtils.random(minScale, maxScale);
+        }
+
+        public static void dispose() {
+            for (InteriorTexture texture : values()) {
+                if (texture.createdTextures)
+                    for (Texture t : texture.textures) {
+                        t.dispose();
+                    }
+                texture.createdTextures = false;
+            }
         }
     }
 
@@ -100,8 +120,6 @@ public class ProtozoaRenderer {
         }
 
         public void draw(float delta, OrthographicCamera camera, SpriteBatch batch) {
-//            angle += delta * 0.5f;
-//            position = Geometry.rotate(position, delta * 0.5f);
             float cellAngle = protozoan.getAngle();
 
             float criticalZoom = RenderSettings.cameraZoomForCellDetails;
@@ -114,7 +132,7 @@ public class ProtozoaRenderer {
             elementSprite.setPosition(
                     (float) (protozoan.getPos().x + Math.cos(cellAngle + angle) * position.x * protozoan.getRadius() * 0.7f),
                     (float) (protozoan.getPos().y + Math.sin(cellAngle + angle) * position.y * protozoan.getRadius() * 0.7f));
-//            elementSprite.setSize(size, size);
+
             float w = scale * protozoan.getRadius();
             float h = w * elementSprite.getHeight() / elementSprite.getWidth();
             elementSprite.setSize(w, h);
@@ -122,10 +140,9 @@ public class ProtozoaRenderer {
         }
     }
 
-    private static final Sprite spikeTexture = new Sprite(new Texture("cell/spike.png"));
     private final Protozoan protozoan;
     private final Map<SurfaceNode, NodeRenderer> nodeRenderers;
-    private final ArrayList<InteriorElement> interiorElements = new ArrayList<>();
+    private final ArrayList<InteriorElement> interiorElements = new ArrayList<>(0);
 
     public ProtozoaRenderer(Protozoan protozoan) {
         this.protozoan = protozoan;
@@ -215,21 +232,11 @@ public class ProtozoaRenderer {
     }
 
     public boolean isStale() {
-        boolean stale = protozoan.isDead();
-        if (stale)
-            dispose();
-        return stale;
+        return protozoan.isDead();
     }
 
-    public void dispose() {
-//        if (detailedSprite != null) {
-//            detailedSprite.getTexture().dispose();
-//            detailedSprite = null;
-//        }
-        for (NodeRenderer nodeRenderer : nodeRenderers.values()) {
-            nodeRenderer.dispose();
-        }
-        nodeRenderers.clear();
+    public static void dispose() {
+        InteriorTexture.dispose();
+        CellTexture.dispose();
     }
-
 }

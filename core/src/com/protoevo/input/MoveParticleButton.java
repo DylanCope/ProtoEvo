@@ -103,4 +103,16 @@ public class MoveParticleButton extends ImageButton {
                 return openGrey;
         }
     }
+
+    public static void dispose() {
+        if (openGrey != null)
+            ((TextureRegionDrawable) openGrey).getRegion().getTexture().dispose();
+        if (open != null)
+            ((TextureRegionDrawable) open).getRegion().getTexture().dispose();
+        if (closed != null)
+            ((TextureRegionDrawable) closed).getRegion().getTexture().dispose();
+        openGrey = null;
+        open = null;
+        closed = null;
+    }
 }

@@ -3,10 +3,8 @@ package com.protoevo.core;
 import com.github.javafaker.Faker;
 import com.protoevo.settings.Settings;
 import com.protoevo.settings.SimulationSettings;
-import com.protoevo.env.ChemicalSolution;
 import com.protoevo.env.Environment;
-import com.protoevo.ui.SimulationScreen;
-import com.protoevo.utils.FileIO;
+import com.protoevo.ui.GraphicsAdapter;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -14,17 +12,16 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.text.SimpleDateFormat;
 import java.util.*;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class Simulation implements Runnable
 {
 	private final Environment environment;
-	private SimulationScreen simulationScreen;
-	private boolean simulate;
+	private ApplicationManager manager;
+	private volatile boolean simulate;
 	private static boolean paused = false;
 	private float timeDilation = 1, timeSinceSave = 0, timeSinceSnapshot = 0;
-	private double updateDelay = Application.refreshDelay / 1000.0, lastUpdateTime = 0;
+	private double updateDelay = GraphicsAdapter.refreshDelay / 1000.0, lastUpdateTime = 0;
 	
 	public static Random RANDOM = new Random(SimulationSettings.simulationSeed);
 	private boolean debug = false, delayUpdate = true, initialised = false;
@@ -32,8 +29,7 @@ public class Simulation implements Runnable
 	private final String name;
 	private final String genomeFile, historyFile;
 	private List<String> statsNames;
-	private REPL repl;
-	private Thread replThread;
+	private final REPL repl = new REPL(this);
 
 	public Simulation() {
 		this(Settings.simulationSeed);
@@ -131,8 +127,9 @@ public class Simulation implements Runnable
 		}
 	}
 
-	public void setSimulationScreen(SimulationScreen screen) {
-		this.simulationScreen = screen;
+	public void setManager(ApplicationManager manager) {
+		this.manager = manager;
+		repl.setManager(manager);
 	}
 
 	public Environment loadMostRecentEnv() {
@@ -161,26 +158,19 @@ public class Simulation implements Runnable
 			makeHistorySnapshot();
 			initialised = true;
 		}
-		repl = new REPL(this, simulationScreen);
-		replThread = new Thread(repl);
-		replThread.start();
+		new Thread(repl).start();
 
-		if (simulationScreen != null) {
-			simulationScreen.notifySimulationLoaded();
+		if (manager != null) {
+			manager.notifySimulationReady();
 		}
 	}
 
 	public void run() {
-
-		ChemicalSolution chemicalSolution = environment.getChemicalSolution();
-		if (chemicalSolution != null)
-			chemicalSolution.initialise();
-
 		while (simulate) {
 			if (paused)
 				continue;
 
-			update(Settings.simulationUpdateDelta);
+			update();
 
 			if (environment.numberOfProtozoa() <= 0 && Settings.finishOnProtozoaExtinction) {
 				simulate = false;
@@ -197,16 +187,15 @@ public class Simulation implements Runnable
 		);
 	}
 
-	public void update(float delta)
+	public void update()
 	{
 		if (isPaused())
 			return;
 
-		delta *= timeDilation;
+		float delta = timeDilation * SimulationSettings.simulationUpdateDelta;
+
 		try {
-			synchronized (environment) {
-				environment.update(delta);
-			}
+			environment.update(delta);
 		} catch (Exception e) {
 			e.printStackTrace();
 			System.out.println("Error occurred during simulation. Saving and exiting.");
@@ -233,16 +222,18 @@ public class Simulation implements Runnable
 
 	public void close() {
 		simulate = false;
-		System.out.println();
-		System.out.println("Closing simulation.");
-		save();
+		System.out.println("\nClosing simulation.");
+		String saveFile = save();
+		System.out.println("Saved environment to: " + saveFile);
+		environment.getWorld().dispose();
+		repl.close();
 	}
 
-	public void save() {
+	public String save() {
 		String timeStamp = new SimpleDateFormat("yyyy-MM-dd-HH-mm-ss").format(new Date());
 		String fileName = "saves/" + name + "/env/" + timeStamp;
-//		FileIO.writeJson(environment, fileName);
 		EnvFileIO.serialize(environment, fileName);
+		return fileName;
 	}
 
 	public void makeHistorySnapshot() {
@@ -297,14 +288,6 @@ public class Simulation implements Runnable
     public static boolean isPaused() {
 		return paused;
     }
-
-	public void dispose() {
-		close();
-		environment.getWorld().dispose();
-		repl.close();
-		replThread.interrupt();
-		System.exit(0);
-	}
 
 	public boolean isReady() {
 		return initialised;
