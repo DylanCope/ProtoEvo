@@ -11,7 +11,6 @@ import com.protoevo.settings.SimulationSettings;
 import com.protoevo.utils.*;
 
 import java.io.Serializable;
-import java.util.function.Consumer;
 import java.util.stream.IntStream;
 
 @JsonIdentityInfo(
@@ -35,7 +34,7 @@ public class ChemicalSolution implements Serializable {
     public interface ChemicalUpdatedCallback {
         void onChemicalUpdated(int i, int j, Colour colour);
     }
-    private ChemicalUpdatedCallback updateChemicalCallback;
+    private transient ChemicalUpdatedCallback updateChemicalCallback;
 
     public ChemicalSolution() {}
 
@@ -110,8 +109,12 @@ public class ChemicalSolution implements Serializable {
         return (int) Utils.linearRemap(x, xMin, xMax, 0, chemicalTextureWidth);
     }
 
-    public boolean inBounds(float x, float y) {
-        return x >= xMin && x <= xMax && y >= yMin && y <= yMax;
+    public boolean outOfWorldBounds(float x, float y) {
+        return x < xMin || x > xMax || y < yMin || y > yMax;
+    }
+
+    public boolean outOfTextureBounds(int x, int y) {
+        return x < 0 || x >= chemicalTextureWidth || y < 0 || y >= chemicalTextureHeight;
     }
 
     private int toFloatBufferIndex(int x, int y) {
@@ -123,7 +126,7 @@ public class ChemicalSolution implements Serializable {
     }
 
     public void set(int x, int y, Colour colour) {
-        if (!inBounds(x, y))
+        if (outOfTextureBounds(x, y))
             return;
         colours[x][y].set(colour);
         if (updateChemicalCallback != null)
@@ -131,7 +134,7 @@ public class ChemicalSolution implements Serializable {
     }
 
     public void set(int x, int y, float r, float g, float b, float a) {
-        if (!inBounds(x, y))
+        if (outOfTextureBounds(x, y))
             return;
         colours[x][y].set(r, g, b, a);
         if (updateChemicalCallback != null)
@@ -139,7 +142,7 @@ public class ChemicalSolution implements Serializable {
     }
 
     public void set(int x, int y, int rgba8888) {
-        if (!inBounds(x, y))
+        if (outOfTextureBounds(x, y))
             return;
         colours[x][y].set(rgba8888);
         if (updateChemicalCallback != null)
@@ -150,7 +153,7 @@ public class ChemicalSolution implements Serializable {
         float worldX = e.getPos().x;
         float worldY = -e.getPos().y;
 
-        if (!inBounds(worldX, worldY))
+        if (outOfWorldBounds(worldX, worldY))
             return;
 
         if (e.isEdible() && !e.isDead()) {

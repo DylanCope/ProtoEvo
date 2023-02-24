@@ -453,7 +453,7 @@ public class Environment implements Serializable
 		cellsToAdd.add(e);
 	}
 
-	public Statistics getStats(boolean includeProtozoaStats) {
+	public Statistics getStats() {
 		Statistics stats = new Statistics();
 		stats.putTime("Time Elapsed", elapsedTime);
 		stats.putCount("Protozoa", numberOfProtozoa());
@@ -478,8 +478,6 @@ public class Environment implements Serializable
 			if (count > 0)
 				stats.putCount("Died from " + cod.getReason(), count);
 		}
-//		if (includeProtozoaStats)
-//			stats.putAll(getProtozoaStats());
 		return stats;
 	}
 
@@ -516,41 +514,26 @@ public class Environment implements Serializable
 		return debugStats;
 	}
 
-	public Statistics getStats() {
-		return getStats(false);
-	}
-
-	public Statistics getProtozoaStats() {
-		Statistics stats = new Statistics();
-
-		// TODO: move calculating mean stats to Statistics class
-//		Collection<Protozoan> protozoa = cells.stream()
-//				.filter(cell -> cell instanceof Protozoan)
-//				.map(cell -> (Protozoan) cell)
-//				.collect(Collectors.toSet());
-//
-//		for (Cell e : protozoa) {
-//			for (Statistics.Stat stat : e.getStats()) {
-//				String key = "Sum " + stat.getName();
-//				float currentValue = stats.getOrDefault(key, 0f);
-//				stats.put(key, stat.getValue() + currentValue);
-//			}
-//		}
-//
-//		int numProtozoa = protozoa.size();
-//		for (Cell e : protozoa) {
-//			for (Map.Entry<String, Float> stat : e.getStats().entrySet()) {
-//				float sumValue = stats.getOrDefault("Sum " + stat.getKey(), 0f);
-//				float mean = sumValue / numProtozoa;
-//				stats.put("Mean " + stat.getKey(), mean);
-//				float currVar = stats.getOrDefault("Var " + stat.getKey(), 0f);
-//				float deltaVar = (float) Math.pow(stat.getValue() - mean, 2) / numProtozoa;
-//				stats.put("Var " + stat.getKey(), currVar + deltaVar);
-//			}
-//		}
+	public Statistics getProtozoaSummaryStats(boolean computeLogStats, boolean removeMoleculeStats) {
+		Iterator<Statistics> protozoaStats = cells.stream()
+				.filter(cell -> cell instanceof Protozoan)
+				.map(Cell::getStats)
+				.iterator();
+		Statistics stats = Statistics.computeSummaryStatistics(protozoaStats, computeLogStats);
+		final int protozoaCount = numberOfProtozoa();
+		stats.putCount("Protozoa Count", protozoaCount);
+		stats.getStatsMap().entrySet().removeIf(
+			entry -> entry.getKey().endsWith("Count")
+					&& ((int) entry.getValue().getValue() == 0 || (int) entry.getValue().getValue() == protozoaCount)
+				|| (removeMoleculeStats && entry.getKey().contains("Molecule"))
+		);
 		return stats;
 	}
-	
+
+	public Statistics getProtozoaSummaryStats() {
+		return getProtozoaSummaryStats(false, true);
+	}
+
 	public int numberOfProtozoa() {
 		return getCount(Protozoan.class);
 	}

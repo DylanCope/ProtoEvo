@@ -11,6 +11,7 @@ public class PanZoomCameraInput extends InputAdapter {
     Vector3 lastTouch, tmp;
 
     private boolean panningDisabled = false;
+    public static final float maxZoomOut = 10f;
 
     public PanZoomCameraInput(OrthographicCamera cam) {
         this.cam = cam;
@@ -46,6 +47,7 @@ public class PanZoomCameraInput extends InputAdapter {
     @Override
     public boolean scrolled(float amountX, float amountY) {
         cam.zoom *= amountY > 0 ? 1.05f : 0.95f;
+        cam.zoom = Math.min(cam.zoom, maxZoomOut);
         return false;
     }
 

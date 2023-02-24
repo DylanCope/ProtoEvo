@@ -1,6 +1,8 @@
 package com.protoevo.core;
 
 
+import com.badlogic.gdx.Gdx;
+
 import java.io.Serializable;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -223,6 +225,7 @@ public class Statistics implements Serializable, Iterable<Statistics.Stat> {
         private final String name;
         private final StatType type;
         private Object value;
+        private float error;
         private ComplexUnit unit;
         private Map<BaseUnit, Float> unitMultipliers;
 
@@ -292,21 +295,108 @@ public class Statistics implements Serializable, Iterable<Statistics.Stat> {
             return number / (float) Math.pow(1000, exp / 3);
         }
 
+        public boolean canBeNumeric() {
+            return isNumeric() || type.equals(StatType.BOOLEAN);
+        }
+
         public float getFloat() {
-            float number = ((Number) value).floatValue();
+            if (type.equals(StatType.BOOLEAN))
+                return ((Boolean) value) ? 1 : 0;
+
+            return ((Number) value).floatValue();
+        }
+
+        public float getMultipliedFloat() {
+            float number = getFloat();
             if (unit != null) {
                 for (Map.Entry<BaseUnit, Float> entry : unitMultipliers.entrySet()) {
                     if (unit.getExponent(entry.getKey()) != 0)
                         number *= Math.pow(entry.getValue(),
-                                           unit.getExponent(entry.getKey()));
+                                unit.getExponent(entry.getKey()));
                 }
             }
             return number;
         }
 
+        public boolean isNumeric() {
+            return type.equals(StatType.FLOAT) || type.equals(StatType.INTEGER);
+        }
+
+        public Stat add(Number n) {
+            if (type.equals(StatType.INTEGER)) {
+                value = ((Integer) value) + n.intValue();
+            } else if (type.equals(StatType.FLOAT)) {
+                value = ((Float) value) + n.floatValue();
+            }
+            return this;
+        }
+
+        public Stat add(Stat stat) {
+            if (type.equals(StatType.INTEGER)) {
+                value = ((Integer) value) + ((Integer) stat.value);
+            } else if (type.equals(StatType.FLOAT)) {
+                value = ((Float) value) + ((Float) stat.value);
+            }
+            return this;
+        }
+
+        public Stat sub(Number n) {
+            if (type.equals(StatType.INTEGER)) {
+                value = ((Integer) value) - n.intValue();
+            } else if (type.equals(StatType.FLOAT)) {
+                value = ((Float) value) - n.floatValue();
+            }
+            return this;
+        }
+
+        public Stat sub(Stat stat) {
+            if (type.equals(StatType.INTEGER)) {
+                value = ((Integer) value) - ((Integer) stat.value);
+            } else if (type.equals(StatType.FLOAT)) {
+                value = ((Float) value) - ((Float) stat.value);
+            }
+            return this;
+        }
+
+        public Stat mul(Number n) {
+            if (type.equals(StatType.INTEGER)) {
+                value = ((Integer) value) * n.intValue();
+            } else if (type.equals(StatType.FLOAT)) {
+                value = ((Float) value) * n.floatValue();
+            }
+            return this;
+        }
+
+        public Stat mul(Stat stat) {
+            if (type.equals(StatType.INTEGER)) {
+                value = ((Integer) value) * ((Integer) stat.value);
+            } else if (type.equals(StatType.FLOAT)) {
+                value = ((Float) value) * ((Float) stat.value);
+            }
+            return this;
+        }
+
+        public Stat div(Number n) {
+            if (type.equals(StatType.INTEGER)) {
+                value = ((Integer) value) / n.intValue();
+            } else if (type.equals(StatType.FLOAT)) {
+                value = ((Float) value) / n.floatValue();
+            }
+            return this;
+        }
+
+        public Stat div(Stat stat) {
+            if (type.equals(StatType.INTEGER)) {
+                value = ((Integer) value) / ((Integer) stat.value);
+            } else if (type.equals(StatType.FLOAT)) {
+                value = ((Float) value) / ((Float) stat.value);
+            }
+            return this;
+        }
+
         public String getValueString() {
-            if (type.equals(StatType.FLOAT) || type.equals(StatType.INTEGER)) {
-                float number = getFloat();
+            if (isNumeric()) {
+                float number = getMultipliedFloat();
                 float mantissa = getStandardMantissa(number);
                 int exp = getStandardExponent(number);
 
@@ -319,6 +409,14 @@ public class Statistics implements Serializable, Iterable<Statistics.Stat> {
                 String valueStr = String.format("%.2f", mantissa);
                 if (valueStr.endsWith(".00"))
                     valueStr = valueStr.substring(0, valueStr.length() - 3);
+
+                if (error > 0) {
+                    String errorStr = String.format("%.2f", error);
+                    if (errorStr.endsWith(".00"))
+                        errorStr = errorStr.substring(0, errorStr.length() - 3);
+                    return valueStr + " ± " + errorStr + " " + unitStr;
+                }
+
                 if (unitStr.length() > 1)
                     return valueStr + " " + unitStr;
                 else
@@ -334,7 +432,6 @@ public class Statistics implements Serializable, Iterable<Statistics.Stat> {
     }
 
     private final Map<String, Stat> stats = new ConcurrentHashMap<>();
-    private final Map<String, Stat> treeMap = new TreeMap<>();
     private final Map<BaseUnit, Float> unitMultipliers = new HashMap<>();
 
     public Statistics() {
@@ -447,15 +544,11 @@ public class Statistics implements Serializable, Iterable<Statistics.Stat> {
     }
 
     public Collection<Stat> getStats() {
-        treeMap.clear();
-        treeMap.putAll(stats);
-        return treeMap.values();
+        return stats.values();
     }
 
     public Map<String, Stat> getStatsMap() {
-        treeMap.clear();
-        treeMap.putAll(stats);
-        return treeMap;
+        return stats;
     }
 
     public void clear() {
@@ -470,5 +563,76 @@ public class Statistics implements Serializable, Iterable<Statistics.Stat> {
     public void putAll(Statistics other) {
         for (Stat stat : other)
             put(new Stat(stat));
+    }
+
+    public static Statistics computeSummaryStatistics(Iterator<Statistics> iterator) {
+        return computeSummaryStatistics(iterator, false);
+    }
+
+    public static Statistics computeSummaryStatistics(Iterator<Statistics> iterator, boolean computeLogSummaries) {
+        Statistics summaryStats = new Statistics();
+        Set<String> statNames = new HashSet<>();
+
+        // Implementation of Welford's algorithm for computing mean and variance
+        // https://en.wikipedia.org/wiki/Algorithms_for_calculating_variance
+        while (iterator.hasNext()) {
+            Statistics stats = iterator.next();
+            for (Stat stat : stats) {
+                if (stat.canBeNumeric()) {
+                    if (!statNames.contains(stat.name)) {
+                        summaryStats.put(stat.name + " Mean", 0f, stat.unit);
+                        summaryStats.putCount(stat.name + " Count",0);
+                        if (computeLogSummaries)
+                            summaryStats.put(stat.name + " Log Mean", 0f);
+                    }
+                    statNames.add(stat.name);
+
+                    summaryStats.stats.get(stat.name + " Count").add(1);
+                    Stat meanStat = summaryStats.stats.get(stat.name + " Mean");
+
+                    float newValue = stat.getFloat();
+                    float mean = summaryStats.stats.get(stat.name + " Mean").getFloat();
+                    float delta = newValue - mean;
+                    int count = (int) summaryStats.stats.get(stat.name + " Count").getFloat();
+                    mean += delta / count;
+                    float delta2 = newValue - mean;
+
+                    meanStat.setValue(mean);
+                    meanStat.error += delta * delta2;
+
+                    if (computeLogSummaries) {
+                        float logValue = (float) Math.log(newValue);
+                        Stat logMeanStat = summaryStats.stats.get(stat.name + " Log Mean");
+                        float logMean = logMeanStat.getFloat();
+                        float logDelta = logValue - logMean;
+                        logMean += logDelta / count;
+                        float logDelta2 = logValue - logMean;
+
+                        logMeanStat.setValue(logMean);
+                        logMeanStat.error += logDelta * logDelta2;
+                    }
+                }
+            }
+        }
+
+        for (String name : statNames) {
+            int count = (int) summaryStats.stats.get(name + " Count").getFloat();
+            Stat meanStat = summaryStats.stats.get(name + " Mean");
+            if (count > 1) {
+                meanStat.error = (float) Math.sqrt(meanStat.error / count);
+                if (computeLogSummaries) {
+                    Stat logMeanStat = summaryStats.stats.get(name + " Log Mean");
+                    logMeanStat.error = (float) Math.sqrt(logMeanStat.error / count);
+                }
+            } else {
+                meanStat.error = 0;
+                if (computeLogSummaries) {
+                    Stat logMeanStat = summaryStats.stats.get(name + " Log Mean");
+                    logMeanStat.error = 0;
+                }
+            }
+        }
+
+        return summaryStats;
     }
 }

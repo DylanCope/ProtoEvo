@@ -192,7 +192,7 @@ public class Simulation implements Runnable
 	}
 
 	public void printStats() {
-		environment.getStats(true).forEach(
+		environment.getStats().forEach(
 			stat -> System.out.println(stat.toString())
 		);
 	}
@@ -246,24 +246,24 @@ public class Simulation implements Runnable
 	}
 
 	public void makeHistorySnapshot() {
-		Statistics stats = environment.getStats(true);
-
-		if (statsNames == null) {
-			statsNames = new ArrayList<>();
-			for (Statistics.Stat stat : stats.getStats())
-				statsNames.add(stat.getName());
-
-			String statsCsvHeader = String.join(",", statsNames);
-			FileIO.appendLine(historyFile, statsCsvHeader);
-		}
-
-		Map<String, Statistics.Stat> statMap = stats.getStatsMap();
-
-		String statsString = statsNames.stream()
-				.map(k -> statMap.get(k).getValueString())
-				.collect(Collectors.joining(","));
-
-		FileIO.appendLine(historyFile, statsString);
+//		Statistics stats = environment.getStats();
+//
+//		if (statsNames == null) {
+//			statsNames = new ArrayList<>();
+//			for (Statistics.Stat stat : stats.getStats())
+//				statsNames.add(stat.getName());
+//
+//			String statsCsvHeader = String.join(",", statsNames);
+//			FileIO.appendLine(historyFile, statsCsvHeader);
+//		}
+//
+//		Map<String, Statistics.Stat> statMap = stats.getStatsMap();
+//
+//		String statsString = statsNames.stream()
+//				.map(k -> statMap.get(k).getValueString())
+//				.collect(Collectors.joining(","));
+//
+//		FileIO.appendLine(historyFile, statsString);
 	}
 
 	public void toggleDebug() {

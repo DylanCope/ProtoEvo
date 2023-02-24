@@ -8,10 +8,8 @@ import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.GlyphLayout;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
-import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.scenes.scene2d.EventListener;
-import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.Touchable;
 import com.badlogic.gdx.scenes.scene2d.ui.*;
@@ -23,7 +21,6 @@ import com.protoevo.biology.nodes.SurfaceNode;
 import com.protoevo.biology.cells.Protozoan;
 import com.protoevo.biology.organelles.Organelle;
 import com.protoevo.core.*;
-import com.protoevo.input.SaveCellTextListener;
 import com.protoevo.settings.WorldGenerationSettings;
 import com.protoevo.env.Environment;
 import com.protoevo.input.ParticleTracker;
@@ -38,9 +35,6 @@ import com.protoevo.utils.DebugMode;
 import com.protoevo.utils.ImageUtils;
 import com.protoevo.utils.Utils;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
@@ -72,7 +66,7 @@ public class SimulationScreen {
     private final ImageButton saveTrackedParticleButton;
     private final TextField saveTrackedParticleTextField;
 
-    private final SelectBox<String> selectBox;
+    private final SelectBox<String> statsSelectBox;
 
     private final float graphicsHeight;
     private final float graphicsWidth;
@@ -100,7 +94,8 @@ public class SimulationScreen {
         uiBatch = new SpriteBatch();
 
         stage.getRoot().addCaptureListener(event -> {
-            if (!(event.getTarget() instanceof TextField))
+            if (stage.getKeyboardFocus() instanceof TextField
+                    && !(event.getTarget() instanceof TextField))
                 stage.setKeyboardFocus(null);
             return false;
         });
@@ -163,9 +158,11 @@ public class SimulationScreen {
 
         Skin skin = UIStyle.getUISkin();
 
-        selectBox = new SelectBox<>(skin);
-        selectBox.getStyle().font = titleFont;
-        stage.addActor(selectBox);
+        statsSelectBox = new SelectBox<>(skin);
+        statsSelectBox.getStyle().font = titleFont;
+        stage.addActor(statsSelectBox);
+        statsSelectBox.setHeight(statsSelectBox.getStyle().font.getLineHeight());
+        setEnvStatOptions();
 
         inputManager = new SimulationInputManager(this);
         renderer = new ShaderLayers(
@@ -283,97 +280,112 @@ public class SimulationScreen {
         return renderStats(stats, 0, font);
     }
 
+
+    public void setSaveParticleTopBarUI() {
+        saveTrackedParticleButton.setVisible(true);
+        float fieldWidthMul = 8f;
+
+        Vector2 pos = topBar.nextLeftButtonPosition();
+        saveTrackedParticleButton.setPosition(pos.x, pos.y);
+        saveTrackedParticleTextField.setVisible(true);
+        saveTrackedParticleTextField.setBounds(
+                saveTrackedParticleButton.getX() + saveTrackedParticleButton.getWidth() * 1.8f,
+                saveTrackedParticleButton.getY(),
+                fieldWidthMul * saveTrackedParticleButton.getWidth(),
+                saveTrackedParticleButton.getHeight()
+        );
+    }
+
+    public void setProtozoaStatOptions(Protozoan protozoan) {
+        statGetters.clear();
+        ArrayList<String> statOptions = new ArrayList<>();
+        statOptions.add("Protozoan Stats");
+        statGetters.put("Protozoan Stats", protozoan::getStats);
+        getStats = protozoan::getStats;
+
+        layout.setText(statsSelectBox.getStyle().font, "Protozoan Stats");
+        float maxWidth = layout.width;
+
+        for (SurfaceNode node : protozoan.getSurfaceNodes()) {
+            String option;
+            if (node.getAttachment() != null)
+                option = "Node " + node.getIndex() + " (" + node.getAttachmentName() + ") Stats";
+            else
+                option = "Node " + node.getIndex() + " Stats";
+            statOptions.add(option);
+            statGetters.put(option, node::getStats);
+            layout.setText(statsSelectBox.getStyle().font, option);
+            maxWidth = Math.max(maxWidth, layout.width);
+        }
+
+        for (Organelle organelle : protozoan.getOrganelles()) {
+            String option;
+            if (organelle.getFunction() != null)
+                option = "Organelle " + organelle.getIndex()
+                        + " (" + organelle.getFunction().getName() + ") Stats";
+            else
+                option = "Organelle " + organelle.getIndex() + " Stats";
+            statOptions.add(option);
+            statGetters.put(option, organelle::getStats);
+            layout.setText(statsSelectBox.getStyle().font, option);
+            maxWidth = Math.max(maxWidth, layout.width);
+        }
+
+        statsSelectBox.setItems(statOptions.toArray(new String[0]));
+        statsSelectBox.setWidth(maxWidth);
+        statsSelectBox.setSelected("Protozoan Stats");
+    }
+
+    public void addStatOption(String name, Callable<Statistics> getter) {
+        statGetters.put(name, getter);
+        layout.setText(statsSelectBox.getStyle().font, name);
+        if (layout.width > statsSelectBox.getWidth())
+            statsSelectBox.setWidth(layout.width);
+        statsSelectBox.setItems(statGetters.keySet().toArray(new String[0]));
+    }
+
+    public void setEnvStatOptions() {
+        statGetters.clear();
+        addStatOption("Simulation Stats", environment::getStats);
+        addStatOption("Protozoa Summary", environment::getProtozoaSummaryStats);
+        statsSelectBox.setSelected("Simulation Stats");
+    }
+
+    public void hideSaveParticleTopBarUI() {
+        saveTrackedParticleButton.setVisible(false);
+        saveTrackedParticleTextField.setVisible(false);
+    }
+
     public void renderStats() {
         float titleY = (float) (17 * graphicsHeight / 20f + 1.5 * titleFont.getLineHeight());
+
+        if (statsSelectBox.getSelected() != null && statsSelectBox.isVisible())
+            getStats = statGetters.get(statsSelectBox.getSelected());
 
         ParticleTracker particleTracker = inputManager.getParticleTracker();
         if (renderingEnabled && particleTracker.isTracking()) {
             Particle particle = particleTracker.getTrackedParticle();
 
-            if ((!selectBox.isVisible() || trackedParticle != particle) && particle instanceof Protozoan) {
-                ArrayList<String> statOptions = new ArrayList<>();
-                statOptions.add("Protozoan Stats");
-                statGetters.put("Protozoan Stats", particle::getStats);
-                getStats = particle::getStats;
-
-
-                saveTrackedParticleButton.setVisible(true);
-                float fieldWidthMul = 8f;
-
-                Vector2 pos = topBar.nextLeftButtonPosition();
-                saveTrackedParticleButton.setPosition(pos.x, pos.y);
-//                saveTrackedParticleButton.setPosition(
-//                        graphicsWidth - 2 * textAwayFromEdge - 1.1f * (1 + fieldWidthMul) * saveTrackedParticleButton.getWidth(),
-//                        saveTrackedParticleButton.getHeight() * 2f
-//                );
-                saveTrackedParticleTextField.setVisible(true);
-                saveTrackedParticleTextField.setBounds(
-                        saveTrackedParticleButton.getX() + saveTrackedParticleButton.getWidth() * 1.8f,
-                        saveTrackedParticleButton.getY(),
-                        fieldWidthMul * saveTrackedParticleButton.getWidth(),
-                        saveTrackedParticleButton.getHeight()
-                );
-
-                layout.setText(selectBox.getStyle().font, "Protozoan Stats");
-                float maxWidth = layout.width;
-
-                for (SurfaceNode node : ((Protozoan) particle).getSurfaceNodes()) {
-                    String option;
-                    if (node.getAttachment() != null)
-                         option = "Node " + node.getIndex() + " (" + node.getAttachmentName() + ") Stats";
-                    else
-                        option = "Node " + node.getIndex() + " Stats";
-                    statOptions.add(option);
-                    statGetters.put(option, node::getStats);
-                    layout.setText(selectBox.getStyle().font, option);
-                    maxWidth = Math.max(maxWidth, layout.width);
+            if ((trackedParticle != particle)) {
+                if (particle instanceof Protozoan) {
+                    setSaveParticleTopBarUI();
+                    setProtozoaStatOptions((Protozoan) particle);
+                } else {
+                    hideSaveParticleTopBarUI();
+                    statGetters.clear();
+                    addStatOption(particle.getPrettyName() + " Stats", particle::getStats);
+                    statsSelectBox.setSelectedIndex(0);
                 }
-
-                for (Organelle organelle : ((Protozoan) particle).getOrganelles()) {
-                    String option;
-                    if (organelle.getFunction() != null)
-                        option = "Organelle " + organelle.getIndex()
-                                + " (" + organelle.getFunction().getName() + ") Stats";
-                    else
-                        option = "Organelle " + organelle.getIndex() + " Stats";
-                    statOptions.add(option);
-                    statGetters.put(option, organelle::getStats);
-                    layout.setText(selectBox.getStyle().font, option);
-                    maxWidth = Math.max(maxWidth, layout.width);
-                }
-
-                if (statOptions.size() >= 2) {
-                    selectBox.setVisible(true);
-                    selectBox.setBounds(
-                            textAwayFromEdge, titleY - selectBox.getStyle().font.getLineHeight() / 2f,
-                            maxWidth, selectBox.getStyle().font.getLineHeight());
-                    selectBox.setItems(statOptions.toArray(new String[0]));
-                }
-
-            } else if (!(particle instanceof Protozoan)) {
-                getStats = particle::getStats;
-                selectBox.setVisible(false);
-                saveTrackedParticleButton.setVisible(false);
-                saveTrackedParticleTextField.setVisible(false);
+                trackedParticle = particle;
             }
-
-            if (selectBox.getSelected() != null && selectBox.isVisible())
-                getStats = statGetters.get(selectBox.getSelected());
-
-            if (!selectBox.isVisible()) {
-                titleFont.draw(uiBatch, particle.getPrettyName() + " Stats", textAwayFromEdge, titleY);
-            }
-            trackedParticle = particle;
         }
-        else {
-            saveTrackedParticleButton.setVisible(false);
-            saveTrackedParticleTextField.setVisible(false);
-            getStats = statGetters.get("Env");
-            selectBox.setVisible(false);
-            graphicsStatsYOffset = 0;
-
-            titleFont.draw(uiBatch, "Simulation Stats", textAwayFromEdge, titleY);
+        else if (trackedParticle != null) {
+            trackedParticle = null;
+            hideSaveParticleTopBarUI();
+            setEnvStatOptions();
         }
+
+        statsSelectBox.setPosition(textAwayFromEdge, titleY - statsSelectBox.getStyle().font.getLineHeight() / 2f);
 
         renderStats(stats);
     }

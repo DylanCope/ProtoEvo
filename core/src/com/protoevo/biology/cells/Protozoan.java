@@ -50,16 +50,23 @@ public class Protozoan extends Cell implements Evolvable
 			timeSinceLastGeneUpdate = 0;
 		}
 		age(delta);
-		surfaceNodes.forEach(n -> n.update(delta));
 
-		engulfedCells.forEach(c -> eat(c, delta));
-		engulfedCells.removeIf(c -> c.getHealth() < 0.1f);
+		for (SurfaceNode node : surfaceNodes)
+			node.update(delta);
+
+		for (Cell c : engulfedCells)
+			eat(c, delta);
+		engulfedCells.removeIf(this::removeEngulfedCondition);
 
 		if (shouldSplit() && hasNotBurst()) {
 			getEnv().requestBurst(this, Protozoan.class, this::createSplitChild);
 		}
 
-		move(delta);
+		generateThrust(delta);
+	}
+
+	private boolean removeEngulfedCondition(Cell c) {
+		return c.getHealth() <= 0f;
 	}
 
 	@Override
@@ -154,7 +161,7 @@ public class Protozoan extends Cell implements Evolvable
 		this.thrustTurn = ProtozoaSettings.maxCiliaTurn * turn;
 	}
 
-	public void move(float delta) {
+	public void generateThrust(float delta) {
 		if (thrustMag <= 1e-12)
 			return;
 
@@ -205,9 +212,13 @@ public class Protozoan extends Cell implements Evolvable
 			getEnv().requestBurst(
 					this,
 					MeatCell.class,
-					r -> new MeatCell(r, getEnv()),
+					this::createMeat,
 					true);
 		super.kill(causeOfDeath);
+	}
+
+	private MeatCell createMeat(float r) {
+		return new MeatCell(r, getEnv());
 	}
 
 	private void handleEngulfing(Cell e, float delta) {
