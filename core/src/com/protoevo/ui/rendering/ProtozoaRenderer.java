@@ -10,8 +10,7 @@ import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector2;
 import com.protoevo.biology.nodes.*;
 import com.protoevo.biology.cells.Protozoan;
-import com.protoevo.core.Particle;
-import com.protoevo.core.Simulation;
+import com.protoevo.physics.Particle;
 import com.protoevo.env.Rock;
 import com.protoevo.settings.RenderSettings;
 import com.protoevo.utils.Geometry;
@@ -20,7 +19,6 @@ import com.protoevo.utils.Utils;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Random;
 import java.util.function.Function;
 
 public class ProtozoaRenderer {

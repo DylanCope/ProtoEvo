@@ -1,4 +1,4 @@
-package com.protoevo.core;
+package com.protoevo.physics;
 
 public class FixtureCategories {
     public static final short SENSOR = 0x0001;

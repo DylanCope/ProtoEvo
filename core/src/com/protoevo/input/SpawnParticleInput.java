@@ -7,7 +7,7 @@ import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector3;
 import com.protoevo.biology.cells.PlantCell;
-import com.protoevo.core.Particle;
+import com.protoevo.physics.Particle;
 import com.protoevo.env.Environment;
 import com.protoevo.ui.SimulationScreen;
 import com.protoevo.utils.Geometry;

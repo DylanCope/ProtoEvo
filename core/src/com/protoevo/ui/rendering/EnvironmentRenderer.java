@@ -11,11 +11,12 @@ import com.badlogic.gdx.physics.box2d.Box2DDebugRenderer;
 import com.badlogic.gdx.utils.ScreenUtils;
 import com.protoevo.biology.cells.Cell;
 import com.protoevo.biology.cells.Protozoan;
-import com.protoevo.core.Particle;
+import com.protoevo.physics.Particle;
 import com.protoevo.core.Simulation;
-import com.protoevo.core.SpatialHash;
+import com.protoevo.physics.SpatialHash;
 import com.protoevo.env.*;
 import com.protoevo.input.ParticleTracker;
+import com.protoevo.physics.CollisionHandler;
 import com.protoevo.ui.SimulationInputManager;
 import com.protoevo.ui.shaders.ShaderLayers;
 import com.protoevo.utils.DebugMode;
@@ -113,7 +114,7 @@ public class EnvironmentRenderer implements Renderer {
             // Render Particles
             batch.begin();
             if (camera.zoom < 3)
-                environment.getJointsManager().getParticleBindings()
+                environment.getJointsManager().getJoinings()
                         .forEach(this::renderJoinedParticles);
             environment.getParticles().stream()
 //                    .parallel()
@@ -149,7 +150,7 @@ public class EnvironmentRenderer implements Renderer {
         shapeRenderer.set(ShapeRenderer.ShapeType.Line);
 
         SpatialHash<Cell> spatialHash = simulation.getEnv().getSpatialHash(Protozoan.class);
-        float size = spatialHash.getCellSize();
+        float size = spatialHash.getChunkSize();
         for (int i = 0; i < spatialHash.getResolution(); i++) {
             float x = spatialHash.getOriginX() + i * size;
             for (int j = 0; j < spatialHash.getResolution(); j++) {

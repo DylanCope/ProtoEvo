@@ -4,7 +4,7 @@ import com.badlogic.gdx.InputAdapter;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector3;
-import com.protoevo.core.Particle;
+import com.protoevo.physics.Particle;
 import com.protoevo.ui.SimulationInputManager;
 import com.protoevo.ui.SimulationScreen;
 import com.protoevo.utils.CursorUtils;

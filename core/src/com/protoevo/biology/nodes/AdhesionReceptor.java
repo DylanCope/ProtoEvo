@@ -3,16 +3,16 @@ package com.protoevo.biology.nodes;
 import com.protoevo.biology.*;
 import com.protoevo.biology.cells.Cell;
 import com.protoevo.biology.cells.Protozoan;
-import com.protoevo.env.CollisionHandler;
+import com.protoevo.physics.CollisionHandler;
 import com.protoevo.env.JointsManager;
 import com.protoevo.settings.Settings;
 
-import java.util.Optional;
-
 public class AdhesionReceptor extends NodeAttachment {
 
-    private SurfaceNode otherNode;
-    private JointsManager.Joining joining;
+    private boolean isBound = false;
+    private int otherNodeIdx;
+    private long joiningID;
+    private float[] outgoing = new float[SurfaceNode.ioDim];
 
     public AdhesionReceptor(SurfaceNode node) {
         super(node);
@@ -20,27 +20,58 @@ public class AdhesionReceptor extends NodeAttachment {
 
     @Override
     public void update(float delta, float[] input, float[] output) {
-        if (otherNode != null && ensureBindingStillValid()) {
+        if (!isBindingStillValid())
+            unbind();
+
+        if (isBound) {
             handleResourceExchange(delta);
+            AdhesionReceptor other = getOtherAdhesionReceptor();
+            for (int i = 0; i < SurfaceNode.ioDim; i++) {
+                outgoing[i] = input[i];
+                output[i] = other.outgoing[i];
+            }
+            return;
         }
+
         Cell cell = node.getCell();
         for (CollisionHandler.Collision contact : cell.getContacts()) {
             Object other = cell.getOther(contact);
-            if (other instanceof Protozoan && joining == null)
-                joining = tryBindTo((Protozoan) other);
+            if (other instanceof Protozoan && !isBound) {
+                tryBindTo((Protozoan) other);
+                if (isBound)
+                    break;
+            }
         }
     }
 
-    public void unbind(JointsManager.Joining joining) {
-        if (this.joining == joining) {
-            otherNode = null;
-            this.joining = null;
-        }
+    public void unbind() {
+        isBound = false;
+        joiningID = -1;
+        otherNodeIdx = -1;
+    }
+
+    public Cell getOtherCell() {
+        Cell cell = node.getCell();
+        JointsManager.Joining joining = cell.getJoining(joiningID);
+        if (joining == null)
+            return null;
+        Object other = joining.getOther(cell);
+        if (!(other instanceof Cell))
+            return null;
+        return (Cell) other;
+    }
+
+    public SurfaceNode getOtherNode() {
+        Cell other = getOtherCell();
+        if (other == null)
+            return null;
+        return other.getSurfaceNodes().get(otherNodeIdx);
     }
 
     public void handleResourceExchange(float delta) {
         Cell cell = node.getCell();
-        Cell other = otherNode.getCell();
+        JointsManager.Joining joining = cell.getJoining(joiningID);
+        Cell other = (Cell) joining.getOther(cell);
         float transferRate = Settings.channelBindingEnergyTransport;
 
         float massDelta = cell.getConstructionMassAvailable() - other.getConstructionMassAvailable();
@@ -79,22 +110,22 @@ public class AdhesionReceptor extends NodeAttachment {
         }
     }
 
-    private boolean ensureBindingStillValid() {
-        if (otherNode.getCell().isDead()
+    private boolean isBindingStillValid() {
+        SurfaceNode otherNode = getOtherNode();
+        return otherNode != null && !(otherNode.getCell().isDead()
                 || !otherNode.exists()
                 || !(otherNode.getAttachment() instanceof AdhesionReceptor)
                 || otherNode.getCell().notBoundTo(node.getCell())
-                || node.getCell().notBoundTo(otherNode.getCell())){
-            node.getCell().requestJointRemoval(otherNode.getCell());
-            otherNode = null;
-            return false;
-        }
-        return true;
+                || node.getCell().notBoundTo(otherNode.getCell()));
     }
 
-    private JointsManager.Joining tryBindTo(Protozoan otherCell) {
+    public AdhesionReceptor getOtherAdhesionReceptor() {
+        return (AdhesionReceptor) getOtherNode().getAttachment();
+    }
+
+    private void tryBindTo(Protozoan otherCell) {
         if (Math.random() > getConstructionProgress())
-            return null;
+            return;
 
         for (SurfaceNode otherNode : otherCell.getSurfaceNodes()) {
             if (createBindingCondition(otherNode)) {
@@ -108,25 +139,18 @@ public class AdhesionReceptor extends NodeAttachment {
                 cell.registerJoining(joining);
                 otherCell.registerJoining(joining);
 
-                this.otherNode = otherNode;
-                if (otherNode.getAttachment() != null && otherNode.getAttachment() instanceof AdhesionReceptor)
+                this.otherNodeIdx = otherNode.getIndex();
+                this.joiningID = joining.id;
+                isBound = true;
+
+                if (otherNode.getAttachment() instanceof AdhesionReceptor)
                     ((AdhesionReceptor) otherNode.getAttachment()).setOtherNode(node);
-
-                joining.listener = this::unbind;
-
-                return joining;
             }
         }
-
-        return null;
-    }
-
-    public Optional<SurfaceNode> getOtherNode() {
-        return Optional.ofNullable(otherNode);
     }
 
     public void setOtherNode(SurfaceNode otherNode) {
-        this.otherNode = otherNode;
+        this.otherNodeIdx = otherNode.getIndex();
     }
 
     private boolean createBindingCondition(SurfaceNode otherNode) {
@@ -157,13 +181,13 @@ public class AdhesionReceptor extends NodeAttachment {
 
     @Override
     public String getInputMeaning(int index) {
-        return "Input: " + index;
+        return "Outgoing Signal " + index;
     }
 
     @Override
     public String getOutputMeaning(int index) {
-        if (otherNode == null)
+        if (!isBound)
             return null;
-        return "Output: " + index;
+        return "Incoming Signal " + index;
     }
 }

@@ -2,7 +2,7 @@ package com.protoevo.input;
 
 import com.badlogic.gdx.Input;
 import com.protoevo.biology.cells.Cell;
-import com.protoevo.core.EnvFileIO;
+import com.protoevo.env.EnvFileIO;
 
 public class SaveCellTextListener implements Input.TextInputListener {
 

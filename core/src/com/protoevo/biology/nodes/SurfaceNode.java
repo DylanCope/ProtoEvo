@@ -30,13 +30,14 @@ public class SurfaceNode implements Evolvable.Element, Serializable {
     public static final String activationPrefix = "Activation/";
     public static final String inputActivationPrefix = "Input" + activationPrefix;
     public static final String outputActivationPrefix = "Output" + activationPrefix;
+    public static final int ioDim = 3;
 
     private Cell cell;
     private float angle, constructionSignature, deltaTime;
     private final Vector2 relativePosition = new Vector2(), worldPosition = new Vector2();
     private NodeAttachment attachment = null;
-    private final float[] inputActivation = new float[3];
-    private final float[] outputActivation = new float[3];
+    private final float[] inputActivation = new float[ioDim];
+    private final float[] outputActivation = new float[ioDim];
     private int nodeIdx;
     private final Statistics stats = new Statistics();
     private final ArrayList<NodeAttachment> candidateAttachments = new ArrayList<>();

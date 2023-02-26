@@ -2,8 +2,8 @@ package com.protoevo.biology.nodes;
 
 import com.badlogic.gdx.math.Vector2;
 import com.protoevo.biology.cells.Cell;
-import com.protoevo.core.Shape;
-import com.protoevo.core.Particle;
+import com.protoevo.physics.Shape;
+import com.protoevo.physics.Particle;
 import com.protoevo.settings.ProtozoaSettings;
 import com.protoevo.settings.SimulationSettings;
 import com.protoevo.utils.Colour;

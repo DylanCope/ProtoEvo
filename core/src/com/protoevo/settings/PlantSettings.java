@@ -14,5 +14,5 @@ public class PlantSettings {
     public static final float plantCriticalCrowding = 6.0f;
     public static final float plantRegen = .2f;
     public static float collisionDestructionRate =
-            5f * Geometry.getCircleArea(maxPlantBirthRadius) * SimulationSettings.basicParticleMassDensity;
+            Geometry.getCircleArea(maxPlantBirthRadius) * SimulationSettings.basicParticleMassDensity;
 }

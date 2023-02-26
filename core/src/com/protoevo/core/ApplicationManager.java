@@ -7,12 +7,28 @@ import com.protoevo.settings.RenderSettings;
 import com.protoevo.ui.GraphicsAdapter;
 import com.protoevo.utils.DebugMode;
 
+import java.util.Map;
+
+import static com.protoevo.utils.Utils.parseArgs;
+
 public class ApplicationManager {
 
     private static boolean windowed = true;
     private volatile boolean headless = false, applicationRunning = true;
     private Simulation simulation;
     private GraphicsAdapter graphics;
+
+    public static void main(String[] args) {
+        System.out.println("Current JVM version: " + System.getProperty("java.version"));
+        Map<String, String> argsMap = parseArgs(args);
+
+        ApplicationManager app = new ApplicationManager();
+
+        if (argsMap.containsKey("headless"))
+            app.switchToHeadlessMode();
+
+        app.launch();
+    }
 
     public void launch() {
         createSimulation();
@@ -34,8 +50,7 @@ public class ApplicationManager {
     }
 
     public void createSimulation() {
-        simulation = new Simulation(0, "erebus-tangela-omnis");
-//        simulation = new Simulation();
+        simulation = new Simulation("tartarus-dragonair-reprehenderit");
         simulation.setManager(this);
 
         if (!headless) {

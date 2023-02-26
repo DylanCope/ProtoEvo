@@ -8,7 +8,7 @@ import com.fasterxml.jackson.databind.KeyDeserializer;
 import com.fasterxml.jackson.databind.PropertyName;
 import com.fasterxml.jackson.databind.deser.impl.ReadableObjectId;
 import com.fasterxml.jackson.databind.introspect.ObjectIdInfo;
-import com.protoevo.core.Particle;
+import com.protoevo.physics.Particle;
 import com.protoevo.env.Environment;
 
 import java.io.IOException;

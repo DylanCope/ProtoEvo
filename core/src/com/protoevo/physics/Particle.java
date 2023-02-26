@@ -1,12 +1,13 @@
-package com.protoevo.core;
+package com.protoevo.physics;
 
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.*;
 import com.badlogic.gdx.utils.Array;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.protoevo.biology.CauseOfDeath;
-import com.protoevo.env.CollisionHandler;
+import com.protoevo.core.Statistics;
 import com.protoevo.env.Environment;
+import com.protoevo.env.JointsManager;
 import com.protoevo.env.Rock;
 import com.protoevo.settings.SimulationSettings;
 import com.protoevo.utils.Colour;
@@ -15,17 +16,16 @@ import com.protoevo.utils.Geometry;
 import java.io.Serializable;
 import java.util.Collection;
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 public class Particle implements Shape, Serializable {
     public static long serialVersionUID = 1L;
-
-    public static int nextId = 0; // make sure restored on deserialization
-    protected int hashCode = nextId++;
+    protected final long id = UUID.randomUUID().getMostSignificantBits();
 
     private final Vector2[] boundingBox = new Vector2[]{new Vector2(), new Vector2()};
 
-    private Environment environment;
+    private transient Environment environment;
     private transient Body body;
     private transient Fixture dynamicsFixture, sensorFixture;
     private boolean dead = false, disposed = false;
@@ -46,6 +46,10 @@ public class Particle implements Shape, Serializable {
 
     public Environment getEnv() {
         return environment;
+    }
+
+    public JointsManager.Joining getJoining(long joiningID) {
+        return environment.getJointsManager().getJoining(joiningID);
     }
 
     public void addToEnv(Environment environment) {
@@ -455,6 +459,10 @@ public class Particle implements Shape, Serializable {
 
     @Override
     public int hashCode() {
-        return hashCode;
+        return Long.hashCode(id);
+    }
+
+    public long getId() {
+        return id;
     }
 }

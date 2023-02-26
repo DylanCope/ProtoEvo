@@ -22,6 +22,8 @@ import com.protoevo.biology.nodes.SurfaceNode;
 import com.protoevo.biology.cells.Protozoan;
 import com.protoevo.biology.organelles.Organelle;
 import com.protoevo.core.*;
+import com.protoevo.env.EnvFileIO;
+import com.protoevo.physics.Particle;
 import com.protoevo.settings.WorldGenerationSettings;
 import com.protoevo.env.Environment;
 import com.protoevo.input.ParticleTracker;

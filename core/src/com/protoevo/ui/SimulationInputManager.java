@@ -2,15 +2,9 @@ package com.protoevo.ui;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.OrthographicCamera;
-import com.badlogic.gdx.graphics.Texture;
-import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.Vector2;
-import com.badlogic.gdx.scenes.scene2d.ui.ImageButton;
-import com.badlogic.gdx.scenes.scene2d.utils.Drawable;
-import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
-import com.protoevo.core.Particle;
+import com.protoevo.physics.Particle;
 import com.protoevo.input.*;
-import com.protoevo.utils.ImageUtils;
 
 import java.util.Collection;
 

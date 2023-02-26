@@ -2,9 +2,8 @@ package com.protoevo.biology.cells;
 
 import com.badlogic.gdx.math.MathUtils;
 import com.protoevo.biology.CauseOfDeath;
-import com.protoevo.core.Simulation;
 import com.protoevo.core.Statistics;
-import com.protoevo.env.CollisionHandler;
+import com.protoevo.physics.CollisionHandler;
 import com.protoevo.env.Environment;
 import com.protoevo.env.JointsManager;
 import com.protoevo.settings.PlantSettings;
@@ -104,7 +103,7 @@ public class PlantCell extends Cell {
             if (o instanceof Protozoan)
                 nProtozoaContacts++;
         }
-        if (nProtozoaContacts > 1) {
+        if (nProtozoaContacts >= 1) {
             float dps = PlantSettings.collisionDestructionRate * nProtozoaContacts;
             removeMass(delta * dps, CauseOfDeath.OVERCROWDING);
         }

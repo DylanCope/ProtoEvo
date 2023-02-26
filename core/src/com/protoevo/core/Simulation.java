@@ -1,7 +1,7 @@
 package com.protoevo.core;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.javafaker.Faker;
+import com.protoevo.env.EnvFileIO;
 import com.protoevo.settings.Settings;
 import com.protoevo.settings.SimulationSettings;
 import com.protoevo.env.Environment;
@@ -29,7 +29,6 @@ public class Simulation implements Runnable
 	private boolean debug = false, delayUpdate = true, initialised = false;
 
 	private final String name;
-	private final String genomeFile, historyFile;
 	private List<String> statsNames;
 	private final REPL repl = new REPL(this);
 
@@ -42,12 +41,12 @@ public class Simulation implements Runnable
 		RANDOM = new Random(seed);
 		simulate = true;
 		name = generateSimName();
-		System.out.println("Created new simulation named: " + name);
-		genomeFile = "saves/" + name + "/genomes.csv";
-		historyFile = "saves/" + name + "/history.csv";
-		newSaveDir();
 		environment = newDefaultEnv();
 		loadSettings();
+	}
+
+	public Simulation(String name) {
+		this(Settings.simulationSeed, name);
 	}
 
 	public Simulation(long seed, String name)
@@ -55,10 +54,7 @@ public class Simulation implements Runnable
 		RANDOM = new Random(seed);
 		simulate = true;
 		this.name = name;
-		genomeFile = "saves/" + name + "/genomes.csv";
-		historyFile = "saves/" + name + "/history.csv";
 
-		newSaveDir();
 		environment = loadMostRecentEnv();
 		loadSettings();
 	}
@@ -68,10 +64,7 @@ public class Simulation implements Runnable
 		RANDOM = new Random(seed);
 		simulate = true;
 		this.name = name;
-		genomeFile = "saves/" + name + "/genomes.csv";
-		historyFile = "saves/" + name + "/history.csv";
 
-		newSaveDir();
 		environment = loadEnv("saves/" + name + "/env/" + save);
 		loadSettings();
 	}
@@ -84,18 +77,11 @@ public class Simulation implements Runnable
 
 	private void newSaveDir() {
 		try {
+			System.out.println("Created new simulation named: " + name);
 			Files.createDirectories(Paths.get("saves/" + name));
 			Files.createDirectories(Paths.get("saves/" + name + "/env"));
 			Files.createDirectories(Paths.get("saves/" + name + "/stats"));
 			Files.createDirectories(Paths.get("saves/" + name + "/stats/summaries"));
-
-			Path genomePath = Paths.get(genomeFile);
-			if (!Files.exists(genomePath))
-				Files.createFile(genomePath);
-
-			Path historyPath = Paths.get(historyFile);
-			if (!Files.exists(historyPath))
-				Files.createFile(historyPath);
 
 		} catch (IOException e) {
 			throw new RuntimeException(e);
@@ -112,22 +98,19 @@ public class Simulation implements Runnable
 	
 	public Environment newDefaultEnv()
 	{
-		Environment environment = new Environment();
-		environment.setGenomeFile(genomeFile);
-		return environment;
+		newSaveDir();
+		return new Environment();
 	}
 
 	public Environment loadEnv(String filename)
 	{
 		try {
-			Environment env = EnvFileIO.deserialize(filename);
-			env.rebuildWorld();
+			Environment env = EnvFileIO.reloadEnvironment(filename);
 			System.out.println("Loaded tank at: " + filename);
 			initialised = true;
 			return env;
 		} catch (Exception e) {
-			System.err.println("Unable to load environment at " + filename + " because: " + e.getMessage());
-			throw new RuntimeException(e);
+			return newDefaultEnv();
 		}
 	}
 
@@ -139,20 +122,23 @@ public class Simulation implements Runnable
 	public Environment loadMostRecentEnv() {
 		Path dir = Paths.get("saves/" + name + "/env");
 		Optional<String> lastFilePath = Optional.empty();
-		if (Files.exists(dir))
+		if (Files.exists(dir)) {
 			try (Stream<Path> pathStream = Files.list(dir)) {
 				lastFilePath = pathStream
-						.filter(f -> !Files.isDirectory(f))
-						.max(Comparator.comparingLong(f -> f.toFile().lastModified()))
-						.map(path -> path.toString().replace(".env", ""));
+						.filter(Files::isDirectory)
+						.max(Comparator.comparingLong(
+								f -> Paths.get(f.toString() + "/environment.dat")
+										.toFile().lastModified()))
+						.map(Path::toString);
 			} catch (IOException e) {
-				throw new RuntimeException("Invalid input directory: " + dir, e);
+				return newDefaultEnv();
 			}
+		}
 
 		if (lastFilePath.isPresent())
 			return loadEnv(lastFilePath.get());
 		else
-			throw new RuntimeException("No environment files found in " + dir);
+			return newDefaultEnv();
 	}
 
 	public void prepare()
@@ -208,13 +194,14 @@ public class Simulation implements Runnable
 		}
 
 		timeSinceSave += delta;
-		if (timeSinceSave > Settings.timeBetweenSaves) {
+		timeSinceSnapshot += delta;
+
+		if (timeSinceSave >= Settings.timeBetweenSaves) {
 			timeSinceSave = 0;
 			save();
 		}
 
-		timeSinceSnapshot += delta;
-		if (timeSinceSnapshot > Settings.historySnapshotTime) {
+		if (timeSinceSnapshot >= Settings.historySnapshotTime) {
 			timeSinceSnapshot = 0;
 			makeHistorySnapshot();
 		}
@@ -240,7 +227,7 @@ public class Simulation implements Runnable
 	public String save() {
 		String timeStamp = getTimeStampString();
 		String fileName = "saves/" + name + "/env/" + timeStamp;
-		EnvFileIO.serialize(environment, fileName);
+		EnvFileIO.saveEnvironment(environment, fileName);
 		return fileName;
 	}
 
@@ -307,6 +294,10 @@ public class Simulation implements Runnable
 
 	public String getSaveFolder() {
 		return "saves/" + name;
+	}
+
+	public String getName() {
+		return name;
 	}
 
 	public void toggleTimeDilation() {

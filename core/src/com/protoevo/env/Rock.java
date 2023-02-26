@@ -4,8 +4,7 @@ import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector2;
 import com.fasterxml.jackson.annotation.JsonIdentityInfo;
 import com.fasterxml.jackson.annotation.ObjectIdGenerators;
-import com.protoevo.core.Shape;
-import com.protoevo.core.Simulation;
+import com.protoevo.physics.Shape;
 import com.protoevo.utils.Colour;
 import com.protoevo.utils.Geometry;
 

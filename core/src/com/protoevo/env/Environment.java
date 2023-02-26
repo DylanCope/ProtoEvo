@@ -4,54 +4,49 @@ import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.*;
-import com.fasterxml.jackson.annotation.JsonIdentityInfo;
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.ObjectIdGenerators;
 import com.google.common.collect.Streams;
-import com.protoevo.biology.*;
+import com.protoevo.biology.BurstRequest;
+import com.protoevo.biology.CauseOfDeath;
 import com.protoevo.biology.cells.Cell;
 import com.protoevo.biology.cells.MeatCell;
 import com.protoevo.biology.cells.PlantCell;
-import com.protoevo.biology.evolution.Evolvable;
 import com.protoevo.biology.cells.Protozoan;
+import com.protoevo.biology.evolution.Evolvable;
 import com.protoevo.biology.nodes.SurfaceNode;
 import com.protoevo.biology.organelles.Organelle;
+import com.protoevo.physics.*;
 import com.protoevo.core.*;
-import com.protoevo.core.Shape;
-import com.protoevo.settings.WorldGenerationSettings;
+import com.protoevo.physics.Shape;
 import com.protoevo.settings.Settings;
 import com.protoevo.settings.SimulationSettings;
+import com.protoevo.settings.WorldGenerationSettings;
 import com.protoevo.utils.Colour;
 import com.protoevo.utils.FileIO;
 import com.protoevo.utils.Geometry;
+import com.protoevo.utils.SerializableFunction;
 
 import java.io.Serializable;
 import java.util.*;
-import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
-@JsonIdentityInfo(
-		generator = ObjectIdGenerators.IntSequenceGenerator.class,
-		scope = Environment.class)
+
 public class Environment implements Serializable
 {
 	private static final long serialVersionUID = 2804817237950199223L;
 	private transient World world;
-	private transient boolean initialised = false;
 	private float elapsedTime, physicsStepTime;
-	@JsonIgnore
 	private final Statistics stats = new Statistics();
-	@JsonIgnore
 	private final Statistics debugStats = new Statistics();
 	public final ConcurrentHashMap<CauseOfDeath, Integer> causeOfDeathCounts =
 			new ConcurrentHashMap<>(CauseOfDeath.values().length, 1);
-	@JsonIgnore
-	private final ConcurrentHashMap<Class<? extends Cell>, SpatialHash<Cell>> spatialHashes;
 
-	private transient Map<Class<? extends Particle>, Function<Float, Vector2>> spawnPositionFns;
+	private Chunks chunks = new Chunks();
+
+	private Map<Class<? extends Particle>, SerializableFunction<Float, Vector2>> spawnPositionFns;
 
 	private final ChemicalSolution chemicalSolution;
 	private final List<Rock> rocks = new ArrayList<>();
@@ -69,9 +64,8 @@ public class Environment implements Serializable
 	@JsonIgnore
 	private final List<String> genomesToWrite = new ArrayList<>();
 	@JsonIgnore
-	private final Set<Cell> cellsToAdd = new HashSet<>();
-
-	private final Set<Cell> cells = new HashSet<>();
+	private transient Set<Cell> cellsToAdd;
+	private transient ConcurrentHashMap<Long, Cell> cells;
 	private boolean hasInitialised;
 	private Vector2[] populationStartCentres;
 
@@ -81,6 +75,7 @@ public class Environment implements Serializable
 
 	public Environment()
 	{
+		recreateTransientObjects();
 		buildWorld();
 		jointsManager = new JointsManager(this);
 
@@ -92,21 +87,14 @@ public class Environment implements Serializable
 					SimulationSettings.chemicalFieldRadius);
 		}
 
-		int resolution = SimulationSettings.spatialHashResolution;
-//		int protozoaCap = (int) Math.ceil(SimulationSettings.maxProtozoa / (float) (resolution * resolution));
-//		int plantCap = (int) Math.ceil(SimulationSettings.maxPlants / (float) (resolution * resolution));
-//		int meatCap = (int) Math.ceil(SimulationSettings.maxMeat / (float) (resolution * resolution));
-		int protozoaCap = 300;
-		int plantCap = 75;
-		int meatCap = 50;
-
-		spatialHashes = new ConcurrentHashMap<>(3, 1);
-		spatialHashes.put(Protozoan.class, new SpatialHash<>(resolution, protozoaCap, SimulationSettings.spatialHashRadius));
-		spatialHashes.put(PlantCell.class, new SpatialHash<>(resolution, plantCap, SimulationSettings.spatialHashRadius));
-		spatialHashes.put(MeatCell.class, new SpatialHash<>(resolution, meatCap, SimulationSettings.spatialHashRadius));
-
 		elapsedTime = 0;
 		hasInitialised = false;
+	}
+
+	public void recreateTransientObjects() {
+		cellsToAdd = new HashSet<>();
+		cells = new ConcurrentHashMap<>();
+		chunks.initialise();
 	}
 
 	public void buildWorld() {
@@ -118,17 +106,16 @@ public class Environment implements Serializable
 
 	public void rebuildWorld() {
 		buildWorld();
-		buildSpawners();
 		createRockFixtures();
-		for (Cell cell : cells) {
-			cell.createBody();
-		}
+		for (Cell cell : getCells())
+			cell.setEnv(this);
 		jointsManager.rebuild();
+		updateChunkAllocations();
 	}
 
 	public void update(float delta)
 	{
-		cells.forEach(Particle::physicsUpdate);
+		getCells().forEach(Particle::physicsUpdate);
 
 		elapsedTime += delta;
 		long startTime = System.nanoTime();
@@ -141,7 +128,7 @@ public class Environment implements Serializable
 
   		handleCellUpdates(delta);
 		handleBirthsAndDeaths();
-		updateSpatialHashes();
+		updateChunkAllocations();
 
 		jointsManager.flushJoints();
 
@@ -151,7 +138,7 @@ public class Environment implements Serializable
 	}
 
 	private void handleCellUpdates(float delta) {
-		cells.parallelStream().forEach(cell -> cell.update(delta));
+		getCells().parallelStream().forEach(cell -> cell.update(delta));
 	}
 
 	private void handleBirthsAndDeaths() {
@@ -162,41 +149,19 @@ public class Environment implements Serializable
 
 		flushEntitiesToAdd();
 
-		for (Cell cell : cells) {
+		for (Cell cell : getCells()) {
 			if (cell.isDead()) {
 				dispose(cell);
 				depositOnDeath(cell);
 			}
 		}
-		cells.removeIf(Cell::isDead);
+		getCells().removeIf(Cell::isDead);
 	}
 
-	public Vector2[] createRocks() {
+	public void createRocks() {
 		System.out.println("Creating rocks structures...");
-		WorldGeneration.generateClustersOfRocks(
-				this, new Vector2(0, 0), 1, WorldGenerationSettings.rockClusterRadius);
-
-		int numClusterCentres = 8;
-		Vector2[] clusterCentres = new Vector2[numClusterCentres];
-
-		for (int i = 0; i < numClusterCentres; i++) {
-			float minR = WorldGenerationSettings.rockClusterRadius;
-			float maxR = WorldGenerationSettings.environmentRadius / 5f - WorldGenerationSettings.rockClusterRadius;
-
-			Vector2 centre = WorldGeneration.randomPosition(minR, maxR);
-			clusterCentres[i] = centre;
-
-			int nRings = WorldGeneration.RANDOM.nextInt(WorldGenerationSettings.numRingClusters - 1) + 1;
-			float radiusRange =
-					.8f * WorldGenerationSettings.environmentRadius +
-							WorldGeneration.RANDOM.nextFloat() * WorldGenerationSettings.rockClusterRadius;
-			WorldGeneration.generateClustersOfRocks(this, centre, nRings, radiusRange);
-		}
-
-		WorldGeneration.generateRocks(this, 200);
+		rocks.addAll(WorldGeneration.generate());
 		createRockFixtures();
-
-		return clusterCentres;
 	}
 
 	public void createRockFixtures() {
@@ -268,7 +233,7 @@ public class Environment implements Serializable
 		spawnPositionFns = new HashMap<>(3, 1);
 		if (populationStartCentres != null) {
 			final float clusterR = WorldGenerationSettings.populationClusterRadius;
-			spawnPositionFns.put(PlantCell.class, r -> randomPosition(r, populationStartCentres, 1.2f*clusterR));
+			spawnPositionFns.put(PlantCell.class, r -> randomPosition(r, populationStartCentres, 1.5f*clusterR));
 			spawnPositionFns.put(Protozoan.class, r -> randomPosition(r, populationStartCentres, clusterR));
 		}
 		else {
@@ -281,7 +246,7 @@ public class Environment implements Serializable
 		populationStartCentres = new Vector2[WorldGenerationSettings.numPopulationStartClusters];
 		for (int i = 0; i < populationStartCentres.length; i++)
 			populationStartCentres[i] = Geometry.randomPointInCircle(
-					WorldGenerationSettings.environmentRadius, WorldGeneration.RANDOM);
+					WorldGenerationSettings.environmentRadius / 2f, WorldGeneration.RANDOM);
 
 		buildSpawners();
 
@@ -350,12 +315,10 @@ public class Environment implements Serializable
 		return randomPosition(entityRadius, Geometry.ZERO, WorldGenerationSettings.rockClusterRadius);
 	}
 
-	public void add(Cell cell) {
-		if (getLocalCount(cell) < getLocalCapacity(cell)) {
-			cells.add(cell);
-			// update local counts
-			spatialHashes.get(cell.getClass()).add(cell);
-
+	public void tryAdd(Cell cell) {
+		if (getLocalCount(cell) < getLocalCapacity(cell)
+				&& chunks.getGlobalCount(cell) < chunks.getGlobalCapacity(cell)) {
+			add(cell);
 			bornCounts.put(cell.getClass(),
 					bornCounts.getOrDefault(cell.getClass(), 0L) + 1);
 			generationCounts.put(cell.getClass(),
@@ -368,9 +331,20 @@ public class Environment implements Serializable
 		}
 	}
 
+	public void add(Cell cell) {
+		cells.put(cell.getId(), cell);
+		chunks.add(cell);
+	}
+
+	public Cell getCell(long id) {
+		if (cells.containsKey(id))
+			return cells.get(id);
+		return null;
+	}
+
 	private void flushEntitiesToAdd() {
 		for (Cell cell : cellsToAdd)
-			add(cell);
+			tryAdd(cell);
 		cellsToAdd.clear();
 	}
 
@@ -384,16 +358,12 @@ public class Environment implements Serializable
 	}
 
 	public int getCount(Class<? extends Cell> cellClass) {
-		return spatialHashes.get(cellClass).size();
+		return chunks.getLocalCount(cellClass);
 	}
 
-	private void updateSpatialHashes() {
-		spatialHashes.values().forEach(SpatialHash::clear);
-		cells.forEach(cell -> spatialHashes.get(cell.getClass()).add(cell));
-	}
-
-	public int getCapacity(Class<? extends Cell> cellClass) {
-		return spatialHashes.get(cellClass).getTotalCapacity();
+	public void updateChunkAllocations() {
+		chunks.clear();
+		getCells().forEach(chunks::allocate);
 	}
 
 	private void dispose(Particle e) {
@@ -410,14 +380,14 @@ public class Environment implements Serializable
 
 	public void depositOnDeath(Cell cell) {
 		if (Settings.enableChemicalField) {
-			if (!cell.isEngulfed() && !cell.hasChildren()) {
+			if (!cell.isEngulfed() && cell.hasNotBurst()) {
 				if (cell instanceof Protozoan || cell instanceof MeatCell)
 					chemicalSolution.depositCircle(
 							cell.getPos(), cell.getRadius() * 1.5f,
 							meatColourDeposit.cpy().mul(0.25f + 0.75f * cell.getHealth()));
 				else if (cell instanceof PlantCell)
-					chemicalSolution.depositCircle(cell.getPos(),
-							cell.getRadius() * 1.5f,
+					chemicalSolution.depositCircle(
+							cell.getPos(), cell.getRadius() * 1.5f,
 							plantColourDeposit.cpy().mul(0.25f + 0.75f * cell.getHealth()));
 			}
 		}
@@ -435,7 +405,7 @@ public class Environment implements Serializable
 	}
 
 	public int getLocalCount(Class<? extends Particle> cellType, Vector2 pos) {
-		return spatialHashes.get(cellType).getCount(pos);
+		return chunks.getChunkCount(cellType, pos);
 	}
 
 	public int getLocalCapacity(Particle cell) {
@@ -443,7 +413,7 @@ public class Environment implements Serializable
 	}
 
 	public int getLocalCapacity(Class<? extends Particle> cellType) {
-		return spatialHashes.get(cellType).getChunkCapacity();
+		return chunks.getChunkCapacity(cellType);
 	}
 
 	public void registerToAdd(Cell e) {
@@ -507,7 +477,7 @@ public class Environment implements Serializable
 
 		int totalCells = cells.size();
 		int sleepCount = 0;
-		for (Cell cell : cells)
+		for (Cell cell : getCells())
 			if (cell.getBody() != null && !cell.getBody().isAwake())
 				sleepCount++;
 
@@ -517,7 +487,7 @@ public class Environment implements Serializable
 	}
 
 	public Statistics getProtozoaSummaryStats(boolean computeLogStats, boolean removeMoleculeStats, boolean allStats) {
-		Iterator<Statistics> protozoaStats = cells.stream()
+		Iterator<Statistics> protozoaStats = getCells().stream()
 				.filter(cell -> cell instanceof Protozoan)
 				.map(p -> {
 					if (allStats) {
@@ -556,7 +526,7 @@ public class Environment implements Serializable
 	}
 
 	public Optional<? extends Shape> getCollision(Vector2 pos, float r) {
-		Optional<Cell> collidingCell = Streams.concat(cells.stream(), cellsToAdd.stream())
+		Optional<Cell> collidingCell = Streams.concat(getCells().stream(), cellsToAdd.stream())
 				.filter(cell -> Geometry.doCirclesCollide(pos, r, cell.getPos(), cell.getRadius()))
 				.findAny();
 
@@ -591,17 +561,17 @@ public class Environment implements Serializable
 	}
 
 	public Collection<Cell> getCells() {
-		return cells;
+		return cells.values();
 	}
 
 	public Collection<? extends Particle> getParticles() {
-		return cells;
+		return getCells();
 	}
 
 	public void ensureAddedToEnvironment(Particle particle) {
 		if (particle instanceof Cell) {
 			Cell cell = (Cell) particle;
-			if (!cells.contains(cell))
+			if (!cells.containsKey(cell.getId()))
 				registerToAdd(cell);
 		}
 	}
@@ -630,6 +600,11 @@ public class Environment implements Serializable
 	}
 
 	public SpatialHash<Cell> getSpatialHash(Class<? extends Cell> clazz) {
-		return spatialHashes.get(clazz);
+		return chunks.getSpatialHash(clazz);
 	}
+
+	public Chunks getChunks() {
+		return chunks;
+	}
+
 }

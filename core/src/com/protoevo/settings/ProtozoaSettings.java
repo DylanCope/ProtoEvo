@@ -9,7 +9,7 @@ public class ProtozoaSettings {
     public static final float minHealthToSplit = 0.15f;
     public static final float engulfForce = 500f;
     public static final float maxProtozoanSplitRadius = maxProtozoanBirthRadius * 3f;
-    public static final float minProtozoanSplitRadius = maxProtozoanBirthRadius * 1.5f;
+    public static final float minProtozoanSplitRadius = maxProtozoanBirthRadius * 1.2f;
     public static final float minProtozoanGrowthRate = 0;
     public static final float maxProtozoanGrowthRate = 1.5f;
     public static final float spikeDamage = 3f;

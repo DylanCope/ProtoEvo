@@ -9,9 +9,9 @@ import com.protoevo.biology.ConstructionProject;
 import com.protoevo.biology.Food;
 import com.protoevo.biology.nodes.SurfaceNode;
 import com.protoevo.biology.organelles.Organelle;
-import com.protoevo.core.Particle;
+import com.protoevo.physics.Particle;
 import com.protoevo.core.Statistics;
-import com.protoevo.env.CollisionHandler;
+import com.protoevo.physics.CollisionHandler;
 import com.protoevo.env.JointsManager;
 import com.protoevo.env.Rock;
 import com.protoevo.settings.Settings;
@@ -40,13 +40,12 @@ public abstract class Cell extends Particle implements Serializable {
 	private double constructionMassAvailable = SimulationSettings.startingAvailableConstructionMass;
 	private double massChangeForGrowth = 0f;
 	private final Map<ComplexMolecule, Float> availableComplexMolecules = new ConcurrentHashMap<>(0);
-	private final Map<Cell, JointsManager.Joining> attachedCells = new ConcurrentHashMap<>();
+	private final Map<Long, Long> cellJoinings = new ConcurrentHashMap<>();  // maps cell id to joining id
 	//	private final Map<CellAdhesion.CAM, Float> surfaceCAMs = new HashMap<>(0);
 	private final Map<Food.Type, Float> foodDigestionRates = new HashMap<>(0);
 	private final Map<Food.Type, Food> foodToDigest = new HashMap<>(0);
 	private final Set<ConstructionProject> constructionProjects = new HashSet<>(0);
 	//	private final Map<CellAdhesion.CAM, Float> camProductionRates = new HashMap<>(0);
-	private final ArrayList<Cell> children = new ArrayList<>();
 	private ArrayList<Organelle> organelles = new ArrayList<>();
 	private boolean hasBurst = false;
 	private float repairRate = 1f;
@@ -70,7 +69,7 @@ public abstract class Cell extends Particle implements Serializable {
 
 		organelles.forEach(organelle -> organelle.update(delta));
 
-		attachedCells.entrySet().removeIf(this::detachCellCondition);
+		cellJoinings.entrySet().removeIf(this::detachCellCondition);
 	}
 
 	public void voidDamage(float delta) {
@@ -80,28 +79,23 @@ public abstract class Cell extends Particle implements Serializable {
 
 	public void requestJointRemoval(JointsManager.Joining joining) {
 		Cell other = (Cell) joining.getOther(this);
-		if (attachedCells.containsKey(other)){
-			getEnv().getJointsManager().requestJointRemoval(joining);
-			attachedCells.remove(other);
-		}
+		getEnv().getJointsManager().requestJointRemoval(joining);
+		cellJoinings.remove(other.getId());
 	}
 
-	public void requestJointRemoval(Cell other) {
-		JointsManager.Joining toRemove = null;
-		for (Cell attached : attachedCells.keySet()) {
-			if (attached == other) {
-				JointsManager.Joining joining = attachedCells.get(attached);
-				getEnv().getJointsManager().requestJointRemoval(joining);
-				toRemove = joining;
-				break;
-			}
-		}
-		if (toRemove != null)
-			attachedCells.remove(other);
+	public Cell getCell(long id) {
+		return getEnv().getCell(id);
+	}
+
+	public Iterable<Cell> getAttachedCells() {
+		return () -> cellJoinings.keySet().stream()
+				.map(this::getCell)
+				.filter(Objects::nonNull)
+				.iterator();
 	}
 
 	public boolean isAttachedTo(Cell other) {
-		return attachedCells.containsKey(other);
+		return cellJoinings.containsKey(other.getId());
 	}
 
 	public void setOrganelles(ArrayList<Organelle> organelles) {
@@ -217,9 +211,14 @@ public abstract class Cell extends Particle implements Serializable {
 		return Settings.cellRepairRate * repairRate;
 	}
 
-	public boolean detachCellCondition(Map.Entry<Cell, JointsManager.Joining> entry) {
-		JointsManager.Joining joining = entry.getValue();
-		Cell other = (Cell) joining.getOther(this);
+	public boolean detachCellCondition(Map.Entry<Long, Long> entry) {
+		Cell other = getCell(entry.getKey());
+		long joiningID = entry.getValue();
+		JointsManager.Joining joining = getJoining(entry.getValue());
+		if (joining == null || other == null) {
+			getEnv().getJointsManager().requestJointRemoval(joiningID);
+			return true;
+		}
 
 		boolean detach = other.isDead();
 
@@ -296,20 +295,14 @@ public abstract class Cell extends Particle implements Serializable {
 	}
 
 	public void registerJoining(JointsManager.Joining joining) {
-		Object other = joining.getOther(this);
-		if (other instanceof Cell)
-			attachedCells.put((Cell) other, joining);
+		Particle other = joining.getOther(this);
+		cellJoinings.put(other.getId(), joining.id);
 	}
 
 	public void deregisterJoining(JointsManager.Joining joining) {
-		Object other = joining.getOther(this);
-		if (other instanceof Cell)
-			attachedCells.remove((Cell) other);
+		Particle other = joining.getOther(this);
+		cellJoinings.remove(other.getId());
 	}
-
-//	public Collection<CellAdhesion.CAM> getSurfaceCAMs() {
-//		return surfaceCAMs.keySet();
-//	}
 
 	@Override
 	public void onCollision(CollisionHandler.Collision contact, Rock rock) {
@@ -328,7 +321,7 @@ public abstract class Cell extends Particle implements Serializable {
 	}
 
 	public boolean notBoundTo(Cell otherCell) {
-		return !(attachedCells.containsKey(otherCell) || otherCell.attachedCells.containsKey(this));
+		return !(cellJoinings.containsKey(otherCell.getId()) || otherCell.cellJoinings.containsKey(getId()));
 	}
 
 	public abstract boolean isEdible();
@@ -406,8 +399,8 @@ public abstract class Cell extends Particle implements Serializable {
 				stats.putMass(String.format("Molecule %.2f Available", molecule.getSignature()),
 						availableComplexMolecules.get(molecule));
 
-		if (attachedCells.size() > 0)
-			stats.putCount("Num Cell Bindings", attachedCells.size());
+		if (cellJoinings.size() > 0)
+			stats.putCount("Num Cell Bindings", cellJoinings.size());
 
 //		for (CellAdhesion.CAMJunctionType junctionType : CellAdhesion.CAMJunctionType.values()) {
 //			float camMass = 0;
@@ -434,7 +427,7 @@ public abstract class Cell extends Particle implements Serializable {
 
 	public Statistics getDebugStats() {
 		Statistics stats = super.getDebugStats();
-		stats.putCount("Num Attached Cells", attachedCells.size());
+		stats.putCount("Num Attached Cells", cellJoinings.size());
 		stats.putMass("Mass To Grow", (float) massChangeForGrowth);
 		return stats;
 	}
@@ -448,6 +441,8 @@ public abstract class Cell extends Particle implements Serializable {
 	}
 
 	public void kill(CauseOfDeath causeOfDeath) {
+		getAttachedCells().forEach(other -> other.cellJoinings.remove(this.getId()));
+		cellJoinings.clear();
 		super.kill(causeOfDeath);
 	}
 
@@ -500,10 +495,6 @@ public abstract class Cell extends Particle implements Serializable {
 
 	public void setFoodToDigest(Food.Type foodType, Food food) {
 		foodToDigest.put(foodType, food);
-	}
-
-	public Collection<Cell> getChildren() {
-		return children;
 	}
 
 //	public float getCAMAvailable(CellAdhesion.CAM cam) {
@@ -637,12 +628,8 @@ public abstract class Cell extends Particle implements Serializable {
 		return foodToDigest;
 	}
 
-	public Collection<Cell> getAttachedCells() {
-		return attachedCells.keySet();
-	}
-
 	public int getNumAttachedCells() {
-		return attachedCells.size();
+		return cellJoinings.size();
 	}
 
 	public float getShieldFactor() {
@@ -677,11 +664,8 @@ public abstract class Cell extends Particle implements Serializable {
 		this.fullyEngulfed = true;
 	}
 
-	public Collection<SurfaceNode> getSurfaceNodes() {
+	public List<SurfaceNode> getSurfaceNodes() {
 		return null;
 	}
 
-	public boolean hasChildren() {
-		return !children.isEmpty();
-	}
 }

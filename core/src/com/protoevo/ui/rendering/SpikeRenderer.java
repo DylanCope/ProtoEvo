@@ -6,10 +6,8 @@ import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.Vector2;
 import com.protoevo.biology.cells.Cell;
 import com.protoevo.biology.nodes.NodeAttachment;
-import com.protoevo.biology.nodes.Photoreceptor;
 import com.protoevo.biology.nodes.Spike;
 import com.protoevo.biology.nodes.SurfaceNode;
-import com.protoevo.core.Shape;
 import com.protoevo.utils.ImageUtils;
 
 public class SpikeRenderer extends NodeRenderer {

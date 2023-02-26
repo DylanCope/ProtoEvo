@@ -4,7 +4,22 @@ import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector2;
 
+import java.util.HashMap;
+import java.util.Map;
+
 public class Utils {
+
+    public static Map<String, String> parseArgs(String[] args) {
+        Map<String, String> argsMap = new HashMap<>();
+        for (String arg: args) {
+            String[] split = arg.split("=");
+            if (split.length == 2) {
+                if (!split[1].equals(""))
+                    argsMap.put(split[0], split[1]);
+            }
+        }
+        return argsMap;
+    }
 
     public static String numberToString(float d, int dp) {
         if (Float.isNaN(d))

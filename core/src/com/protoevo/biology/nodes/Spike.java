@@ -18,7 +18,6 @@ public class Spike extends NodeAttachment implements Serializable {
     private static final long serialVersionUID = 1L;
 
     private Vector2 spikePoint = new Vector2();
-    private Cell cell;
     private final float attackFactor = 10f;
     private float extension = 1;
 
@@ -42,7 +41,7 @@ public class Spike extends NodeAttachment implements Serializable {
 
     @Override
     public void update(float delta, float[] input, float[] output) {
-        cell = node.getCell();
+        Cell cell = node.getCell();
         if (cell == null)
             return;
 
@@ -58,14 +57,12 @@ public class Spike extends NodeAttachment implements Serializable {
                 if (Geometry.lineIntersectCondition(ts)) {
                     output[0] = 1f;
 
-//                    float r2 = other.getRadius() * other.getRadius();
-//                    float woundDepth = 1f - other.getPos().dst2(spikePoint) / r2;
                     float woundDepth = MathUtils.clamp(
                             Math.max(ts[0], ts[1]) - Math.min(ts[0], ts[1]),
                             0, 1);
 
                     float myAttack = (
-                            2*cell.getHealth() +
+                            2* cell.getHealth() +
                             ProtozoaSettings.spikeDamage * woundDepth * getSpikeLength() / other.getRadius() +
                             2* MathUtils.random()
                     );

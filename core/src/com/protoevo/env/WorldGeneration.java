@@ -13,6 +13,22 @@ public class WorldGeneration {
     
     public static Random RANDOM = new Random(WorldGenerationSettings.worldGenerationSeed);
 
+    public static List<Rock> generate() {
+        List<Rock> rocks = new ArrayList<>();
+
+        float minR = WorldGenerationSettings.rockClusterRadius;
+        float maxR = 4 * WorldGenerationSettings.rockClusterRadius;
+        int numClusterCentres = WorldGenerationSettings.numRingClusters;
+
+        WorldGeneration.generateClustersOfRocks(
+                rocks, numClusterCentres, minR, maxR,
+                WorldGenerationSettings.environmentRadius - maxR);
+
+        generateRocks(rocks, WorldGenerationSettings.rockGenerationIterations);
+        
+        return rocks;
+    }
+
     public static Vector2 randomPosition(Vector2 centre, float minR, float maxR) {
         float t = (float) (2 * Math.PI * RANDOM.nextDouble());
         float r = minR + (maxR - minR) * RANDOM.nextFloat();
@@ -27,24 +43,20 @@ public class WorldGeneration {
         return randomPosition(Geometry.ZERO, minR, maxR);
     }
 
-    public static void generateClustersOfRocks(Environment environment, Vector2 pos, int nRings, float radiusRange) {
-
-        if (WorldGenerationSettings.initialPopulationClustering) {
-            // generate a ring for each population cluster
-            for (int i = 0; i < nRings; i++) {
-                Vector2 centre = randomPosition(WorldGenerationSettings.rockClusterRadius).add(pos);
-                float minR = Math.max(0.1f, radiusRange);
-                float radius = RANDOM.nextFloat() * (radiusRange - minR) + minR;
-                generateRingOfRocks(environment, centre, radius);
-            }
+    public static void generateClustersOfRocks(
+            List<Rock> rocks, int nRings, float minR, float maxR, float centreOffset) {
+        for (int i = 0; i < nRings; i++) {
+            Vector2 centre = Geometry.randomPointInCircle(centreOffset, RANDOM);
+            float radius = RANDOM.nextFloat() * (maxR - minR) + minR;
+            generateRingOfRocks(rocks, centre, radius);
         }
     }
 
-    public static void generateRingOfRocks(Environment environment, Vector2 ringCentre, float ringRadius) {
-        generateRingOfRocks(environment, ringCentre, ringRadius, WorldGenerationSettings.ringBreakProbability);
+    public static void generateRingOfRocks(List<Rock> rocks, Vector2 ringCentre, float ringRadius) {
+        generateRingOfRocks(rocks, ringCentre, ringRadius, WorldGenerationSettings.ringBreakProbability);
     }
 
-    public static void generateRingOfRocks(Environment environment, Vector2 ringCentre, float ringRadius, float breakProb) {
+    public static void generateRingOfRocks(List<Rock> rocks, Vector2 ringCentre, float ringRadius, float breakProb) {
         float angleDelta = (float) (2 * Math.asin(WorldGenerationSettings.minRockSize / (20 * ringRadius)));
         Rock currentRock = null;
         for (float angle = 0; angle < 2*Math.PI; angle += angleDelta) {
@@ -55,10 +67,10 @@ public class WorldGeneration {
             }
             if (currentRock == null || currentRock.allEdgesAttached()) {
                 currentRock = newCircumferenceRockAtAngle(ringCentre, ringRadius, angle);
-                if (isRockObstructed(currentRock, environment.getRocks(), WorldGenerationSettings.minRockOpeningSize)) {
+                if (isRockObstructed(currentRock, rocks, WorldGenerationSettings.minRockOpeningSize)) {
                     currentRock = null;
                 } else {
-                    environment.getRocks().add(currentRock);
+                    rocks.add(currentRock);
                 }
             } else {
                 Rock bestNextRock = null;
@@ -68,7 +80,7 @@ public class WorldGeneration {
                     float sizeRange = (WorldGenerationSettings.maxRockSize - WorldGenerationSettings.minRockOpeningSize);
                     float rockSize = 1.5f * WorldGenerationSettings.minRockOpeningSize + sizeRange * RANDOM.nextFloat();
                     if (!currentRock.isEdgeAttached(i)) {
-                        Rock newRock = newAttachedRock(currentRock, i, environment.getRocks(), rockSize);
+                        Rock newRock = newAttachedRock(currentRock, i, rocks, rockSize);
                         if (newRock != null) {
                             float dist = Math.abs(newRock.getCentre().dst(ringCentre) - ringRadius);
                             if (dist < bestRockDistToCirc) {
@@ -80,7 +92,7 @@ public class WorldGeneration {
                     }
                 }
                 if (bestNextRock != null) {
-                    environment.getRocks().add(bestNextRock);
+                    rocks.add(bestNextRock);
                     bestNextRock.setEdgeAttached(0);
                     currentRock.setEdgeAttached(bestRockAttachIdx);
                 }
@@ -96,38 +108,46 @@ public class WorldGeneration {
     }
 
 
-    public static void generateRocks(Environment environment, int nIterations) {
+    public static void generateRocks(List<Rock> rocks, int nIterations) {
         List<Rock> unattachedRocks = new ArrayList<>();
-        for (Rock rock : environment.getRocks())
+        for (Rock rock : rocks)
             if (!rock.allEdgesAttached())
                 unattachedRocks.add(rock);
 
         for (int i = 0; i < nIterations; i++) {
             if (unattachedRocks.size() == 0
                     || RANDOM.nextFloat() > WorldGenerationSettings.rockClustering) {
-                Rock rock = newRock(environment);
-                if (tryAdd(rock, environment.getRocks())) {
+                Rock rock = newRock(rocks);
+                if (tryAdd(rock, rocks)) {
                     unattachedRocks.add(rock);
                 }
             } else {
-                Rock toAttach = selectRandomUnattachedRock(environment, unattachedRocks);
-                int edgeIdx = 0;
-                while (edgeIdx < 3) {
-                    if (!toAttach.isEdgeAttached(edgeIdx))
+                Rock toAttach = selectRandomUnattachedRock(unattachedRocks);
+                for (int j = 0; j < 50; j++) {
+                    if (toAttach == null)
                         break;
-                    edgeIdx++;
-                }
-                if (edgeIdx == 3)
-                    continue;
 
-                Rock rock = newAttachedRock(toAttach, edgeIdx, environment.getRocks());
-                if (rock != null) {
-                    environment.getRocks().add(rock);
-                    unattachedRocks.add(rock);
-                    rock.setEdgeAttached(0);
-                    toAttach.setEdgeAttached(edgeIdx);
-                    if (edgeIdx == 2) // no edges left to attach to
-                        unattachedRocks.remove(toAttach);
+                    boolean added = false;
+                    for (int edgeIdx = 0; edgeIdx < 3; edgeIdx++) {
+                        if (!toAttach.isEdgeAttached(edgeIdx)) {
+                            Rock rock = newAttachedRock(toAttach, edgeIdx, rocks);
+                            if (rock != null) {
+                                rocks.add(rock);
+                                unattachedRocks.add(rock);
+                                rock.setEdgeAttached(0);
+                                toAttach.setEdgeAttached(edgeIdx);
+                                if (edgeIdx == 2) // no edges left to attach to
+                                    unattachedRocks.remove(toAttach);
+                                toAttach = rock;
+                                added = true;
+                                break;
+                            }
+                        }
+                    }
+
+                    if (!added) {
+                        break;
+                    }
                 }
             }
         }
@@ -162,7 +182,7 @@ public class WorldGeneration {
         return null;
     }
 
-    private static Rock selectRandomUnattachedRock(Environment environment, List<Rock> unattachedRocks) {
+    private static Rock selectRandomUnattachedRock(List<Rock> unattachedRocks) {
         int i = RANDOM.nextInt(unattachedRocks.size());
         return unattachedRocks.get(i);
     }
@@ -205,7 +225,7 @@ public class WorldGeneration {
         return true;
     }
 
-    public static Rock newRock(Environment environment) {
+    public static Rock newRock(List<Rock> rocks) {
         float centreR = WorldGenerationSettings.environmentRadius * RANDOM.nextFloat();
         float centreT = (float) (2*Math.PI * RANDOM.nextFloat());
         Vector2 centre = Geometry.fromAngle(centreT).setLength(centreR);

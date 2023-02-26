@@ -5,7 +5,7 @@ import com.badlogic.gdx.Input;
 import com.badlogic.gdx.InputAdapter;
 import com.badlogic.gdx.math.Vector3;
 import com.protoevo.biology.CauseOfDeath;
-import com.protoevo.core.Particle;
+import com.protoevo.physics.Particle;
 import com.protoevo.ui.SimulationScreen;
 
 public class LightningStrikeInput extends InputAdapter {

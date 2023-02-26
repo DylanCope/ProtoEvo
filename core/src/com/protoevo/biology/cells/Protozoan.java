@@ -24,7 +24,7 @@ public class Protozoan extends Cell implements Evolvable
 
 	private GeneExpressionFunction geneExpressionFunction;
 	private GeneExpressionFunction crossOverGenome;
-	private Protozoan mate;
+	private long mateID = -1;
 	private float timeMating = 0;
 	public boolean wasJustDamaged = false;
 	private List<SurfaceNode> surfaceNodes;
@@ -186,7 +186,6 @@ public class Protozoan extends Cell implements Evolvable
 
 		child.setRadius(r);
 		child.setEnv(getEnv());
-		getChildren().add(child);
 
 		return child;
 	}
@@ -350,7 +349,16 @@ public class Protozoan extends Cell implements Evolvable
 	}
 
 	public Protozoan getMate() {
-		return mate;
+		if (mateID == -1)
+			return null;
+		Cell cell = getCell(mateID);
+		if (cell == null)
+			return null;
+		return (Protozoan) cell;
+	}
+
+	public boolean hasMate() {
+		return getMate() != null;
 	}
 
 	public float getSplitRadius() {
@@ -363,7 +371,7 @@ public class Protozoan extends Cell implements Evolvable
 	}
 
 	@Override
-	public Collection<SurfaceNode> getSurfaceNodes() {
+	public List<SurfaceNode> getSurfaceNodes() {
 		return surfaceNodes;
 	}
 
