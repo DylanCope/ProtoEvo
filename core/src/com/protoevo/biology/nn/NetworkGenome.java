@@ -1,6 +1,7 @@
 package com.protoevo.biology.nn;
 
 import com.badlogic.gdx.math.MathUtils;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.common.collect.Iterators;
 import com.protoevo.core.Simulation;
 import com.protoevo.settings.SimulationSettings;
@@ -17,8 +18,11 @@ public class NetworkGenome implements Serializable
 	private NeuronGene[] sensorNeuronGenes, outputNeuronGenes, hiddenNeuronGenes;
 	private int nNeuronGenes;
 	private SynapseGene[] synapseGenes;
+	@JsonIgnore
 	private Random random = Simulation.RANDOM;
 	private int numStructuralMutations = 0, nSensors, nOutputs;
+	private static int maxSynapseMutationsPerGeneration = 10;
+	private static int maxNodeMutationsPerGeneration = 10;
 
 	public NetworkGenome(NetworkGenome other) {
 		setProperties(other);
@@ -158,13 +162,13 @@ public class NetworkGenome implements Serializable
 	}
 
 	public SynapseGene addSynapse(NeuronGene in, NeuronGene out) {
-		return addSynapse(in, out, MathUtils.random(-1, 1));
+		return addSynapse(in, out, MathUtils.random(-1f, 1f));
 	}
 
 	private void createHiddenBetween(SynapseGene g) {
 
 		NeuronGene n = new NeuronGene(
-			nNeuronGenes++, Neuron.Type.HIDDEN, ActivationFn.randomActivation()
+			nNeuronGenes++, Neuron.Type.HIDDEN, ActivationFn.LINEAR
 		);
 
 		n.setMutationRange(
@@ -174,8 +178,8 @@ public class NetworkGenome implements Serializable
 		hiddenNeuronGenes = Arrays.copyOf(hiddenNeuronGenes, hiddenNeuronGenes.length + 1);
 		hiddenNeuronGenes[hiddenNeuronGenes.length - 1] = n;
 
-		SynapseGene inConnection = new SynapseGene(g.getIn(), n, 1f);
-		SynapseGene outConnection = new SynapseGene(n, g.getOut(), g.getWeight());
+		SynapseGene inConnection = new SynapseGene(g.getIn(), n, g.getWeight());
+		SynapseGene outConnection = new SynapseGene(n, g.getOut(), 1f);
 
 
 		synapseGenes = Arrays.copyOf(synapseGenes, synapseGenes.length + 2);
@@ -329,17 +333,22 @@ public class NetworkGenome implements Serializable
 	
 	public void mutate()
 	{
-		for (NeuronGene n : sensorNeuronGenes)
-			mutateSensor(n);
+		for (int i = 0; i < maxNodeMutationsPerGeneration; i++) {
+			int idx = MathUtils.random(
+					0, sensorNeuronGenes.length + outputNeuronGenes.length + hiddenNeuronGenes.length - 1);
+			if (idx < sensorNeuronGenes.length)
+				mutateSensor(sensorNeuronGenes[idx]);
+			else if (idx < sensorNeuronGenes.length + outputNeuronGenes.length)
+				mutateOutput(outputNeuronGenes[idx - sensorNeuronGenes.length]);
+			else
+				mutateHidden(hiddenNeuronGenes[idx - sensorNeuronGenes.length - outputNeuronGenes.length]);
+		}
 
-		for (NeuronGene n : outputNeuronGenes)
-			mutateOutput(n);
-
-		for (NeuronGene n : hiddenNeuronGenes)
-			mutateHidden(n);
-
-		for (int i = 0; i < synapseGenes.length; i++)
-			mutateSynapseGene(i);
+		if (synapseGenes.length > 0)
+			for (int i = 0; i < maxSynapseMutationsPerGeneration; i++) {
+				int idx = MathUtils.random(0, synapseGenes.length - 1);
+				mutateSynapseGene(idx);
+			}
 	}
 	
 	public NetworkGenome crossover(NetworkGenome other)
@@ -492,6 +501,24 @@ public class NetworkGenome implements Serializable
 
 	public int getNumStructuralMutations() {
 		return numStructuralMutations;
+	}
+
+	public int getMutationCount() {
+		int count = getNumStructuralMutations();
+
+		for (NeuronGene gene : sensorNeuronGenes)
+			count += gene.getMutationCount();
+
+		for (NeuronGene gene : hiddenNeuronGenes)
+			count += gene.getMutationCount();
+
+		for (NeuronGene gene : outputNeuronGenes)
+			count += gene.getMutationCount();
+
+		for (SynapseGene gene : synapseGenes)
+			count += gene.getMutationCount();
+
+		return count;
 	}
 
 	public int numberOfSensors() {

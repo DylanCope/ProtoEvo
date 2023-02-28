@@ -2,20 +2,16 @@ package com.protoevo.biology.nn;
 
 
 import com.badlogic.gdx.math.MathUtils;
-import com.fasterxml.jackson.annotation.JsonIdentityInfo;
-import com.fasterxml.jackson.annotation.ObjectIdGenerators;
 import com.protoevo.core.Simulation;
-import com.protoevo.env.Environment;
 import com.protoevo.settings.SimulationSettings;
+import com.protoevo.utils.Utils;
 
 import java.io.Serializable;
 import java.util.Objects;
 
-@JsonIdentityInfo(
-        generator = ObjectIdGenerators.IntSequenceGenerator.class,
-        scope = Environment.class)
 public class SynapseGene implements Comparable<SynapseGene>, Serializable
 {
+    private final long signature;
     private static int globalInnovation = 0;
     private final int innovation;
     private NeuronGene in, out;
@@ -32,6 +28,7 @@ public class SynapseGene implements Comparable<SynapseGene>, Serializable
         disabled = false;
         this.weight = weight;
         this.innovation = innovation;
+        signature = Utils.newID();
     }
 
     public SynapseGene(SynapseGene other) {
@@ -43,6 +40,9 @@ public class SynapseGene implements Comparable<SynapseGene>, Serializable
         this.mutationRate = other.mutationRate;
         this.mutationRateMin = other.mutationRateMin;
         this.mutationRateMax = other.mutationRateMax;
+        this.nMutations = other.nMutations;
+        this.nMutationRateMutations = other.nMutationRateMutations;
+        this.signature = other.signature;
     }
 
     public SynapseGene(NeuronGene in, NeuronGene out, float weight) {
@@ -155,5 +155,9 @@ public class SynapseGene implements Comparable<SynapseGene>, Serializable
 
     public void setWeight(float weight) {
         this.weight = weight;
+    }
+
+    public int getMutationCount() {
+        return nMutations + nMutationRateMutations;
     }
 }

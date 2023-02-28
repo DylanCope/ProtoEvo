@@ -1,26 +1,22 @@
 package com.protoevo.biology.nn;
 
 import com.badlogic.gdx.math.MathUtils;
-import com.fasterxml.jackson.annotation.JsonIdentityInfo;
-import com.fasterxml.jackson.annotation.ObjectIdGenerators;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.protoevo.core.Simulation;
-import com.protoevo.env.Environment;
 import com.protoevo.settings.SimulationSettings;
+import com.protoevo.utils.Utils;
 
 import java.io.Serializable;
-import java.util.Objects;
 
-@JsonIdentityInfo(
-        generator = ObjectIdGenerators.IntSequenceGenerator.class,
-        scope = Environment.class)
 public class NeuronGene implements Comparable<NeuronGene>, Serializable
 {
-
+    private final long signature;
     private final int id;
     private final Neuron.Type type;
     private ActivationFn activation;
 
     private String label;
+    @JsonIgnore
     private Object[] tags;
     private boolean disabled;
     private float mutationRate = SimulationSettings.globalMutationChance;
@@ -28,6 +24,7 @@ public class NeuronGene implements Comparable<NeuronGene>, Serializable
     private float mutationRateMax = SimulationSettings.maxMutationChance;
     private int nMutations = 0;
     private int nMutationRateMutations = 0;
+    @JsonIgnore
     private int genomeIdx = -1;
 
     public NeuronGene(int id, Neuron.Type type, ActivationFn activation)
@@ -36,6 +33,7 @@ public class NeuronGene implements Comparable<NeuronGene>, Serializable
     }
 
     public NeuronGene(NeuronGene other) {
+        this.signature = other.signature;
         this.id = other.id;
         this.type = other.type;
         this.activation = other.activation;
@@ -51,6 +49,7 @@ public class NeuronGene implements Comparable<NeuronGene>, Serializable
 
     public NeuronGene(int id, Neuron.Type type, ActivationFn activation, String label)
     {
+        signature = Utils.newID();
         this.id = id;
         this.type = type;
         this.activation = activation;
@@ -115,7 +114,7 @@ public class NeuronGene implements Comparable<NeuronGene>, Serializable
 
     @Override
     public int hashCode() {
-        return Objects.hash(id);
+        return Integer.hashCode(id);
     }
 
     @Override
@@ -134,9 +133,17 @@ public class NeuronGene implements Comparable<NeuronGene>, Serializable
         return disabled;
     }
 
-    public int getId() { return id; }
-    public Neuron.Type getType() { return type; }
-    public ActivationFn getActivation() { return activation; }
+    public int getId() {
+        return id;
+    }
+
+    public Neuron.Type getType() {
+        return type;
+    }
+
+    public ActivationFn getActivation() {
+        return activation;
+    }
 
     public String getLabel() {
         return label;
@@ -164,5 +171,9 @@ public class NeuronGene implements Comparable<NeuronGene>, Serializable
 
     public void setGenomeIdx(int myIdx) {
         genomeIdx = myIdx;
+    }
+
+    public int getMutationCount() {
+        return nMutations + nMutationRateMutations;
     }
 }

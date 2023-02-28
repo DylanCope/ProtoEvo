@@ -6,8 +6,13 @@ import com.badlogic.gdx.math.Vector2;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 
 public class Utils {
+
+    public static long newID() {
+        return UUID.randomUUID().getMostSignificantBits();
+    }
 
     public static Map<String, String> parseArgs(String[] args) {
         Map<String, String> argsMap = new HashMap<>();
@@ -74,16 +79,24 @@ public class Utils {
         );
     }
 
-    public static float linearRemap(float v, float vStart, float vEnd, float outStart, float outEnd) {
+    public static float clampedLinearRemap(float v, float vStart, float vEnd, float outStart, float outEnd) {
         if (Math.abs(vEnd - vStart) < 1e-12)
-            return v < vStart ? outStart : outEnd;
+            return v <= vStart ? outStart : outEnd;
 
-        float value = outStart + (outEnd - outStart) * ((v - vStart) / (vEnd - vStart));
+        float out = outStart + (outEnd - outStart) * ((v - vStart) / (vEnd - vStart));
         if (outStart < outEnd) {
-            return MathUtils.clamp(value, outStart, outEnd);
+            return MathUtils.clamp(out, outStart, outEnd);
         } else {
-            return MathUtils.clamp(value, outEnd, outStart);
+            return MathUtils.clamp(out, outEnd, outStart);
         }
+    }
+
+    public static float cyclicalLinearRemap(float v, float vStart, float vEnd, float outStart, float outEnd) {
+        if (v < vStart || v > vEnd) {
+            float vRange = vStart - vEnd;
+            v = ((v - vStart) % vRange + vRange) % vRange + vEnd;
+        }
+        return clampedLinearRemap(v, vStart, vEnd, outStart, outEnd);
     }
 
     public static String superscript(String str) {

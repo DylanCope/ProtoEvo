@@ -237,7 +237,7 @@ public class EnvironmentRenderer implements Renderer {
 
                     float d2 = tmpVec.set(p.getPos()).dst2(cell.getPos());
                     float dInside = p.getRadius() - cell.getRadius();
-                    float alpha = Utils.linearRemap(
+                    float alpha = Utils.clampedLinearRemap(
                             d2, dInside * dInside, dInside * dInside * 0.75f * 0.75f,
                             1.0f, 0.05f);
                     batch.setColor(cell.getColor().r, cell.getColor().g, cell.getColor().b, alpha);

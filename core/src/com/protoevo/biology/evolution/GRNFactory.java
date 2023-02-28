@@ -162,6 +162,9 @@ public class GRNFactory {
         if (!networkGenome.hasSensor("Bias"))
             networkGenome.addSensor("Bias");
 
+        if (!networkGenome.hasSensor("Random Source"))
+            networkGenome.addSensor("Random Source");
+
         GeneExpressionFunction.Regulators regulators = geneExpressionFunction.getGeneRegulators();
         for (String regulator : regulators.keySet()) {
             if (!networkGenome.hasSensor(regulator)) {

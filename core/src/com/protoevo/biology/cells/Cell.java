@@ -83,7 +83,7 @@ public abstract class Cell extends Particle implements Serializable {
 		cellJoinings.remove(other.getId());
 	}
 
-	public Cell getCell(long id) {
+	public Cell getCell(Long id) {
 		return getEnv().getCell(id);
 	}
 
@@ -137,9 +137,22 @@ public abstract class Cell extends Particle implements Serializable {
 		foodDigestionRates.put(foodType, rate);
 	}
 
+	public float getTotalFoodMassToDigest() {
+		float total = 0;
+		for (Food food : foodToDigest.values()) {
+			total += food.getSimpleMass();
+		}
+		return total;
+	}
+
+	public float getFoodToDigestMassCap() {
+		return getMass(getRadius()) * 0.25f;
+	}
+
 	public void eat(Cell cell, float extraction) {
 
-		if (!(cell instanceof PlantCell || cell instanceof MeatCell))
+		if (!(cell instanceof PlantCell || cell instanceof MeatCell)
+				|| getTotalFoodMassToDigest() >= getFoodToDigestMassCap())
 			return;
 
 		Food.Type foodType = cell instanceof PlantCell ? Food.Type.Plant : Food.Type.Meat;

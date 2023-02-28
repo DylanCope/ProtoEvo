@@ -1,12 +1,9 @@
 package com.protoevo.test;
 
-import com.badlogic.gdx.math.Vector2;
-import com.protoevo.env.Environment;
 import com.protoevo.env.Rock;
 import com.protoevo.env.WorldGeneration;
 import com.protoevo.settings.WorldGenerationSettings;
 import com.protoevo.utils.Colour;
-import org.checkerframework.checker.units.qual.C;
 
 import java.awt.Color;
 import java.awt.Graphics2D;
@@ -16,7 +13,7 @@ import java.io.IOException;
 import java.util.List;
 import javax.imageio.ImageIO;
 
-public class TriangleDrawer {
+public class RocksDrawer {
 
     public static void drawRocks(List<Rock> rocks) {
         // Create a new BufferedImage with white background

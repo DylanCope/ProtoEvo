@@ -69,7 +69,7 @@ public class SpawnParticleInput extends InputAdapter {
         if (Gdx.input.isButtonPressed(Input.Buttons.MIDDLE)) {
             timeSinceSpawn += Gdx.graphics.getDeltaTime();
             float speed = mousePos.dst(lastMousePos);
-            float dynamicRate = Utils.linearRemap(speed, 0f, Gdx.graphics.getWidth() / 4f, rate, 0f);
+            float dynamicRate = Utils.clampedLinearRemap(speed, 0f, Gdx.graphics.getWidth() / 4f, rate, 0f);
             if (timeSinceSpawn > dynamicRate) {
                 Vector3 worldSpace = camera.unproject(new Vector3(screenX, screenY, 0));
                 addParticle(worldSpace.x, worldSpace.y);

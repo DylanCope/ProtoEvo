@@ -1,6 +1,8 @@
 package com.protoevo.core;
 
 import com.github.javafaker.Faker;
+import com.protoevo.biology.cells.Protozoan;
+import com.protoevo.biology.nn.NetworkGenome;
 import com.protoevo.env.EnvFileIO;
 import com.protoevo.settings.Settings;
 import com.protoevo.settings.SimulationSettings;
@@ -14,13 +16,14 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class Simulation implements Runnable
 {
 	private final Environment environment;
 	private ApplicationManager manager;
-	private volatile boolean simulate;
+	private volatile boolean simulate, saveRequested = false;
 	private static boolean paused = false;
 	private float timeDilation = 1, timeSinceSave = 0, timeSinceSnapshot = 0;
 	private double updateDelay = GraphicsAdapter.refreshDelay / 1000.0, lastUpdateTime = 0;
@@ -82,7 +85,7 @@ public class Simulation implements Runnable
 			Files.createDirectories(Paths.get("saves/" + name + "/env"));
 			Files.createDirectories(Paths.get("saves/" + name + "/stats"));
 			Files.createDirectories(Paths.get("saves/" + name + "/stats/summaries"));
-
+			Files.createDirectories(Paths.get("saves/" + name + "/stats/protozoa-genomes"));
 		} catch (IOException e) {
 			throw new RuntimeException(e);
 		}
@@ -110,7 +113,8 @@ public class Simulation implements Runnable
 			initialised = true;
 			return env;
 		} catch (Exception e) {
-			return newDefaultEnv();
+//			return newDefaultEnv();
+			throw new RuntimeException(e);
 		}
 	}
 
@@ -131,21 +135,26 @@ public class Simulation implements Runnable
 										.toFile().lastModified()))
 						.map(Path::toString);
 			} catch (IOException e) {
-				return newDefaultEnv();
+//				System.out.println("Unable to find environment of given name: " + e.getMessage());
+//				System.exit(0);
+//				return newDefaultEnv();
+				throw new RuntimeException(e);
 			}
 		}
 
 		if (lastFilePath.isPresent())
 			return loadEnv(lastFilePath.get());
-		else
+		else {
+			System.out.println("Unable to find environment of given name.");
 			return newDefaultEnv();
+		}
 	}
 
 	public void prepare()
 	{
 		if (!initialised) {
 			environment.initialise();
-			makeHistorySnapshot();
+			makeStatisticsSnapshot();
 			initialised = true;
 		}
 		new Thread(repl).start();
@@ -162,13 +171,21 @@ public class Simulation implements Runnable
 
 			update();
 
-			if (environment.numberOfProtozoa() <= 0 && Settings.finishOnProtozoaExtinction) {
+			if (isFinished()) {
 				simulate = false;
 				System.out.println();
 				System.out.println("Finished simulation. All protozoa died.");
 				printStats();
 			}
 		}
+	}
+
+	public boolean isFinished() {
+		return environment.hasStarted() && environment.numberOfProtozoa() <= 0 && Settings.finishOnProtozoaExtinction;
+	}
+
+	public void requestSave() {
+		saveRequested = true;
 	}
 
 	public void printStats() {
@@ -190,20 +207,25 @@ public class Simulation implements Runnable
 			e.printStackTrace();
 			System.out.println("Error occurred during simulation. Saving and exiting.");
 			save();
-			throw e;
+			repl.close();
+			System.exit(0);
 		}
 
 		timeSinceSave += delta;
 		timeSinceSnapshot += delta;
 
-		if (timeSinceSave >= Settings.timeBetweenSaves) {
+		if (timeSinceSave >= Settings.timeBetweenSaves || saveRequested) {
 			timeSinceSave = 0;
+			if (saveRequested) {
+				saveRequested = false;
+				System.out.println("\nSaving environment.");
+			}
 			save();
 		}
 
 		if (timeSinceSnapshot >= Settings.historySnapshotTime) {
 			timeSinceSnapshot = 0;
-			makeHistorySnapshot();
+			makeStatisticsSnapshot();
 		}
 	}
 
@@ -231,29 +253,21 @@ public class Simulation implements Runnable
 		return fileName;
 	}
 
-	public void makeHistorySnapshot() {
+	public void makeStatisticsSnapshot() {
 		Statistics stats = new Statistics(environment.getStats());
 		stats.putAll(environment.getDebugStats());
 		stats.putAll(environment.getPhysicsDebugStats());
 		stats.putAll(environment.getProtozoaSummaryStats(true, false, true));
 
-		FileIO.writeJson(stats, "saves/" + name + "/stats/summaries/" + getTimeStampString());
-//		if (statsNames == null) {
-//			statsNames = new ArrayList<>();
-//			for (Statistics.Stat stat : stats.getStats())
-//				statsNames.add(stat.getName());
-//
-//			String statsCsvHeader = String.join(",", statsNames);
-//			FileIO.appendLine(historyFile, statsCsvHeader);
-//		}
-//
-//		Map<String, Statistics.Stat> statMap = stats.getStatsMap();
-//
-//		String statsString = statsNames.stream()
-//				.map(k -> statMap.get(k).getValueString())
-//				.collect(Collectors.joining(","));
-//
-//		FileIO.appendLine(historyFile, statsString);
+		String timeStamp = getTimeStampString();
+
+		FileIO.writeJson(stats, "saves/" + name + "/stats/summaries/" + timeStamp);
+
+		List<NetworkGenome> protozoaGenomes = environment.getCells().stream()
+				.filter(cell -> cell instanceof Protozoan)
+				.map(cell -> ((Protozoan) cell).getGeneExpressionFunction().getGRNGenome())
+				.collect(Collectors.toList());
+		FileIO.writeJson(protozoaGenomes, "saves/" + name + "/stats/protozoa-genomes/" + timeStamp);
 	}
 
 	public void toggleDebug() {

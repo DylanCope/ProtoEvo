@@ -10,7 +10,7 @@ public class SimulationSettings {
     public static final float voidDamagePerSecond = 1f;
     public static final float spatialHashRadius = voidStartDistance;
 
-    public static final int maxPlants = 6000;
+    public static final int maxPlants = 4000;
     public static final int maxProtozoa = 2000;
     public static final int maxMeat = 2000;
     public static final int protozoaLocalCap = 300;
@@ -27,8 +27,8 @@ public class SimulationSettings {
     public static final float maxMutationChance = 0.1f;
     public static final float minTraitMutationChance = 0.001f;
     public static final float maxTraitMutationChance = 0.1f;
-    public static final float minRegulationMutationChance = 0.0001f;
-    public static final float maxRegulationMutationChance = 0.001f;
+    public static final float minRegulationMutationChance = 0.001f;
+    public static final float maxRegulationMutationChance = 0.05f;
 
     public static final float cellGrowthFactor = 2e-2f;
     public static final float digestionFactor = 15f;

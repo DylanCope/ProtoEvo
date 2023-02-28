@@ -61,7 +61,7 @@ public class Flagellum extends NodeAttachment implements Serializable {
         torque *= sizePenalty * ProtozoaSettings.maxFlagellumTorque;
 
         float p = cell.generateMovement(thrustVector, torque);
-        output[0] = Utils.linearRemap(p, 0, 1, -1, 1);
+        output[0] = Utils.clampedLinearRemap(p, 0, 1, -1, 1);
 
         Vector2 currentCellPos = cell.getPos();
         if (lastCellPos.isZero() || cell.getRadius() == 0) {

@@ -55,6 +55,9 @@ public class JointsManager implements Serializable {
         }
 
         public Vector2 getAnchorA() {
+            if (!anchoredA)
+                return particleA.getPos();
+
             float t = anchorAngleA + particleA.getAngle();
             float r = particleA.getRadius();
             anchorA.set((float) (r * Math.cos(t)), (float) (r * Math.sin(t)))
@@ -63,6 +66,9 @@ public class JointsManager implements Serializable {
         }
 
         public Vector2 getAnchorB() {
+            if (!anchoredB)
+                return particleB.getPos();
+
             float t = anchorAngleB + particleB.getAngle();
             float r = particleB.getRadius();
             anchorB.set((float) (r * Math.cos(t)), (float) (r * Math.sin(t)))

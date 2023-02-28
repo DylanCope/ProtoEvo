@@ -90,10 +90,6 @@ public class PlantCell extends Cell {
         if (isDead())
             return;
 
-//        updateCrowdingFactor();
-//        if (getGrowthRate() < 0f)
-//            damage(-PlantSettings.plantRegen * delta * getGrowthRate(), CauseOfDeath.OVERCROWDING);
-
         addConstructionMass(delta * Settings.plantConstructionRate);
         addAvailableEnergy(delta * Settings.plantEnergyRate);
 

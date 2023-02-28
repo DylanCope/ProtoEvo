@@ -6,7 +6,6 @@ import com.badlogic.gdx.math.MathUtils;
 import java.io.Serializable;
 
 public class Colour implements Serializable {
-
     public static class Gradient {
 
         public Colour[] colours;
@@ -48,7 +47,7 @@ public class Colour implements Serializable {
             float currMin = positions[0];
             float currMax = positions[positions.length - 1];
             for (int i = 0; i < positions.length; i++) {
-                positions[i] = Utils.linearRemap(positions[i], currMin, currMax, min, max);
+                positions[i] = Utils.clampedLinearRemap(positions[i], currMin, currMax, min, max);
             }
         }
     }
@@ -99,6 +98,22 @@ public class Colour implements Serializable {
             color = new Color();
         return color.set(r, g, b, a);
     }
+
+    public float get(int axis) {
+        switch (axis) {
+            case 0:
+                return r;
+            case 1:
+                return g;
+            case 2:
+                return b;
+            case 3:
+                return a;
+            default:
+                throw new RuntimeException("Invalid axis " + axis);
+        }
+    }
+
 
     public int getRGBA8888() {
         return Color.rgba8888(getColor());

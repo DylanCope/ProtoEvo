@@ -1,15 +1,11 @@
 package com.protoevo.biology.evolution;
 
-import com.fasterxml.jackson.annotation.JsonIdentityInfo;
-import com.fasterxml.jackson.annotation.ObjectIdGenerators;
+import com.badlogic.gdx.math.MathUtils;
 import com.protoevo.biology.nn.NetworkGenome;
 import com.protoevo.biology.nn.NeuralNetwork;
 import com.protoevo.biology.nn.NeuronGene;
 import com.protoevo.biology.nn.SynapseGene;
-import com.protoevo.core.Simulation;
-import com.protoevo.env.Environment;
-import com.protoevo.settings.Settings;
-import com.protoevo.settings.SimulationSettings;
+import com.protoevo.utils.Utils;
 
 import java.io.Serializable;
 import java.lang.reflect.Constructor;
@@ -18,20 +14,19 @@ import java.lang.reflect.Method;
 import java.util.*;
 import java.util.function.Function;
 
-@JsonIdentityInfo(
-        generator = ObjectIdGenerators.IntSequenceGenerator.class,
-        scope = Environment.class)
-public class GeneExpressionFunction implements Evolvable.Component, Serializable {
 
+public class GeneExpressionFunction implements Evolvable.Component, Serializable {
 
     public static class ExpressionNodes extends HashMap<String, ExpressionNode> {}
     public static class Regulators extends HashMap<String, RegulationNode> {}
 
-    @JsonIdentityInfo(
-            generator = ObjectIdGenerators.IntSequenceGenerator.class,
-            scope = Environment.class)
-    public static abstract class Node {
 
+    public static abstract class Node {
+        public final long id = Utils.newID();
+
+        public long getID() {
+            return id;
+        }
 
         public abstract Object getLastTarget();
         public abstract String getDisplayName();
@@ -285,8 +280,10 @@ public class GeneExpressionFunction implements Evolvable.Component, Serializable
 
     private void setGRNInputs() {
         geneRegulatoryNetwork.setInput("Bias", 1f);
+        geneRegulatoryNetwork.setInput("Random Source", MathUtils.random(-1f, 1f));
         for (String geneName : getTraitNames()) {
-            if (geneRegulatoryNetwork.hasSensor(GRNFactory.getInputName(geneName))) {
+            String inputName = GRNFactory.getInputName(geneName);
+            if (geneRegulatoryNetwork.hasSensor(inputName)) {
                 if (notDisabled(geneName)) {
                     Object geneValue = getGeneValue(geneName);
                     float value;
@@ -299,9 +296,9 @@ public class GeneExpressionFunction implements Evolvable.Component, Serializable
                     else
                         throw new RuntimeException("Could not cast gene " + geneName + " value to float.");
 
-                    geneRegulatoryNetwork.setInput(GRNFactory.getInputName(geneName), value);
+                    geneRegulatoryNetwork.setInput(inputName, value);
                 } else {
-                    geneRegulatoryNetwork.setInput(GRNFactory.getInputName(geneName), 0);
+                    geneRegulatoryNetwork.setInput(inputName, 0);
                 }
             }
         }
@@ -565,7 +562,7 @@ public class GeneExpressionFunction implements Evolvable.Component, Serializable
     }
 
     public int getMutationCount() {
-        int mutationCount = 0;
+        int mutationCount = grnGenome.getMutationCount();
         for (ExpressionNode node : expressionNodes.values()) {
             mutationCount += node.getTrait().getMutationCount();
         }
@@ -641,5 +638,9 @@ public class GeneExpressionFunction implements Evolvable.Component, Serializable
         if (expressionNodes.containsKey(name))
             return expressionNodes.get(name);
         return null;
+    }
+
+    public NetworkGenome getGRNGenome() {
+        return grnGenome;
     }
 }

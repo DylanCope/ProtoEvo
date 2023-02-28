@@ -6,6 +6,7 @@ import com.badlogic.gdx.utils.Array;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.protoevo.biology.CauseOfDeath;
 import com.protoevo.core.Statistics;
+import com.protoevo.env.ChemicalSolution;
 import com.protoevo.env.Environment;
 import com.protoevo.env.JointsManager;
 import com.protoevo.env.Rock;
@@ -46,6 +47,12 @@ public class Particle implements Shape, Serializable {
 
     public Environment getEnv() {
         return environment;
+    }
+
+    public ChemicalSolution getChemicalSolution() {
+        if (environment == null)
+            return null;
+        return environment.getChemicalSolution();
     }
 
     public JointsManager.Joining getJoining(long joiningID) {

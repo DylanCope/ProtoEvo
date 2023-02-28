@@ -32,7 +32,7 @@ public class Protozoan extends Cell implements Evolvable
 	private float damageRate = 0;
 	private float herbivoreFactor, splitRadius;
 	private float timeSinceLastGeneUpdate = 0;
-	private final static float geneUpdateTime = Settings.simulationUpdateDelta * 20;
+	private final static float geneUpdateTime = Settings.simulationUpdateDelta * 10;
 	private final Vector2 tmp = new Vector2();
 	private final Collection<Cell> engulfedCells = new ArrayList<>(0);
 	private final Vector2 thrust = new Vector2();
@@ -140,15 +140,34 @@ public class Protozoan extends Cell implements Evolvable
 
 	@Override
 	@GeneRegulator(name="Size",
-			       min=ProtozoaSettings.minProtozoanSplitRadius,
-			       max=ProtozoaSettings.maxProtozoanSplitRadius)
+			       min=SimulationSettings.minParticleRadius,
+			       max=SimulationSettings.maxParticleRadius)
 	public float getRadius() {
 		return super.getRadius();
 	}
 
-	@GeneRegulator(name="Construction Mass Available", max=1/1000f)
+	@GeneRegulator(name="Construction Mass Available")
 	public float getConstructionMass() {
-		return getConstructionMassAvailable();
+		return getConstructionMassAvailable() / getConstructionMassCap();
+	}
+
+	@GeneRegulator(name="Plant to Digest")
+	public float getPlantToDigest() {
+		if (!getFoodToDigest().containsKey(Food.Type.Plant))
+			return 0;
+		return getFoodToDigest().get(Food.Type.Plant).getSimpleMass() / getFoodToDigestMassCap();
+	}
+
+	@GeneRegulator(name="Meat to Digest")
+	public float getMeatToDigest() {
+		if (!getFoodToDigest().containsKey(Food.Type.Meat))
+			return 0;
+		return getFoodToDigest().get(Food.Type.Meat).getSimpleMass() / getFoodToDigestMassCap();
+	}
+
+	@GeneRegulator(name="Contact Sensor")
+	public float getContact() {
+		return getContacts().size() > 0 ? 1 : 0;
 	}
 
 	@RegulatedFloat(name="Cilia Thrust", min=0, max=1)

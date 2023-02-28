@@ -121,7 +121,7 @@ public class ProtozoaRenderer {
             float cellAngle = protozoan.getAngle();
 
             float criticalZoom = RenderSettings.cameraZoomForCellDetails;
-            float a = Utils.linearRemap(
+            float a = Utils.clampedLinearRemap(
                     camera.zoom, criticalZoom, .5f * criticalZoom, 0, 1f);
             Color c = protozoan.getColor();
             elementSprite.setColor(c.r, c.g, c.b, a);

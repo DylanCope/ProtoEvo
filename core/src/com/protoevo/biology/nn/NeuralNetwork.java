@@ -2,6 +2,7 @@ package com.protoevo.biology.nn;
 
 import java.io.Serializable;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -15,7 +16,7 @@ public class NeuralNetwork implements Serializable
     private final Neuron[] inputNeurons;
     private final float[] outputs;
     private final Neuron[] neurons;
-    private final HashSet<String> outputLabels = new HashSet<>(), inputLabels = new HashSet<>();
+    private final HashMap<String, Neuron> outputLabels = new HashMap<>(), inputLabels = new HashMap<>();
     private final int depth;
     private final int nInputs;
     private boolean computedGraphics = false;
@@ -64,7 +65,7 @@ public class NeuralNetwork implements Serializable
 
     public int calculateDepth() {
         boolean[] visited = new boolean[neurons.length];
-//        int depth = calculateDepth(outputNeurons, visited);
+
         int depth = 1;
         for (Neuron n : outputNeurons) {
             Arrays.fill(visited, false);
@@ -99,26 +100,6 @@ public class NeuralNetwork implements Serializable
         }
         neuron.setDepth(maxDepth + 1);
         return maxDepth + 1;
-    }
-
-    private int calculateDepth(Neuron[] explore, boolean[] visited) {
-
-        List<Neuron> unexplored = Arrays.stream(explore)
-                .filter(n -> !visited[n.getId()])
-                .collect(Collectors.toList());
-
-        for (Neuron n : explore)
-            visited[n.getId()] = true;
-
-        int maxDepth = 0;
-
-        for (Neuron n : unexplored) {
-            int neuronDepth = 1 + calculateDepth(n.getInputs(), visited);
-            n.setDepth(neuronDepth);
-            maxDepth = Math.max(maxDepth, neuronDepth);
-        }
-
-        return maxDepth;
     }
 
     public void setInput(float ... values) {
@@ -183,12 +164,6 @@ public class NeuralNetwork implements Serializable
         return nodeSpacing;
     }
 
-    public void disableInputsFrom(int i) {
-        for (int idx = i; idx < inputNeurons.length; idx++)
-            inputNeurons[idx].setConnectedToOutput(false);
-//        disableOnlyConnectedToDisabled();
-    }
-
     private void disableOnlyConnectedToDisabled() {
         boolean check = true;
         while (check) {
@@ -212,43 +187,56 @@ public class NeuralNetwork implements Serializable
     }
 
     public boolean hasSensor(String label) {
-        if (inputLabels.contains(label))
+        if (inputLabels.containsKey(label))
             return true;
 
         for (Neuron n : neurons) {
             if (n.hasLabel() && n.getLabel().equals(label)) {
-                inputLabels.add(label);
+                inputLabels.put(label, n);
             }
         }
 
-        return inputLabels.contains(label);
+        return inputLabels.containsKey(label);
     }
 
     public void setInput(String label, float value) {
+        if (inputLabels.containsKey(label)) {
+            inputLabels.get(label).setState(value);
+            return;
+        }
+
         for (Neuron n : neurons)
             if (n.hasLabel() && n.getLabel().equals(label)) {
                 n.setState(value);
+                inputLabels.put(label, n);
                 return;
             }
     }
 
     public float getOutput(String label) {
-        for (Neuron n : neurons)
-            if (n.getLabel().equals(label))
+        if (outputLabels.containsKey(label))
+            return outputLabels.get(label).getState();
+
+        for (Neuron n : neurons) {
+            if (n.getLabel().equals(label)) {
+                outputLabels.put(label, n);
                 return n.getState();
+            }
+        }
+
         throw new RuntimeException("Asked for value of neuron that does not exist: " + label);
     }
 
     public boolean hasOutput(String outputName) {
-        if (outputLabels.contains(outputName))
+        if (outputLabels.containsKey(outputName))
             return true;
 
         for (Neuron n : neurons) {
             if (n.hasLabel() && n.getLabel().equals(outputName)) {
-                outputLabels.add(outputName);
+                outputLabels.put(outputName, n);
             }
         }
 
-        return outputLabels.contains(outputName);
+        return outputLabels.containsKey(outputName);
     }
 }

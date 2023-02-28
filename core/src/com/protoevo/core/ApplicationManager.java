@@ -42,7 +42,6 @@ public class ApplicationManager {
                 loopUpdate();
             }
         }
-        System.out.println("ApplicationManager: Exiting application.");
 
         saveAndCloseCurrentSimulation();
 
@@ -50,7 +49,7 @@ public class ApplicationManager {
     }
 
     public void createSimulation() {
-        simulation = new Simulation("tartarus-dragonair-reprehenderit");
+        simulation = new Simulation();
         simulation.setManager(this);
 
         if (!headless) {
@@ -83,6 +82,10 @@ public class ApplicationManager {
     public void update() {
         if (hasSimulation() && simulation.isReady()) {
             simulation.update();
+        }
+        if (simulation.isFinished()) {
+            System.out.println("Simulation finished.");
+            exit();
         }
     }
 

@@ -38,9 +38,9 @@ public class Photoreceptor extends NodeAttachment implements Serializable {
         interactionRange = getInteractionRange();
         attachmentRelPos.set(node.getRelativePos());
         castRays();
-        output[0] = colour.r * 2 - 1f;
-        output[1] = colour.g * 2 - 1f;
-        output[2] = colour.b * 2 - 1f;
+        output[0] = colour.r;
+        output[1] = colour.g;
+        output[2] = colour.b;
     }
 
     public Vector2[] nextRay() {
@@ -120,7 +120,7 @@ public class Photoreceptor extends NodeAttachment implements Serializable {
 
     public float computeColourFalloffWeight() {
         float ir2 = getInteractionRange() * getInteractionRange();
-        return Utils.linearRemap(minSqLen,0.5f * ir2, ir2,1, 0);
+        return Utils.clampedLinearRemap(minSqLen,0.5f * ir2, ir2,1, 0);
     }
 
     public Vector2[] getRay() {
@@ -135,7 +135,7 @@ public class Photoreceptor extends NodeAttachment implements Serializable {
     public float getInteractionRange() {
         if (node.getCell() == null)
             return 0;
-        return Utils.linearRemap(
+        return Utils.clampedLinearRemap(
                 node.getCell().getRadius(),
                 ProtozoaSettings.minProtozoanBirthRadius, SimulationSettings.maxParticleRadius,
                 node.getCell().getRadius() * 5f, ProtozoaSettings.protozoaLightRange);

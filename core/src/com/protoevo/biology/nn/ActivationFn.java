@@ -1,5 +1,6 @@
 package com.protoevo.biology.nn;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.protoevo.utils.SerializableFunction;
 import com.protoevo.utils.Utils;
 
@@ -16,11 +17,17 @@ public class ActivationFn implements Serializable, Function<Float, Float> {
     public static final ActivationFn RELU = new ActivationFn(z -> z > 0 ? z : 0f, "ReLu");
 
     public static ActivationFn getOutputMapper(float min, float max) {
-        return new ActivationFn(z -> Utils.linearRemap(z, -1, 1, min, max));
+        return new ActivationFn(
+                z -> Utils.cyclicalLinearRemap(z, -1, 1, min, max),
+                String.format("CyclicalLinearRemap[[%.3f, %.3f] -> [-1, 1]]", min, max)
+        );
     }
 
     public static ActivationFn getInputMapper(float min, float max) {
-        return new ActivationFn(z -> Utils.linearRemap(z, min, max, -1, 1));
+        return new ActivationFn(
+                z -> Utils.cyclicalLinearRemap(z, min, max, -1, 1),
+                String.format("CyclicalLinearRemap[[-1, 1] -> [%.3f, %.3f]]", min, max)
+        );
     }
 
     public static ActivationFn getBooleanInputMapper() {
@@ -31,6 +38,7 @@ public class ActivationFn implements Serializable, Function<Float, Float> {
             SIGMOID, LINEAR, TANH, STEP, RELU
     };
 
+    @JsonIgnore
     private final SerializableFunction<Float, Float> function;
     private String name;
 

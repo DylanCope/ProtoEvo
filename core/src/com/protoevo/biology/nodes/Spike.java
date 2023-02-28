@@ -4,7 +4,6 @@ import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector2;
 import com.protoevo.biology.CauseOfDeath;
 import com.protoevo.biology.cells.Cell;
-import com.protoevo.core.Simulation;
 import com.protoevo.settings.ProtozoaSettings;
 import com.protoevo.utils.Geometry;
 import com.protoevo.utils.Utils;
@@ -45,7 +44,7 @@ public class Spike extends NodeAttachment implements Serializable {
         if (cell == null)
             return;
 
-        extension = Utils.linearRemap(input[0], -1, 1, 0, 1);
+        extension = Utils.clampedLinearRemap(input[0], -1, 1, 0, 1);
         spikePoint = getSpikePoint();
 
         for (Object toInteract : cell.getInteractionQueue()) {

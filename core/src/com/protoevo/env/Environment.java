@@ -66,7 +66,7 @@ public class Environment implements Serializable
 	@JsonIgnore
 	private transient Set<Cell> cellsToAdd;
 	private transient ConcurrentHashMap<Long, Cell> cells;
-	private boolean hasInitialised;
+	private boolean hasInitialised, hasStarted;
 	private Vector2[] populationStartCentres;
 
 	private final JointsManager jointsManager;
@@ -75,6 +75,7 @@ public class Environment implements Serializable
 
 	public Environment()
 	{
+		hasStarted = false;
 		recreateTransientObjects();
 		buildWorld();
 		jointsManager = new JointsManager(this);
@@ -104,6 +105,10 @@ public class Environment implements Serializable
 		world.setContactListener(new CollisionHandler(this));
 	}
 
+	public boolean hasStarted() {
+		return hasStarted;
+	}
+
 	public void rebuildWorld() {
 		buildWorld();
 		createRockFixtures();
@@ -115,6 +120,7 @@ public class Environment implements Serializable
 
 	public void update(float delta)
 	{
+		hasStarted = true;
 		getCells().forEach(Particle::physicsUpdate);
 
 		elapsedTime += delta;

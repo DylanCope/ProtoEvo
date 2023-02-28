@@ -106,7 +106,7 @@ public class ChemicalSolution implements Serializable {
     }
 
     public int toChemicalGridX(float x) {
-        return (int) Utils.linearRemap(x, xMin, xMax, 0, chemicalTextureWidth);
+        return (int) Utils.clampedLinearRemap(x, xMin, xMax, 0, chemicalTextureWidth);
     }
 
     public boolean outOfWorldBounds(float x, float y) {
@@ -122,7 +122,7 @@ public class ChemicalSolution implements Serializable {
     }
 
     public int toChemicalGridY(float y) {
-        return (int) Utils.linearRemap(y, yMin, yMax, 0, chemicalTextureHeight);
+        return (int) Utils.clampedLinearRemap(y, yMin, yMax, 0, chemicalTextureHeight);
     }
 
     public void set(int x, int y, Colour colour) {
@@ -397,18 +397,34 @@ public class ChemicalSolution implements Serializable {
         return chemicalTextureWidth;
     }
 
-    public float getGreenDensity(float x, float y) {
-        int i = toChemicalGridX(x);
-        int j = toChemicalGridY(y);
-        return getGreenDensity(i, j);
+    public float getPlantDensity(Vector2 pos) {
+        return getDensity(pos.x, pos.y, 1);
     }
 
-    public float getGreenDensity(int i, int j) {
+    public float getPlantDensity(float x, float y) {
+        return getDensity(x, y, 1);
+    }
+
+    public float getMeatDensity(Vector2 pos) {
+        return getDensity(pos.x, pos.y, 0);
+    }
+
+    public float getMeatDensity(float x, float y) {
+        return getDensity(x, y, 0);
+    }
+
+    public float getDensity(float x, float y, int axis) {
+        int i = toChemicalGridX(x);
+        int j = toChemicalGridY(y);
+        return getDensity(i, j, axis);
+    }
+
+    public float getDensity(int i, int j, int axis) {
         if (i < 0 || i >= chemicalTextureWidth || j < 0 || j >= chemicalTextureHeight)
             return 0;
 ;
         Colour c = colours[i][j];
-        return c.g * c.a;
+        return c.get(axis) * c.a;
     }
 
     public float getMinX() {

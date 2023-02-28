@@ -12,7 +12,7 @@ public class AdhesionReceptor extends NodeAttachment {
     private boolean isBound = false;
     private int otherNodeIdx;
     private long joiningID;
-    private float[] outgoing = new float[SurfaceNode.ioDim];
+    private final float[] outgoing = new float[SurfaceNode.ioDim];
 
     public AdhesionReceptor(SurfaceNode node) {
         super(node);
@@ -20,7 +20,7 @@ public class AdhesionReceptor extends NodeAttachment {
 
     @Override
     public void update(float delta, float[] input, float[] output) {
-        if (!isBindingStillValid())
+        if (isBound && !isBindingStillValid())
             unbind();
 
         if (isBound) {
@@ -63,7 +63,7 @@ public class AdhesionReceptor extends NodeAttachment {
 
     public SurfaceNode getOtherNode() {
         Cell other = getOtherCell();
-        if (other == null)
+        if (other == null || otherNodeIdx < 0 || otherNodeIdx >= other.getSurfaceNodes().size())
             return null;
         return other.getSurfaceNodes().get(otherNodeIdx);
     }
@@ -124,7 +124,7 @@ public class AdhesionReceptor extends NodeAttachment {
     }
 
     private void tryBindTo(Protozoan otherCell) {
-        if (Math.random() > getConstructionProgress())
+        if (Math.random() < getConstructionProgress())
             return;
 
         for (SurfaceNode otherNode : otherCell.getSurfaceNodes()) {
@@ -169,9 +169,8 @@ public class AdhesionReceptor extends NodeAttachment {
     }
 
     private boolean isCloseEnough(SurfaceNode otherNode) {
-        float d = JointsManager.idealJointLength(otherNode.getCell(), node.getCell())
-                + otherNode.getCell().getRadius() + node.getCell().getRadius();
-        return node.getWorldPosition().dst2(otherNode.getWorldPosition()) < d*d;
+        float d = JointsManager.idealJointLength(otherNode.getCell(), node.getCell());
+        return node.getWorldPosition().dst2(otherNode.getWorldPosition()) <= d*d;
     }
 
     @Override

@@ -43,13 +43,19 @@ public interface MoleculeFunctionalContext extends Consumer<ComplexMolecule>, Se
         return getMoleculeMatching(toFunctionSignature(molecule1), toFunctionSignature(molecule2));
     }
 
+    default float cyclicalDistance(float signature1, float signature2) {
+        float sMin = Math.min(signature1, signature2);
+        float sMax = Math.max(signature1, signature2);
+        return Math.min(sMax - sMin, sMin + 1 - sMax);
+    }
+
     default MoleculeFunction getClosestFunction(float moleculeSignature) {
         Map<MoleculeFunction, Float> functionSignatures = getMoleculeFunctionSignatures();
         MoleculeFunction closestFunction = null;
         float distance = Float.MAX_VALUE;
         for (MoleculeFunction fn : functionSignatures.keySet()) {
             float fnSignature = functionSignatures.get(fn);
-            float diff = Math.abs(fnSignature - moleculeSignature);
+            float diff = cyclicalDistance(fnSignature, moleculeSignature);
             if (diff < distance) {
                 distance = diff;
                 closestFunction = fn;
