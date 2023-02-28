@@ -11,6 +11,10 @@ saved-cells
 *.ear
 hs_err_pid*
 
+# VSCode
+
+.vscode/
+
 ## Robovm
 /ios/robovm-build/
 
