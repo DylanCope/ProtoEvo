@@ -20,7 +20,7 @@ public class Utils {
             String[] split = arg.split("=");
             if (split.length == 2) {
                 if (!split[1].equals(""))
-                    argsMap.put(split[0], split[1]);
+                    argsMap.put(split[0].replace("--", ""), split[1]);
             }
         }
         return argsMap;

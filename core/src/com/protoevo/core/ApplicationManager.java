@@ -24,16 +24,15 @@ public class ApplicationManager {
 
         ApplicationManager app = new ApplicationManager();
 
-        if (argsMap.containsKey("headless"))
+        if (argsMap.containsKey("headless") && Boolean.parseBoolean(argsMap.get("headless"))) {
             app.switchToHeadlessMode();
+            app.setSimulation(new Simulation());
+        }
 
         app.launch();
     }
 
     public void launch() {
-        if (headless)
-            createSimulation();
-
         applicationRunning = true;
 
         while (applicationRunning) {
@@ -49,8 +48,10 @@ public class ApplicationManager {
         System.exit(0);
     }
 
-    public void createSimulation() {
-        simulation = new Simulation();
+    public void setSimulation(Simulation simulation) {
+//        simulation = new Simulation("uranus-blastoise-provident");
+//        simulation = new Simulation();
+        this.simulation = simulation;
         simulation.setManager(this);
 
         if (!headless) {

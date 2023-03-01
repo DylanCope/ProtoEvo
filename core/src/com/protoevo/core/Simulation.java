@@ -122,25 +122,26 @@ public class Simulation implements Runnable
 		repl.setManager(manager);
 	}
 
-	public Environment loadMostRecentEnv() {
+	public static Optional<Path> getMostRecentSave(String name) {
 		Path dir = Paths.get("saves/" + name + "/env");
-		Optional<String> lastFilePath = Optional.empty();
 		if (Files.exists(dir)) {
 			try (Stream<Path> pathStream = Files.list(dir)) {
-				lastFilePath = pathStream
+				return pathStream
 						.filter(Files::isDirectory)
 						.max(Comparator.comparingLong(
 								f -> Paths.get(f.toString() + "/environment.dat")
-										.toFile().lastModified()))
-						.map(Path::toString);
+										.toFile().lastModified()));
 			} catch (IOException e) {
-//				System.out.println("Unable to find environment of given name: " + e.getMessage());
-//				System.exit(0);
-//				return newDefaultEnv();
-				throw new RuntimeException(e);
+				System.out.println("Unable to find environment of given name: " + e.getMessage());
+				System.exit(0);
+				return Optional.empty();
 			}
 		}
+		return Optional.empty();
+	}
 
+	public Environment loadMostRecentEnv() {
+		Optional<String> lastFilePath = getMostRecentSave(name).map(Path::toString);
 		if (lastFilePath.isPresent())
 			return loadEnv(lastFilePath.get());
 		else {

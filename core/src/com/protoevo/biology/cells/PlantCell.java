@@ -68,20 +68,6 @@ public class PlantCell extends Cell {
         return crowdingFactor;
     }
 
-    public void updateCrowdingFactor() {
-        crowdingFactor = 0;
-        for (CollisionHandler.Collision contact : getContacts()) {
-            Object other = getOther(contact);
-            if (other instanceof Cell) {
-                Cell otherCell = (Cell) other;
-                float sqDist = otherCell.getPos().dst2(getPos());
-                if (sqDist < Math.pow(3 * getRadius(), 2)) {
-                    crowdingFactor += otherCell.getRadius() / (getRadius() + sqDist);
-                }
-            }
-        }
-        crowdingFactor *= 5;
-    }
 
     @Override
     public void update(float delta) {
@@ -111,6 +97,11 @@ public class PlantCell extends Cell {
                 this, PlantCell.class, this::createChild
             );
         }
+    }
+
+    @Override
+    protected float getVoidStartDistance2() {
+        return super.getVoidStartDistance2() * 0.9f * 0.9f;
     }
 
     public PlantCell createChild(float r) {
@@ -158,7 +149,6 @@ public class PlantCell extends Cell {
 
     public Statistics getStats() {
         Statistics stats = super.getStats();
-        stats.put("Crowding Factor", getCrowdingFactor());
         stats.put("Split Radius", Settings.statsDistanceScalar * maxRadius);
         return stats;
     }

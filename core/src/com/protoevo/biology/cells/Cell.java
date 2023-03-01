@@ -67,14 +67,19 @@ public abstract class Cell extends Particle implements Serializable {
 		repair(delta);
 		grow(delta);
 
-		organelles.forEach(organelle -> organelle.update(delta));
+		for (Organelle organelle : organelles)
+			organelle.update(delta);
 
 		cellJoinings.entrySet().removeIf(this::detachCellCondition);
 	}
 
 	public void voidDamage(float delta) {
-		if (getPos().len2() > SimulationSettings.voidStartDistance2)
+		if (getPos().len2() > getVoidStartDistance2())
 			damage(delta * SimulationSettings.voidDamagePerSecond, CauseOfDeath.THE_VOID);
+	}
+
+	protected float getVoidStartDistance2() {
+		return SimulationSettings.voidStartDistance2;
 	}
 
 	public void requestJointRemoval(Long joiningId) {
@@ -91,14 +96,13 @@ public abstract class Cell extends Particle implements Serializable {
 	}
 
 	public Cell getCell(Long id) {
+		if (getEnv() == null)
+			return null;
 		return getEnv().getCell(id);
 	}
 
-	public Iterable<Cell> getAttachedCells() {
-		return () -> cellJoinings.keySet().stream()
-				.map(this::getCell)
-				.filter(Objects::nonNull)
-				.iterator();
+	public Collection<Long> getAttachedCellIDs() {
+		return cellJoinings.keySet();
 	}
 
 	public boolean isAttachedTo(Cell other) {
@@ -180,6 +184,8 @@ public abstract class Cell extends Particle implements Serializable {
 			if (cell.getComplexMoleculeAvailable(molecule) > 0) {
 				float extractedAmount = extraction * cell.getComplexMoleculeAvailable(molecule);
 				cell.depleteComplexMolecule(molecule, extractedAmount);
+				if (extractedAmount <= 1e-12)
+					continue;
 				food.addComplexMoleculeMass(molecule, extractedMass);
 			}
 		}
@@ -464,7 +470,11 @@ public abstract class Cell extends Particle implements Serializable {
 	}
 
 	public void kill(CauseOfDeath causeOfDeath) {
-		getAttachedCells().forEach(other -> other.cellJoinings.remove(this.getId()));
+		for (Long otherId : getAttachedCellIDs()) {
+			Cell other = getCell(otherId);
+			if (other != null)
+				other.cellJoinings.remove(this.getId());
+		}
 		cellJoinings.clear();
 		super.kill(causeOfDeath);
 	}

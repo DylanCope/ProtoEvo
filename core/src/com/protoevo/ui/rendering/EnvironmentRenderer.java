@@ -189,7 +189,11 @@ public class EnvironmentRenderer implements Renderer {
             if (particle instanceof Cell) {
                 Cell cell = (Cell) particle;
                 shapeRenderer.setColor(0, 0, 1, 1);
-                for (Cell other : cell.getAttachedCells()) {
+                for (Long otherId : cell.getAttachedCellIDs()) {
+                    Cell other = cell.getCell(otherId);
+                    if (other == null)
+                        continue;
+
                     Vector2 otherPos = other.getPos();
                     float otherR = other.getRadius();
                     shapeRenderer.setColor(Color.ORANGE);

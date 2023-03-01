@@ -112,7 +112,7 @@ public class SimulationScreen extends ScreenAdapter {
         infoTextSize = (int) (graphicsHeight / 50f);
         textAwayFromEdge = (int) (graphicsWidth / 60);
 
-        font = skin.getFont("default");
+        font = UIStyle.createFiraCode(infoTextSize);
         debugFont = skin.getFont("debug");
 
         statsTitle = skin.getFont("statsTitle");
@@ -146,7 +146,6 @@ public class SimulationScreen extends ScreenAdapter {
                 new ShockWaveLayer(camera),
                 new VignetteLayer(camera, inputManager.getParticleTracker())
         );
-
 
         float boxWidth = (graphicsWidth / 2.0f - 1.2f * graphicsHeight * .4f);
         float boxHeight = 3 * graphicsHeight / 4;
@@ -390,6 +389,7 @@ public class SimulationScreen extends ScreenAdapter {
 
         if (countDownToRender > 0) {
             loadingString("Enabling Renderer");
+            simulation.update();
             countDownToRender -= delta;
             if (countDownToRender <= 0) {
                 renderingEnabled = true;
@@ -494,7 +494,7 @@ public class SimulationScreen extends ScreenAdapter {
     public void dispose() {
         stage.dispose();
         uiBatch.dispose();
-//        font.dispose();
+        font.dispose();
 //        statsTitle.dispose();
 //        debugFont.dispose();
         topBar.dispose();

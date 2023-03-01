@@ -9,6 +9,7 @@ import com.protoevo.core.Simulation;
 import com.protoevo.env.Environment;
 import com.protoevo.settings.SimulationSettings;
 import com.protoevo.utils.Geometry;
+import com.protoevo.utils.SerializableFunction;
 
 import java.io.Serializable;
 import java.util.function.Function;
@@ -19,13 +20,12 @@ import java.util.function.Function;
 public class BurstRequest<T extends Cell> implements Serializable {
     public static final long serialVersionUID = 1L;
 
-
-    private final Function<Float, T> createChild;
+    private final SerializableFunction<Float, T> createChild;
     private final Cell parent;
     private final Class<T> cellType;
     private final boolean overrideMinRadius;
 
-    public BurstRequest(Cell parent, Class<T> cellType, Function<Float, T> createChild) {
+    public BurstRequest(Cell parent, Class<T> cellType, SerializableFunction<Float, T> createChild) {
         this.createChild = createChild;
         this.parent = parent;
         this.cellType = cellType;
@@ -34,7 +34,7 @@ public class BurstRequest<T extends Cell> implements Serializable {
 
     public BurstRequest(Cell parent,
                         Class<T> cellType,
-                        Function<Float, T> createChild,
+                        SerializableFunction<Float, T> createChild,
                         boolean overrideMinRadius) {
         this.createChild = createChild;
         this.parent = parent;
@@ -90,8 +90,12 @@ public class BurstRequest<T extends Cell> implements Serializable {
         for (Food.Type foodType : parent.getFoodToDigest().keySet()) {
             Food oldFood = parent.getFoodToDigest().get(foodType);
             Food newFood = new Food(p * oldFood.getSimpleMass(), foodType);
+            if (newFood.getSimpleMass() <= 1e-12)
+                continue;
             for (ComplexMolecule molecule : oldFood.getComplexMolecules()) {
                 float moleculeAmount = p * oldFood.getComplexMoleculeMass(molecule);
+                if (moleculeAmount <= 1e-12)
+                    continue;
                 newFood.addComplexMoleculeMass(molecule, moleculeAmount);
             }
             child.setFoodToDigest(foodType, newFood);

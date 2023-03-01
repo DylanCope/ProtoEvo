@@ -34,7 +34,6 @@ import java.util.stream.Stream;
 public class EnvFileIO {
     private static final FSTConfiguration fstConfig = FSTConfiguration.createDefaultConfiguration();
     static {
-        fstConfig.setForceSerializable(true);
         fstConfig.registerClass(
                 Environment.class,
                 Particle.class,
@@ -124,8 +123,10 @@ public class EnvFileIO {
             serialize(cells, cells.getClass(), filename + "/chunks/" + i + ".chunk");
         });
     }
+
     public static void deserializeChunk(String filename, List<Cell> cells) {
         List<Cell> chunkCells = deserialize(filename, cells.getClass());
+        chunkCells.removeIf(c -> Float.isNaN(c.getPos().x) || Float.isNaN(c.getPos().y));
         cells.addAll(chunkCells);
     }
 

@@ -1,13 +1,9 @@
 package com.protoevo.ui;
 
-import com.badlogic.gdx.ApplicationAdapter;
 import com.badlogic.gdx.Game;
-import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.scenes.scene2d.ui.Skin;
-import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
-import com.badlogic.gdx.utils.ScreenUtils;
 import com.protoevo.core.ApplicationManager;
-import com.protoevo.ui.SimulationScreen;
+import com.protoevo.core.Simulation;
 
 public class GraphicsAdapter extends Game {
 	private final ApplicationManager applicationManager;
@@ -36,7 +32,8 @@ public class GraphicsAdapter extends Game {
 	}
 
 	public void notifySimulationReady() {
-		simulationScreen.notifySimulationLoaded();
+		if (simulationScreen != null)
+			simulationScreen.notifySimulationLoaded();
 	}
 
 	public SimulationScreen getSimulationScreen() {
@@ -79,9 +76,11 @@ public class GraphicsAdapter extends Game {
 		setScreen(titleScreen);
 	}
 
-	public void moveToSimulationScreen() {
-		applicationManager.createSimulation();
+	public void moveToSimulationScreen(Simulation simulation) {
+		applicationManager.setSimulation(simulation);
 		simulationScreen = new SimulationScreen(this, applicationManager.getSimulation());
+		if (applicationManager.getSimulation().isReady())
+			simulationScreen.notifySimulationLoaded();
 		setScreen(simulationScreen);
 	}
 }

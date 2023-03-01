@@ -9,12 +9,14 @@ import com.protoevo.physics.Particle;
 import com.protoevo.physics.SpatialHash;
 import com.protoevo.settings.SimulationSettings;
 
+import java.io.Serializable;
 import java.util.Collection;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public class Chunks {
+public class Chunks implements Serializable {
+    public static final long serialVersionUID = 1L;
 
     private transient ConcurrentHashMap<Class<? extends Cell>, SpatialHash<Cell>> cellHashes;
     private ConcurrentHashMap<Class<? extends Cell>, Integer> globalCellCounts, globalCaps;

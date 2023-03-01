@@ -588,7 +588,7 @@ public class Environment implements Serializable
 
 	public <T extends Cell> void requestBurst(Cell parent,
 											  Class<T> cellType,
-											  Function<Float, T> createChild,
+											  SerializableFunction<Float, T> createChild,
 											  boolean overrideMinParticleSize) {
 
 		if (getLocalCount(cellType, parent.getPos()) >= getLocalCapacity(cellType))
@@ -601,7 +601,7 @@ public class Environment implements Serializable
 		burstRequests.add(request);
 	}
 
-	public <T extends Cell> void requestBurst(Cell parent, Class<T> cellType, Function<Float, T> createChild) {
+	public <T extends Cell> void requestBurst(Cell parent, Class<T> cellType, SerializableFunction<Float, T> createChild) {
 		requestBurst(parent, cellType, createChild, false);
 	}
 
