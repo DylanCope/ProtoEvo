@@ -26,7 +26,6 @@ public class Simulation implements Runnable
 	private volatile boolean simulate, saveRequested = false;
 	private static boolean paused = false;
 	private float timeDilation = 1, timeSinceSave = 0, timeSinceSnapshot = 0;
-	private double updateDelay = GraphicsAdapter.refreshDelay / 1000.0, lastUpdateTime = 0;
 	
 	public static Random RANDOM = new Random(SimulationSettings.simulationSeed);
 	private boolean debug = false, delayUpdate = true, initialised = false;
@@ -289,14 +288,6 @@ public class Simulation implements Runnable
 	public float getTimeDilation() { return timeDilation; }
 
 	public void setTimeDilation(float td) { timeDilation = td; }
-
-	public void setUpdateDelay(float updateDelay) {
-		this.updateDelay = updateDelay;
-	}
-
-	public void toggleUpdateDelay() {
-		delayUpdate = !delayUpdate;
-	}
 
     public static boolean isPaused() {
 		return paused;

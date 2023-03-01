@@ -12,7 +12,7 @@ public class AdhesionReceptor extends NodeAttachment {
     private boolean isBound = false;
     private int otherNodeIdx;
     private long joiningID;
-    private final float[] outgoing = new float[SurfaceNode.ioDim];
+    private volatile float[] outgoing = new float[SurfaceNode.ioDim];
 
     public AdhesionReceptor(SurfaceNode node) {
         super(node);
@@ -46,6 +46,7 @@ public class AdhesionReceptor extends NodeAttachment {
 
     public void unbind() {
         isBound = false;
+        node.getCell().requestJointRemoval(joiningID);
         joiningID = -1;
         otherNodeIdx = -1;
     }
@@ -112,11 +113,11 @@ public class AdhesionReceptor extends NodeAttachment {
 
     private boolean isBindingStillValid() {
         SurfaceNode otherNode = getOtherNode();
-        return otherNode != null && !(otherNode.getCell().isDead()
-                || !otherNode.exists()
-                || !(otherNode.getAttachment() instanceof AdhesionReceptor)
-                || otherNode.getCell().notBoundTo(node.getCell())
-                || node.getCell().notBoundTo(otherNode.getCell()));
+        if (otherNode == null)
+            return false;
+        return !otherNode.getCell().isDead()
+                && otherNode.exists()
+                && otherNode.getAttachment() instanceof AdhesionReceptor;
     }
 
     public AdhesionReceptor getOtherAdhesionReceptor() {
@@ -124,8 +125,8 @@ public class AdhesionReceptor extends NodeAttachment {
     }
 
     private void tryBindTo(Protozoan otherCell) {
-        if (Math.random() < getConstructionProgress())
-            return;
+//        if (Math.random() > getConstructionProgress())
+//            return;
 
         for (SurfaceNode otherNode : otherCell.getSurfaceNodes()) {
             if (createBindingCondition(otherNode)) {
@@ -139,18 +140,17 @@ public class AdhesionReceptor extends NodeAttachment {
                 cell.registerJoining(joining);
                 otherCell.registerJoining(joining);
 
-                this.otherNodeIdx = otherNode.getIndex();
-                this.joiningID = joining.id;
-                isBound = true;
-
-                if (otherNode.getAttachment() instanceof AdhesionReceptor)
-                    ((AdhesionReceptor) otherNode.getAttachment()).setOtherNode(node);
+                AdhesionReceptor otherAttachment = (AdhesionReceptor) otherNode.getAttachment();
+                setOtherNode(otherNode, joining);
+                otherAttachment.setOtherNode(node, joining);
             }
         }
     }
 
-    public void setOtherNode(SurfaceNode otherNode) {
+    public void setOtherNode(SurfaceNode otherNode, JointsManager.Joining joining) {
         this.otherNodeIdx = otherNode.getIndex();
+        this.joiningID = joining.id;
+        isBound = true;
     }
 
     private boolean createBindingCondition(SurfaceNode otherNode) {

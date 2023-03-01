@@ -1,7 +1,7 @@
 package com.protoevo.ui;
 
 import com.badlogic.gdx.Gdx;
-import com.badlogic.gdx.graphics.Color;
+import com.badlogic.gdx.ScreenAdapter;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
@@ -16,6 +16,7 @@ import com.badlogic.gdx.scenes.scene2d.ui.*;
 import com.badlogic.gdx.scenes.scene2d.ui.TextField;
 import com.badlogic.gdx.scenes.scene2d.utils.Drawable;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
+import com.badlogic.gdx.utils.ScreenUtils;
 import com.protoevo.biology.cells.Cell;
 import com.protoevo.biology.nn.NeuralNetwork;
 import com.protoevo.biology.nodes.SurfaceNode;
@@ -38,27 +39,24 @@ import com.protoevo.utils.DebugMode;
 import com.protoevo.utils.ImageUtils;
 import com.protoevo.utils.Utils;
 
-import java.awt.*;
-import java.io.File;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Callable;
 
-public class SimulationScreen {
+public class SimulationScreen extends ScreenAdapter {
 
+    private final GraphicsAdapter graphics;
     private final Simulation simulation;
     private final Environment environment;
     private final SimulationInputManager inputManager;
     private final Renderer renderer;
     private final SpriteBatch uiBatch;
-    private final Skin skin;
     private final Stage stage;
     private final GlyphLayout layout = new GlyphLayout();
     private final OrthographicCamera camera;
-    private final BitmapFont font, debugFont, titleFont;
+    private final BitmapFont font, debugFont, statsTitle;
     private final TopBar topBar;
     private final int infoTextSize, textAwayFromEdge;
     private final NetworkRenderer networkRenderer;
@@ -76,12 +74,15 @@ public class SimulationScreen {
     private final Set<ImageButton> buttons = new java.util.HashSet<>();
 
     private final SelectBox<String> statsSelectBox;
-
     private final float graphicsHeight;
     private final float graphicsWidth;
     private boolean uiHidden = false, renderingEnabled = false, simLoaded = false;
 
     public SimulationScreen(GraphicsAdapter graphics, Simulation simulation) {
+        this.graphics = graphics;
+        this.simulation = simulation;
+        this.environment = simulation.getEnv();
+
         CursorUtils.setDefaultCursor();
 
         getStats = simulation.getEnv()::getStats;
@@ -94,14 +95,12 @@ public class SimulationScreen {
                 false, WorldGenerationSettings.environmentRadius,
                 WorldGenerationSettings.environmentRadius * graphicsHeight / graphicsWidth);
         camera.position.set(0, 0, 0);
-        camera.zoom = 1f; //WorldGenerationSettings.environmentRadius;
+        camera.zoom = 1f;
 
-        this.simulation = simulation;
-        this.environment = simulation.getEnv();
         stage = new Stage();
         uiBatch = new SpriteBatch();
 
-        skin = UIStyle.getUISkin();
+        Skin skin = graphics.getSkin();
 
         stage.getRoot().addCaptureListener(event -> {
             if (stage.getKeyboardFocus() instanceof TextField
@@ -113,55 +112,13 @@ public class SimulationScreen {
         infoTextSize = (int) (graphicsHeight / 50f);
         textAwayFromEdge = (int) (graphicsWidth / 60);
 
-        font = UIStyle.createFiraCode(infoTextSize);
-        font.setColor(Color.WHITE.cpy().mul(.9f));
-        debugFont = UIStyle.createFiraCode(infoTextSize);
-        debugFont.setColor(Color.GOLD);
+        font = skin.getFont("default");
+        debugFont = skin.getFont("debug");
 
-        titleFont = UIStyle.createFiraCode((int) (graphicsHeight / 40f));
+        statsTitle = skin.getFont("statsTitle");
 
-        topBar = new TopBar(this, font.getLineHeight());
-
-        ImageButton closeButton = createBarImageButton("icons/x-button.png", event -> {
-            graphics.exitApplication();
-            return true;
-        });
-        topBar.addRight(closeButton);
-
-        ImageButton pauseButton = createBarImageButton("icons/play_pause.png", event -> {
-            simulation.togglePause();
-            return true;
-        });
-        topBar.addLeft(pauseButton);
-
-        ImageButton toggleRenderingButton = createBarImageButton("icons/fast_forward.png", event -> {
-            simulation.toggleTimeDilation();
-            return true;
-        });
-        topBar.addLeft(toggleRenderingButton);
-
-        ImageButton homeButton = createBarImageButton("icons/home_icon.png", event -> {
-            camera.position.set(0, 0, 0);
-            camera.zoom = WorldGenerationSettings.environmentRadius;
-            return true;
-        });
-        topBar.addLeft(homeButton);
-
-        ImageButton folderButton = createBarImageButton("icons/folder.png", event -> {
-            try {
-                Desktop.getDesktop().open(new File(simulation.getSaveFolder()));
-            } catch (IOException e) {
-                System.out.println("\nFailed to open folder: " + e.getMessage() + "\n");
-            }
-            return true;
-        });
-        topBar.addLeft(folderButton);
-
-        ImageButton replButton = createBarImageButton("icons/terminal.png", event -> {
-            graphics.switchToHeadlessMode();
-            return true;
-        });
-        topBar.addLeft(replButton);
+        topBar = new TopBar(stage, font.getLineHeight());
+        inputManager = new SimulationInputManager(this);
 
         saveTrackedParticleTextField = new TextField("", skin);
         stage.addActor(saveTrackedParticleTextField);
@@ -179,13 +136,11 @@ public class SimulationScreen {
         });
         saveTrackedParticleButton.setVisible(false);
 
-        statsSelectBox = new SelectBox<>(skin);
-        statsSelectBox.getStyle().font = titleFont;
+        statsSelectBox = new SelectBox<>(skin, "statsTitle");
         stage.addActor(statsSelectBox);
         statsSelectBox.setHeight(statsSelectBox.getStyle().font.getLineHeight());
         setEnvStatOptions();
 
-        inputManager = new SimulationInputManager(this);
         renderer = new ShaderLayers(
                 new EnvironmentRenderer(camera, simulation, inputManager),
                 new ShockWaveLayer(camera),
@@ -203,9 +158,20 @@ public class SimulationScreen {
                 boxXStart, boxYStart, boxWidth, boxHeight, infoTextSize);
     }
 
+    @Override
+    public void show() {
+        super.show();
+        inputManager.registerAsInputProcessor();
+    }
+
+    @Override
+    public void hide() {
+        super.hide();
+        Gdx.input.setInputProcessor(null);
+    }
+
     public ImageButton createImageButton(String texturePath, float width, float height, EventListener listener) {
         Texture texture = ImageUtils.getTexture(texturePath);
-
         Drawable drawable = new TextureRegionDrawable(new TextureRegion(texture));
         ImageButton button = new ImageButton(drawable);
         button.setSize(width, height);
@@ -214,15 +180,6 @@ public class SimulationScreen {
         stage.addActor(button);
         buttons.add(button);
         return button;
-    }
-
-    public ImageButton createBarImageButton(String texturePath, EventListener touchListener) {
-        return createImageButton(texturePath, topBar.getButtonSize(), topBar.getButtonSize(), event -> {
-            if (event.toString().equals("touchDown")) {
-                touchListener.handle(event);
-            }
-            return true;
-        });
     }
 
     public Stage getStage() {
@@ -302,12 +259,11 @@ public class SimulationScreen {
         return renderStats(stats, 0, font);
     }
 
-
     public void setSaveParticleTopBarUI() {
         saveTrackedParticleButton.setVisible(true);
         float fieldWidthMul = 8f;
 
-        Vector2 pos = topBar.nextLeftButtonPosition();
+        Vector2 pos = topBar.nextLeftPosition();
         saveTrackedParticleButton.setPosition(pos.x, pos.y);
         saveTrackedParticleTextField.setVisible(true);
         saveTrackedParticleTextField.setBounds(
@@ -379,7 +335,7 @@ public class SimulationScreen {
     }
 
     public void renderStats() {
-        float titleY = (float) (17 * graphicsHeight / 20f + 1.5 * titleFont.getLineHeight());
+        float titleY = (float) (17 * graphicsHeight / 20f + 1.5 * statsTitle.getLineHeight());
 
         if (statsSelectBox.getSelected() != null && statsSelectBox.isVisible())
             getStats = statGetters.get(statsSelectBox.getSelected());
@@ -423,7 +379,13 @@ public class SimulationScreen {
         uiBatch.end();
     }
 
-    public void draw(float delta) {
+    @Override
+    public void render(float delta) {
+        ScreenUtils.clear(EnvironmentRenderer.backgroundColor);
+
+        if (simLoaded)
+            simulation.update();
+
         elapsedTime += delta;
 
         if (countDownToRender > 0) {
@@ -532,13 +494,12 @@ public class SimulationScreen {
     public void dispose() {
         stage.dispose();
         uiBatch.dispose();
-        font.dispose();
-        titleFont.dispose();
-        debugFont.dispose();
+//        font.dispose();
+//        statsTitle.dispose();
+//        debugFont.dispose();
         topBar.dispose();
         renderer.dispose();
         networkRenderer.dispose();
-        skin.dispose();
         inputManager.dispose();
         for (ImageButton button : buttons)
             ((TextureRegionDrawable) button.getImage().getDrawable()).getRegion().getTexture().dispose();
@@ -576,5 +537,9 @@ public class SimulationScreen {
 
     public synchronized void notifySimulationLoaded() {
         countDownToRender = 3;
+    }
+
+    public GraphicsAdapter getGraphics() {
+        return graphics;
     }
 }

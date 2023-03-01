@@ -1,18 +1,20 @@
 package com.protoevo.ui;
 
 import com.badlogic.gdx.ApplicationAdapter;
+import com.badlogic.gdx.Game;
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.scenes.scene2d.ui.Skin;
+import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.gdx.utils.ScreenUtils;
 import com.protoevo.core.ApplicationManager;
 import com.protoevo.ui.SimulationScreen;
 
-public class GraphicsAdapter extends ApplicationAdapter {
-	public static final float refreshDelay = 1000 / 60f;
-
+public class GraphicsAdapter extends Game {
 	private final ApplicationManager applicationManager;
 	private SimulationScreen simulationScreen;
-	private int updatesPerFrame = 1;
-	private boolean reducedRendering = false;
+	private SandboxScreen sandboxScreen;
+	private TitleScreen titleScreen;
+	private Skin skin;
 
 	public GraphicsAdapter(ApplicationManager applicationManager) {
 		this.applicationManager = applicationManager;
@@ -20,31 +22,16 @@ public class GraphicsAdapter extends ApplicationAdapter {
 
 	@Override
 	public void create() {
+		skin = UIStyle.getUISkin();
 		if (applicationManager.hasSimulation()) {
 			simulationScreen = new SimulationScreen(this, applicationManager.getSimulation());
 			if (applicationManager.getSimulation().isReady())
 				simulationScreen.notifySimulationLoaded();
+			setScreen(simulationScreen);
 		}
-	}
-
-	@Override
-	public void render() {
-		ScreenUtils.clear(0, 0.1f, 0.2f, 1f);
-
-		if (reducedRendering) {
-			int fps = Gdx.graphics.getFramesPerSecond();
-			if (fps > 5)
-				updatesPerFrame = fps / 5;
-		} else {
-			updatesPerFrame = 1;
-		}
-
-		for (int i = 0; i < updatesPerFrame; i++)
-			applicationManager.update();
-
-		if (applicationManager.hasSimulation()) {
-			float deltaTime = Gdx.graphics.getDeltaTime();
-			simulationScreen.draw(deltaTime);
+		else {
+			titleScreen = new TitleScreen(this);
+			setScreen(titleScreen);
 		}
 	}
 
@@ -66,11 +53,35 @@ public class GraphicsAdapter extends ApplicationAdapter {
 
 	@Override
 	public void dispose() {
-		simulationScreen.dispose();
+		super.dispose();
+		if (skin != null)
+			skin.dispose();
+		if (simulationScreen != null)
+			simulationScreen.dispose();
+		if (sandboxScreen != null)
+			sandboxScreen.dispose();
+		if (titleScreen != null)
+			titleScreen.dispose();
 		FrameBufferManager.dispose();
 	}
 
-	public void toggleReducedRendering() {
-		reducedRendering = !reducedRendering;
+	public Skin getSkin() {
+		return skin;
+	}
+
+	public void moveToSandbox() {
+		sandboxScreen = new SandboxScreen(this);
+		setScreen(sandboxScreen);
+	}
+
+	public void moveToTitleScreen() {
+		titleScreen = new TitleScreen(this);
+		setScreen(titleScreen);
+	}
+
+	public void moveToSimulationScreen() {
+		applicationManager.createSimulation();
+		simulationScreen = new SimulationScreen(this, applicationManager.getSimulation());
+		setScreen(simulationScreen);
 	}
 }

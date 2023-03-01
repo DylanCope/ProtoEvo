@@ -77,10 +77,17 @@ public abstract class Cell extends Particle implements Serializable {
 			damage(delta * SimulationSettings.voidDamagePerSecond, CauseOfDeath.THE_VOID);
 	}
 
+	public void requestJointRemoval(Long joiningId) {
+		JointsManager.Joining joining = getJoining(joiningId);
+		if (joining != null)
+			requestJointRemoval(joining);
+	}
+
 	public void requestJointRemoval(JointsManager.Joining joining) {
-		Cell other = (Cell) joining.getOther(this);
 		getEnv().getJointsManager().requestJointRemoval(joining);
+		Cell other = (Cell) joining.getOther(this);
 		cellJoinings.remove(other.getId());
+		other.cellJoinings.remove(getId());
 	}
 
 	public Cell getCell(Long id) {
@@ -334,7 +341,10 @@ public abstract class Cell extends Particle implements Serializable {
 	}
 
 	public boolean notBoundTo(Cell otherCell) {
-		return !(cellJoinings.containsKey(otherCell.getId()) || otherCell.cellJoinings.containsKey(getId()));
+		return !(
+			cellJoinings.containsKey(otherCell.getId())
+			|| otherCell.cellJoinings.containsKey(getId())
+		);
 	}
 
 	public abstract boolean isEdible();

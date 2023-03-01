@@ -31,7 +31,8 @@ public class ApplicationManager {
     }
 
     public void launch() {
-        createSimulation();
+        if (headless)
+            createSimulation();
 
         applicationRunning = true;
 

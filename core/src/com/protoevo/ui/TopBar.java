@@ -5,15 +5,15 @@ import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.scenes.scene2d.Actor;
+import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.ImageButton;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
 
 public class TopBar {
 
-    private final SimulationScreen simulationScreen;
+    private final Stage stage;
     private final List<Actor> leftActors;
     private final List<Actor> rightActors;
     private final float topBarHeight;
@@ -21,8 +21,8 @@ public class TopBar {
     private final float topBarPadding = 10f;
     private final ShapeRenderer shapeRenderer;
 
-    public TopBar(SimulationScreen simulationScreen, float fontSize) {
-        this.simulationScreen = simulationScreen;
+    public TopBar(Stage stage, float fontSize) {
+        this.stage = stage;
         shapeRenderer = new ShapeRenderer();
         leftActors = new ArrayList<>();
         rightActors = new ArrayList<>();
@@ -42,7 +42,7 @@ public class TopBar {
         return topBarHeight;
     }
 
-    public Vector2 nextLeftButtonPosition() {
+    public Vector2 nextLeftPosition() {
 
         float x;
         if (leftActors.size() > 0) {
@@ -57,11 +57,11 @@ public class TopBar {
         return new Vector2(x, y);
     }
 
-    public void addLeft(ImageButton button) {
-        Vector2 nextLeft = nextLeftButtonPosition();
-        button.setPosition(nextLeft.x, nextLeft.y);
-        leftActors.add(button);
-        simulationScreen.getStage().addActor(button);
+    public void addLeft(Actor actor) {
+        Vector2 nextLeft = nextLeftPosition();
+        actor.setPosition(nextLeft.x, nextLeft.y);
+        leftActors.add(actor);
+        stage.addActor(actor);
     }
 
     public Vector2 nextRightButtonPosition() {
@@ -82,7 +82,7 @@ public class TopBar {
         Vector2 nextRight = nextRightButtonPosition();
         button.setPosition(nextRight.x - button.getWidth(), nextRight.y);
         rightActors.add(button);
-        simulationScreen.getStage().addActor(button);
+        stage.addActor(button);
     }
 
     public void draw(float delta) {

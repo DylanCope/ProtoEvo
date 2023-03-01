@@ -28,7 +28,7 @@ import java.util.HashMap;
 import static com.protoevo.utils.Utils.lerp;
 
 public class EnvironmentRenderer implements Renderer {
-
+    public static Color backgroundColor = new Color(0, 0.1f, 0.2f, 1);
     private final Box2DDebugRenderer debugRenderer;
     private final SpriteBatch batch;
     private final Texture particleTexture;
@@ -103,8 +103,7 @@ public class EnvironmentRenderer implements Renderer {
     }
 
     public void render(float delta) {
-        ScreenUtils.clear(0, 0.1f, 0.2f, .95f);
-
+        ScreenUtils.clear(backgroundColor);
         synchronized (environment) {
             if (chemicalsRenderer != null)
                 chemicalsRenderer.render(delta);

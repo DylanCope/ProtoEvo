@@ -76,19 +76,23 @@ public class JointsManager implements Serializable {
             return anchorB;
         }
 
+        public boolean notAnchored() {
+            return !anchoredA && !anchoredB;
+        }
+
         @Override
         public boolean equals(Object o) {
             if (o == null) return false;
             if (o == this) return true;
             if (!(o instanceof Joining)) return false;
             Joining jp = (Joining) o;
-            return (particleA == jp.particleA && particleB == jp.particleB)
-                    | (particleA == jp.particleB && particleB == jp.particleA);
+            return (particleAId == jp.particleAId && particleBId == jp.particleBId)
+                    || (particleAId == jp.particleBId && particleBId == jp.particleAId);
         }
 
         @Override
         public int hashCode() {
-            return particleA.hashCode() + particleB.hashCode();
+            return Long.hashCode(id);
         }
 
         public Particle getOther(Particle particle) {
@@ -236,7 +240,8 @@ public class JointsManager implements Serializable {
                 continue;
             }
 
-            if (bodyA.getUserData() instanceof Particle
+            if (joining.notAnchored()
+                    && bodyA.getUserData() instanceof Particle
                     && bodyB.getUserData() instanceof Particle) {
                 handleGrowingParticle(joining);
             }
@@ -275,8 +280,8 @@ public class JointsManager implements Serializable {
     private JointDef makeJointDef(Joining joining) {
         Particle particleA = joining.particleA;
         Particle particleB = joining.particleB;
-        Vector2 anchorA = joining.anchorA;
-        Vector2 anchorB = joining.anchorB;
+        Vector2 anchorA = joining.getAnchorA();
+        Vector2 anchorB = joining.getAnchorB();
 
         RopeJointDef defJoint = new RopeJointDef();
         defJoint.maxLength = joining.getIdealLength();
@@ -307,7 +312,7 @@ public class JointsManager implements Serializable {
 
         return jointsToAdd.contains(joining)
                 || joinings.containsKey(joining.id)
-                || jointRemovalRequests.contains(joining);
+                || jointRemovalRequests.contains(joining.id);
     }
 
     public void createJoint(Joining joining) {

@@ -9,6 +9,8 @@ import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator;
 import com.badlogic.gdx.scenes.scene2d.ui.*;
 import com.protoevo.utils.CursorUtils;
 
+import java.time.format.TextStyle;
+
 public class UIStyle {
 
     public static Texture getWhite1x1() {
@@ -36,32 +38,67 @@ public class UIStyle {
 
         skin.add("white", getWhite1x1());
 
-        int infoTextSize = (int) (Gdx.graphics.getHeight() / 50f);
+        Color transparent = new Color(0, 0, 0, 0);
+        Color selectionColor = new Color(0, 0, 0.8f, 0.95f);
+
+        float graphicsHeight = Gdx.graphics.getHeight();
+        int infoTextSize = (int) (graphicsHeight / 50f);
         // Store the default libGDX font under the name "default".
         skin.add("default", createFiraCode(infoTextSize));
+        BitmapFont debugFont = createFiraCode(infoTextSize);
+        debugFont.setColor(Color.GOLD);
+        skin.add("debug", debugFont);
+
+        BitmapFont statsTitleFont = UIStyle.createFiraCode((int) (graphicsHeight / 40f));
+        skin.add("statsTitle", statsTitleFont);
+
+        skin.add("mainTitle", UIStyle.createFiraCode((int) (graphicsHeight / 20f)));
+
+        Label.LabelStyle labelStyle = new Label.LabelStyle();
+        labelStyle.font = skin.getFont("default");
+        labelStyle.fontColor = Color.WHITE;
+        skin.add("default", labelStyle);
+
+        Label.LabelStyle debugLabelStyle = new Label.LabelStyle();
+        debugLabelStyle.font = skin.getFont("debug");
+        debugLabelStyle.fontColor = Color.GOLD;
+        skin.add("debug", debugLabelStyle);
+
+        Label.LabelStyle statsTitleLabelStyle = new Label.LabelStyle();
+        statsTitleLabelStyle.font = skin.getFont("statsTitle");
+        statsTitleLabelStyle.fontColor = Color.WHITE;
+        skin.add("statsTitle", statsTitleLabelStyle);
+
+        Label.LabelStyle mainTitleLabelStyle = new Label.LabelStyle();
+        mainTitleLabelStyle.font = skin.getFont("mainTitle");
+        mainTitleLabelStyle.fontColor = Color.WHITE;
+        skin.add("mainTitle", mainTitleLabelStyle);
 
         // Configure a TextButtonStyle and name it "default". Skin resources are stored by type, so this doesn't overwrite the font.
         TextButton.TextButtonStyle textButtonStyle = new TextButton.TextButtonStyle();
-        textButtonStyle.up = skin.newDrawable("white", Color.DARK_GRAY);
-        textButtonStyle.down = skin.newDrawable("white", Color.DARK_GRAY);
-        textButtonStyle.checked = skin.newDrawable("white", Color.BLUE);
-        textButtonStyle.over = skin.newDrawable("white", Color.LIGHT_GRAY);
+        textButtonStyle.up = skin.newDrawable("white", transparent);
+        textButtonStyle.down = skin.newDrawable("white", transparent);
+        textButtonStyle.checked = skin.newDrawable("white", transparent);
+        textButtonStyle.over = skin.newDrawable("white", selectionColor);
         textButtonStyle.font = skin.getFont("default");
         skin.add("default", textButtonStyle);
 
         SelectBox.SelectBoxStyle selectBoxStyle = new SelectBox.SelectBoxStyle();
         selectBoxStyle.font = skin.getFont("default");
         selectBoxStyle.fontColor = Color.WHITE;
-        selectBoxStyle.background = skin.newDrawable("white", new Color(0, 0, 0, 0));
+        selectBoxStyle.background = skin.newDrawable("white", transparent);
         selectBoxStyle.scrollStyle = new ScrollPane.ScrollPaneStyle();
         selectBoxStyle.scrollStyle.background = skin.newDrawable("white", new Color(0, 0, 0, 0.95f));
         selectBoxStyle.listStyle = new List.ListStyle();
         selectBoxStyle.listStyle.font = skin.getFont("default");
         selectBoxStyle.listStyle.fontColorSelected = Color.WHITE;
         selectBoxStyle.listStyle.fontColorUnselected = new Color(0.7f, 0.7f, 0.7f, 1);
-        Color selectionColor = new Color(0, 0, 0.8f, 0.95f);
         selectBoxStyle.listStyle.selection = skin.newDrawable("white",  selectionColor);
         skin.add("default", selectBoxStyle);
+
+        SelectBox.SelectBoxStyle titleSelectBoxStyle = new SelectBox.SelectBoxStyle(selectBoxStyle);
+        titleSelectBoxStyle.font = skin.getFont("statsTitle");
+        skin.add("statsTitle", titleSelectBoxStyle);
 
         TextField.TextFieldStyle textFieldStyle = new TextField.TextFieldStyle();
         textFieldStyle.font = skin.getFont("default");
