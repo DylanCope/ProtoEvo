@@ -3,16 +3,18 @@ package com.protoevo.biology.nodes;
 import com.protoevo.biology.*;
 import com.protoevo.biology.cells.Cell;
 import com.protoevo.biology.cells.Protozoan;
+import com.protoevo.core.Statistics;
 import com.protoevo.physics.CollisionHandler;
 import com.protoevo.env.JointsManager;
 import com.protoevo.settings.Settings;
 
 public class AdhesionReceptor extends NodeAttachment {
 
-    private boolean isBound = false;
-    private int otherNodeIdx;
-    private long joiningID;
+    private volatile boolean isBound = false;
+    private volatile int otherNodeIdx;
+    private volatile long joiningID;
     private volatile float[] outgoing = new float[SurfaceNode.ioDim];
+    private float constructionMassTransfer, molecularMassTransfer, energyTransfer;
 
     public AdhesionReceptor(SurfaceNode node) {
         super(node);
@@ -26,6 +28,11 @@ public class AdhesionReceptor extends NodeAttachment {
         if (isBound) {
             handleResourceExchange(delta);
             AdhesionReceptor other = getOtherAdhesionReceptor();
+            if (other == null) {
+                unbind();
+                return;
+            }
+
             for (int i = 0; i < SurfaceNode.ioDim; i++) {
                 outgoing[i] = input[i];
                 output[i] = other.outgoing[i];
@@ -42,6 +49,10 @@ public class AdhesionReceptor extends NodeAttachment {
                     break;
             }
         }
+    }
+
+    public boolean isBound() {
+        return isBound;
     }
 
     public void unbind() {
@@ -72,11 +83,14 @@ public class AdhesionReceptor extends NodeAttachment {
     public void handleResourceExchange(float delta) {
         Cell cell = node.getCell();
         JointsManager.Joining joining = cell.getJoining(joiningID);
+        if (joining == null)
+            return;
+
         Cell other = (Cell) joining.getOther(cell);
         float transferRate = Settings.channelBindingEnergyTransport;
 
         float massDelta = cell.getConstructionMassAvailable() - other.getConstructionMassAvailable();
-        float constructionMassTransfer = Math.abs(transferRate * massDelta * delta);
+        constructionMassTransfer = Math.abs(transferRate * massDelta * delta);
         if (massDelta > 0) {
             other.addConstructionMass(constructionMassTransfer);
             cell.depleteConstructionMass(constructionMassTransfer);
@@ -86,7 +100,7 @@ public class AdhesionReceptor extends NodeAttachment {
         }
 
         float energyDelta = cell.getEnergyAvailable() - other.getEnergyAvailable();
-        float energyTransfer = Math.abs(transferRate * energyDelta * delta);
+        energyTransfer = Math.abs(transferRate * energyDelta * delta);
         if (energyDelta > 0) {
             other.addAvailableEnergy(energyTransfer);
             cell.depleteEnergy(energyTransfer);
@@ -95,6 +109,7 @@ public class AdhesionReceptor extends NodeAttachment {
             other.depleteEnergy(energyTransfer);
         }
 
+        molecularMassTransfer = 0;
         for (ComplexMolecule molecule : cell.getComplexMolecules())
             handleComplexMoleculeTransport(other, cell, molecule, delta);
         for (ComplexMolecule molecule : other.getComplexMolecules())
@@ -106,6 +121,7 @@ public class AdhesionReceptor extends NodeAttachment {
         float transferRate = Settings.occludingBindingEnergyTransport;
         if (massDelta > 0) {
             float massTransfer = transferRate * massDelta * delta;
+            molecularMassTransfer += massTransfer;
             dst.addAvailableComplexMolecule(molecule, massTransfer);
             src.depleteComplexMolecule(molecule, massTransfer);
         }
@@ -121,13 +137,13 @@ public class AdhesionReceptor extends NodeAttachment {
     }
 
     public AdhesionReceptor getOtherAdhesionReceptor() {
-        return (AdhesionReceptor) getOtherNode().getAttachment();
+        SurfaceNode otherNode = getOtherNode();
+        if (otherNode == null)
+            return null;
+        return (AdhesionReceptor) otherNode.getAttachment();
     }
 
     private void tryBindTo(Protozoan otherCell) {
-//        if (Math.random() > getConstructionProgress())
-//            return;
-
         for (SurfaceNode otherNode : otherCell.getSurfaceNodes()) {
             if (createBindingCondition(otherNode)) {
                 Cell cell = node.getCell();
@@ -180,6 +196,8 @@ public class AdhesionReceptor extends NodeAttachment {
 
     @Override
     public String getInputMeaning(int index) {
+        if (!isBound)
+            return null;
         return "Outgoing Signal " + index;
     }
 
@@ -188,5 +206,13 @@ public class AdhesionReceptor extends NodeAttachment {
         if (!isBound)
             return null;
         return "Incoming Signal " + index;
+    }
+
+    @Override
+    public void addStats(Statistics stats) {
+        stats.putBoolean("Is Bound", isBound);
+        stats.putMass("Construction Mass Transfer", constructionMassTransfer);
+        stats.putEnergy("Energy Transfer", energyTransfer);
+        stats.putMass("Molecular Mass Transfer", molecularMassTransfer);
     }
 }

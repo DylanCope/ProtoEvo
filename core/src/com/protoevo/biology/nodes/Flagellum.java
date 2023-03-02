@@ -115,10 +115,8 @@ public class Flagellum extends NodeAttachment implements Serializable {
     }
 
     @Override
-    public Statistics getStats() {
-        stats.clear();
+    public void addStats(Statistics stats) {
         stats.put("Thrust", thrustVector.len(), Statistics.ComplexUnit.IMPULSE);
         stats.put("Torque", torque, Statistics.ComplexUnit.TORQUE);
-        return stats;
     }
 }

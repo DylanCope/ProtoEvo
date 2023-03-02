@@ -11,7 +11,6 @@ import com.protoevo.biology.evolution.*;
 import com.protoevo.core.Statistics;
 import com.protoevo.env.Environment;
 import com.protoevo.settings.SimulationSettings;
-import org.checkerframework.checker.units.qual.A;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -61,6 +60,9 @@ public class SurfaceNode implements Evolvable.Element, Serializable {
                 throw new RuntimeException("Failed to instantiate node attachment: " + e);
             }
         }
+
+        attachment = new AdhesionReceptor(this);
+        attachment.getConstructionProject().progress(attachment.getConstructionProject().getTimeToComplete());
 
         for (int i = 0; i < candidateAttachments.size(); i++) {
             NodeAttachment candidate = candidateAttachments.get(i);
@@ -308,9 +310,7 @@ public class SurfaceNode implements Evolvable.Element, Serializable {
                     stats.putMass(String.format("Molecule %.2f Available", molecule.getSignature()),
                             cell.getComplexMoleculeAvailable(molecule));
 
-            Statistics attachmentStats = attachment.getStats();
-            if (attachmentStats != null)
-                stats.putAll(attachmentStats);
+            attachment.addStats(stats);
         }
         for (NodeAttachment candidate : candidateAttachments)
             if (candidate.getConstructionProgress() > 0 && candidate != attachment)

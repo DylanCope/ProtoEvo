@@ -14,7 +14,6 @@ import java.util.Map;
 
 public abstract class NodeAttachment implements Serializable, Constructable {
 
-    
     private static final long serialVersionUID = 1L;
 
     public static Class<NodeAttachment>[] possibleAttachments = new Class[]{
@@ -75,7 +74,6 @@ public abstract class NodeAttachment implements Serializable, Constructable {
     public abstract String getInputMeaning(int index);
     public abstract String getOutputMeaning(int index);
 
-    public Statistics getStats() {
-        return null;
-    }
+    public abstract void addStats(Statistics stats);
+
 }

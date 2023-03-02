@@ -4,6 +4,7 @@ import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector2;
 import com.protoevo.biology.CauseOfDeath;
 import com.protoevo.biology.cells.Cell;
+import com.protoevo.core.Statistics;
 import com.protoevo.settings.ProtozoaSettings;
 import com.protoevo.utils.Geometry;
 import com.protoevo.utils.Utils;
@@ -12,12 +13,12 @@ import com.protoevo.utils.Utils;
 import java.io.Serializable;
 
 public class Spike extends NodeAttachment implements Serializable {
-
     
     private static final long serialVersionUID = 1L;
 
     private Vector2 spikePoint = new Vector2();
     private final float attackFactor = 10f;
+    private float lastDPS = 0;
     private float extension = 1;
 
     public Spike(SurfaceNode node) {
@@ -73,6 +74,7 @@ public class Spike extends NodeAttachment implements Serializable {
                     if (myAttack > theirDefense) {
                         float dps = attackFactor * (myAttack - theirDefense);
                         other.damage(dps * delta, CauseOfDeath.MURDER);
+                        lastDPS = dps;
                     }
 
                     output[1] = other.getHealth();
@@ -108,5 +110,12 @@ public class Spike extends NodeAttachment implements Serializable {
         if (index == 2)
             return "Attack Amount";
         return null;
+    }
+
+    @Override
+    public void addStats(Statistics stats) {
+        stats.put("Last DPS", lastDPS, Statistics.ComplexUnit.PERCENTAGE_PER_TIME);
+        stats.put("Spike Length", getSpikeLength(), Statistics.ComplexUnit.DISTANCE);
+        stats.put("Spike Extension", getSpikeExtension(), Statistics.ComplexUnit.PERCENTAGE);
     }
 }

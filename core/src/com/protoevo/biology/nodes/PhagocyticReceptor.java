@@ -3,6 +3,7 @@ package com.protoevo.biology.nodes;
 import com.badlogic.gdx.math.Vector2;
 import com.protoevo.biology.CauseOfDeath;
 import com.protoevo.biology.cells.*;
+import com.protoevo.core.Statistics;
 import com.protoevo.settings.SimulationSettings;
 import com.protoevo.physics.CollisionHandler;
 
@@ -10,7 +11,6 @@ import com.protoevo.physics.CollisionHandler;
 import java.io.Serializable;
 
 public class PhagocyticReceptor extends NodeAttachment implements Serializable {
-
     
     private static final long serialVersionUID = 1L;
     private final Vector2 tmp = new Vector2();
@@ -114,5 +114,12 @@ public class PhagocyticReceptor extends NodeAttachment implements Serializable {
         if (index == 2)
             return "Is Last Engulfed Meat";
         return null;
+    }
+
+    @Override
+    public void addStats(Statistics stats) {
+        stats.putCount("Engulfed Cells", ((Protozoan) node.getCell()).getEngulfedCells().size());
+        stats.putBoolean("Will Engulf Plant?", engulfPlant);
+        stats.putBoolean("Will Engulf Meat?", engulfMeat);
     }
 }

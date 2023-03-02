@@ -1,6 +1,8 @@
 package com.protoevo.biology.evolution;
 
+import com.badlogic.gdx.math.MathUtils;
 import com.protoevo.biology.nn.*;
+import com.protoevo.settings.ProtozoaSettings;
 import com.protoevo.settings.SimulationSettings;
 import com.protoevo.utils.Utils;
 
@@ -137,7 +139,11 @@ public class GRNFactory {
                     (GRNTag) fn -> fn.getExpressionNode(node.getName())
             );
             for (String regulator : regulators.keySet()) {
-                SynapseGene synapseGene = networkGenome.addSynapse(networkGenome.getNeuronGene(regulator), outputGene);
+                if (MathUtils.randomBoolean(ProtozoaSettings.initialGenomeConnectivity))
+                    continue;
+
+                SynapseGene synapseGene = networkGenome.addSynapse(
+                        networkGenome.getNeuronGene(regulator), outputGene);
                 synapseGene.setMutationRange(
                         SimulationSettings.minRegulationMutationChance,
                         SimulationSettings.maxRegulationMutationChance);

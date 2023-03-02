@@ -2,6 +2,7 @@ package com.protoevo.biology.nodes;
 
 import com.badlogic.gdx.math.Vector2;
 import com.protoevo.biology.cells.Cell;
+import com.protoevo.core.Statistics;
 import com.protoevo.physics.Shape;
 import com.protoevo.physics.Particle;
 import com.protoevo.settings.ProtozoaSettings;
@@ -14,7 +15,6 @@ import java.io.Serializable;
 
 public class Photoreceptor extends NodeAttachment implements Serializable {
 
-    
     private static final long serialVersionUID = 1L;
     private final Vector2[] ray = new Vector2[]{new Vector2(), new Vector2()};
     private final Shape.Intersection[] intersections =
@@ -160,5 +160,14 @@ public class Photoreceptor extends NodeAttachment implements Serializable {
         else if (index == 2)
             return "B";
         return null;
+    }
+
+    @Override
+    public void addStats(Statistics stats) {
+        stats.putPercentage("Red Light", colour.r);
+        stats.putPercentage("Green Light", colour.g);
+        stats.putPercentage("Blue Light", colour.b);
+        stats.putDistance("Interaction Range", getInteractionRange());
+        stats.put("FoV", fov, Statistics.ComplexUnit.ANGLE);
     }
 }

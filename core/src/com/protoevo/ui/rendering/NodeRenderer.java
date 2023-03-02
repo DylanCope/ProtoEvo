@@ -55,7 +55,7 @@ public class NodeRenderer {
         return !node.exists() || node.getAttachment() == null || node.getCell() == null
                 || !getAttachmentSprites().containsKey(node.getAttachment().getClass())
                 || (node.getAttachment() instanceof AdhesionReceptor
-                && ((AdhesionReceptor) node.getAttachment()).getOtherNode() != null);
+                && ((AdhesionReceptor) node.getAttachment()).isBound());
     }
 
     public void render(float delta, SpriteBatch batch) {

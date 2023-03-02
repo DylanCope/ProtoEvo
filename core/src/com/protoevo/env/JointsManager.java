@@ -171,6 +171,7 @@ public class JointsManager implements Serializable {
                 entry -> entry.getValue().particleA == null
                         || entry.getValue().particleB == null
         );
+        jointsToAdd.clear();
         jointsToAdd.addAll(joinings.values());
         flushJoints();
     }
@@ -178,6 +179,12 @@ public class JointsManager implements Serializable {
     public Joining getJoining(long id) {
         if (joinings.containsKey(id))
             return joinings.get(id);
+        if (!jointsToAdd.isEmpty()) {
+            for (Joining joining : jointsToAdd) {
+                if (joining.id == id)
+                    return joining;
+            }
+        }
         return null;
     }
 
