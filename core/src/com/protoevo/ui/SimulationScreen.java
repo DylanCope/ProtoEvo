@@ -39,10 +39,7 @@ import com.protoevo.utils.DebugMode;
 import com.protoevo.utils.ImageUtils;
 import com.protoevo.utils.Utils;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.Callable;
 
 public class SimulationScreen extends ScreenAdapter {
@@ -65,6 +62,7 @@ public class SimulationScreen extends ScreenAdapter {
     private float elapsedTime = 0, pollStatsCounter = 0, countDownToRender = 0;
     private float graphicsStatsYOffset = 0;
     private final Statistics stats = new Statistics();
+    private final TreeMap<String, String> sortedStats = new TreeMap<>();
     private Callable<Statistics> getStats;
     private final Map<String, Callable<Statistics>> statGetters = new HashMap<>();
     private final Statistics debugStats = new Statistics();
@@ -247,8 +245,10 @@ public class SimulationScreen extends ScreenAdapter {
     }
 
     private int renderStats(Statistics stats, int lineNumber, BitmapFont statsFont) {
-        for (Statistics.Stat stat : stats) {
-            statsFont.draw(uiBatch, stat.toString(), textAwayFromEdge, getYPosLHS(lineNumber));
+        sortedStats.clear();
+        stats.forEach(stat -> sortedStats.put(stat.getName(), stat.toString()));
+        for (String statString : sortedStats.values()) {
+            statsFont.draw(uiBatch, statString, textAwayFromEdge, getYPosLHS(lineNumber));
             lineNumber++;
         }
         return lineNumber;

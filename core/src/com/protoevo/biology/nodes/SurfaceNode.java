@@ -61,9 +61,6 @@ public class SurfaceNode implements Evolvable.Element, Serializable {
             }
         }
 
-        attachment = new AdhesionReceptor(this);
-        attachment.getConstructionProject().progress(attachment.getConstructionProject().getTimeToComplete());
-
         for (int i = 0; i < candidateAttachments.size(); i++) {
             NodeAttachment candidate = candidateAttachments.get(i);
             float signature = i / (float) candidateAttachments.size();
