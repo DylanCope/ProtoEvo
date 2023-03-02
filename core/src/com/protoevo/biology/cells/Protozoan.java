@@ -51,11 +51,14 @@ public class Protozoan extends Cell implements Evolvable
 		}
 		age(delta);
 
-		for (SurfaceNode node : surfaceNodes)
-			node.update(delta);
+		if (surfaceNodes != null)
+			for (SurfaceNode node : surfaceNodes)
+				node.update(delta);
 
-		for (Cell c : engulfedCells)
-			eat(c, delta);
+		for (Cell engulfedCell : engulfedCells) {
+			handleEngulfing(engulfedCell, delta);
+			eat(engulfedCell, ProtozoaSettings.engulfEatingRateMultiplier * delta);
+		}
 		engulfedCells.removeIf(this::removeEngulfedCondition);
 
 		if (shouldSplit() && hasNotBurst()) {
@@ -277,8 +280,6 @@ public class Protozoan extends Cell implements Evolvable
 	@Override
 	public void eat(Cell e, float delta)
 	{
-		handleEngulfing(e, delta);
-
 		float extraction = .5f;
 		if (e instanceof PlantCell) {
 			extraction *= getHerbivoreFactor();

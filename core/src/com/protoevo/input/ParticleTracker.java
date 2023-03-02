@@ -10,12 +10,9 @@ import com.protoevo.physics.Particle;
 import com.protoevo.ui.SimulationScreen;
 import com.protoevo.utils.Geometry;
 
-import java.util.Collection;
-
 public class ParticleTracker extends InputAdapter {
 
     private final SimulationScreen simulationScreen;
-    private final Collection<? extends Particle> entities;
     private final OrthographicCamera camera;
     private final PanZoomCameraInput panZoomCameraInput;
     private Particle trackedParticle;
@@ -24,7 +21,6 @@ public class ParticleTracker extends InputAdapter {
     public ParticleTracker(SimulationScreen screen,
                            PanZoomCameraInput panZoomCameraInput) {
         this.simulationScreen = screen;
-        this.entities = screen.getEnvironment().getParticles();
         this.camera = screen.getCamera();
         this.panZoomCameraInput = panZoomCameraInput;
     }
@@ -41,14 +37,12 @@ public class ParticleTracker extends InputAdapter {
         if (!canTrack)
             return false;
 
-        synchronized (entities) {
-            for (Particle particle : entities) {
-                if (Geometry.isPointInsideCircle(particle.getPos(), particle.getRadius(), touchPos)) {
-                    trackedParticle = particle;
-                    panZoomCameraInput.setPanningDisabled(true);
-                    simulationScreen.pollStats();
-                    return true;
-                }
+        for (Particle particle : simulationScreen.getEnvironment().getParticles()) {
+            if (Geometry.isPointInsideCircle(particle.getPos(), particle.getRadius(), touchPos)) {
+                trackedParticle = particle;
+                panZoomCameraInput.setPanningDisabled(true);
+                simulationScreen.pollStats();
+                return true;
             }
         }
         return false;

@@ -4,6 +4,7 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.*;
 import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector3;
@@ -17,10 +18,13 @@ import com.protoevo.physics.SpatialHash;
 import com.protoevo.env.*;
 import com.protoevo.input.ParticleTracker;
 import com.protoevo.physics.CollisionHandler;
+import com.protoevo.settings.WorldGenerationSettings;
 import com.protoevo.ui.SimulationInputManager;
+import com.protoevo.ui.UIStyle;
 import com.protoevo.ui.shaders.ShaderLayers;
 import com.protoevo.utils.DebugMode;
 import com.protoevo.utils.Utils;
+import space.earlygrey.shapedrawer.ShapeDrawer;
 
 import java.util.Collection;
 import java.util.HashMap;
@@ -29,12 +33,13 @@ import static com.protoevo.utils.Utils.lerp;
 
 public class EnvironmentRenderer implements Renderer {
     public static Color backgroundColor = new Color(0, 0.1f, 0.2f, 1);
-    private final Box2DDebugRenderer debugRenderer;
+    private final Box2DDebugRenderer physicsDebugRenderer;
     private final SpriteBatch batch;
     private final Texture particleTexture;
     private final HashMap<Protozoan, ProtozoaRenderer> protozoaRenderers = new HashMap<>();
     private final Sprite jointSprite;
-    private final ShapeRenderer shapeRenderer;
+    private final ShapeRenderer debugRenderer;
+    private final ShapeDrawer shapeDrawer;
     private final Environment environment;
     private final OrthographicCamera camera;
     private final Simulation simulation;
@@ -55,14 +60,16 @@ public class EnvironmentRenderer implements Renderer {
         this.inputManager = inputManager;
         environment = simulation.getEnv();
 
-        debugRenderer = new Box2DDebugRenderer();
+        physicsDebugRenderer = new Box2DDebugRenderer();
         batch = new SpriteBatch();
         particleTexture = CellTexture.getTexture();
 
+        shapeDrawer = new ShapeDrawer(batch, new TextureRegion(UIStyle.getWhite1x1()));
+
         jointSprite = loadSprite("cell/binding_base_128x128.png");
 
-        shapeRenderer = new ShapeRenderer();
-        shapeRenderer.setAutoShapeType(true);
+        debugRenderer = new ShapeRenderer();
+        debugRenderer.setAutoShapeType(true);
 
         if (environment.getChemicalSolution() != null)
             chemicalsRenderer = new ShaderLayers(
@@ -120,21 +127,15 @@ public class EnvironmentRenderer implements Renderer {
                     .filter(p -> !circleNotVisible(p.getPos(), p.getRadius()))
                     .iterator()
                     .forEachRemaining(p -> drawParticle(delta, p));
+
+            renderRocks();
+
             batch.end();
 
             protozoaRenderers.entrySet()
                     .removeIf(entry -> entry.getValue().isStale());
 
             // Render rocks
-            shapeRenderer.setProjectionMatrix(camera.combined);
-            shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
-            for (Rock rock : environment.getRocks()) {
-                shapeRenderer.setColor(rock.getColor());
-                Vector2[] ps = rock.getPoints();
-                shapeRenderer.triangle(ps[0].x, ps[0].y, ps[1].x, ps[1].y, ps[2].x, ps[2].y);
-            }
-            shapeRenderer.end();
-
             if (DebugMode.isInteractionInfo())
                 renderInteractionDebug();
             if (DebugMode.isDebugModePhysicsDebug())
@@ -142,11 +143,46 @@ public class EnvironmentRenderer implements Renderer {
         }
     }
 
+    public void renderRocks() {
+        shapeDrawer.update();
+        for (Rock rock : environment.getRocks()) {
+            shapeDrawer.setColor(rock.getColor());
+            Vector2[] ps = rock.getPoints();
+            shapeDrawer.filledTriangle(ps[0].x, ps[0].y, ps[1].x, ps[1].y, ps[2].x, ps[2].y);
+
+            Color rockColor = rock.getColor();
+            float k = 0.8f;
+            shapeDrawer.setColor(rockColor.r * k, rockColor.g * k, rockColor.b * k, rockColor.a);
+            for (int i = 0; i < rock.getEdges().length; i++) {
+                if (rock.isEdgeAttached(i))
+                    continue;
+                Vector2[] edge = rock.getEdge(i);
+                float w = 0.05f * WorldGenerationSettings.maxRockSize;
+                Vector2 dir = edge[1].cpy().sub(edge[0]).setLength(w / 2f);
+                Vector2 start = edge[0].cpy().sub(dir);
+                Vector2 end = edge[1].cpy().add(dir);
+                shapeDrawer.line(start, end, w);
+            }
+        }
+
+//        g.setStroke(new BasicStroke(toRenderSpace(0.02f * Settings.maxRockSize)));
+////			g.drawPolygon(xPoints, yPoints, screenPoints.length);
+//        for (int i = 0; i < rock.getEdges().length; i++) {
+//            if (rock.isEdgeAttached(i))
+//                continue;
+//            Vector2[] edge = rock.getEdge(i);
+//            Vector2 start = toRenderSpace(edge[0]);
+//            Vector2 end = toRenderSpace(edge[1]);
+//            g.drawLine((int) start.getX(), (int) start.getY(),
+//                    (int) end.getX(), (int) end.getY());
+//        }
+    }
+
     public void renderPhysicsDebug() {
-        debugRenderer.render(simulation.getEnv().getWorld(), camera.combined);
-        shapeRenderer.begin();
-        shapeRenderer.setColor(Color.GOLD);
-        shapeRenderer.set(ShapeRenderer.ShapeType.Line);
+        physicsDebugRenderer.render(simulation.getEnv().getWorld(), camera.combined);
+        debugRenderer.begin();
+        debugRenderer.setColor(Color.GOLD);
+        debugRenderer.set(ShapeRenderer.ShapeType.Line);
 
         SpatialHash<Cell> spatialHash = simulation.getEnv().getSpatialHash(Protozoan.class);
         float size = spatialHash.getChunkSize();
@@ -156,22 +192,22 @@ public class EnvironmentRenderer implements Renderer {
                 float y = spatialHash.getOriginY() + j * size;
                 if (boxNotVisible(x, y, size, size))
                     continue;
-                shapeRenderer.box(x, y, 0, size, size, 0);
+                debugRenderer.box(x, y, 0, size, size, 0);
             }
         }
-        shapeRenderer.end();
+        debugRenderer.end();
     }
 
     public void renderInteractionDebug() {
-        shapeRenderer.begin();
+        debugRenderer.begin();
         ParticleTracker particleTracker = inputManager.getParticleTracker();
 
         if (particleTracker.isTracking()) {
             Particle particle = particleTracker.getTrackedParticle();
-            shapeRenderer.setColor(0, 1, 0, 1);
+            debugRenderer.setColor(0, 1, 0, 1);
 
             float maxDistance = particle.getInteractionRange();
-            shapeRenderer.box(
+            debugRenderer.box(
                     particle.getPos().x - maxDistance,
                     particle.getPos().y - maxDistance, 0,
                     2*maxDistance, 2*maxDistance, 0);
@@ -181,14 +217,14 @@ public class EnvironmentRenderer implements Renderer {
                 if (other instanceof Particle) {
                     Vector2 otherPos = ((Particle) other).getPos();
                     float otherR = ((Particle) other).getRadius();
-                    shapeRenderer.setColor(1, 0, 0, 1);
-                    shapeRenderer.circle(otherPos.x, otherPos.y, otherR);
+                    debugRenderer.setColor(1, 0, 0, 1);
+                    debugRenderer.circle(otherPos.x, otherPos.y, otherR);
                 }
             }
 
             if (particle instanceof Cell) {
                 Cell cell = (Cell) particle;
-                shapeRenderer.setColor(0, 0, 1, 1);
+                debugRenderer.setColor(0, 0, 1, 1);
                 for (Long otherId : cell.getAttachedCellIDs()) {
                     Cell other = cell.getCell(otherId);
                     if (other == null)
@@ -196,17 +232,17 @@ public class EnvironmentRenderer implements Renderer {
 
                     Vector2 otherPos = other.getPos();
                     float otherR = other.getRadius();
-                    shapeRenderer.setColor(Color.ORANGE);
-                    shapeRenderer.circle(otherPos.x, otherPos.y, otherR);
+                    debugRenderer.setColor(Color.ORANGE);
+                    debugRenderer.circle(otherPos.x, otherPos.y, otherR);
                 }
                 if (cell instanceof Protozoan && protozoaRenderers.containsKey((Protozoan) cell)) {
                     Protozoan protozoan = (Protozoan) cell;
                     ProtozoaRenderer protozoaRenderer = protozoaRenderers.get(protozoan);
-                    protozoaRenderer.renderDebug(shapeRenderer);
+                    protozoaRenderer.renderDebug(debugRenderer);
                 }
             }
         }
-        shapeRenderer.end();
+        debugRenderer.end();
     }
 
     private final Vector3 tmpWorldCoordinate = new Vector3();
@@ -267,8 +303,8 @@ public class EnvironmentRenderer implements Renderer {
         FlagellumRenderer.disposeAnimation();
         batch.dispose();
         particleTexture.dispose();
+        physicsDebugRenderer.dispose();
         debugRenderer.dispose();
-        shapeRenderer.dispose();
         chemicalsRenderer.dispose();
     }
 }

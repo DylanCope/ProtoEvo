@@ -238,5 +238,6 @@ public class NetworkRenderer extends InputAdapter implements Renderer {
     @Override
     public void dispose() {
         font.dispose();
+        shapeRenderer.getRegion().getTexture().dispose();
     }
 }

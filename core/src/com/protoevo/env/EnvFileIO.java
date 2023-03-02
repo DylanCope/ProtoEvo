@@ -132,7 +132,7 @@ public class EnvFileIO {
 
     public static Environment reloadEnvironment(String filename) {
         Environment env = deserialize(filename + "/environment.dat", Environment.class);
-        env.recreateTransientObjects();
+        env.createTransientObjects();
 
         Path chunksDir = Paths.get(filename + "/chunks");
         List<Cell> cells = new ArrayList<>();

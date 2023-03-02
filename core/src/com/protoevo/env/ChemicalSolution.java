@@ -158,10 +158,9 @@ public class ChemicalSolution implements Serializable {
 
         if (e.isEdible() && !e.isDead()) {
             Colour cellColour = e.getColour();
-            float h = e.getHealth();
             depositCircle(
                     e.getPos(), e.getRadius(),
-                    h * cellColour.r, h * cellColour.g, h * cellColour.b, 1);
+                    cellColour.r, cellColour.g, cellColour.b, 1f);
         }
         else if (e instanceof Protozoan) {
             protozoanIO(delta, (Protozoan) e);

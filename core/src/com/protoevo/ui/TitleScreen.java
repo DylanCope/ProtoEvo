@@ -10,7 +10,6 @@ import com.badlogic.gdx.utils.ScreenUtils;
 import com.protoevo.core.Simulation;
 import com.protoevo.ui.rendering.EnvironmentRenderer;
 
-import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -38,11 +37,16 @@ public class TitleScreen extends ScreenAdapter {
 
         title = new Label("ProtoEvo", graphics.getSkin(), "mainTitle");
         paddingLabel = new Label("", graphics.getSkin());
+    }
+
+    private void createButtons() {
+
+        buttons.clear();
 
         TextButton newSimulationButton = new TextButton("New Simulation", graphics.getSkin());
         newSimulationButton.addListener(e -> {
             if (e.toString().equals("touchDown"))
-                graphics.moveToSimulationScreen(new Simulation());
+                graphics.loadSimulation(new Simulation());
             return true;
         });
         buttons.add(newSimulationButton);
@@ -56,14 +60,14 @@ public class TitleScreen extends ScreenAdapter {
 //        buttons.add(sandboxButton);
 
         try (Stream<Path> paths = Files.list(Paths.get("saves"))) {
-                paths.map(dir -> dir.getName(dir.getNameCount() - 1).toString())
+            paths.map(dir -> dir.getName(dir.getNameCount() - 1).toString())
                     .sorted(Comparator.comparingLong(s -> -getMostRecentSaveModifiedTime(s)))
                     .limit(5)
                     .forEach(saveName -> {
                         TextButton button = new TextButton("Load " + saveName, graphics.getSkin());
                         button.addListener(e -> {
                             if (e.toString().equals("touchDown"))
-                                graphics.moveToSimulationScreen(new Simulation(saveName));
+                                graphics.loadSimulation(new Simulation(saveName));
                             return true;
                         });
                         buttons.add(button);
@@ -115,6 +119,7 @@ public class TitleScreen extends ScreenAdapter {
 
     @Override
     public void show() {
+        createButtons();
         Gdx.input.setInputProcessor(stage);
     }
 

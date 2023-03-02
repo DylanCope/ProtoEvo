@@ -58,9 +58,8 @@ public class SimulationScreen extends ScreenAdapter {
     private final int infoTextSize, textAwayFromEdge;
     private final NetworkRenderer networkRenderer;
     private final MouseOverNeuronCallback mouseOverNeuronCallback;
-    private final float noRenderPollStatsTime = 2f;
-    private float elapsedTime = 0, pollStatsCounter = 0, countDownToRender = 0;
-    private float graphicsStatsYOffset = 0;
+    private final static float pollStatsInterval = .02f;
+    private float elapsedTime = 0, pollStatsCounter = 0;
     private final Statistics stats = new Statistics();
     private final TreeMap<String, String> sortedStats = new TreeMap<>();
     private Callable<Statistics> getStats;
@@ -74,16 +73,16 @@ public class SimulationScreen extends ScreenAdapter {
     private final SelectBox<String> statsSelectBox;
     private final float graphicsHeight;
     private final float graphicsWidth;
-    private boolean uiHidden = false, renderingEnabled = false, simLoaded = false;
+    private boolean uiHidden = false;
+
 
     public SimulationScreen(GraphicsAdapter graphics, Simulation simulation) {
         this.graphics = graphics;
         this.simulation = simulation;
-        this.environment = simulation.getEnv();
+        environment = simulation.getEnv();
+        getStats = environment::getStats;
 
         CursorUtils.setDefaultCursor();
-
-        getStats = simulation.getEnv()::getStats;
 
         graphicsHeight = Gdx.graphics.getHeight();
         graphicsWidth = Gdx.graphics.getWidth();
@@ -98,30 +97,36 @@ public class SimulationScreen extends ScreenAdapter {
         stage = new Stage();
         uiBatch = new SpriteBatch();
 
-        Skin skin = graphics.getSkin();
-
         stage.getRoot().addCaptureListener(event -> {
             if (stage.getKeyboardFocus() instanceof TextField
                     && !(event.getTarget() instanceof TextField))
                 stage.setKeyboardFocus(null);
             return false;
         });
-
         infoTextSize = (int) (graphicsHeight / 50f);
         textAwayFromEdge = (int) (graphicsWidth / 60);
 
         font = UIStyle.createFiraCode(infoTextSize);
+
+        Skin skin = graphics.getSkin();
         debugFont = skin.getFont("debug");
 
         statsTitle = skin.getFont("statsTitle");
 
         topBar = new TopBar(stage, font.getLineHeight());
+
         inputManager = new SimulationInputManager(this);
+        renderer = new ShaderLayers(
+                new EnvironmentRenderer(camera, simulation, inputManager),
+                new ShockWaveLayer(camera),
+                new VignetteLayer(camera, inputManager.getParticleTracker())
+        );
+
 
         saveTrackedParticleTextField = new TextField("", skin);
         stage.addActor(saveTrackedParticleTextField);
         saveTrackedParticleTextField.setVisible(false);
-        saveTrackedParticleTextField.setMessageText("Save as...");
+        saveTrackedParticleTextField.setMessageText("Save cell as...");
 
         saveTrackedParticleButton = createImageButton(
                 "icons/save.png", topBar.getButtonSize(), topBar.getButtonSize(), event -> {
@@ -139,31 +144,70 @@ public class SimulationScreen extends ScreenAdapter {
         statsSelectBox.setHeight(statsSelectBox.getStyle().font.getLineHeight());
         setEnvStatOptions();
 
-        renderer = new ShaderLayers(
-                new EnvironmentRenderer(camera, simulation, inputManager),
-                new ShockWaveLayer(camera),
-                new VignetteLayer(camera, inputManager.getParticleTracker())
-        );
-
         float boxWidth = (graphicsWidth / 2.0f - 1.2f * graphicsHeight * .4f);
         float boxHeight = 3 * graphicsHeight / 4;
         float boxXStart = graphicsWidth - boxWidth * 1.1f;
         float boxYStart = (graphicsHeight - boxHeight) / 2;
         mouseOverNeuronCallback = new MouseOverNeuronCallback(font);
+
         networkRenderer = new NetworkRenderer(
                 simulation, this, uiBatch, mouseOverNeuronCallback,
                 boxXStart, boxYStart, boxWidth, boxHeight, infoTextSize);
     }
 
     @Override
+    public void render(float delta) {
+        ScreenUtils.clear(EnvironmentRenderer.backgroundColor);
+
+        simulation.update();
+
+        elapsedTime += delta;
+
+        camera.update();
+
+        ParticleTracker particleTracker = inputManager.getParticleTracker();
+        if (particleTracker.isTracking()) {
+            if (particleTracker.getTrackedParticle().isDead())
+                particleTracker.untrack();
+            else
+                camera.position.set(particleTracker.getTrackedParticlePosition());
+        }
+
+        renderer.render(delta);
+
+        if (uiHidden)
+            return;
+
+        topBar.draw(delta);
+
+        uiBatch.begin();
+
+        pollStatsCounter += delta;
+        if (pollStatsCounter > pollStatsInterval) {
+            pollStatsCounter = 0;
+            pollStats();
+        }
+
+        handleNetworkRenderer(delta);
+
+        renderStats();
+
+        if (DebugMode.isDebugMode())
+            drawDebugInfo();
+
+        uiBatch.end();
+
+        stage.act(delta);
+        stage.draw();
+    }
+
+    @Override
     public void show() {
-        super.show();
         inputManager.registerAsInputProcessor();
     }
 
     @Override
     public void hide() {
-        super.hide();
         Gdx.input.setInputProcessor(null);
     }
 
@@ -237,7 +281,7 @@ public class SimulationScreen extends ScreenAdapter {
     }
 
     public float getYPosLHS(int i) {
-        return graphicsHeight - (1.3f*infoTextSize*i + 3 * graphicsHeight / 20f) - graphicsStatsYOffset;
+        return graphicsHeight - (1.3f*infoTextSize*i + 3 * graphicsHeight / 20f);
     }
 
     public float getYPosRHS(int i) {
@@ -340,7 +384,7 @@ public class SimulationScreen extends ScreenAdapter {
             getStats = statGetters.get(statsSelectBox.getSelected());
 
         ParticleTracker particleTracker = inputManager.getParticleTracker();
-        if (renderingEnabled && particleTracker.isTracking()) {
+        if (particleTracker.isTracking()) {
             Particle particle = particleTracker.getTrackedParticle();
 
             if ((trackedParticle != particle)) {
@@ -367,90 +411,9 @@ public class SimulationScreen extends ScreenAdapter {
         renderStats(stats);
     }
 
-    public void loadingString(String text) {
-        uiBatch.begin();
-        float x = 4 * topBar.getPadding() + topBar.getHeight();
-        StringBuilder textWithDots = new StringBuilder(text);
-        for (int i = 0; i < Math.max(0, (int) (elapsedTime * 2) % 4); i++)
-            textWithDots.append(".");
-
-        font.draw(uiBatch, textWithDots.toString(), x, x);
-        uiBatch.end();
-    }
-
-    @Override
-    public void render(float delta) {
-        ScreenUtils.clear(EnvironmentRenderer.backgroundColor);
-
-        if (simLoaded)
-            simulation.update();
-
-        elapsedTime += delta;
-
-        if (countDownToRender > 0) {
-            loadingString("Enabling Renderer");
-            simulation.update();
-            countDownToRender -= delta;
-            if (countDownToRender <= 0) {
-                renderingEnabled = true;
-                simLoaded = true;
-            }
-        }
-
-        camera.update();
-
-        ParticleTracker particleTracker = inputManager.getParticleTracker();
-        if (simLoaded && particleTracker.isTracking()) {
-            if (particleTracker.getTrackedParticle().isDead())
-                particleTracker.untrack();
-            else
-                camera.position.set(particleTracker.getTrackedParticlePosition());
-        }
-
-        if (simLoaded && renderingEnabled)
-            renderer.render(delta);
-
-        if (uiHidden)
-            return;
-
-        if (!simLoaded && countDownToRender <= 0) {
-            loadingString("Loading Simulation");
-            return;
-        }
-        else if (!renderingEnabled && countDownToRender <= 0) {
-            loadingString("Accelerating Simulation");
-        }
-
-        topBar.draw(delta);
-
-        uiBatch.begin();
-
-        if (!renderingEnabled) {
-            pollStatsCounter += delta;
-            if (pollStatsCounter > noRenderPollStatsTime) {
-                pollStatsCounter = 0;
-                pollStats();
-            }
-        } else {
-            pollStats();
-        }
-
-        handleNetworkRenderer(delta);
-
-        renderStats();
-
-        if (renderingEnabled && DebugMode.isDebugMode())
-            drawDebugInfo();
-
-        uiBatch.end();
-
-        stage.act(delta);
-        stage.draw();
-    }
-
     private void handleNetworkRenderer(float delta) {
         ParticleTracker particleTracker = inputManager.getParticleTracker();
-        if (renderingEnabled && particleTracker.isTracking()) {
+        if (particleTracker.isTracking()) {
             Particle particle = particleTracker.getTrackedParticle();
             if (particle instanceof Protozoan) {
                 Protozoan protozoan = (Protozoan) particle;
@@ -466,17 +429,17 @@ public class SimulationScreen extends ScreenAdapter {
 
     public void pollStats() {
         ParticleTracker particleTracker = inputManager.getParticleTracker();
-        try {
-            if (getStats == null)
-                getStats = simulation.getEnv()::getStats;
+        if (getStats == null)
+            return;
 
+        try {
             stats.clear();
             stats.putAll(getStats.call());
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
 
-        if (renderingEnabled && particleTracker.isTracking()) {
+        if (particleTracker.isTracking()) {
             Particle particle = particleTracker.getTrackedParticle();
             if (DebugMode.isDebugModePhysicsDebug()) {
                 debugStats.clear();
@@ -495,8 +458,6 @@ public class SimulationScreen extends ScreenAdapter {
         stage.dispose();
         uiBatch.dispose();
         font.dispose();
-//        statsTitle.dispose();
-//        debugFont.dispose();
         topBar.dispose();
         renderer.dispose();
         networkRenderer.dispose();
@@ -521,22 +482,8 @@ public class SimulationScreen extends ScreenAdapter {
         uiHidden = !uiHidden;
     }
 
-    public void toggleEnvironmentRendering() {
-        if (!renderingEnabled) {
-            countDownToRender = 3;
-            Gdx.graphics.setForegroundFPS(60);
-        } else {
-            renderingEnabled = false;
-            Gdx.graphics.setForegroundFPS(5);
-        }
-    }
-
     public boolean hasSimulationNotLoaded() {
-        return !simLoaded;
-    }
-
-    public synchronized void notifySimulationLoaded() {
-        countDownToRender = 3;
+        return environment == null;
     }
 
     public GraphicsAdapter getGraphics() {

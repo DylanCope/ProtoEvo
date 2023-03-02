@@ -7,6 +7,7 @@ import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector3;
 import com.protoevo.physics.Particle;
+import com.protoevo.ui.SimulationInputManager;
 import com.protoevo.ui.SimulationScreen;
 import com.protoevo.utils.CursorUtils;
 
@@ -15,7 +16,6 @@ import java.util.Collection;
 public class MoveParticle extends InputAdapter {
     private final SimulationScreen simulationScreen;
     private final OrthographicCamera camera;
-    private final Collection<? extends Particle> entities;
     private final MoveParticleButton moveParticleButton;
     private final ParticleTracker particleTracker;
     private Particle grabbedParticle;
@@ -25,12 +25,11 @@ public class MoveParticle extends InputAdapter {
     private boolean jediMode = true;
 
     public MoveParticle(SimulationScreen simulationScreen,
-                        MoveParticleButton moveParticleButton,
+                        SimulationInputManager inputManager,
                         ParticleTracker particleTracker) {
         this.simulationScreen = simulationScreen;
         this.camera = simulationScreen.getCamera();
-        this.entities = simulationScreen.getEnvironment().getParticles();
-        this.moveParticleButton = moveParticleButton;
+        this.moveParticleButton = inputManager.getMoveParticleButton();
         this.particleTracker = particleTracker;
     }
 
@@ -64,16 +63,14 @@ public class MoveParticle extends InputAdapter {
     @Override
     public boolean touchDown(int screenX, int screenY, int pointer, int button) {
         if (Gdx.input.isButtonPressed(Input.Buttons.LEFT) && pickUpEnabled()) {
-            synchronized (entities) {
-                Vector3 worldSpace = camera.unproject(new Vector3(screenX, screenY, 0));
-                mouseVel.set(0, 0);
-                lastMousePos.set(worldSpace.x, worldSpace.y);
-                for (Particle particle : entities) {
-                    if (particle.getPos().dst(worldSpace.x, worldSpace.y) < particle.getRadius()) {
-                        grabbedParticle = particle;
-                        moveParticleButton.setState(MoveParticleButton.State.HOLDING);
-                        return true;
-                    }
+            Vector3 worldSpace = camera.unproject(new Vector3(screenX, screenY, 0));
+            mouseVel.set(0, 0);
+            lastMousePos.set(worldSpace.x, worldSpace.y);
+            for (Particle particle : simulationScreen.getEnvironment().getParticles()) {
+                if (particle.getPos().dst(worldSpace.x, worldSpace.y) < particle.getRadius()) {
+                    grabbedParticle = particle;
+                    moveParticleButton.setState(MoveParticleButton.State.HOLDING);
+                    return true;
                 }
             }
         }

@@ -424,7 +424,7 @@ public abstract class Cell extends Particle implements Serializable {
 				Statistics.ComplexUnit.PERCENTAGE_PER_TIME);
 
 		for (ComplexMolecule molecule : availableComplexMolecules.keySet())
-			if (availableComplexMolecules.get(molecule) > 0)
+			if (availableComplexMolecules.get(molecule) >= 1e-9)
 				stats.putMass(String.format("Molecule %.2f Available", molecule.getSignature()),
 						availableComplexMolecules.get(molecule));
 

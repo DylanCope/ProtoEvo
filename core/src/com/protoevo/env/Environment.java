@@ -15,14 +15,13 @@ import com.protoevo.biology.cells.Protozoan;
 import com.protoevo.biology.evolution.Evolvable;
 import com.protoevo.biology.nodes.SurfaceNode;
 import com.protoevo.biology.organelles.Organelle;
-import com.protoevo.physics.*;
-import com.protoevo.core.*;
+import com.protoevo.core.Statistics;
 import com.protoevo.physics.Shape;
+import com.protoevo.physics.*;
 import com.protoevo.settings.Settings;
 import com.protoevo.settings.SimulationSettings;
 import com.protoevo.settings.WorldGenerationSettings;
 import com.protoevo.utils.Colour;
-import com.protoevo.utils.FileIO;
 import com.protoevo.utils.Geometry;
 import com.protoevo.utils.SerializableFunction;
 
@@ -31,7 +30,6 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Function;
 
 
 public class Environment implements Serializable
@@ -44,7 +42,7 @@ public class Environment implements Serializable
 	public final ConcurrentHashMap<CauseOfDeath, Integer> causeOfDeathCounts =
 			new ConcurrentHashMap<>(CauseOfDeath.values().length, 1);
 
-	private Chunks chunks = new Chunks();
+	private final Chunks chunks = new Chunks();
 
 	private Map<Class<? extends Particle>, SerializableFunction<Float, Vector2>> spawnPositionFns;
 
@@ -60,15 +58,11 @@ public class Environment implements Serializable
 	}
 	private long crossoverEvents = 0;
 
-	private String genomeFile = null;
-	@JsonIgnore
-	private final List<String> genomesToWrite = new ArrayList<>();
 	@JsonIgnore
 	private transient Set<Cell> cellsToAdd;
 	private transient ConcurrentHashMap<Long, Cell> cells;
 	private boolean hasInitialised, hasStarted;
 	private Vector2[] populationStartCentres;
-
 	private final JointsManager jointsManager;
 	@JsonIgnore
 	private final ConcurrentLinkedQueue<BurstRequest<? extends Cell>> burstRequests = new ConcurrentLinkedQueue<>();
@@ -76,7 +70,7 @@ public class Environment implements Serializable
 	public Environment()
 	{
 		hasStarted = false;
-		recreateTransientObjects();
+		createTransientObjects();
 		buildWorld();
 		jointsManager = new JointsManager(this);
 
@@ -92,7 +86,7 @@ public class Environment implements Serializable
 		hasInitialised = false;
 	}
 
-	public void recreateTransientObjects() {
+	public void createTransientObjects() {
 		cellsToAdd = new HashSet<>();
 		cells = new ConcurrentHashMap<>();
 		chunks.initialise();
@@ -192,43 +186,15 @@ public class Environment implements Serializable
 		System.out.println("Commencing world generation... ");
 		createRocks();
 
-		// random shuffle population start centres
-//		List<Vector2> populationStartCentresList = Arrays.asList(populationStartCentres);
-//		Collections.shuffle(populationStartCentresList);
-//		populationStartCentres = populationStartCentresList.toArray(new Vector2[0]);
-
-//		if (populationStartCentres.length > 0)
-//			initialisePopulation(Arrays.copyOfRange(
-//					populationStartCentres, 0, WorldGenerationSettings.numPopulationClusters));
-//		else
 		initialisePopulation();
 
 		flushEntitiesToAdd();
-
-		if (Settings.writeGenomes && genomeFile != null)
-			writeGenomeHeaders();
 
 		if (chemicalSolution != null)
 			chemicalSolution.initialise();
 
 		hasInitialised = true;
 		System.out.println("Environment initialisation complete.");
-	}
-
-	public void writeGenomeHeaders() {
-//		Protozoan protozoan = chunkManager.getAllCells()
-//				.stream()
-//				.filter(cell -> cell instanceof Protozoan)
-//				.map(cell -> (Protozoan) cell)
-//				.findAny()
-//				.orElseThrow(() -> new RuntimeException("No initial population present"));
-//
-//		StringBuilder headerStr = new StringBuilder();
-//		headerStr.append("Generation,Time Elapsed,Parent 1 ID,Parent 2 ID,ID,");
-////		for (Gene<?> gene : protozoan.getGenome().getGenes())
-////			headerStr.append(gene.getTraitName()).append(",");
-//
-//		FileIO.appendLine(genomeFile, headerStr.toString());
 	}
 
 	public boolean hasBeenInitialised() {
@@ -354,15 +320,6 @@ public class Environment implements Serializable
 		cellsToAdd.clear();
 	}
 
-	private void flushWrites() {
-		List<String> genomeWritesHandled = new ArrayList<>();
-		for (String line : genomesToWrite) {
-			FileIO.appendLine(genomeFile, line);
-			genomeWritesHandled.add(line);
-		}
-		genomesToWrite.removeAll(genomeWritesHandled);
-	}
-
 	public int getCount(Class<? extends Cell> cellClass) {
 		return chunks.getLocalCount(cellClass);
 	}
@@ -381,29 +338,25 @@ public class Environment implements Serializable
 		e.dispose();
 	}
 
-	private final Colour meatColourDeposit = new Colour(Color.FIREBRICK);
-	private final Colour plantColourDeposit = new Colour(Color.FOREST);
+//	private final Colour meatColourDeposit = new Colour(Color.FIREBRICK);
+//	private final Colour plantColourDeposit = new Colour(Color.FOREST);
 
 	public void depositOnDeath(Cell cell) {
 		if (Settings.enableChemicalField) {
 			if (!cell.isEngulfed() && cell.hasNotBurst()) {
-				if (cell instanceof Protozoan || cell instanceof MeatCell)
-					chemicalSolution.depositCircle(
-							cell.getPos(), cell.getRadius() * 1.5f,
-							meatColourDeposit.cpy().mul(0.25f + 0.75f * cell.getHealth()));
-				else if (cell instanceof PlantCell)
-					chemicalSolution.depositCircle(
-							cell.getPos(), cell.getRadius() * 1.5f,
-							plantColourDeposit.cpy().mul(0.25f + 0.75f * cell.getHealth()));
+				chemicalSolution.depositCircle(
+						cell.getPos(), cell.getRadius() * 1.25f,
+						cell.getColour());
+//				if (cell instanceof Protozoan || cell instanceof MeatCell)
+//					chemicalSolution.depositCircle(
+//							cell.getPos(), cell.getRadius() * 1.5f,
+//							meatColourDeposit.cpy().mul(0.25f + 0.75f * cell.getHealth()));
+//				else if (cell instanceof PlantCell)
+//					chemicalSolution.depositCircle(
+//							cell.getPos(), cell.getRadius() * 1.5f,
+//							plantColourDeposit.cpy().mul(0.25f + 0.75f * cell.getHealth()));
 			}
 		}
-	}
-
-	private void handleNewProtozoa(Protozoan p) {
-//		if (genomeFile != null && Settings.writeGenomes) {
-//			String genomeLine = p.getGeneration() + "," + elapsedTime + "," + p.getGenome().toString();
-//			genomesToWrite.add(genomeLine);
-//		}
 	}
 
 	public int getLocalCount(Particle cell) {
@@ -492,7 +445,8 @@ public class Environment implements Serializable
 		return debugStats;
 	}
 
-	public Statistics getProtozoaSummaryStats(boolean computeLogStats, boolean removeMoleculeStats, boolean allStats) {
+	public Statistics getProtozoaSummaryStats(
+			boolean computeLogStats, boolean removeMoleculeStats, boolean allStats) {
 		Iterator<Statistics> protozoaStats = getCells().stream()
 				.filter(cell -> cell instanceof Protozoan)
 				.map(p -> {
@@ -546,10 +500,6 @@ public class Environment implements Serializable
 		return elapsedTime;
 	}
 
-	public void setGenomeFile(String genomeFile) {
-		this.genomeFile = genomeFile;
-	}
-
 	public ChemicalSolution getChemicalSolution() {
 		return chemicalSolution;
 	}
@@ -597,11 +547,14 @@ public class Environment implements Serializable
 		if (burstRequests.stream().anyMatch(request -> request.parentEquals(parent)))
 			return;
 
-		BurstRequest<T> request = new BurstRequest<>(parent, cellType, createChild, overrideMinParticleSize);
+		BurstRequest<T> request = new BurstRequest<>(
+				parent, cellType, createChild, overrideMinParticleSize);
 		burstRequests.add(request);
 	}
 
-	public <T extends Cell> void requestBurst(Cell parent, Class<T> cellType, SerializableFunction<Float, T> createChild) {
+	public <T extends Cell> void requestBurst(Cell parent,
+											  Class<T> cellType,
+											  SerializableFunction<Float, T> createChild) {
 		requestBurst(parent, cellType, createChild, false);
 	}
 

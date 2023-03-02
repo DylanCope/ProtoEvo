@@ -56,7 +56,7 @@
 	mul.f32 	%f52, %f51, %f51;
 	fma.rn.f32 	%f1, %f49, %f49, %f52;
 	setp.leu.f32 	%p10, %f1, 0f44364000;
-	mov.f32 	%f126, 0f3F733333;
+	mov.f32 	%f126, 0f3F7EB852;
 	@%p10 bra 	$L__BB0_2;
 
 	sqrt.rn.f32 	%f53, %f1;

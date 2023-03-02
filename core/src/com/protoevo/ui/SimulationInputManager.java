@@ -41,6 +41,13 @@ public class SimulationInputManager {
         });
         topBar.addRight(closeButton);
 
+        ImageButton backButton = createBarImageButton("icons/back.png", event -> {
+            graphics.moveToTitleScreen(simulationScreen);
+            simulation.save();
+            return true;
+        });
+        topBar.addRight(backButton);
+
         ImageButton pauseButton = createBarImageButton("icons/play_pause.png", event -> {
             simulation.togglePause();
             return true;
@@ -86,7 +93,7 @@ public class SimulationInputManager {
         moveParticleButton.setPosition(pos.x, pos.y);
 
         SpawnParticleInput spawnParticleInput = new SpawnParticleInput(simulationScreen);
-        MoveParticle moveParticle = new MoveParticle(simulationScreen, moveParticleButton, particleTracker);
+        MoveParticle moveParticle = new MoveParticle(simulationScreen, this, particleTracker);
         CursorUpdater cursorUpdater = new CursorUpdater(simulationScreen, this);
 
 //        ImageButton jediButton = simulationScreen.createBarImageButton("icons/jedi_on.png", event -> {

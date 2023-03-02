@@ -1,6 +1,8 @@
 package com.protoevo.ui;
 
 import com.badlogic.gdx.Game;
+import com.badlogic.gdx.Screen;
+import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.scenes.scene2d.ui.Skin;
 import com.protoevo.core.ApplicationManager;
 import com.protoevo.core.Simulation;
@@ -8,8 +10,10 @@ import com.protoevo.core.Simulation;
 public class GraphicsAdapter extends Game {
 	private final ApplicationManager applicationManager;
 	private SimulationScreen simulationScreen;
+	private LoadingScreen loadingScreen;
 	private SandboxScreen sandboxScreen;
 	private TitleScreen titleScreen;
+	private SpriteBatch batch;
 	private Skin skin;
 
 	public GraphicsAdapter(ApplicationManager applicationManager) {
@@ -18,12 +22,13 @@ public class GraphicsAdapter extends Game {
 
 	@Override
 	public void create() {
+		batch = new SpriteBatch();
+
+		loadingScreen = new LoadingScreen(this, applicationManager);
+
 		skin = UIStyle.getUISkin();
 		if (applicationManager.hasSimulation()) {
-			simulationScreen = new SimulationScreen(this, applicationManager.getSimulation());
-			if (applicationManager.getSimulation().isReady())
-				simulationScreen.notifySimulationLoaded();
-			setScreen(simulationScreen);
+			loadSimulation(applicationManager.getSimulation());
 		}
 		else {
 			titleScreen = new TitleScreen(this);
@@ -32,8 +37,7 @@ public class GraphicsAdapter extends Game {
 	}
 
 	public void notifySimulationReady() {
-		if (simulationScreen != null)
-			simulationScreen.notifySimulationLoaded();
+		loadingScreen.notifySimulationReady();
 	}
 
 	public SimulationScreen getSimulationScreen() {
@@ -51,6 +55,7 @@ public class GraphicsAdapter extends Game {
 	@Override
 	public void dispose() {
 		super.dispose();
+		batch.dispose();
 		if (skin != null)
 			skin.dispose();
 		if (simulationScreen != null)
@@ -71,16 +76,23 @@ public class GraphicsAdapter extends Game {
 		setScreen(sandboxScreen);
 	}
 
-	public void moveToTitleScreen() {
+	public void moveToTitleScreen(Screen previousScreen) {
 		titleScreen = new TitleScreen(this);
 		setScreen(titleScreen);
+//		screen.dispose();
 	}
 
-	public void moveToSimulationScreen(Simulation simulation) {
+	public void loadSimulation(Simulation simulation) {
+		setScreen(loadingScreen);
 		applicationManager.setSimulation(simulation);
+	}
+
+	public void setSimulationScreen() {
 		simulationScreen = new SimulationScreen(this, applicationManager.getSimulation());
-		if (applicationManager.getSimulation().isReady())
-			simulationScreen.notifySimulationLoaded();
 		setScreen(simulationScreen);
+	}
+
+	public SpriteBatch getSpriteBatch() {
+		return batch;
 	}
 }

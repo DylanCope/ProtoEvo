@@ -16,20 +16,22 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class Simulation implements Runnable
 {
-	private final Environment environment;
+	private Environment environment;
 	private ApplicationManager manager;
 	private volatile boolean simulate, saveRequested = false;
 	private static boolean paused = false;
 	private float timeDilation = 1, timeSinceSave = 0, timeSinceSnapshot = 0;
 	
 	public static Random RANDOM = new Random(SimulationSettings.simulationSeed);
-	private boolean debug = false, delayUpdate = true, initialised = false;
+	private boolean debug = false, initialised = false;
 
+	private final Supplier<Environment> environmentLoader;
 	private final String name;
 	private List<String> statsNames;
 	private final REPL repl = new REPL(this);
@@ -43,7 +45,7 @@ public class Simulation implements Runnable
 		RANDOM = new Random(seed);
 		simulate = true;
 		name = generateSimName();
-		environment = newDefaultEnv();
+		environmentLoader = this::newDefaultEnv;
 		loadSettings();
 	}
 
@@ -57,7 +59,7 @@ public class Simulation implements Runnable
 		simulate = true;
 		this.name = name;
 
-		environment = loadMostRecentEnv();
+		environmentLoader = this::loadMostRecentEnv;
 		loadSettings();
 	}
 
@@ -67,15 +69,11 @@ public class Simulation implements Runnable
 		simulate = true;
 		this.name = name;
 
-		environment = loadEnv("saves/" + name + "/env/" + save);
+		environmentLoader = () -> loadEnv("saves/" + name + "/env/" + save);
 		loadSettings();
 	}
 
-	private void loadSettings() {
-//		environment.cellCapacities.put(Protozoan.class, SimulationSettings.maxProtozoa);
-//		environment.cellCapacities.put(PlantCell.class, SimulationSettings.maxPlants);
-//		environment.cellCapacities.put(MeatCell.class, SimulationSettings.maxMeat);
-	}
+	private void loadSettings() {}
 
 	private void newSaveDir() {
 		try {
@@ -152,6 +150,7 @@ public class Simulation implements Runnable
 
 	public void prepare()
 	{
+		environment = environmentLoader.get();
 		if (!initialised) {
 			environment.initialise();
 			makeStatisticsSnapshot();

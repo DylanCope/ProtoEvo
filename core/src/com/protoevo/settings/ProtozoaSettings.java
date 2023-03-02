@@ -9,6 +9,7 @@ public class ProtozoaSettings {
     public static final float initialGenomeConnectivity = 0.5f;
     public static final float minHealthToSplit = 0.15f;
     public static final float engulfForce = 500f;
+    public static float engulfEatingRateMultiplier = 3f;
     public static final float maxProtozoanSplitRadius = maxProtozoanBirthRadius * 3f;
     public static final float minProtozoanSplitRadius = maxProtozoanBirthRadius * 1.2f;
     public static final float minProtozoanGrowthRate = 0;
