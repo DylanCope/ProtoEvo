@@ -43,4 +43,5 @@ public class SimulationSettings {
     public static double deleteNeuronMutationRate = 0.1;
     public static float chemicalExtractionFoodConversion = 3e-5f;
     public static float chemicalExtractionFactor = 100f;  // colour removed per unit time
+    public static double energyRequiredForGrowth = 1e4f;
 }

@@ -1,5 +1,6 @@
 package com.protoevo.biology.nn;
 
+import com.badlogic.gdx.math.MathUtils;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.protoevo.utils.SerializableFunction;
 import com.protoevo.utils.Utils;
@@ -15,6 +16,12 @@ public class ActivationFn implements Serializable, Function<Float, Float> {
     public static final ActivationFn TANH = new ActivationFn(z -> (float) Math.tanh(z), "Tanh");
     public static final ActivationFn STEP = new ActivationFn(z -> z > 0 ? 1f : 0f, "Step");
     public static final ActivationFn RELU = new ActivationFn(z -> z > 0 ? z : 0f, "ReLu");
+    public static final ActivationFn SIN = new ActivationFn(MathUtils::sin, "Sin");
+    public static final ActivationFn GAUSSIAN = new ActivationFn(z -> (float) Math.exp(-z*z), "Gaussian");
+
+    public static final ActivationFn[] activationFunctions = new ActivationFn[]{
+            SIGMOID, LINEAR, TANH, STEP, RELU, SIN, GAUSSIAN
+    };
 
     public static ActivationFn getOutputMapper(float min, float max) {
         return new ActivationFn(
@@ -33,10 +40,6 @@ public class ActivationFn implements Serializable, Function<Float, Float> {
     public static ActivationFn getBooleanInputMapper() {
         return new ActivationFn(z -> z > 0 ? 1f : -1f);
     }
-
-    public static ActivationFn[] activationFunctions = new ActivationFn[]{
-            SIGMOID, LINEAR, TANH, STEP, RELU
-    };
 
     @JsonIgnore
     private final SerializableFunction<Float, Float> function;

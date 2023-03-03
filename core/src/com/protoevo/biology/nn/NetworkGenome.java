@@ -446,8 +446,10 @@ public class NetworkGenome implements Serializable
 		int[] inputCounts = new int[neurons.length];
 		Arrays.fill(inputCounts, 0);
 
-		for (SynapseGene g : synapseGenes)
-			inputCounts[g.getOut().getId()]++;
+		for (SynapseGene g : synapseGenes) {
+			if (!g.isDisabled())
+				inputCounts[g.getOut().getId()]++;
+		}
 
 		for (int i = 0; i < hiddenNeuronGenes.length + outputNeuronGenes.length; i++) {
 			NeuronGene g;
@@ -466,6 +468,8 @@ public class NetworkGenome implements Serializable
 
 		Arrays.fill(inputCounts, 0);
 		for (SynapseGene g : synapseGenes) {
+			if (g.isDisabled())
+				continue;
 			int i = inputCounts[g.getOut().getId()]++;
 			neurons[g.getOut().getId()].getInputs()[i] = neurons[g.getIn().getId()];
 			neurons[g.getOut().getId()].getWeights()[i] = g.getWeight();

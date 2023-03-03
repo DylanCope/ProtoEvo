@@ -126,9 +126,6 @@ public class LoadSaveScreen extends ScreenAdapter {
             statsTable.row();
         }
 
-        scrollTable.add(statsTable).width(scrollWidth);
-        scrollTable.row();
-
         final String saveTimeStamp = path.getFileName().toString();
         TextButton loadButton = new TextButton("Load", skin);
         loadButton.addListener(new ClickListener() {
@@ -137,10 +134,12 @@ public class LoadSaveScreen extends ScreenAdapter {
                 graphics.loadSimulation(new Simulation(simulationName, saveTimeStamp));
             }
         });
-        loadButton.align(Align.right);
+        loadButton.align(Align.right).pad(loadButton.getHeight() / 5f);
+
+        scrollTable.add(statsTable).width(scrollWidth).padBottom(loadButton.getHeight() / 2f);
+        scrollTable.row();
 
         scrollTable.add(loadButton).padBottom(loadButton.getHeight());
-
         scrollTable.row();
     }
 

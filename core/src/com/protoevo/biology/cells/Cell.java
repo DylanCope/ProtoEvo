@@ -288,6 +288,7 @@ public abstract class Cell extends Particle implements Serializable {
 			return;
 
 		massChangeForGrowth = getMass(newR) - getMass(currR);
+		float energyForGrowth = (float) (massChangeForGrowth * SimulationSettings.energyRequiredForGrowth);
 
 		if (massChangeForGrowth > constructionMassAvailable) {
 			double dr2 = constructionMassAvailable / (Math.PI * getMassDensity());
@@ -295,10 +296,14 @@ public abstract class Cell extends Particle implements Serializable {
 			massChangeForGrowth = constructionMassAvailable;
 		}
 
-		if (newR > SimulationSettings.minParticleRadius && massChangeForGrowth <= constructionMassAvailable) {
+		if (newR > SimulationSettings.minParticleRadius
+				&& massChangeForGrowth <= constructionMassAvailable
+				&& energyForGrowth <= energyAvailable) {
 			setRadius(newR);
-			if (massChangeForGrowth > 0)
+			if (massChangeForGrowth > 0) {
 				depleteConstructionMass(massChangeForGrowth);
+				depleteEnergy(energyForGrowth);
+			}
 		}
 		if (newR < getMinRadius())
 			kill(CauseOfDeath.GREW_TOO_SMALL);

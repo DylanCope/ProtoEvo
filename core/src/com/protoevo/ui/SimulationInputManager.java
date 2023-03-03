@@ -35,18 +35,26 @@ public class SimulationInputManager {
         Simulation simulation = simulationScreen.getSimulation();
         GraphicsAdapter graphics = simulationScreen.getGraphics();
 
-        ImageButton closeButton = createBarImageButton("icons/x-button.png", event -> {
-            graphics.exitApplication();
+        topBar.createRightBarImageButton("icons/x-button.png", event -> {
+            simulation.onOtherThread(() -> {
+                simulation.save();
+                graphics.exitApplication();
+            });
             return true;
         });
-        topBar.addRight(closeButton);
 
-        ImageButton backButton = createBarImageButton("icons/back.png", event -> {
-            graphics.moveToTitleScreen(simulationScreen);
-            simulation.save();
+        topBar.createRightBarImageButton("icons/back.png", event -> {
+            simulation.onOtherThread(() -> {
+                simulation.save();
+                graphics.moveToTitleScreen(simulationScreen);
+            });
             return true;
         });
-        topBar.addRight(backButton);
+
+        topBar.createRightBarImageButton("icons/save.png", event -> {
+            simulation.onOtherThread(simulation::save);
+            return true;
+        });
 
         ImageButton pauseButton = createBarImageButton("icons/play_pause.png", event -> {
             simulation.togglePause();

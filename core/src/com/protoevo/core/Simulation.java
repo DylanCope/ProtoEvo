@@ -24,7 +24,7 @@ public class Simulation implements Runnable
 {
 	private Environment environment;
 	private ApplicationManager manager;
-	private volatile boolean simulate, saveRequested = false;
+	private volatile boolean simulate, saveRequested = false, busyOnOtherThread = false;
 	private static boolean paused = false;
 	private float timeDilation = 1, timeSinceSave = 0, timeSinceSnapshot = 0;
 	
@@ -225,7 +225,7 @@ public class Simulation implements Runnable
 
 	public void update()
 	{
-		if (isPaused())
+		if (isPaused() || busyOnOtherThread)
 			return;
 
 		float delta = timeDilation * SimulationSettings.simulationUpdateDelta;
@@ -249,13 +249,27 @@ public class Simulation implements Runnable
 				saveRequested = false;
 				System.out.println("\nSaving environment.");
 			}
-			save();
+			onOtherThread(this::save);
 		}
 
 		if (timeSinceSnapshot >= Settings.historySnapshotTime) {
 			timeSinceSnapshot = 0;
-			makeStatisticsSnapshot();
+			onOtherThread(this::makeStatisticsSnapshot);
 		}
+	}
+
+	public void onOtherThread(Runnable runnable) {
+		if (busyOnOtherThread)
+			return;
+		busyOnOtherThread = true;
+		new Thread(() -> {
+			runnable.run();
+			busyOnOtherThread = false;
+		}).start();
+	}
+
+	public boolean isBusyOnOtherThread() {
+		return busyOnOtherThread;
 	}
 
 	public void interruptSimulationLoop() {

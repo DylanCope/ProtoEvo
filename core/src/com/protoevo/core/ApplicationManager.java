@@ -14,7 +14,7 @@ import static com.protoevo.utils.Utils.parseArgs;
 public class ApplicationManager {
 
     private static boolean windowed = true;
-    private volatile boolean headless = false, applicationRunning = true;
+    private volatile boolean headless = false, applicationRunning = true, saveOnExit = true;
     private Simulation simulation;
     private GraphicsAdapter graphics;
 
@@ -43,7 +43,8 @@ public class ApplicationManager {
             }
         }
 
-        saveAndCloseCurrentSimulation();
+        if (saveOnExit)
+            saveAndCloseCurrentSimulation();
 
         System.exit(0);
     }
@@ -115,6 +116,7 @@ public class ApplicationManager {
     public void switchToHeadlessMode() {
         closeGraphics();
         headless = true;
+        saveOnExit = true;
     }
 
     public boolean isGraphicsActive() {
@@ -130,6 +132,7 @@ public class ApplicationManager {
 
     public void createGraphics() {
         headless = false;
+        saveOnExit = false;
 
         Lwjgl3ApplicationConfiguration config = new Lwjgl3ApplicationConfiguration();
         config.setForegroundFPS(60);

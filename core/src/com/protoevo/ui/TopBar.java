@@ -142,5 +142,7 @@ public class TopBar {
 
     public void dispose() {
         shapeRenderer.dispose();
+//        for (ImageButton button : buttons)
+//            ((TextureRegionDrawable) button.getImage().getDrawable()).getRegion().getTexture().dispose();
     }
 }

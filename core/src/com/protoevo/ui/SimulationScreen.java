@@ -98,6 +98,7 @@ public class SimulationScreen extends ScreenAdapter {
         uiBatch = new SpriteBatch();
 
         stage.getRoot().addCaptureListener(event -> {
+            CursorUtils.setDefaultCursor();
             if (stage.getKeyboardFocus() instanceof TextField
                     && !(event.getTarget() instanceof TextField))
                 stage.setKeyboardFocus(null);
@@ -121,7 +122,6 @@ public class SimulationScreen extends ScreenAdapter {
                 new ShockWaveLayer(camera),
                 new VignetteLayer(camera, inputManager.getParticleTracker())
         );
-
 
         saveTrackedParticleTextField = new TextField("", skin);
         stage.addActor(saveTrackedParticleTextField);
@@ -182,6 +182,9 @@ public class SimulationScreen extends ScreenAdapter {
 
         uiBatch.begin();
 
+        if (simulation.isBusyOnOtherThread())
+            drawSavingText();
+
         pollStatsCounter += delta;
         if (pollStatsCounter > pollStatsInterval) {
             pollStatsCounter = 0;
@@ -209,6 +212,15 @@ public class SimulationScreen extends ScreenAdapter {
     @Override
     public void hide() {
         Gdx.input.setInputProcessor(null);
+    }
+
+    public void drawSavingText() {
+        StringBuilder textWithDots = new StringBuilder("Saving Simulation Data");
+        for (int i = 0; i < Math.max(0, (int) (elapsedTime * 2) % 4); i++)
+            textWithDots.append(".");
+
+        float x = 3 * font.getLineHeight();
+        font.draw(uiBatch, textWithDots.toString(), x, x);
     }
 
     public ImageButton createImageButton(String texturePath, float width, float height, EventListener listener) {

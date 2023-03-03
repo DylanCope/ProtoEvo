@@ -6,6 +6,7 @@ import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.scenes.scene2d.ui.Skin;
 import com.protoevo.core.ApplicationManager;
 import com.protoevo.core.Simulation;
+import com.protoevo.utils.CursorUtils;
 
 public class GraphicsAdapter extends Game {
 	private final ApplicationManager applicationManager;
@@ -22,6 +23,7 @@ public class GraphicsAdapter extends Game {
 
 	@Override
 	public void create() {
+		CursorUtils.setDefaultCursor();
 		batch = new SpriteBatch();
 
 		loadingScreen = new LoadingScreen(this, applicationManager);
