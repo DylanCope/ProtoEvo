@@ -6,7 +6,7 @@ public final class Settings {
     public static final float simulationUpdateDelta = 1f / 1000f;
     public static final float maxProtozoaSpeed = .01f;
     public static final float maxParticleSpeed = 1e-4f;
-    public static final float timeBetweenSaves = 100.0f;
+    public static final float timeBetweenSaves = 50.0f;
     public static final float historySnapshotTime = 20.0f;
     public static final boolean writeGenomes = false;
     public static final boolean finishOnProtozoaExtinction = true;

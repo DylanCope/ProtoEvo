@@ -140,6 +140,9 @@ public class AdhesionReceptor extends NodeAttachment {
         SurfaceNode otherNode = getOtherNode();
         if (otherNode == null)
             return null;
+        NodeAttachment otherAttachment = otherNode.getAttachment();
+        if (!(otherAttachment instanceof AdhesionReceptor))
+            return null;
         return (AdhesionReceptor) otherNode.getAttachment();
     }
 

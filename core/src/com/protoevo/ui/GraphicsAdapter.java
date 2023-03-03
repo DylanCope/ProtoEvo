@@ -28,7 +28,11 @@ public class GraphicsAdapter extends Game {
 
 		skin = UIStyle.getUISkin();
 		if (applicationManager.hasSimulation()) {
-			loadSimulation(applicationManager.getSimulation());
+			Simulation simulation = applicationManager.getSimulation();
+			if (simulation.isReady())
+				setSimulationScreen();
+			else
+				loadSimulation(applicationManager.getSimulation());
 		}
 		else {
 			titleScreen = new TitleScreen(this);

@@ -49,15 +49,17 @@ public class ApplicationManager {
     }
 
     public void setSimulation(Simulation simulation) {
-//        simulation = new Simulation("uranus-blastoise-provident");
-//        simulation = new Simulation();
         this.simulation = simulation;
         simulation.setManager(this);
 
-        if (!headless) {
-            new Thread(simulation::prepare).start();
+        if (!simulation.isReady()) {
+            if (!headless) {
+                new Thread(simulation::prepare).start();
+            } else {
+                simulation.prepare();
+            }
         } else {
-            simulation.prepare();
+            notifySimulationReady();
         }
     }
 
