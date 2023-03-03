@@ -2,14 +2,22 @@ package com.protoevo.ui;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.GL20;
+import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.scenes.scene2d.Actor;
+import com.badlogic.gdx.scenes.scene2d.EventListener;
 import com.badlogic.gdx.scenes.scene2d.Stage;
+import com.badlogic.gdx.scenes.scene2d.Touchable;
 import com.badlogic.gdx.scenes.scene2d.ui.ImageButton;
+import com.badlogic.gdx.scenes.scene2d.utils.Drawable;
+import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
+import com.protoevo.utils.ImageUtils;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 public class TopBar {
 
@@ -20,6 +28,7 @@ public class TopBar {
     private final float topBarButtonSize;
     private final float topBarPadding = 10f;
     private final ShapeRenderer shapeRenderer;
+    private final Set<ImageButton> buttons = new java.util.HashSet<>();
 
     public TopBar(Stage stage, float fontSize) {
         this.stage = stage;
@@ -40,6 +49,37 @@ public class TopBar {
 
     public float getHeight() {
         return topBarHeight;
+    }
+
+    public ImageButton createImageButton(String texturePath, float width, float height, EventListener listener) {
+        Texture texture = ImageUtils.getTexture(texturePath);
+        Drawable drawable = new TextureRegionDrawable(new TextureRegion(texture));
+        ImageButton button = new ImageButton(drawable);
+        button.setSize(width, height);
+        button.setTouchable(Touchable.enabled);
+        button.addListener(listener);
+        stage.addActor(button);
+        buttons.add(button);
+        return button;
+    }
+
+    public ImageButton createBarImageButton(String texturePath, EventListener touchListener) {
+        return createImageButton(texturePath, getButtonSize(), getButtonSize(), event -> {
+            if (event.toString().equals("touchDown")) {
+                touchListener.handle(event);
+            }
+            return true;
+        });
+    }
+
+    public void createLeftBarImageButton(String texturePath, EventListener touchListener) {
+        ImageButton button = createBarImageButton(texturePath, touchListener);
+        addLeft(button);
+    }
+
+    public void createRightBarImageButton(String texturePath, EventListener touchListener) {
+        ImageButton button = createBarImageButton(texturePath, touchListener);
+        addRight(button);
     }
 
     public Vector2 nextLeftPosition() {

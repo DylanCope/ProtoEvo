@@ -63,6 +63,10 @@ public class Simulation implements Runnable
 		loadSettings();
 	}
 
+	public Simulation(String name, String save) {
+		this(Settings.simulationSeed, name, save);
+	}
+
 	public Simulation(long seed, String name, String save)
 	{
 		RANDOM = new Random(seed);
@@ -120,22 +124,48 @@ public class Simulation implements Runnable
 		repl.setManager(manager);
 	}
 
-	public static Optional<Path> getMostRecentSave(String name) {
-		Path dir = Paths.get("saves/" + name + "/env");
+	public static Stream<Path> getStatsPaths(String name) {
+		Path dir = Paths.get("saves/" + name + "/stats/summaries");
 		if (Files.exists(dir)) {
-			try (Stream<Path> pathStream = Files.list(dir)) {
-				return pathStream
-						.filter(Files::isDirectory)
-						.max(Comparator.comparingLong(
-								f -> Paths.get(f.toString() + "/environment.dat")
-										.toFile().lastModified()));
+			try (Stream<Path> paths = Files.list(dir)){
+				return paths.collect(Collectors.toList()).stream()
+						.filter(path -> path.getFileName().toString().endsWith(".json"));
 			} catch (IOException e) {
 				System.out.println("Unable to find environment of given name: " + e.getMessage());
 				System.exit(0);
-				return Optional.empty();
+				return Stream.empty();
 			}
 		}
-		return Optional.empty();
+		return Stream.empty();
+	}
+
+	public static Optional<Path> getClosestStatsPath(String name, Long time) {
+		return getStatsPaths(name).min(
+				Comparator.comparingLong(
+					path -> Math.abs(time - path.toFile().lastModified())));
+	}
+
+	public static Stream<Path> getSavePaths(String name) {
+		Path dir = Paths.get("saves/" + name + "/env");
+		if (Files.exists(dir)) {
+			try (Stream<Path> paths = Files.list(dir)){
+				return paths.collect(Collectors.toList()).stream().filter(Files::isDirectory);
+			} catch (IOException e) {
+				System.out.println("Unable to find environment of given name: " + e.getMessage());
+				System.exit(0);
+				return Stream.empty();
+			}
+		}
+		return Stream.empty();
+	}
+
+	public static Long saveModifiedTime(Path path) {
+		return Paths.get(path.toString() + "/environment.dat")
+				.toFile().lastModified();
+	}
+
+	public static Optional<Path> getMostRecentSave(String name) {
+		return getSavePaths(name).max(Comparator.comparingLong(Simulation::saveModifiedTime));
 	}
 
 	public Environment loadMostRecentEnv() {

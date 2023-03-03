@@ -91,6 +91,11 @@ public class GraphicsAdapter extends Game {
 		applicationManager.setSimulation(simulation);
 	}
 
+	public void moveToLoadSaveScreen(String simulationName) {
+		LoadSaveScreen loadSaveScreen = new LoadSaveScreen(this, simulationName);
+		setScreen(loadSaveScreen);
+	}
+
 	public void setSimulationScreen() {
 		simulationScreen = new SimulationScreen(this, applicationManager.getSimulation());
 		setScreen(simulationScreen);

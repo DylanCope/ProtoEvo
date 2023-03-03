@@ -1,6 +1,8 @@
 package com.protoevo.utils;
 
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
+import com.fasterxml.jackson.core.JsonFactory;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
@@ -63,11 +65,19 @@ public class FileIO
 		}
 	}
 
-	public static Object readJson(String filename, Class<?> clazz) throws IOException {
+	public static <T> T readJson(String filename, Class<T> clazz) throws IOException {
 		String filePath = filename.endsWith(".json") ? filename : filename + ".json";
 		File file = new File(filePath);
 		ObjectMapper mapper = getJsonMapper();
 		return mapper.readValue(file, clazz);
+	}
+
+	public static JsonNode readJson(String filename) throws IOException {
+		String filePath = filename.endsWith(".json") ? filename : filename + ".json";
+		File file = new File(filePath);
+		JsonFactory factory = new JsonFactory();
+		ObjectMapper mapper = new ObjectMapper(factory);
+		return mapper.readTree(file);
 	}
 
 	public static void serialize(Object object, String filename)

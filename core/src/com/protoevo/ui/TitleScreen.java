@@ -67,7 +67,7 @@ public class TitleScreen extends ScreenAdapter {
                         TextButton button = new TextButton("Load " + saveName, graphics.getSkin());
                         button.addListener(e -> {
                             if (e.toString().equals("touchDown"))
-                                graphics.loadSimulation(new Simulation(saveName));
+                                graphics.moveToLoadSaveScreen(saveName);
                             return true;
                         });
                         buttons.add(button);

@@ -92,8 +92,6 @@ public class Statistics implements Serializable, Iterable<Statistics.Stat> {
     }
 
     public static class ComplexUnit implements Serializable {
-
-        
         private static final long serialVersionUID = 1L;
 
         public static final ComplexUnit COUNT = new ComplexUnit(BaseUnit.COUNT);
@@ -449,6 +447,34 @@ public class Statistics implements Serializable, Iterable<Statistics.Stat> {
 
     public void setUnitMultiplier(BaseUnit unit, double multiplier) {
         unitMultipliers.put(unit, multiplier);
+    }
+
+
+    public Object getValue(String name) {
+        return stats.containsKey(name) ? stats.get(name).getValue() : null;
+    }
+
+    public <T> T getValue(String name, Class<T> type) {
+        Object value = stats.get(name).getValue();
+        if (value == null || !type.isAssignableFrom(value.getClass()))
+            return null;
+        return type.cast(value);
+    }
+
+    public Integer getCount(String name) {
+        return getValue(name, Integer.class);
+    }
+
+    public Double getDouble(String name) {
+        return getValue(name, Double.class);
+    }
+
+    public String getString(String name) {
+        return getValue(name, String.class);
+    }
+
+    public Boolean getBoolean(String name) {
+        return getValue(name, Boolean.class);
     }
 
     public Stat put(String name, StatType type, Comparable<?> value) {
