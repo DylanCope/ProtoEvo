@@ -5,18 +5,18 @@ import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.GlyphLayout;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.protoevo.biology.evolution.GeneExpressionFunction;
-import com.protoevo.biology.nn.ActivationFn;
 import com.protoevo.biology.nn.GRNTag;
 import com.protoevo.biology.nn.Neuron;
 import com.protoevo.biology.nodes.SurfaceNode;
+import com.protoevo.biology.organelles.Organelle;
 import com.protoevo.utils.Utils;
 
-public class MouseOverNeuronCallback {
+public class MouseOverNeuronHandler {
     private final GlyphLayout layout = new GlyphLayout();
     private final BitmapFont font;
     private GeneExpressionFunction geneExpressionFunction;
 
-    public MouseOverNeuronCallback(BitmapFont font) {
+    public MouseOverNeuronHandler(BitmapFont font) {
         this.font = font;
     }
 
@@ -34,9 +34,10 @@ public class MouseOverNeuronCallback {
         String displayName = geneNode.getDisplayName();
         if (displayName.contains(SurfaceNode.activationPrefix)) {
             String[] parts = displayName.split(SurfaceNode.activationPrefix);
-            label += " " + getAttachmentIOString(surfaceNode, parts);
+            boolean isInput = parts[0].contains("Input");
+            label += (isInput ? "\n" : " ") + getAttachmentIOString(surfaceNode, parts);
         } else {
-            label += " " + displayName;
+            label += "\n" + displayName;
         }
         label += " = " + Utils.numberToString(neuron.getLastState(), 2);
         return label;
@@ -58,6 +59,27 @@ public class MouseOverNeuronCallback {
         }
     }
 
+    private String getOrganelleLabel(Neuron neuron,
+                                     GeneExpressionFunction.Node geneNode,
+                                     Organelle organelle) {
+        String label;
+        String displayName = geneNode.getDisplayName();
+        String[] parts = displayName.split("Input/");
+        if (parts.length == 2) {
+            label = "Organelle " + organelle.getIndex() + ": ";
+            if (organelle.getFunction() != null) {
+                int idx = Integer.parseInt(parts[1]);
+                label += "\n" + organelle.getFunction().getInputMeaning(idx);
+            } else {
+                label += "Input " + organelle.getIndex();
+            }
+        } else {
+            label = displayName;
+        }
+        label += " = " + Utils.numberToString(neuron.getLastState(), 2);
+        return label;
+    }
+
     public String getNeuronLabel(Neuron neuron) {
 
         if (geneExpressionFunction != null && neuron.getTags() != null
@@ -69,30 +91,49 @@ public class MouseOverNeuronCallback {
                 if (node.getLastTarget() instanceof SurfaceNode) {
                     return getSurfaceNodeLabel(neuron, node, (SurfaceNode) node.getLastTarget());
                 }
+                else if (node.getLastTarget() instanceof Organelle) {
+                    return getOrganelleLabel(neuron, node, (Organelle) node.getLastTarget());
+                }
             }
         }
 
-        if (neuron.hasLabel())
-            return neuron.getLabel() + " = " +
-                    Utils.numberToString(neuron.getLastState(), 2);
+        if (neuron.hasLabel()) {
+            String label = neuron.getLabel();
+            if (label.endsWith(":Output"))
+                label = label.substring(0, label.length() - ":Output".length());
+            return label + " = " + Utils.numberToString(neuron.getLastState(), 2);
+        }
 
         return neuron.getActivation() + "(z) = "
                 + Utils.numberToString(neuron.getLastState(), 2);
     }
 
-    public void apply(SpriteBatch batch, Neuron neuron, float graphicsRadius) {
+    public void apply(SpriteBatch batch, Neuron neuron, float graphicsRadius, float neuronSpacing) {
         float x = neuron.getGraphicsX();
         float y = neuron.getGraphicsY();
 
         String labelStr = getNeuronLabel(neuron);
         layout.setText(font, labelStr);
         float labelX = x - layout.width / 2;
-        float pad = font.getLineHeight() * 0.3f;
+        float pad = layout.height * 0.3f;
         float infoWidth = layout.width + 2*pad;
         if (labelX + infoWidth >= Gdx.graphics.getWidth())
             labelX = (int) (Gdx.graphics.getWidth() - 1.1 * infoWidth);
 
-        float labelY = (y + 1.1f * graphicsRadius) + font.getLineHeight();
+        float labelY = (y + 1.1f * graphicsRadius) + layout.height;
         font.draw(batch, labelStr, labelX, labelY);
+
+        if (neuronSpacing < font.getLineHeight())
+            return;
+
+        for (Neuron input : neuron.getInputs()) {
+            String inputLabelStr = getNeuronLabel(input);
+            layout.setText(font, inputLabelStr);
+            float inputLabelX = input.getGraphicsX() - layout.width - graphicsRadius * 1.5f;
+            if (inputLabelX + layout.width >= Gdx.graphics.getWidth())
+                inputLabelX = (int) (Gdx.graphics.getWidth() - 1.1 * layout.width);
+            float inputLabelY = input.getGraphicsY() + layout.height / 2f;
+            font.draw(batch, inputLabelStr, inputLabelX, inputLabelY);
+        }
     }
 }

@@ -123,7 +123,6 @@ public class EnvironmentRenderer implements Renderer {
                 environment.getJointsManager().getJoinings()
                         .forEach(this::renderJoinedParticles);
             environment.getParticles().stream()
-//                    .parallel()
                     .filter(p -> !circleNotVisible(p.getPos(), p.getRadius()))
                     .iterator()
                     .forEachRemaining(p -> drawParticle(delta, p));

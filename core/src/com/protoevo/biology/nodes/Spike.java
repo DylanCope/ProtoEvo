@@ -73,7 +73,7 @@ public class Spike extends NodeAttachment implements Serializable {
 
                     if (myAttack > theirDefense) {
                         float dps = attackFactor * (myAttack - theirDefense);
-                        other.damage(dps * delta, CauseOfDeath.MURDER);
+                        other.damage(dps * delta, CauseOfDeath.SPIKE_DAMAGE);
                         lastDPS = dps;
                     }
 

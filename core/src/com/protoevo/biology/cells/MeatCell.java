@@ -24,8 +24,8 @@ public class MeatCell extends Cell {
     }
 
     public void age(float delta) {
-        float deathRate = getRadius() * delta * 20f;
-        damage(getHealth() * deathRate, CauseOfDeath.OLD_AGE);
+        float deathRate = getRadius() * delta * 50f;
+        damage(getHealth() * deathRate, CauseOfDeath.MEAT_DECAY);
     }
 
     @Override

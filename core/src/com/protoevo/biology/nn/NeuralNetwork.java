@@ -1,10 +1,7 @@
 package com.protoevo.biology.nn;
 
 import java.io.Serializable;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -15,7 +12,7 @@ public class NeuralNetwork implements Serializable
     private final Neuron[] outputNeurons;
     private final Neuron[] inputNeurons;
     private final float[] outputs;
-    private final Neuron[] neurons;
+    private final List<Neuron> neurons;
     private final HashMap<String, Neuron> outputLabels = new HashMap<>(), inputLabels = new HashMap<>();
     private final int depth;
     private final int nInputs;
@@ -23,14 +20,17 @@ public class NeuralNetwork implements Serializable
     private float nodeSpacing;
 
     public NeuralNetwork(Neuron[] neurons) {
-        this.neurons = neurons;
+        this.neurons = new ArrayList<>();
 
         int nSensors = 0;
         int nOutputs = 0;
+        int id = 0;
         for (Neuron neuron : neurons) {
             if (neuron == null)
-                throw new IllegalArgumentException("Cannot handle null neurons.");
-            else if (neuron.getType().equals(Neuron.Type.SENSOR))
+                continue;
+            neuron.setId(id++);
+            this.neurons.add(neuron);
+            if (neuron.getType().equals(Neuron.Type.SENSOR))
                 nSensors++;
             else if (neuron.getType().equals(Neuron.Type.OUTPUT))
                 nOutputs++;
@@ -39,19 +39,21 @@ public class NeuralNetwork implements Serializable
 
         inputNeurons = new Neuron[nInputs];
         int i = 0;
-        for (Neuron neuron : neurons)
+        for (Neuron neuron : this.neurons) {
             if (neuron.getType().equals(Neuron.Type.SENSOR)) {
                 inputNeurons[i] = neuron;
                 i++;
             }
+        }
 
         outputNeurons = new Neuron[nOutputs];
         i = 0;
-        for (Neuron neuron : neurons)
+        for (Neuron neuron : this.neurons) {
             if (neuron.getType().equals(Neuron.Type.OUTPUT)) {
                 outputNeurons[i] = neuron;
                 i++;
             }
+        }
 
         outputs = new float[nOutputs];
         Arrays.fill(outputs, 0f);
@@ -64,7 +66,7 @@ public class NeuralNetwork implements Serializable
     }
 
     public int calculateDepth() {
-        boolean[] visited = new boolean[neurons.length];
+        boolean[] visited = new boolean[neurons.size()];
 
         int depth = 1;
         for (Neuron n : outputNeurons) {
@@ -123,7 +125,7 @@ public class NeuralNetwork implements Serializable
     @Override
     public String toString()
     {
-        return Stream.of(neurons)
+        return neurons.stream()
                 .map(Neuron::toString)
                 .collect(Collectors.joining("\n"));
     }
@@ -133,10 +135,10 @@ public class NeuralNetwork implements Serializable
     }
 
     public int getSize() {
-        return neurons.length;
+        return neurons.size();
     }
 
-    public Neuron[] getNeurons() {
+    public List<Neuron> getNeurons() {
         return neurons;
     }
 

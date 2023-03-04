@@ -12,6 +12,7 @@ public class PanZoomCameraInput extends InputAdapter {
 
     private boolean panningDisabled = false;
     public static final float maxZoomOut = 10f;
+    private Runnable onPanOrZoom = () -> {};
 
     public PanZoomCameraInput(OrthographicCamera cam) {
         this.cam = cam;
@@ -29,6 +30,10 @@ public class PanZoomCameraInput extends InputAdapter {
         this.panningDisabled = panningDisabled;
     }
 
+    public void setOnPanOrZoomCallback(Runnable onPanOrZoom) {
+        this.onPanOrZoom = onPanOrZoom;
+    }
+
     @Override
     public boolean touchDragged(int screenX, int screenY, int pointer) {
         if (panningDisabled)
@@ -39,6 +44,7 @@ public class PanZoomCameraInput extends InputAdapter {
             tmp.scl(-1f, -1f, 0);
             cam.translate(tmp);
             lastTouch.set(screenX, screenY, 0);
+            onPanOrZoom.run();
             return true;
         }
         return false;
@@ -48,6 +54,7 @@ public class PanZoomCameraInput extends InputAdapter {
     public boolean scrolled(float amountX, float amountY) {
         cam.zoom *= amountY > 0 ? 1.05f : 0.95f;
         cam.zoom = Math.min(cam.zoom, maxZoomOut);
+        onPanOrZoom.run();
         return false;
     }
 

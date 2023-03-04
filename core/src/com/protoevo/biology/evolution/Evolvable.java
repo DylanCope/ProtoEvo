@@ -72,6 +72,8 @@ public interface Evolvable extends Serializable {
         regulators.putAll(parent2Genome.getGeneRegulators());
         GeneExpressionFunction childGenome = new GeneExpressionFunction(regulators);
 
+        childGenome.setGRNGenome(parent1Genome.getGRNGenome().crossover(parent2Genome.getGRNGenome()));
+
         for (String geneName : allGeneNames) {
             if (parent1Genome.hasGene(geneName) && parent2Genome.hasGene(geneName)) {
                 childGenome.addNode(geneName,
@@ -86,7 +88,7 @@ public interface Evolvable extends Serializable {
             }
         }
 
-        return (T) Evolvable.createNew(clazz, childGenome.cloneWithMutation());
+        return Evolvable.createNew(clazz, childGenome.cloneWithMutation());
     }
 
     static void setTraitValue(Evolvable e, Method setter, Object value) {
@@ -165,7 +167,7 @@ public interface Evolvable extends Serializable {
     }
 
     static <T extends Evolvable> T createNew(Supplier<T> constructor,
-                                             GeneExpressionFunction geneExpressionFunction)
+                                             GeneExpressionFunction fn)
     {
         T newEvolvable = constructor.get();
 
@@ -183,20 +185,20 @@ public interface Evolvable extends Serializable {
                 if (component instanceof GeneExpressionFunction) {
                     GeneExpressionFunction newFn = (GeneExpressionFunction) component;
                     newFn.registerTargetEvolvable(newFn.name(), newFn);
-                    newFn.merge(geneExpressionFunction);
-                    geneExpressionFunction = newFn;
+                    newFn.merge(fn);
+                    fn = newFn;
                 }
                 else {
-                    geneExpressionFunction.merge(componentFn);
+                    fn.merge(componentFn);
                     setTraitValue(newEvolvable, method, component);
                 }
             }
         }
 
         if (newEvolvable instanceof GeneExpressionFunction)
-            ((GeneExpressionFunction) newEvolvable).merge(geneExpressionFunction);
+            ((GeneExpressionFunction) newEvolvable).merge(fn);
         else
-            newEvolvable.setGeneExpressionFunction(geneExpressionFunction);
+            newEvolvable.setGeneExpressionFunction(fn);
 
         return newEvolvable;
     }
@@ -215,9 +217,9 @@ public interface Evolvable extends Serializable {
                 geneExpressionFunction.addEvolvableFloat(evolvable, method);
             }
 
-            else if (method.isAnnotationPresent(RegulatedFloat.class)) {
-                RegulatedFloat regulatedFloat = method.getAnnotation(RegulatedFloat.class);
-                geneExpressionFunction.addRegulatedFloat(regulatedFloat, method);
+            else if (method.isAnnotationPresent(ControlVariable.class)) {
+                ControlVariable controlVariable = method.getAnnotation(ControlVariable.class);
+                geneExpressionFunction.addControlVariable(controlVariable, method);
             }
 
             else if (method.isAnnotationPresent(EvolvableInteger.class)) {

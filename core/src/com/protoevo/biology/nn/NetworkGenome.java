@@ -470,9 +470,10 @@ public class NetworkGenome implements Serializable
 		for (SynapseGene g : synapseGenes) {
 			if (g.isDisabled())
 				continue;
-			int i = inputCounts[g.getOut().getId()]++;
+			int i = inputCounts[g.getOut().getId()];
 			neurons[g.getOut().getId()].getInputs()[i] = neurons[g.getIn().getId()];
 			neurons[g.getOut().getId()].getWeights()[i] = g.getWeight();
+			inputCounts[g.getOut().getId()]++;
 		}
 
 		return new NeuralNetwork(neurons);

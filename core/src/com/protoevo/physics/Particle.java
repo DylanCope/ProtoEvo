@@ -35,6 +35,7 @@ public class Particle implements Shape, Serializable {
     private final Vector2 impulseToApply = new Vector2(0, 0);
     private final Vector2 forceToApply = new Vector2(0, 0);
     private final Vector2 vel = new Vector2(0, 0);
+    protected final Vector2 tmp = new Vector2(0, 0);
     private float angle, torqueToApply = 0;
     @JsonIgnore
     private final Statistics stats = new Statistics();
@@ -80,6 +81,10 @@ public class Particle implements Shape, Serializable {
         contacts.removeIf(c -> (getOther(c) instanceof Particle) && ((Particle) getOther(c)).isDead());
     }
 
+    public float getDampeningFactor() {
+        return 1f;
+    }
+
     public void createBody() {
         if (body != null || disposed)
             return;
@@ -107,7 +112,7 @@ public class Particle implements Shape, Serializable {
         dynamicsFixture.setUserData(this);
 
         body.setUserData(this);
-        body.setLinearDamping(10f);
+        body.setLinearDamping(SimulationSettings.fluidDragDampening);
         body.setAngularDamping(5f);
         body.setSleepingAllowed(true);
 
@@ -216,6 +221,7 @@ public class Particle implements Shape, Serializable {
             vel.set(body.getLinearVelocity());
             pos.set(body.getPosition());
             angle = body.getAngle();
+            body.setLinearDamping(getDampeningFactor() * SimulationSettings.fluidDragDampening);
 
             if (getSpeed() < getRadius() / 50f) {
                 body.setLinearVelocity(0, 0);

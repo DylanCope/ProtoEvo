@@ -7,15 +7,17 @@ import com.protoevo.env.EnvFileIO;
 import com.protoevo.settings.Settings;
 import com.protoevo.settings.SimulationSettings;
 import com.protoevo.env.Environment;
-import com.protoevo.ui.GraphicsAdapter;
 import com.protoevo.utils.FileIO;
 
+import java.awt.*;
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.List;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -249,13 +251,17 @@ public class Simulation implements Runnable
 				saveRequested = false;
 				System.out.println("\nSaving environment.");
 			}
-			onOtherThread(this::save);
+			saveOnOtherThread();
 		}
 
 		if (timeSinceSnapshot >= Settings.historySnapshotTime) {
 			timeSinceSnapshot = 0;
 			onOtherThread(this::makeStatisticsSnapshot);
 		}
+	}
+
+	public void saveOnOtherThread() {
+		onOtherThread(this::save);
 	}
 
 	public void onOtherThread(Runnable runnable) {
@@ -343,6 +349,14 @@ public class Simulation implements Runnable
 
 	public String getSaveFolder() {
 		return "saves/" + name;
+	}
+
+	public void openSaveFolderOnDesktop() {
+		try {
+			Desktop.getDesktop().open(new File(getSaveFolder()));
+		} catch (IOException e) {
+			System.out.println("\nFailed to open folder: " + e.getMessage() + "\n");
+		}
 	}
 
 	public String getName() {

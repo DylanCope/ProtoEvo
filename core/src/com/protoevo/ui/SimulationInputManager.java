@@ -3,15 +3,23 @@ package com.protoevo.ui;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.math.Vector2;
-import com.badlogic.gdx.scenes.scene2d.EventListener;
-import com.badlogic.gdx.scenes.scene2d.ui.ImageButton;
+import com.badlogic.gdx.scenes.scene2d.ui.Label;
+import com.badlogic.gdx.scenes.scene2d.ui.SelectBox;
+import com.badlogic.gdx.utils.Align;
+import com.protoevo.biology.cells.Cell;
+import com.protoevo.biology.cells.PlantCell;
+import com.protoevo.biology.cells.Protozoan;
+import com.protoevo.biology.evolution.Evolvable;
 import com.protoevo.core.Simulation;
+import com.protoevo.env.EnvFileIO;
 import com.protoevo.input.*;
-import com.protoevo.settings.WorldGenerationSettings;
 
-import java.awt.*;
-import java.io.File;
-import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.*;
+import java.util.function.Supplier;
+import java.util.stream.Stream;
 
 public class SimulationInputManager {
     private final SimulationScreen simulationScreen;
@@ -20,6 +28,9 @@ public class SimulationInputManager {
     private final MoveParticleButton moveParticleButton;
     private final LightningButton lightningButton;
     private final InputLayers inputLayers;
+
+    private final SelectBox<String> cellToAddSelectBox;
+    private final Map<String, Supplier<Cell>> possibleCellsToAdd = new HashMap<>();
 
 
     public SimulationInputManager(SimulationScreen simulationScreen)  {
@@ -30,70 +41,64 @@ public class SimulationInputManager {
         inputLayers.addLayer(new SimulationKeyboardControls(simulationScreen));
         inputLayers.addLayer(new ApplyForcesInput(simulationScreen));
         PanZoomCameraInput panZoomCameraInput = new PanZoomCameraInput(camera);
+        panZoomCameraInput.setOnPanOrZoomCallback(simulationScreen::disableMeandering);
 
         topBar = simulationScreen.getTopBar();
         Simulation simulation = simulationScreen.getSimulation();
         GraphicsAdapter graphics = simulationScreen.getGraphics();
 
-        topBar.createRightBarImageButton("icons/x-button.png", event -> {
+        // Right side ui
+
+        topBar.createRightBarImageButton("icons/x-button.png", () -> {
             simulation.onOtherThread(() -> {
-                simulation.save();
+                simulation.close();
                 graphics.exitApplication();
             });
-            return true;
         });
 
-        topBar.createRightBarImageButton("icons/back.png", event -> {
-            simulation.onOtherThread(() -> {
-                simulation.save();
-                graphics.moveToTitleScreen(simulationScreen);
-            });
-            return true;
+        topBar.createRightBarImageButton("icons/back.png", () -> {
+            simulation.onOtherThread(simulation::close);
+            simulationScreen.addConditionalTask(
+                    () -> !simulation.isBusyOnOtherThread(),
+                    () -> graphics.moveToTitleScreen(simulationScreen)
+            );
         });
 
-        topBar.createRightBarImageButton("icons/save.png", event -> {
-            simulation.onOtherThread(simulation::save);
-            return true;
-        });
+        topBar.createRightBarImageButton("icons/save.png", simulation::saveOnOtherThread);
 
-        ImageButton pauseButton = createBarImageButton("icons/play_pause.png", event -> {
-            simulation.togglePause();
-            return true;
-        });
-        topBar.addLeft(pauseButton);
+        possibleCellsToAdd.put("Plant Cell", () -> new PlantCell(simulation.getEnv()));
+        possibleCellsToAdd.put("Random Protozoan", () -> Evolvable.createNew(Protozoan.class));
+        tryLoadSavedProtozoans();
 
-        ImageButton toggleRenderingButton = createBarImageButton("icons/fast_forward.png", event -> {
-            simulation.toggleTimeDilation();
-            return true;
-        });
-        topBar.addLeft(toggleRenderingButton);
+        cellToAddSelectBox = new SelectBox<>(graphics.getSkin());
+        cellToAddSelectBox.setAlignment(Align.left);
+        cellToAddSelectBox.setHeight(topBar.getButtonSize());
+        simulationScreen.getLayout().setText(cellToAddSelectBox.getStyle().font, "Random Protozoa");
+        cellToAddSelectBox.setWidth(simulationScreen.getLayout().width * 1.1f);
+        refreshCellToAddSelectBox();
+        topBar.addRight(cellToAddSelectBox);
+        Label label = new Label("Add Cell: ", graphics.getSkin());
+        label.setHeight(topBar.getButtonSize());
+        label.setAlignment(Align.right);
+        topBar.addRight(label);
 
-        ImageButton homeButton = createBarImageButton("icons/home_icon.png", event -> {
-            camera.position.set(0, 0, 0);
-            camera.zoom = WorldGenerationSettings.environmentRadius;
-            return true;
-        });
-        topBar.addLeft(homeButton);
+        // Left side ui
 
-        ImageButton folderButton = createBarImageButton("icons/folder.png", event -> {
-            try {
-                Desktop.getDesktop().open(new File(simulation.getSaveFolder()));
-            } catch (IOException e) {
-                System.out.println("\nFailed to open folder: " + e.getMessage() + "\n");
-            }
-            return true;
-        });
-        topBar.addLeft(folderButton);
+        topBar.createLeftBarImageButton("icons/play_pause.png", simulation::togglePause);
+        topBar.createLeftBarImageButton("icons/fast_forward.png", simulation::toggleTimeDilation);
+        topBar.createLeftBarImageButton("icons/home_icon.png", simulationScreen::resetCamera);
+        topBar.createLeftBarImageButton("icons/folder.png", simulation::openSaveFolderOnDesktop);
+        topBar.createLeftBarImageButton("icons/terminal.png", graphics::switchToHeadlessMode);
 
-        ImageButton replButton = createBarImageButton("icons/terminal.png", event -> {
-            graphics.switchToHeadlessMode();
-            return true;
-        });
-        topBar.addLeft(replButton);
+        topBar.createLeftBarToggleImageButton(
+                "icons/meander_disabled.png", "icons/meander_enabled.png",
+                simulationScreen::toggleMeandering
+        );
+
+        // Input layers
 
         lightningButton = new LightningButton(this, topBar.getButtonSize());
         inputLayers.addLayer(new LightningStrikeInput(simulationScreen, lightningButton));
-
         particleTracker = new ParticleTracker(simulationScreen, panZoomCameraInput);
 
         moveParticleButton = new MoveParticleButton(topBar.getButtonSize());
@@ -104,32 +109,47 @@ public class SimulationInputManager {
         MoveParticle moveParticle = new MoveParticle(simulationScreen, this, particleTracker);
         CursorUpdater cursorUpdater = new CursorUpdater(simulationScreen, this);
 
-//        ImageButton jediButton = simulationScreen.createBarImageButton("icons/jedi_on.png", event -> {
-//            moveParticle.toggleJediMode();
-//            ImageButton button = (ImageButton) event.getListenerActor();
-//            Drawable tmp = button.getStyle().imageUp;
-//            button.getStyle().imageUp = button.getStyle().imageDown;
-//            button.getStyle().imageDown = tmp;
-//            return true;
-//        });
-//        TextureRegion region = new TextureRegion(ImageUtils.getTexture("icons/jedi_off.png"));
-//        jediButton.getStyle().imageDown = new TextureRegionDrawable(region);
-
         inputLayers.addLayers(cursorUpdater, spawnParticleInput, moveParticle, particleTracker);
         inputLayers.addLayer(panZoomCameraInput);
 
         topBar.addLeft(moveParticleButton);
-//        topBar.addLeft(jediButton);
         topBar.addLeft(lightningButton);
     }
 
-    public ImageButton createBarImageButton(String texturePath, EventListener touchListener) {
-        return simulationScreen.createImageButton(texturePath, topBar.getButtonSize(), topBar.getButtonSize(), event -> {
-            if (event.toString().equals("touchDown")) {
-                touchListener.handle(event);
-            }
-            return true;
-        });
+    private Cell tryLoad(Path save) {
+        try {
+            return EnvFileIO.deserialize(save.toString(), Protozoan.class);
+        }
+        catch (Exception ignored) {
+            return null;
+        }
+    }
+
+    private void tryLoadSavedProtozoans() {
+        try (Stream<Path> saved = Files.list(Paths.get("saved-cells"))) {
+            saved.forEach(save -> {
+                String name = save.getFileName().toString().replace(".cell", "");
+                Cell cell = tryLoad(save);
+                if (cell instanceof Protozoan)
+                    registerNewCloneableCell(name, (Protozoan) cell);
+            });
+        }
+        catch (Exception ignored) {}
+    }
+
+    public void refreshCellToAddSelectBox() {
+        cellToAddSelectBox.setItems(possibleCellsToAdd.keySet().toArray(new String[0]));
+    }
+
+    public void registerNewCloneableCell(String name, final Protozoan protozoan) {
+        possibleCellsToAdd.put(
+                name,
+                () -> Evolvable.asexualClone(protozoan));
+        refreshCellToAddSelectBox();
+    }
+
+    public Cell createNewCell() {
+        return possibleCellsToAdd.get(cellToAddSelectBox.getSelected()).get();
     }
 
     public void registerAsInputProcessor() {

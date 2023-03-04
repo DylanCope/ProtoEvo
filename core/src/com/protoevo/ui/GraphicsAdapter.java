@@ -71,6 +71,7 @@ public class GraphicsAdapter extends Game {
 		if (titleScreen != null)
 			titleScreen.dispose();
 		FrameBufferManager.dispose();
+		CursorUtils.dispose();
 	}
 
 	public Skin getSkin() {

@@ -35,7 +35,7 @@ public class Neuron implements Comparable<Neuron>, Serializable {
     private final Neuron[] inputs;
     private final float[] weights;
     private Type type;
-    private final int id;
+    private int id;
     private float state = 0, lastState = 0, nextState = 0;
     private float learningRate = 0;
     private ActivationFn activation;
@@ -83,6 +83,10 @@ public class Neuron implements Comparable<Neuron>, Serializable {
 
     public int getId() {
         return id;
+    }
+
+    public void setId(int i) {
+        id = i;
     }
 
     public float getState() {

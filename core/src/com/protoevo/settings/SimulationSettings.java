@@ -31,7 +31,7 @@ public class SimulationSettings {
     public static final float maxRegulationMutationChance = 0.05f;
 
     public static final float cellGrowthFactor = 2e-2f;
-    public static final float digestionFactor = 15f;
+    public static final float digestionFactor = 20f;
     public static final float chemicalDiffusionInterval = simulationUpdateDelta * 20f;
     public static final int chemicalFieldResolution = 1024;
     public static final float chemicalFieldRadius = voidStartDistance;
@@ -44,4 +44,6 @@ public class SimulationSettings {
     public static float chemicalExtractionFoodConversion = 3e-5f;
     public static float chemicalExtractionFactor = 100f;  // colour removed per unit time
     public static double energyRequiredForGrowth = 1e4f;
+    public static float fluidDragDampening = 10f;
+    public static boolean matingEnabled = false;
 }

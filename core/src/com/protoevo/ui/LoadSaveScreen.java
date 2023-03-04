@@ -37,14 +37,10 @@ public class LoadSaveScreen extends ScreenAdapter {
 
         TopBar topBar = new TopBar(this.stage, graphics.getSkin().getFont("default").getLineHeight());
 
-        topBar.createRightBarImageButton("icons/x-button.png", event -> {
-            graphics.exitApplication();
-            return true;
-        });
+        topBar.createRightBarImageButton("icons/x-button.png", graphics::exitApplication);
 
-        topBar.createRightBarImageButton("icons/back.png", event -> {
+        topBar.createRightBarImageButton("icons/back.png", () -> {
             graphics.moveToTitleScreen(this);
-            return true;
         });
 
         skin = graphics.getSkin();

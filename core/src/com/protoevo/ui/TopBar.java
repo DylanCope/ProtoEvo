@@ -63,22 +63,59 @@ public class TopBar {
         return button;
     }
 
-    public ImageButton createBarImageButton(String texturePath, EventListener touchListener) {
+    public ImageButton createToggleImageButton(
+            String texturePathUp, String texturePathDown, float width, float height) {
+        Texture texture1 = ImageUtils.getTexture(texturePathUp);
+        Drawable drawable1 = new TextureRegionDrawable(new TextureRegion(texture1));
+        Texture texture2 = ImageUtils.getTexture(texturePathDown);
+        Drawable drawable2 = new TextureRegionDrawable(new TextureRegion(texture2));
+
+        ImageButton button = new ImageButton(drawable1, drawable2);
+        button.setSize(width, height);
+        button.setTouchable(Touchable.enabled);
+        stage.addActor(button);
+        buttons.add(button);
+        return button;
+    }
+
+    public ImageButton createBarToggleImageButton(String texturePathUp, String texturePathDown, Runnable onTouchToggle) {
+        ImageButton button = createToggleImageButton(texturePathUp, texturePathDown, getButtonSize(), getButtonSize());
+        button.addListener(event -> {
+            if (event.toString().equals("touchDown")) {
+//                button.toggle();
+                onTouchToggle.run();
+            }
+            return true;
+        });
+        return button;
+    }
+
+    public void createLeftBarToggleImageButton(String texturePathUp, String texturePathDown, Runnable onTouchToggle) {
+        ImageButton button = createBarToggleImageButton(texturePathUp, texturePathDown, onTouchToggle);
+        addLeft(button);
+    }
+
+    public void createRightBarToggleImageButton(String texturePathUp, String texturePathDown, Runnable onTouchToggle) {
+        ImageButton button = createBarToggleImageButton(texturePathUp, texturePathDown, onTouchToggle);
+        addRight(button);
+    }
+
+    public ImageButton createBarImageButton(String texturePath, Runnable onTouch) {
         return createImageButton(texturePath, getButtonSize(), getButtonSize(), event -> {
             if (event.toString().equals("touchDown")) {
-                touchListener.handle(event);
+                onTouch.run();
             }
             return true;
         });
     }
 
-    public void createLeftBarImageButton(String texturePath, EventListener touchListener) {
-        ImageButton button = createBarImageButton(texturePath, touchListener);
+    public void createLeftBarImageButton(String texturePath, Runnable onTouch) {
+        ImageButton button = createBarImageButton(texturePath, onTouch);
         addLeft(button);
     }
 
-    public void createRightBarImageButton(String texturePath, EventListener touchListener) {
-        ImageButton button = createBarImageButton(texturePath, touchListener);
+    public void createRightBarImageButton(String texturePath, Runnable onTouch) {
+        ImageButton button = createBarImageButton(texturePath, onTouch);
         addRight(button);
     }
 
@@ -118,11 +155,11 @@ public class TopBar {
         return new Vector2(x, y);
     }
 
-    public void addRight(ImageButton button) {
+    public void addRight(Actor actor) {
         Vector2 nextRight = nextRightButtonPosition();
-        button.setPosition(nextRight.x - button.getWidth(), nextRight.y);
-        rightActors.add(button);
-        stage.addActor(button);
+        actor.setPosition(nextRight.x - actor.getWidth(), nextRight.y);
+        rightActors.add(actor);
+        stage.addActor(actor);
     }
 
     public void draw(float delta) {
@@ -142,7 +179,26 @@ public class TopBar {
 
     public void dispose() {
         shapeRenderer.dispose();
-//        for (ImageButton button : buttons)
-//            ((TextureRegionDrawable) button.getImage().getDrawable()).getRegion().getTexture().dispose();
+
+//        for (ImageButton button : buttons) {
+//            Button.ButtonStyle style = button.getStyle();
+//            for (Field field : button.getClass().getDeclaredFields()) {
+//                if (field.isAccessible()) {
+//                    try {
+//                        Object attr = field.get(style);
+//                        if (attr instanceof TextureRegionDrawable)
+//                            ((TextureRegionDrawable) attr).getRegion().getTexture().dispose();
+//                        else if (attr instanceof TextureRegion)
+//                            ((TextureRegion) attr).getTexture().dispose();
+//                        else if (attr instanceof Texture)
+//                            ((Texture) attr).dispose();
+//                        else if (attr instanceof Disposable)
+//                            ((Disposable) attr).dispose();
+//                    } catch (IllegalAccessException e) {
+//                        throw new RuntimeException(e);
+//                    }
+//                }
+//            }
+//        }
     }
 }

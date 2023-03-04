@@ -75,7 +75,7 @@ public class EnvFileIO {
                 Evolvable.Element.class,
                 Trait.class,
                 FloatTrait.class,
-                RegulatedFloatTrait.class,
+                ControlTrait.class,
                 BooleanTrait.class,
                 IntegerTrait.class,
                 CollectionTrait.class,
@@ -99,7 +99,19 @@ public class EnvFileIO {
     public static <T> T deserialize(String filename, Class<T> clazz) {
         try (FileInputStream fileIn = new FileInputStream(filename);
              FSTObjectInput in = new FSTObjectInput(fileIn, getFSTConfig())) {
-            return (T) in.readObject(clazz);
+
+//            // Suppress FST's error messages
+//            PrintStream errBackup = System.err;
+//            System.setErr(new PrintStream(new OutputStream() {
+//                public void write(int b) {}
+//            }));
+
+            T object = (T) in.readObject(clazz);
+
+//            // Restore error print stream
+//            System.setErr(errBackup);
+
+            return object;
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

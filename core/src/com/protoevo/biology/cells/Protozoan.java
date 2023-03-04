@@ -7,6 +7,7 @@ import com.protoevo.biology.nn.NeuralNetwork;
 import com.protoevo.biology.nodes.*;
 import com.protoevo.biology.organelles.Organelle;
 import com.protoevo.core.Statistics;
+import com.protoevo.physics.CollisionHandler;
 import com.protoevo.settings.ProtozoaSettings;
 import com.protoevo.settings.Settings;
 import com.protoevo.settings.SimulationSettings;
@@ -24,9 +25,8 @@ public class Protozoan extends Cell implements Evolvable
 
 	private GeneExpressionFunction geneExpressionFunction;
 	private GeneExpressionFunction crossOverGenome;
-	private long mateID = -1;
-	private float timeMating = 0;
-	public boolean wasJustDamaged = false;
+	private float matingCooldown = 0;
+	private boolean mateDesire;
 	private List<SurfaceNode> surfaceNodes;
 
 	private float damageRate = 0;
@@ -66,6 +66,25 @@ public class Protozoan extends Cell implements Evolvable
 		}
 
 		generateThrust(delta);
+		handleMating(delta);
+	}
+
+	private void handleMating(float delta) {
+		if (SimulationSettings.matingEnabled && mateDesire && matingCooldown <= 0) {
+			for (CollisionHandler.Collision contact : getContacts()) {
+				Object other = getOther(contact);
+				if (other instanceof Protozoan) {
+					Protozoan protozoan = (Protozoan) other;
+					if (protozoan.mateDesire) {
+						crossOverGenome = protozoan.geneExpressionFunction;
+						protozoan.crossOverGenome = geneExpressionFunction;
+						protozoan.matingCooldown = 1;
+					}
+				}
+			}
+		} else {
+			matingCooldown -= delta;
+		}
 	}
 
 	private boolean removeEngulfedCondition(Cell c) {
@@ -173,15 +192,20 @@ public class Protozoan extends Cell implements Evolvable
 		return getContacts().size() > 0 ? 1 : 0;
 	}
 
-	@RegulatedFloat(name="Cilia Thrust", min=0, max=1)
+	@ControlVariable(name="Cilia Thrust", min=0, max=1)
 	public void setCiliaThrust(float thrust) {
 		float sizePenalty = getRadius() / SimulationSettings.maxParticleRadius;
 		this.thrustMag = sizePenalty * thrust * ProtozoaSettings.maxCiliaThrust;
 	}
 
-	@RegulatedFloat(name="Cilia Turn", min=0, max=1)
+	@ControlVariable(name="Cilia Turn", min=0, max=1)
 	public void setCiliaTurn(float turn) {
 		this.thrustTurn = ProtozoaSettings.maxCiliaTurn * turn;
+	}
+
+	@ControlVariable(name="Mate Desire", min=0, max=1)
+	public void setMateDesire(float mate) {
+		this.mateDesire = mate > 0.5f;
 	}
 
 	public void generateThrust(float delta) {
@@ -201,9 +225,10 @@ public class Protozoan extends Cell implements Evolvable
 
 	private Protozoan createSplitChild(float r) {
 		Protozoan child;
-		if (crossOverGenome != null)
+		if (crossOverGenome != null) {
 			child = Evolvable.createChild(this.getClass(), this.getGeneExpressionFunction(), crossOverGenome);
-		else
+			getEnv().incrementCrossOverCount();
+		} else
 			child = Evolvable.asexualClone(this);
 
 		child.setRadius(r);
@@ -243,6 +268,16 @@ public class Protozoan extends Cell implements Evolvable
 		return new MeatCell(r, getEnv());
 	}
 
+	@Override
+	public float getMass() {
+		float mass = super.getMass();
+
+		for (Cell engulfedCell : engulfedCells)
+			mass += engulfedCell.getMass();
+
+		return mass;
+	}
+
 	private void handleEngulfing(Cell e, float delta) {
 		// Move engulfed cell towards the centre of this cell
 		Vector2 vel = tmp.set(getPos()).sub(e.getPos());
@@ -278,16 +313,16 @@ public class Protozoan extends Cell implements Evolvable
 	}
 
 	@Override
-	public void eat(Cell e, float delta)
+	public void eat(Cell engulfed, float delta)
 	{
 		float extraction = .5f;
-		if (e instanceof PlantCell) {
+		if (engulfed instanceof PlantCell) {
 			extraction *= getHerbivoreFactor();
-		} else if (e instanceof MeatCell) {
+		} else if (engulfed instanceof MeatCell) {
 			extraction /= getHerbivoreFactor();
 		}
 
-		super.eat(e, extraction * delta);
+		super.eat(engulfed, extraction * delta);
 	}
 
 
@@ -316,7 +351,7 @@ public class Protozoan extends Cell implements Evolvable
 		Statistics stats = super.getStats();
 		stats.put("Death Rate", 100 * damageRate, Statistics.ComplexUnit.PERCENTAGE_PER_TIME);
 		stats.putDistance("Split Radius", splitRadius);
-		stats.putBoolean("Has Mated", crossOverGenome != null);
+		stats.putBoolean("Has Mated", hasMated());
 		int numSpikes = getNumSpikes();
 		if (numSpikes > 0)
 			stats.putCount("Num Spikes", numSpikes);
@@ -363,22 +398,8 @@ public class Protozoan extends Cell implements Evolvable
 		return false;
 	}
 
-
-	public boolean isHarbouringCrossover() {
+	public boolean hasMated() {
 		return crossOverGenome != null;
-	}
-
-	public Protozoan getMate() {
-		if (mateID == -1)
-			return null;
-		Cell cell = getCell(mateID);
-		if (cell == null)
-			return null;
-		return (Protozoan) cell;
-	}
-
-	public boolean hasMate() {
-		return getMate() != null;
 	}
 
 	public float getSplitRadius() {

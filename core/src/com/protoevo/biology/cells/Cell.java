@@ -3,6 +3,7 @@ package com.protoevo.biology.cells;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector2;
+import com.badlogic.gdx.scenes.scene2d.ui.ImageButton;
 import com.protoevo.biology.CauseOfDeath;
 import com.protoevo.biology.ComplexMolecule;
 import com.protoevo.biology.ConstructionProject;
@@ -45,6 +46,7 @@ public abstract class Cell extends Particle implements Serializable {
 	private final Map<Food.Type, Float> foodDigestionRates = new HashMap<>(0);
 	private final Map<Food.Type, Food> foodToDigest = new HashMap<>(0);
 	private final Set<ConstructionProject> constructionProjects = new HashSet<>(0);
+	private final Set<Long> cellIdsOfConnected = new HashSet<>(0);
 	//	private final Map<CellAdhesion.CAM, Float> camProductionRates = new HashMap<>(0);
 	private ArrayList<Organelle> organelles = new ArrayList<>();
 	private boolean hasBurst = false;
@@ -64,8 +66,8 @@ public abstract class Cell extends Particle implements Serializable {
 
 		voidDamage(delta);
 		digest(delta);
-		repair(delta);
 		grow(delta);
+		repair(delta);
 
 		for (Organelle organelle : organelles)
 			organelle.update(delta);
@@ -160,15 +162,14 @@ public abstract class Cell extends Particle implements Serializable {
 		return getMass(getRadius()) * 0.25f;
 	}
 
-	public void eat(Cell cell, float extraction) {
+	public void eat(Cell engulfed, float extraction) {
 
-		if (!(cell instanceof PlantCell || cell instanceof MeatCell)
-				|| getTotalFoodMassToDigest() >= getFoodToDigestMassCap())
+		if (getTotalFoodMassToDigest() >= getFoodToDigestMassCap())
 			return;
 
-		Food.Type foodType = cell instanceof PlantCell ? Food.Type.Plant : Food.Type.Meat;
-		float extractedMass = cell.getMass() * extraction;
-		cell.removeMass(Settings.foodExtractionWasteMultiplier * extractedMass, CauseOfDeath.EATEN);
+		Food.Type foodType = engulfed instanceof PlantCell ? Food.Type.Plant : Food.Type.Meat;
+		float extractedMass = engulfed.getMass() * extraction;
+		engulfed.removeMass(Settings.engulfExtractionWasteMultiplier * extractedMass, CauseOfDeath.EATEN);
 
 		Food food;
 		if (foodToDigest.containsKey(foodType))
@@ -180,10 +181,10 @@ public abstract class Cell extends Particle implements Serializable {
 
 		food.addSimpleMass(extractedMass);
 
-		for (ComplexMolecule molecule : cell.getComplexMolecules()) {
-			if (cell.getComplexMoleculeAvailable(molecule) > 0) {
-				float extractedAmount = extraction * cell.getComplexMoleculeAvailable(molecule);
-				cell.depleteComplexMolecule(molecule, extractedAmount);
+		for (ComplexMolecule molecule : engulfed.getComplexMolecules()) {
+			if (engulfed.getComplexMoleculeAvailable(molecule) > 0) {
+				float extractedAmount = extraction * engulfed.getComplexMoleculeAvailable(molecule);
+				engulfed.depleteComplexMolecule(molecule, extractedAmount);
 				if (extractedAmount <= 1e-12)
 					continue;
 				food.addComplexMoleculeMass(molecule, extractedMass);
@@ -222,13 +223,13 @@ public abstract class Cell extends Particle implements Serializable {
 
 	public void repair(float delta) {
 		if (!isDead() && getHealth() < 1f && getRepairRate() > 0) {
-			float massRequired = getMass() * 0.01f * delta;
-			float energyRequired = massRequired * 3f;
-			if (massRequired < constructionMassAvailable
-					&& energyRequired < energyAvailable) {
+			float repair = delta * getRepairRate();
+			float massRequired = getBaseMass() * Settings.cellRepairMassFactor * repair;
+			float energyRequired = massRequired * Settings.cellRepairEnergyFactor;
+			if (massRequired < constructionMassAvailable && energyRequired < energyAvailable) {
 				depleteEnergy(energyRequired);
 				depleteConstructionMass(massRequired);
-				heal(delta * getRepairRate());
+				heal(repair);
 			}
 		}
 	}
@@ -413,6 +414,42 @@ public abstract class Cell extends Particle implements Serializable {
 		}
 	}
 
+	@Override
+	public float getDampeningFactor() {
+		if (cellJoinings.size() == 0 || getVel().len2() < 1e-12f)
+			return super.getDampeningFactor();
+
+		float k = 0;
+		for (long cellId : cellJoinings.keySet()) {
+			Cell otherCell = getCell(cellId);
+			if (otherCell != null) {
+				tmp.set(otherCell.getPos()).sub(getPos()).nor();
+				k += tmp.dot(getVel()) / getVel().len();
+			}
+			if (k >= 1)
+				return 0;
+		}
+
+		return super.getDampeningFactor() * MathUtils.clamp(1 - k, 0, 1);
+	}
+
+	public Statistics getResourceStats() {
+		Statistics stats = super.getStats();
+		stats.clear();
+
+		stats.putEnergy("Available Energy", energyAvailable);
+		stats.putMass("Construction Mass", (float) constructionMassAvailable);
+		stats.putMass("Construction Mass Limit", getConstructionMassCap());
+
+		for (ComplexMolecule molecule : availableComplexMolecules.keySet())
+			if (availableComplexMolecules.get(molecule) >= 1e-9)
+				stats.putMass(
+						String.format("Molecule %.2f Available", molecule.getSignature()),
+						availableComplexMolecules.get(molecule));
+
+		return stats;
+	}
+
 	public Statistics getStats() {
 		Statistics stats = super.getStats();
 		stats.putTime("Age", timeAlive);
@@ -428,13 +465,15 @@ public abstract class Cell extends Particle implements Serializable {
 		stats.put("Repair Rate", 100 * getRepairRate(),
 				Statistics.ComplexUnit.PERCENTAGE_PER_TIME);
 
-		for (ComplexMolecule molecule : availableComplexMolecules.keySet())
-			if (availableComplexMolecules.get(molecule) >= 1e-9)
-				stats.putMass(String.format("Molecule %.2f Available", molecule.getSignature()),
-						availableComplexMolecules.get(molecule));
+//		for (ComplexMolecule molecule : availableComplexMolecules.keySet())
+//			if (availableComplexMolecules.get(molecule) >= 1e-9)
+//				stats.putMass(String.format("Molecule %.2f Available", molecule.getSignature()),
+//						availableComplexMolecules.get(molecule));
 
-		if (cellJoinings.size() > 0)
+		if (cellJoinings.size() > 0) {
 			stats.putCount("Num Cell Bindings", cellJoinings.size());
+			stats.putCount("Multicell Structure Size", getNumCellsInMulticellularOrganism());
+		}
 
 //		for (CellAdhesion.CAMJunctionType junctionType : CellAdhesion.CAMJunctionType.values()) {
 //			float camMass = 0;
@@ -459,10 +498,30 @@ public abstract class Cell extends Particle implements Serializable {
 		return stats;
 	}
 
+	public int getNumCellsInMulticellularOrganism() {
+		cellIdsOfConnected.clear();
+		cellIdsOfConnected.add(getId());
+		return getNumCellsInMulticellularOrganism(cellIdsOfConnected);
+	}
+
+	public int getNumCellsInMulticellularOrganism(Set<Long> visited) {
+		int numCells = 1;
+		for (Long cellId : cellJoinings.keySet()) {
+			if (!visited.contains(cellId)) {
+				visited.add(cellId);
+				Cell cell = getCell(cellId);
+				if (cell != null)
+					numCells += cell.getNumCellsInMulticellularOrganism(visited);
+			}
+		}
+		return numCells;
+	}
+
 	public Statistics getDebugStats() {
 		Statistics stats = super.getDebugStats();
 		stats.putCount("Num Attached Cells", cellJoinings.size());
 		stats.putMass("Mass To Grow", (float) massChangeForGrowth);
+		stats.put("Dampening Factor", getDampeningFactor());
 		return stats;
 	}
 
@@ -512,7 +571,7 @@ public abstract class Cell extends Particle implements Serializable {
 	}
 
 	public Colour degradeColour(Colour colour, float t) {
-		return lerp(colour, Colour.LIGHT_GRAY, t);
+		return lerp(colour, Colour.GRAY, t);
 	}
 
 	public int getGeneration() {
@@ -640,6 +699,10 @@ public abstract class Cell extends Particle implements Serializable {
 		for (float mass : availableComplexMolecules.values())
 			extraMass += mass;
 		return getMass(getRadius(), extraMass);
+	}
+
+	public float getBaseMass() {
+		return getMass(getRadius());
 	}
 
 	/**

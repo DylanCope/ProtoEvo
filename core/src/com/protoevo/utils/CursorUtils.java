@@ -1,6 +1,7 @@
 package com.protoevo.utils;
 
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.graphics.Cursor;
 import com.badlogic.gdx.graphics.Pixmap;
 
 public class CursorUtils {
@@ -9,16 +10,7 @@ public class CursorUtils {
         DEFAULT, OPEN_HAND, CLOSED_HAND, MAGNIFYING_GLASS, LIGHTNING
     }
 
-    public static CursorState cursorState = null;
-
-    private static Pixmap defaultCursorPixmap;
-    private static Pixmap openHandCursorPixmap;
-    private static Pixmap closedHandCursorPixmap;
-    private static Pixmap magnifyingGlassCursorPixmap;
-    private static Pixmap lightningCursor;
-
-
-    public static Pixmap createCursorPixmap(String path) {
+    public static Cursor createCursor(String path, int xHotspot, int yHotspot) {
         Pixmap pixmap = new Pixmap(Gdx.files.internal(path));
         int size = 32;
         Pixmap cursorPixmap = new Pixmap(size, size, pixmap.getFormat());
@@ -28,65 +20,94 @@ public class CursorUtils {
                 0, 0,
                 cursorPixmap.getWidth(), cursorPixmap.getHeight());
         pixmap.dispose();
-        return cursorPixmap;
+        Cursor cursor = Gdx.graphics.newCursor(cursorPixmap, xHotspot, yHotspot);
+        cursorPixmap.dispose();
+        return cursor;
+    }
+
+    private static class CursorStateHolder {
+        private final Cursor defaultCursorPixmap;
+        private final Cursor openHandCursorPixmap;
+        private final Cursor closedHandCursorPixmap;
+        private final Cursor magnifyingGlassCursorPixmap;
+        private final Cursor lightningCursor;
+        private CursorState cursorState;
+
+        public CursorStateHolder() {
+            defaultCursorPixmap = createCursor("cursors/cursor.png", 0, 0);
+            openHandCursorPixmap = createCursor("cursors/hand_open_behind.png", 16, 12);
+            closedHandCursorPixmap = createCursor("cursors/hand_closed_behind.png", 16, 16);
+            magnifyingGlassCursorPixmap = createCursor("cursors/magnifying_glass.png", 0, 0);
+            lightningCursor = createCursor("cursors/lightning.png", 0, 0);
+        }
+
+        public void setCursor(CursorState cursorState) {
+            if (this.cursorState == cursorState) return;
+            this.cursorState = cursorState;
+            try {
+                switch (cursorState) {
+                    case DEFAULT:
+                        Gdx.graphics.setCursor(defaultCursorPixmap);
+                        break;
+                    case OPEN_HAND:
+                        Gdx.graphics.setCursor(openHandCursorPixmap);
+                        break;
+                    case CLOSED_HAND:
+                        Gdx.graphics.setCursor(closedHandCursorPixmap);
+                        break;
+                    case MAGNIFYING_GLASS:
+                        Gdx.graphics.setCursor(magnifyingGlassCursorPixmap);
+                        break;
+                    case LIGHTNING:
+                        Gdx.graphics.setCursor(lightningCursor);
+                        break;
+                }
+            }
+            catch (Exception ignored) {}
+        }
+
+        public void dispose() {
+            defaultCursorPixmap.dispose();
+            openHandCursorPixmap.dispose();
+            closedHandCursorPixmap.dispose();
+            magnifyingGlassCursorPixmap.dispose();
+            lightningCursor.dispose();
+        }
+    }
+
+    private static CursorStateHolder cursorStateHolder = null;
+
+    private static CursorStateHolder getCursorStateHolder() {
+        if (cursorStateHolder == null) {
+            cursorStateHolder = new CursorStateHolder();
+        }
+        return cursorStateHolder;
     }
 
     public static void setDefaultCursor() {
-        if (cursorState == CursorState.DEFAULT) return;
-
-        if (defaultCursorPixmap == null)
-            defaultCursorPixmap = createCursorPixmap("cursors/cursor.png");
-
-        int xHotspot = 0, yHotspot = 0;
-        Gdx.graphics.setCursor(Gdx.graphics.newCursor(defaultCursorPixmap, xHotspot, yHotspot));
-        cursorState = CursorState.DEFAULT;
+        getCursorStateHolder().setCursor(CursorState.DEFAULT);
     }
 
     public static void setMagnifyingGlassCursor() {
-        if (cursorState == CursorState.MAGNIFYING_GLASS) return;
-
-        if (magnifyingGlassCursorPixmap == null)
-            magnifyingGlassCursorPixmap = createCursorPixmap("cursors/magnifier.png");
-
-        int xHotspot = 7, yHotspot = 6;
-        Gdx.graphics.setCursor(Gdx.graphics.newCursor(magnifyingGlassCursorPixmap, xHotspot, yHotspot));
-
-        cursorState = CursorState.MAGNIFYING_GLASS;
+        getCursorStateHolder().setCursor(CursorState.MAGNIFYING_GLASS);
     }
 
     public static void setOpenHandCursor() {
-        if (cursorState == CursorState.OPEN_HAND) return;
-
-        if (openHandCursorPixmap == null)
-            openHandCursorPixmap = createCursorPixmap("cursors/hand_open_behind.png");
-
-        int xHotspot = 16, yHotspot = 12;
-        Gdx.graphics.setCursor(Gdx.graphics.newCursor(openHandCursorPixmap, xHotspot, yHotspot));
-
-        cursorState = CursorState.OPEN_HAND;
+        getCursorStateHolder().setCursor(CursorState.OPEN_HAND);
     }
 
     public static void setClosedHandCursor() {
-        if (cursorState == CursorState.CLOSED_HAND) return;
-
-        if (closedHandCursorPixmap == null)
-            closedHandCursorPixmap = createCursorPixmap("cursors/hand_closed_behind.png");
-
-        int xHotspot = 16, yHotspot = 16;
-        Gdx.graphics.setCursor(Gdx.graphics.newCursor(closedHandCursorPixmap, xHotspot, yHotspot));
-
-        cursorState = CursorState.CLOSED_HAND;
+        getCursorStateHolder().setCursor(CursorState.CLOSED_HAND);
     }
 
     public static void setLightningCursor() {
-        if (cursorState == CursorState.LIGHTNING) return;
+        getCursorStateHolder().setCursor(CursorState.LIGHTNING);
+    }
 
-        if (lightningCursor == null)
-            lightningCursor = createCursorPixmap("cursors/can_strike.png");
-
-        int xHotspot = 0, yHotspot = 0;
-        Gdx.graphics.setCursor(Gdx.graphics.newCursor(lightningCursor, xHotspot, yHotspot));
-
-        cursorState = CursorState.LIGHTNING;
+    public static void dispose() {
+        if (cursorStateHolder != null) {
+            cursorStateHolder.dispose();
+            cursorStateHolder = null;
+        }
     }
 }

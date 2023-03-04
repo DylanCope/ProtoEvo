@@ -1,34 +1,32 @@
 package com.protoevo.biology;
 
-import com.fasterxml.jackson.annotation.JsonIdentityInfo;
-import com.fasterxml.jackson.annotation.ObjectIdGenerators;
-import com.protoevo.env.Environment;
-
 import java.io.Serializable;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Complex molecules are required for the construction of specialised cell behaviour.
  */
-
-@JsonIdentityInfo(
-        generator = ObjectIdGenerators.IntSequenceGenerator.class,
-        scope = Environment.class)
 public class ComplexMolecule implements Serializable {
 
     public static final long serialVersionUID = 1L;
 
-    private final float signature, getProductionCost;
+    public static final int possibleMolecules = 128;
 
-    public ComplexMolecule(float signature, float getProductionCost) {
+    private final float signature, productionCost;
+
+    private final static Map<Float, ComplexMolecule> cache = new HashMap<>(possibleMolecules, 1);
+
+    private ComplexMolecule(float signature, float productionCost) {
         this.signature = signature;
-        this.getProductionCost = getProductionCost;
+        this.productionCost = productionCost;
     }
 
     /**
      * @return energy required to produce one mass unit of the complex molecule
      */
     public float getProductionCost() {
-        return getProductionCost;
+        return productionCost;
     }
 
     public float getSignature() {
@@ -36,7 +34,13 @@ public class ComplexMolecule implements Serializable {
     }
 
     public static ComplexMolecule fromSignature(float signature) {
-        return new ComplexMolecule(signature, 0);
+        signature = (float) (Math.floor(signature * possibleMolecules) / possibleMolecules);
+        if (!cache.containsKey(signature)) {
+            ComplexMolecule molecule = new ComplexMolecule(signature, 1e3f);
+            cache.put(signature, molecule);
+            return molecule;
+        }
+        return cache.get(signature);
     }
 
     @Override
@@ -53,12 +57,6 @@ public class ComplexMolecule implements Serializable {
     @Override
     public String toString() {
         return "ComplexMolecule(" + getSignature() + ")";
-    }
-
-    public static ComplexMolecule fromString(String s) {
-        if (s.startsWith("ComplexMolecule(") && s.endsWith(")"))
-            s = s.substring(16, s.length() - 1);
-        return new ComplexMolecule(Float.parseFloat(s), 0);
     }
 
     @Override

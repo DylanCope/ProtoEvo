@@ -4,7 +4,6 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.InputAdapter;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
-import com.badlogic.gdx.graphics.g2d.GlyphLayout;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.Vector2;
@@ -16,10 +15,10 @@ import com.protoevo.ui.SimulationScreen;
 import com.protoevo.ui.UIStyle;
 import com.protoevo.ui.rendering.Renderer;
 import com.protoevo.utils.Colour;
-import com.protoevo.utils.DebugMode;
 import space.earlygrey.shapedrawer.ShapeDrawer;
 
 import java.util.Arrays;
+import java.util.List;
 import java.util.TreeMap;
 
 public class NetworkRenderer extends InputAdapter implements Renderer {
@@ -31,7 +30,7 @@ public class NetworkRenderer extends InputAdapter implements Renderer {
     private final ShapeDrawer shapeRenderer;
     private final SpriteBatch batch;
     private final BitmapFont font;
-    private MouseOverNeuronCallback mouseOverNeuronCallback;
+    private MouseOverNeuronHandler mouseOverNeuronHandler;
     private final Colour.Gradient weightGradient =
             new Colour.Gradient(-1, 1,
                     Colour.RED, new Colour(1, 1, 1, 0), Colour.GREEN);
@@ -39,12 +38,12 @@ public class NetworkRenderer extends InputAdapter implements Renderer {
             new Colour.Gradient(-1, 1,
                     Colour.RED, Colour.BLACK, Colour.GREEN);
 
-    private float boxXStart, boxYStart, boxWidth, boxHeight, infoTextSize;
+    private float boxXStart, boxYStart, boxWidth, boxHeight, infoTextSize, nodeSpacing;
     private Neuron mouseOverNeuron = null;
 
     public NetworkRenderer(Simulation simulation, SimulationScreen simulationScreen,
                            SpriteBatch batch,
-                           MouseOverNeuronCallback mouseOverNeuronCallback,
+                           MouseOverNeuronHandler mouseOverNeuronHandler,
                            float x, float y, float width, float height, int infoTextSize) {
         this.simulation = simulation;
         this.simulationScreen = simulationScreen;
@@ -56,13 +55,13 @@ public class NetworkRenderer extends InputAdapter implements Renderer {
 //        shapeRenderer = new ShapeRenderer();
         shapeRenderer = new ShapeDrawer(batch, new TextureRegion(UIStyle.getWhite1x1()));
         this.batch = batch;
-        this.mouseOverNeuronCallback = mouseOverNeuronCallback;
+        this.mouseOverNeuronHandler = mouseOverNeuronHandler;
 
         font = UIStyle.createFiraCode(infoTextSize);
     }
 
-    public void setMouseOverNeuronCallback(MouseOverNeuronCallback callback) {
-        this.mouseOverNeuronCallback = callback;
+    public void setMouseOverNeuronCallback(MouseOverNeuronHandler callback) {
+        this.mouseOverNeuronHandler = callback;
     }
 
     public void setNeuralNetwork(NeuralNetwork nn) {
@@ -186,8 +185,8 @@ public class NetworkRenderer extends InputAdapter implements Renderer {
         }
 
         batch.setColor(Color.WHITE.cpy().mul(0.9f));
-        if (mouseOverNeuronCallback != null && mouseOverNeuron != null) {
-            mouseOverNeuronCallback.apply(batch, mouseOverNeuron, r);
+        if (mouseOverNeuronHandler != null && mouseOverNeuron != null) {
+            mouseOverNeuronHandler.apply(batch, mouseOverNeuron, r, nodeSpacing);
         }
     }
 
@@ -196,7 +195,7 @@ public class NetworkRenderer extends InputAdapter implements Renderer {
                                              float boxYStart,
                                              float boxWidth,
                                              float boxHeight) {
-        Neuron[] neurons = nn.getNeurons();
+        List<Neuron> neurons = nn.getNeurons();
         int networkDepth = nn.calculateDepth();
 
         int[] depthWidthValues = new int[networkDepth + 1];
@@ -209,16 +208,16 @@ public class NetworkRenderer extends InputAdapter implements Renderer {
         for (int width : depthWidthValues)
             maxWidth = Math.max(maxWidth, width);
 
-        float nodeSpacing = boxHeight / maxWidth;
+        nodeSpacing = boxHeight / maxWidth;
         nn.setGraphicsNodeSpacing(nodeSpacing);
 
         final TreeMap<String, Neuron> sortedNeurons = new TreeMap<>();
         for (int depth = 0; depth <= networkDepth; depth++) {
             sortedNeurons.clear();
-            final int currDepth = depth;
-            Arrays.stream(neurons)
-                    .filter(n -> n.getDepth() == currDepth && n.isConnectedToOutput())
-                    .forEach(n -> sortedNeurons.put(n.getLabel(), n));
+
+            for (Neuron n : neurons)
+                if (n.getDepth() == depth && n.isConnectedToOutput())
+                    sortedNeurons.put(n.getLabel(), n);
 
             float x = boxXStart + depth * boxWidth / networkDepth;
             int nNodes = depthWidthValues[depth];

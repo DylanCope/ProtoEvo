@@ -164,9 +164,9 @@ public class Photoreceptor extends NodeAttachment implements Serializable {
 
     @Override
     public void addStats(Statistics stats) {
-        stats.putPercentage("Red Light", colour.r);
-        stats.putPercentage("Green Light", colour.g);
-        stats.putPercentage("Blue Light", colour.b);
+        stats.putPercentage("Input: Red Light", colour.r);
+        stats.putPercentage("Input: Green Light", colour.g);
+        stats.putPercentage("Input: Blue Light", colour.b);
         stats.putDistance("Interaction Range", getInteractionRange());
         stats.put("FoV", fov, Statistics.ComplexUnit.ANGLE);
     }

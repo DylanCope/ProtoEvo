@@ -8,13 +8,17 @@ import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.GlyphLayout;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
+import com.badlogic.gdx.math.CatmullRomSpline;
+import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector2;
+import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.scenes.scene2d.EventListener;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.Touchable;
 import com.badlogic.gdx.scenes.scene2d.ui.*;
 import com.badlogic.gdx.scenes.scene2d.ui.TextField;
 import com.badlogic.gdx.scenes.scene2d.utils.Drawable;
+import com.badlogic.gdx.scenes.scene2d.utils.Layout;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 import com.badlogic.gdx.utils.ScreenUtils;
 import com.protoevo.biology.cells.Cell;
@@ -28,19 +32,17 @@ import com.protoevo.physics.Particle;
 import com.protoevo.settings.WorldGenerationSettings;
 import com.protoevo.env.Environment;
 import com.protoevo.input.ParticleTracker;
-import com.protoevo.ui.nn.MouseOverNeuronCallback;
+import com.protoevo.ui.nn.MouseOverNeuronHandler;
 import com.protoevo.ui.nn.NetworkRenderer;
 import com.protoevo.ui.rendering.*;
 import com.protoevo.ui.shaders.ShaderLayers;
 import com.protoevo.ui.shaders.ShockWaveLayer;
 import com.protoevo.ui.shaders.VignetteLayer;
-import com.protoevo.utils.CursorUtils;
-import com.protoevo.utils.DebugMode;
-import com.protoevo.utils.ImageUtils;
-import com.protoevo.utils.Utils;
+import com.protoevo.utils.*;
 
 import java.util.*;
 import java.util.concurrent.Callable;
+import java.util.function.Supplier;
 
 public class SimulationScreen extends ScreenAdapter {
 
@@ -57,7 +59,7 @@ public class SimulationScreen extends ScreenAdapter {
     private final TopBar topBar;
     private final int infoTextSize, textAwayFromEdge;
     private final NetworkRenderer networkRenderer;
-    private final MouseOverNeuronCallback mouseOverNeuronCallback;
+    private final MouseOverNeuronHandler mouseOverNeuronHandler;
     private final static float pollStatsInterval = .02f;
     private float elapsedTime = 0, pollStatsCounter = 0;
     private final Statistics stats = new Statistics();
@@ -69,11 +71,18 @@ public class SimulationScreen extends ScreenAdapter {
     private final ImageButton saveTrackedParticleButton;
     private final TextField saveTrackedParticleTextField;
     private final Set<ImageButton> buttons = new java.util.HashSet<>();
+    private final Map<Supplier<Boolean>, Runnable> conditionalTasks = new HashMap<>();
 
     private final SelectBox<String> statsSelectBox;
     private final float graphicsHeight;
     private final float graphicsWidth;
     private boolean uiHidden = false;
+
+    private boolean meanderingCamera = false;
+    private float meanderingTargetZoom = 1f;
+    private Vector2 meanderingTargetPos;
+    private final CatmullRomSpline<Vector3> meanderingSpline = new CatmullRomSpline<>();
+    private float meanderingT = 0f, meanderTThreshold = 0f;
 
 
     public SimulationScreen(GraphicsAdapter graphics, Simulation simulation) {
@@ -131,8 +140,10 @@ public class SimulationScreen extends ScreenAdapter {
         saveTrackedParticleButton = createImageButton(
                 "icons/save.png", topBar.getButtonSize(), topBar.getButtonSize(), event -> {
             if (event.toString().equals("touchDown")) {
-                if (trackedParticle != null) {
-                    EnvFileIO.saveCell((Cell) trackedParticle,  saveTrackedParticleTextField.getText());
+                if (trackedParticle != null && trackedParticle instanceof Protozoan) {
+                    String name = saveTrackedParticleTextField.getText();
+                    EnvFileIO.saveCell((Cell) trackedParticle,  name);
+                    inputManager.registerNewCloneableCell(name, (Protozoan) trackedParticle);
                 }
             }
             return true;
@@ -148,21 +159,28 @@ public class SimulationScreen extends ScreenAdapter {
         float boxHeight = 3 * graphicsHeight / 4;
         float boxXStart = graphicsWidth - boxWidth * 1.1f;
         float boxYStart = (graphicsHeight - boxHeight) / 2;
-        mouseOverNeuronCallback = new MouseOverNeuronCallback(font);
+        mouseOverNeuronHandler = new MouseOverNeuronHandler(font);
 
         networkRenderer = new NetworkRenderer(
-                simulation, this, uiBatch, mouseOverNeuronCallback,
+                simulation, this, uiBatch, mouseOverNeuronHandler,
                 boxXStart, boxYStart, boxWidth, boxHeight, infoTextSize);
     }
 
     @Override
     public void render(float delta) {
+        conditionalTasks.forEach((condition, task) -> {
+            if (condition.get())
+                task.run();
+        });
+        conditionalTasks.entrySet().removeIf(entry -> entry.getKey().get());
+
         ScreenUtils.clear(EnvironmentRenderer.backgroundColor);
 
         simulation.update();
 
         elapsedTime += delta;
 
+        handleMeander(delta);
         camera.update();
 
         ParticleTracker particleTracker = inputManager.getParticleTracker();
@@ -200,6 +218,7 @@ public class SimulationScreen extends ScreenAdapter {
 
         uiBatch.end();
 
+        stage.setDebugAll(DebugMode.isModeOrHigher(DebugMode.SIMPLE_INFO));
         stage.act(delta);
         stage.draw();
     }
@@ -432,7 +451,7 @@ public class SimulationScreen extends ScreenAdapter {
                 NeuralNetwork grn = protozoan.getGeneExpressionFunction().getRegulatoryNetwork();
                 if (grn != null) {
                     networkRenderer.setNeuralNetwork(grn);
-                    mouseOverNeuronCallback.setGeneExpressionFunction(protozoan.getGeneExpressionFunction());
+                    mouseOverNeuronHandler.setGeneExpressionFunction(protozoan.getGeneExpressionFunction());
                     networkRenderer.render(delta);
                 }
             }
@@ -500,5 +519,93 @@ public class SimulationScreen extends ScreenAdapter {
 
     public GraphicsAdapter getGraphics() {
         return graphics;
+    }
+
+    public void addConditionalTask(Supplier<Boolean> trigger, Runnable action) {
+        conditionalTasks.put(trigger, action);
+    }
+
+    private void handleMeander(float delta) {
+        if (meanderingCamera) {
+//            if (meanderingTargetPos1.dst(camera.position.x, camera.position.y) < SimulationSettings.maxParticleRadius) {
+            if (meanderingT >= meanderTThreshold) {
+                pickRandomMeanderTarget();
+            } else {
+                float speed = 0.001f;
+                meanderingT += delta * speed;
+                meanderingSpline.valueAt(camera.position, meanderingT);
+                camera.zoom = camera.position.z;
+                camera.position.z = 0;
+            }
+        }
+    }
+
+    private Vector2 randomMeanderTargetPos() {
+        int nProtozoa = simulation.getEnv().numberOfProtozoa();
+
+        Optional<Cell> protozoan = simulation.getEnv().getCells().stream()
+                .filter(cell -> cell instanceof Protozoan)
+                .skip(MathUtils.random(nProtozoa - 1))
+                .findFirst();
+
+        if (protozoan.isPresent())
+            return protozoan.get().getPos();
+
+        return new Vector2(0, 0);
+    }
+
+    private float randomMeanderZoom(float currZoom, Vector2 pos) {
+        float zoom = currZoom * MathUtils.random(0.5f, 2f);
+        float zoomMax = Utils.clampedLinearRemap(
+                pos.len(),
+                0, environment.getRadius(),
+                4, 1f
+        );
+        return MathUtils.clamp(zoom, 0.5f, zoomMax);
+    }
+
+    private void pickRandomMeanderTarget() {
+        Vector2 meanderingTargetPosMid = meanderingTargetPos == null ? randomMeanderTargetPos() : meanderingTargetPos;
+        float meanderingTargetZoomMind = meanderingTargetPos == null ? randomMeanderZoom(camera.zoom, meanderingTargetPosMid) : meanderingTargetZoom;
+
+        meanderingTargetPos = randomMeanderTargetPos();
+        meanderingTargetZoom = randomMeanderZoom(meanderingTargetZoomMind, meanderingTargetPos);
+
+        meanderingSpline.set(
+                new Vector3[]{
+                        new Vector3(camera.position.x, camera.position.y, camera.zoom),
+                        new Vector3(meanderingTargetPosMid.x, meanderingTargetPosMid.y, meanderingTargetZoomMind),
+                        new Vector3(meanderingTargetPos.x, meanderingTargetPos.y, meanderingTargetZoom)
+                }, true
+        );
+
+        meanderingT = 0f;
+        meanderTThreshold = meanderingSpline.locate(
+                new Vector3(meanderingTargetPosMid.x, meanderingTargetPosMid.y, meanderingTargetZoomMind));
+    }
+
+    public void disableMeandering() {
+        meanderingCamera = false;
+        meanderingTargetPos = null;
+    }
+
+    public void setMeandering() {
+        meanderingCamera = true;
+        pickRandomMeanderTarget();
+    }
+
+    public void toggleMeandering() {
+        meanderingCamera = !meanderingCamera;
+        if (meanderingCamera)
+            pickRandomMeanderTarget();
+    }
+
+    public void resetCamera() {
+        camera.position.set(0, 0, 0);
+        camera.zoom = WorldGenerationSettings.environmentRadius;
+    }
+
+    public GlyphLayout getLayout() {
+        return layout;
     }
 }

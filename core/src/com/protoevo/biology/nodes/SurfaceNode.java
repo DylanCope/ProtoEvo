@@ -218,7 +218,7 @@ public class SurfaceNode implements Evolvable.Element, Serializable {
         return outputActivation;
     }
 
-    @RegulatedFloat(name=inputActivationPrefix + "0", min=-1, max=1)
+    @ControlVariable(name=inputActivationPrefix + "0", min=-1, max=1)
     public void setActivation0(float value) {
         inputActivation[0] = value;
     }
@@ -228,7 +228,7 @@ public class SurfaceNode implements Evolvable.Element, Serializable {
         return outputActivation[0];
     }
 
-    @RegulatedFloat(name=inputActivationPrefix + "1", min=-1, max=1)
+    @ControlVariable(name=inputActivationPrefix + "1", min=-1, max=1)
     public void setActivation1(float value) {
         inputActivation[1] = value;
     }
@@ -238,7 +238,7 @@ public class SurfaceNode implements Evolvable.Element, Serializable {
         return outputActivation[1];
     }
 
-    @RegulatedFloat(name=inputActivationPrefix + "2", min=-1, max=1)
+    @ControlVariable(name=inputActivationPrefix + "2", min=-1, max=1)
     public void setActivation2(float value) {
         inputActivation[2] = value;
     }

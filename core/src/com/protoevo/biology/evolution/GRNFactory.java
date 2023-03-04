@@ -4,7 +4,6 @@ import com.badlogic.gdx.math.MathUtils;
 import com.protoevo.biology.nn.*;
 import com.protoevo.settings.ProtozoaSettings;
 import com.protoevo.settings.SimulationSettings;
-import com.protoevo.utils.Utils;
 
 import java.util.function.Supplier;
 
@@ -128,11 +127,11 @@ public class GRNFactory {
     {
         Trait<?> trait = node.getTrait();
         String name = node.getName();
-        if (trait instanceof RegulatedFloatTrait
+        if (trait instanceof ControlTrait
                 && !networkGenome.hasOutput(getOutputName(name))) {
-            RegulatedFloatTrait regulatedFloatTrait = (RegulatedFloatTrait) trait;
-            float min = regulatedFloatTrait.getMinValue();
-            float max = regulatedFloatTrait.getMaxValue();
+            ControlTrait controlTrait = (ControlTrait) trait;
+            float min = controlTrait.getMinValue();
+            float max = controlTrait.getMaxValue();
             NeuronGene outputGene = networkGenome.addOutput(
                     getOutputName(name),
                     ActivationFn.getOutputMapper(min, max),

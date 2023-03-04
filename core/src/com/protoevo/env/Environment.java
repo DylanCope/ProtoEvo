@@ -56,7 +56,7 @@ public class Environment implements Serializable
 		cellClassNames.put(PlantCell.class, "Plants");
 		cellClassNames.put(MeatCell.class, "Meat");
 	}
-	private long crossoverEvents = 0;
+	private volatile long crossoverEvents = 0;
 
 	@JsonIgnore
 	private transient Set<Cell> cellsToAdd;
@@ -508,10 +508,6 @@ public class Environment implements Serializable
 		return rocks;
 	}
 
-	public void registerCrossoverEvent() {
-		crossoverEvents++;
-	}
-
 	public World getWorld() {
 		return world;
 	}
@@ -566,4 +562,11 @@ public class Environment implements Serializable
 		return chunks;
 	}
 
+	public void incrementCrossOverCount() {
+		crossoverEvents++;
+	}
+
+	public float getRadius() {
+		return WorldGenerationSettings.environmentRadius;
+	}
 }

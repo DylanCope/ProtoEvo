@@ -87,7 +87,7 @@ public class AdhesionReceptor extends NodeAttachment {
             return;
 
         Cell other = (Cell) joining.getOther(cell);
-        float transferRate = Settings.channelBindingEnergyTransport;
+        float transferRate = Settings.cellBindingResourceTransport;
 
         float massDelta = cell.getConstructionMassAvailable() - other.getConstructionMassAvailable();
         constructionMassTransfer = Math.abs(transferRate * massDelta * delta);

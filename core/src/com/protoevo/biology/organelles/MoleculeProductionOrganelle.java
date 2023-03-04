@@ -22,8 +22,6 @@ public class MoleculeProductionOrganelle extends OrganelleFunction implements Se
         super(organelle);
     }
 
-    public static final int possibleMolecules = 128;
-
     /**
      * @param delta time since last update
      * @param input input[0] is the production signature, input[1] is the production rate
@@ -31,11 +29,8 @@ public class MoleculeProductionOrganelle extends OrganelleFunction implements Se
     @Override
     public void update(float delta, float[] input) {
         if ((input[0] != productionSignature && productionChangeTimer <= 0) || productionMolecule == null) {
-            int x = (int) Utils.cyclicalLinearRemap(
-                    input[0], -1, 1,
-                    0, possibleMolecules);
-            productionSignature = x / (float) possibleMolecules;
-            productionMolecule = new ComplexMolecule(productionSignature, 1e3f);
+            productionSignature = Utils.cyclicalLinearRemap(input[0], -1, 1, 0, 1);
+            productionMolecule = ComplexMolecule.fromSignature(productionSignature);
             productionChangeTimer = productionChangeCooldown;
         }
 
@@ -53,7 +48,7 @@ public class MoleculeProductionOrganelle extends OrganelleFunction implements Se
 
         float constructionMassAvailable = cell.getConstructionMassAvailable();
         float energyAvailable = cell.getEnergyAvailable();
-        if (producedMass > 0 && constructionMassAvailable > producedMass && energyAvailable > requiredEnergy) {
+        if (producedMass > 0 && constructionMassAvailable >= producedMass && energyAvailable >= requiredEnergy) {
             cell.addAvailableComplexMolecule(productionMolecule, producedMass);
             cell.depleteConstructionMass(producedMass);
             cell.depleteEnergy(requiredEnergy);

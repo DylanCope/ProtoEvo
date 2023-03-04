@@ -16,7 +16,6 @@ import java.util.function.Function;
 
 
 public class GeneExpressionFunction implements Evolvable.Component, Serializable {
-
     public static class ExpressionNodes extends HashMap<String, ExpressionNode> {}
     public static class Regulators extends HashMap<String, RegulationNode> {}
 
@@ -39,6 +38,14 @@ public class GeneExpressionFunction implements Evolvable.Component, Serializable
         private final String methodGetterName;
         private String targetID;
         private Object lastTarget;
+
+        public RegulationNode(RegulationNode other) {
+            this.name = other.name;
+            this.regulatorGetter = other.regulatorGetter;
+            this.methodGetterName = other.methodGetterName;
+            this.targetID = other.targetID;
+            this.lastTarget = null;
+        }
 
         private Function<Evolvable, Float> createGetter(Method method) {
             String regulatorName = method.getAnnotation(GeneRegulator.class).name();
@@ -99,7 +106,8 @@ public class GeneExpressionFunction implements Evolvable.Component, Serializable
         }
 
         public RegulationNode copy() {
-            return new RegulationNode(name, regulatorGetter, targetID, methodGetterName);
+//            return new RegulationNode(name, regulatorGetter, targetID, methodGetterName);
+            return new RegulationNode(this);
         }
 
         public String getName() {
@@ -114,7 +122,7 @@ public class GeneExpressionFunction implements Evolvable.Component, Serializable
     public static class ExpressionNode extends Node implements Serializable {
         public static final long serialVersionUID = 1L;
         private String name;
-        private final Trait<?> trait;
+        private Trait<?> trait;
         private transient Method traitSetter;
         private final String methodName;
         private final Map<String, Object> dependencies;
@@ -150,6 +158,21 @@ public class GeneExpressionFunction implements Evolvable.Component, Serializable
             this(name, trait, traitSetter, new String[]{});
         }
 
+        public ExpressionNode(ExpressionNode other) {
+            this.name = other.name;
+            this.trait = other.trait.copy();
+            this.traitSetter = other.traitSetter;
+            this.methodName = other.methodName;
+            this.dependencies = new HashMap<>();
+            for (String str : other.dependencies.keySet())
+                if (!str.equals(""))
+                    addDependency(str);
+            this.dependents = other.dependents;
+            this.targetID = other.targetID;
+            this.lastTarget = null;
+            this.lastTraitValue = null;
+        }
+
         public void addDependency(String geneName) {
             dependencies.put(geneName, null);
         }
@@ -164,8 +187,15 @@ public class GeneExpressionFunction implements Evolvable.Component, Serializable
         }
 
         public ExpressionNode cloneWithMutation() {
-            return new ExpressionNode(
-                    name, trait.cloneWithMutation(), traitSetter, targetID, dependencies, dependents);
+            ExpressionNode newNode = copy();
+            newNode.trait = trait.cloneWithMutation();
+            return newNode;
+        }
+
+        public ExpressionNode copy() {
+//            return new ExpressionNode(
+//                    name, trait.copy(), traitSetter, targetID, dependencies, dependents);
+            return new ExpressionNode(this);
         }
 
         public Trait<?> getTrait() {
@@ -212,7 +242,7 @@ public class GeneExpressionFunction implements Evolvable.Component, Serializable
         }
 
         public boolean mapsToTrait() {
-            return getTraitSetter() != null;
+            return methodName != null;
         }
 
         public Method getTraitSetter() {
@@ -272,6 +302,10 @@ public class GeneExpressionFunction implements Evolvable.Component, Serializable
     public void build() {
         Component.super.build();
         buildGeneRegulatoryNetwork();
+    }
+
+    public void setGRNGenome(NetworkGenome genome) {
+        grnGenome = genome;
     }
 
     public NeuralNetwork getRegulatoryNetwork() {
@@ -355,11 +389,11 @@ public class GeneExpressionFunction implements Evolvable.Component, Serializable
         }
     }
 
-    public void addRegulatedFloat(RegulatedFloat regulatedFloat, Method method) {
-        String name = regulatedFloat.name();
-        float minValue = regulatedFloat.min();
-        float maxValue = regulatedFloat.max();
-        RegulatedFloatTrait trait = new RegulatedFloatTrait(name, minValue, maxValue);
+    public void addControlVariable(ControlVariable controlVariable, Method method) {
+        String name = controlVariable.name();
+        float minValue = controlVariable.min();
+        float maxValue = controlVariable.max();
+        ControlTrait trait = new ControlTrait(name, minValue, maxValue);
         trait.setGeneExpressionFunction(this);
         trait.init();
         ExpressionNode node = new ExpressionNode(name, trait, method);
@@ -539,6 +573,28 @@ public class GeneExpressionFunction implements Evolvable.Component, Serializable
         return newFn;
     }
 
+    public GeneExpressionFunction copy() {
+        ExpressionNodes newNodes = new ExpressionNodes();
+        Regulators newRegulators = new Regulators();
+        GeneExpressionFunction newFn = new GeneExpressionFunction(newNodes, newRegulators);
+
+        for (Map.Entry<String, ExpressionNode> entry : expressionNodes.entrySet()) {
+            ExpressionNode newNode = entry.getValue().copy();
+            newNode.trait.setGeneExpressionFunction(newFn);
+            newNodes.put(entry.getKey(), newNode);
+        }
+
+        regulators.forEach(
+                (regulator, regulationNode) -> newRegulators.put(regulator, regulationNode.copy()));
+
+        if (grnGenome != null) {
+            newFn.grnGenome = new NetworkGenome(grnGenome);
+            newFn.geneRegulatoryNetwork = newFn.grnGenome.phenotype();
+        }
+
+        return newFn;
+    }
+
     public float getMeanMutationRate() {
         int count = 0;
         float sum = 0;
@@ -643,4 +699,5 @@ public class GeneExpressionFunction implements Evolvable.Component, Serializable
     public NetworkGenome getGRNGenome() {
         return grnGenome;
     }
+
 }

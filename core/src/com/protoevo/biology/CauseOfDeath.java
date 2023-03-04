@@ -1,7 +1,7 @@
 package com.protoevo.biology;
 
 public enum CauseOfDeath {
-    MURDER("murder"),
+    SPIKE_DAMAGE("spike damage"),
     EATEN("being eaten"),
     OLD_AGE("old age"),
     LOST_TOO_MUCH_MASS("withering away"),
@@ -16,10 +16,12 @@ public enum CauseOfDeath {
     ENV_CAPACITY_EXCEEDED("exceeding environment capacity", true),
     HEALED_TO_DEATH("being healed to death?...", true),  // should never happen
     FAILED_TO_CONSTRUCT("failure to construct", true),
-    OVERCROWDING("overcrowding", false);
+    OVERCROWDING("overcrowding", false),
+    MEAT_DECAY("decay", true);
 
-    private String reason;
-    private boolean debug;
+    private final String reason;
+    private final boolean debug;
+
     CauseOfDeath(String reason, boolean debug) {
         this.reason = reason;
         this.debug = debug;

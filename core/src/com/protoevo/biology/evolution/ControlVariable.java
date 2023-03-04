@@ -7,7 +7,7 @@ import java.lang.annotation.Target;
 
 @Target(ElementType.METHOD)
 @Retention(RetentionPolicy.RUNTIME)
-public @interface RegulatedFloat {
+public @interface ControlVariable {
     String name();
     float min() default -1;
     float max() default 1;

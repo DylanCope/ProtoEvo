@@ -10,6 +10,7 @@ import com.protoevo.settings.PlantSettings;
 import com.protoevo.settings.Settings;
 import com.protoevo.settings.SimulationSettings;
 import com.protoevo.utils.Colour;
+import com.protoevo.utils.Geometry;
 
 public class PlantCell extends Cell {
     public static final long serialVersionUID = -3975433688803760076L;
@@ -76,8 +77,10 @@ public class PlantCell extends Cell {
         if (isDead())
             return;
 
+        float photoRate = getArea() / Geometry.getCircleArea(SimulationSettings.maxParticleRadius);
+
         addConstructionMass(delta * Settings.plantConstructionRate);
-        addAvailableEnergy(delta * Settings.plantEnergyRate);
+        addAvailableEnergy(delta * photoRate * Settings.plantPhotosynthesizeEnergyRate);
 
         int nProtozoaContacts = 0;
         for (CollisionHandler.Collision collision : getContacts()) {
@@ -149,7 +152,7 @@ public class PlantCell extends Cell {
 
     public Statistics getStats() {
         Statistics stats = super.getStats();
-        stats.put("Split Radius", Settings.statsDistanceScalar * maxRadius);
+        stats.putDistance("Split Radius", maxRadius);
         return stats;
     }
 

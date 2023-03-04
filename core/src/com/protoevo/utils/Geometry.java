@@ -78,6 +78,10 @@ public class Geometry {
     }
 
     public static Vector2 randomPointInCircle(float circleR) {
+        float x = MathUtils.random(-circleR, circleR);
+        float y = MathUtils.random(-circleR, circleR);
+        if (x * x + y * y <= circleR * circleR)
+            return new Vector2(x, y);
         return Geometry.randomVector((float) Math.sqrt(Math.random() * circleR * circleR));
     }
 
