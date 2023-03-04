@@ -60,6 +60,9 @@ public class AdhesionReceptor extends NodeAttachment {
         node.getCell().requestJointRemoval(joiningID);
         joiningID = -1;
         otherNodeIdx = -1;
+        energyTransfer = 0;
+        molecularMassTransfer = 0;
+        constructionMassTransfer = 0;
     }
 
     public Cell getOtherCell() {
