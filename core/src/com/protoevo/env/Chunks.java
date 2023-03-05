@@ -7,7 +7,6 @@ import com.protoevo.biology.cells.PlantCell;
 import com.protoevo.biology.cells.Protozoan;
 import com.protoevo.physics.Particle;
 import com.protoevo.physics.SpatialHash;
-import com.protoevo.settings.legacy.LegacySimulationSettings;
 
 import java.io.Serializable;
 import java.util.Collection;

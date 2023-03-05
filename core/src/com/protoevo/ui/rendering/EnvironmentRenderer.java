@@ -18,7 +18,6 @@ import com.protoevo.physics.SpatialHash;
 import com.protoevo.env.*;
 import com.protoevo.input.ParticleTracker;
 import com.protoevo.physics.CollisionHandler;
-import com.protoevo.settings.legacy.LegacyWorldGenerationSettings;
 import com.protoevo.ui.SimulationInputManager;
 import com.protoevo.ui.UIStyle;
 import com.protoevo.ui.shaders.ShaderLayers;

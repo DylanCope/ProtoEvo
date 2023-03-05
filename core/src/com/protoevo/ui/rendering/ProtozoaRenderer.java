@@ -8,11 +8,11 @@ import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector2;
-import com.protoevo.biology.nodes.*;
 import com.protoevo.biology.cells.Protozoan;
-import com.protoevo.physics.Particle;
+import com.protoevo.biology.nodes.*;
 import com.protoevo.env.Rock;
-import com.protoevo.settings.legacy.LegacyRenderSettings;
+import com.protoevo.physics.Particle;
+import com.protoevo.ui.GraphicsAdapter;
 import com.protoevo.utils.Geometry;
 import com.protoevo.utils.Utils;
 
@@ -120,7 +120,7 @@ public class ProtozoaRenderer {
         public void draw(float delta, OrthographicCamera camera, SpriteBatch batch) {
             float cellAngle = protozoan.getAngle();
 
-            float criticalZoom = LegacyRenderSettings.cameraZoomForCellDetails;
+            float criticalZoom = GraphicsAdapter.settings.cameraZoomForCellDetails.get();
             float a = Utils.clampedLinearRemap(
                     camera.zoom, criticalZoom, .5f * criticalZoom, 0, 1f);
             Color c = protozoan.getColor();

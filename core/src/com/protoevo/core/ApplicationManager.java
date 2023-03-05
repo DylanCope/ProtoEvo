@@ -3,9 +3,6 @@ package com.protoevo.core;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.backends.lwjgl3.Lwjgl3Application;
 import com.badlogic.gdx.backends.lwjgl3.Lwjgl3ApplicationConfiguration;
-import com.protoevo.env.Environment;
-import com.protoevo.settings.EnvironmentSettings;
-import com.protoevo.settings.legacy.LegacyRenderSettings;
 import com.protoevo.ui.GraphicsAdapter;
 import com.protoevo.utils.DebugMode;
 
@@ -152,7 +149,7 @@ public class ApplicationManager {
 
         config.setBackBufferConfig(
                 8, 8, 8, 8, 16, 0,
-                LegacyRenderSettings.msaaSamples); // 8, 8, 8, 8, 16, 0 are default values
+                GraphicsAdapter.settings.msaaSamples.get()); // 8, 8, 8, 8, 16, 0 are default values
 
         config.useVsync(true);
         config.setTitle("ProtoEvo");

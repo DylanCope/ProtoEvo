@@ -6,9 +6,11 @@ import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.scenes.scene2d.ui.Skin;
 import com.protoevo.core.ApplicationManager;
 import com.protoevo.core.Simulation;
+import com.protoevo.settings.GraphicsSettings;
 import com.protoevo.utils.CursorUtils;
 
 public class GraphicsAdapter extends Game {
+	public static GraphicsSettings settings = new GraphicsSettings();
 	private final ApplicationManager applicationManager;
 	private SimulationScreen simulationScreen;
 	private LoadingScreen loadingScreen;

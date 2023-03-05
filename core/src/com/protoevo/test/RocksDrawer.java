@@ -3,7 +3,6 @@ package com.protoevo.test;
 import com.protoevo.env.Environment;
 import com.protoevo.env.Rock;
 import com.protoevo.env.WorldGeneration;
-import com.protoevo.settings.legacy.LegacyWorldGenerationSettings;
 import com.protoevo.utils.Colour;
 
 import java.awt.Color;

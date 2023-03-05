@@ -5,7 +5,6 @@ import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.glutils.ShaderProgram;
 import com.badlogic.gdx.math.Vector2;
 import com.protoevo.env.Environment;
-import com.protoevo.settings.legacy.LegacySimulationSettings;
 import com.protoevo.input.ParticleTracker;
 
 public class VignetteLayer extends ShaderLayer {
