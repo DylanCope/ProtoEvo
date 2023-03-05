@@ -47,7 +47,7 @@ public class WorldGeneration {
     public static void generateClustersOfRocks(
             List<Rock> rocks, int nRings, float minR, float maxR, float centreOffset) {
         for (int i = 0; i < nRings; i++) {
-            Vector2 centre = Geometry.randomPointInCircle(centreOffset, RANDOM);
+            Vector2 centre = Geometry.polarRandomPointInCircle(centreOffset, RANDOM);
             float radius = RANDOM.nextFloat() * (maxR - minR) + minR;
             generateRingOfRocks(rocks, centre, radius);
         }

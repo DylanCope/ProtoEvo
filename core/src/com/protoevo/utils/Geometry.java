@@ -78,14 +78,30 @@ public class Geometry {
     }
 
     public static Vector2 randomPointInCircle(float circleR) {
+        // try uniform sampling first
         float x = MathUtils.random(-circleR, circleR);
         float y = MathUtils.random(-circleR, circleR);
         if (x * x + y * y <= circleR * circleR)
             return new Vector2(x, y);
-        return Geometry.randomVector((float) Math.sqrt(Math.random() * circleR * circleR));
+
+        // if that fails, sample from polar coordinates
+        float length = (float) Math.sqrt(MathUtils.random() * circleR * circleR);
+        return Geometry.randomVector(length);
     }
 
     public static Vector2 randomPointInCircle(float circleR, Random random) {
+        // try uniform sampling first
+        float x = MathUtils.random(-circleR, circleR);
+        float y = MathUtils.random(-circleR, circleR);
+        if (x * x + y * y <= circleR * circleR)
+            return new Vector2(x, y);
+
+        // if that fails, sample from polar coordinates
+        float length = (float) Math.sqrt(random.nextFloat() * circleR * circleR);
+        return Geometry.randomVector(length, random);
+    }
+
+    public static Vector2 polarRandomPointInCircle(float circleR, Random random) {
         float length = (float) Math.sqrt(random.nextFloat() * circleR * circleR);
         return Geometry.randomVector(length, random);
     }

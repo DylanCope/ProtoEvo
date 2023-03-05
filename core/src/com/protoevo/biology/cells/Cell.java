@@ -73,21 +73,12 @@ public abstract class Cell extends Particle implements Serializable {
 	}
 
 	public void decayResources(float delta) {
-		for (Food.Type type : foodDigestionRates.keySet()) {
-			Food food = foodToDigest.get(type);
-			if (food != null)
-				food.decay(delta);
-		}
+		foodToDigest.values().forEach(food -> food.decay(delta));
 
-		energyAvailable -= delta * Environment.settings.energyDecayRate.get();
+		depleteEnergy(delta * Environment.settings.energyDecayRate.get());
 
 		for (ComplexMolecule molecule : availableComplexMolecules.keySet()) {
-			float amount = availableComplexMolecules.get(molecule);
-			amount -= delta * Environment.settings.complexMoleculeDecayRate.get();
-			if (amount <= 0)
-				availableComplexMolecules.remove(molecule);
-			else
-				availableComplexMolecules.put(molecule, amount);
+			depleteComplexMolecule(molecule, delta * Environment.settings.complexMoleculeDecayRate.get());
 		}
 	}
 
@@ -227,7 +218,7 @@ public abstract class Cell extends Particle implements Serializable {
 				float massExtracted = food.getSimpleMass() * rate;
 				addConstructionMass(massExtracted);
 				food.subtractSimpleMass(massExtracted);
-				energyAvailable += food.getEnergy(massExtracted);
+				addAvailableEnergy(food.getEnergy(massExtracted));
 			}
 			for (ComplexMolecule molecule : food.getComplexMolecules()) {
 				float amount = food.getComplexMoleculeMass(molecule);
@@ -458,14 +449,24 @@ public abstract class Cell extends Particle implements Serializable {
 		stats.clear();
 
 		stats.putEnergy("Available Energy", energyAvailable);
+		stats.putEnergy("Energy Limit", getAvailableEnergyCap());
 		stats.putMass("Construction Mass", (float) constructionMassAvailable);
 		stats.putMass("Construction Mass Limit", getConstructionMassCap());
 
 		for (ComplexMolecule molecule : availableComplexMolecules.keySet())
-			if (availableComplexMolecules.get(molecule) >= 1e-9)
+			if (availableComplexMolecules.get(molecule) >= 1e-12)
 				stats.putMass(
 						String.format("Molecule %.2f Available", molecule.getSignature()),
 						availableComplexMolecules.get(molecule));
+
+		Statistics.ComplexUnit massPerTime = Statistics.ComplexUnit.MASS_PER_TIME;
+
+		for (Food.Type foodType : foodDigestionRates.keySet())
+			if (foodDigestionRates.get(foodType) > 0)
+				stats.put(foodType + " Digestion Rate", foodDigestionRates.get(foodType), massPerTime);
+
+		for (Food food : foodToDigest.values())
+			stats.putMass(food + " to Digest", food.getSimpleMass());
 
 		return stats;
 	}
@@ -477,43 +478,17 @@ public abstract class Cell extends Particle implements Serializable {
 		stats.putCount("Generation", getGeneration());
 		stats.putEnergy("Available Energy", energyAvailable);
 		stats.putMass("Construction Mass", (float) constructionMassAvailable);
-		stats.putMass("Construction Mass Limit", getConstructionMassCap());
-//		if (wasteMass > 0)
-//			stats.putMass("Waste Mass", wasteMass);
 
 		stats.putSpeed("Growth Rate", getGrowthRate());
 		stats.put("Repair Rate", 100 * getRepairRate(),
 				Statistics.ComplexUnit.PERCENTAGE_PER_TIME);
-
-//		for (ComplexMolecule molecule : availableComplexMolecules.keySet())
-//			if (availableComplexMolecules.get(molecule) >= 1e-9)
-//				stats.putMass(String.format("Molecule %.2f Available", molecule.getSignature()),
-//						availableComplexMolecules.get(molecule));
 
 		if (cellJoinings.size() > 0) {
 			stats.putCount("Num Cell Bindings", cellJoinings.size());
 			stats.putCount("Multicell Structure Size", getNumCellsInMulticellularOrganism());
 		}
 
-//		for (CellAdhesion.CAMJunctionType junctionType : CellAdhesion.CAMJunctionType.values()) {
-//			float camMass = 0;
-//			for (CellAdhesion.CAM molecule : surfaceCAMs.keySet())
-//				if (molecule.getJunctionType().equals(junctionType))
-//					camMass += surfaceCAMs.get(molecule);
-//			if (camMass > 0)
-//				stats.putMass(junctionType + " CAM Mass", camMass);
-//		}
-
 		stats.putBoolean("Being Engulfed", engulfer != null);
-
-		Statistics.ComplexUnit massPerTime = Statistics.ComplexUnit.MASS_PER_TIME;
-
-		for (Food.Type foodType : foodDigestionRates.keySet())
-			if (foodDigestionRates.get(foodType) > 0)
-				stats.put(foodType + " Digestion Rate", foodDigestionRates.get(foodType), massPerTime);
-
-		for (Food food : foodToDigest.values())
-			stats.putMass(food + " to Digest", food.getSimpleMass());
 
 		return stats;
 	}
@@ -635,7 +610,7 @@ public abstract class Cell extends Particle implements Serializable {
 	}
 
 	private float getAvailableEnergyCap() {
-		return Environment.settings.startingAvailableCellEnergy.get() * getRadius()
+		return Environment.settings.energyCapFactor.get() * getRadius()
 				/ Environment.settings.minParticleRadius.get();
 	}
 
@@ -719,6 +694,8 @@ public abstract class Cell extends Particle implements Serializable {
 		float extraMass = (float) constructionMassAvailable;
 		for (float mass : availableComplexMolecules.values())
 			extraMass += mass;
+		for (Food food : foodToDigest.values())
+			extraMass += food.getMass();
 		return getMass(getRadius(), extraMass);
 	}
 

@@ -70,12 +70,12 @@ public class EnvironmentSettings extends Settings {
     public final Settings.Parameter<Float> meatEnergyDensity = new Settings.Parameter<>(
             "Meat Energy Density",
             "Energy per unit mass of meat material.",
-            1e6f
+            3e5f
     );
 
-    public final Settings.Parameter<Float> meatDecayFactor = new Settings.Parameter<>(
-            "Meat Decay Factor",
-            "How quickly meat decays.",
+    public final Settings.Parameter<Float> meatDeathFactor = new Settings.Parameter<>(
+            "Meat Death Factor",
+            "How quickly meat cells die.",
             50f
     );
     public final Settings.Parameter<Boolean> enableChemicalField = new Settings.Parameter<>(
@@ -104,6 +104,10 @@ public class EnvironmentSettings extends Settings {
             "Starting Available Cell Energy",
             "Starting amount of energy available to cells.",
             1f);
+    public final Settings.Parameter<Float> energyCapFactor = new Settings.Parameter<>(
+            "Energy Cap Factor",
+            "Maximum energy a cell can have at the minimum size.",
+            500f);
     public final Settings.Parameter<Float> startingAvailableConstructionMass = new Settings.Parameter<>(
             "Starting Available Construction Mass",
             "Starting amount of construction mass available to cells.",
@@ -175,7 +179,7 @@ public class EnvironmentSettings extends Settings {
     public final Settings.Parameter<Float> chemicalExtractionPlantConversion = new Settings.Parameter<>(
             "Chemical Extraction Plant Conversion",
             "The amount of food extracted from plant matter in the chemical solution.",
-            2e-5f);
+            5e-4f);
     public final Settings.Parameter<Float> chemicalExtractionMeatConversion = new Settings.Parameter<>(
             "Chemical Extraction Meat Conversion",
             "The amount of food extracted from meat matter in the chemical solution.",
@@ -205,7 +209,7 @@ public class EnvironmentSettings extends Settings {
     public Settings.Parameter<Float> energyDecayRate = new Settings.Parameter<>(
             "Energy Decay Rate",
             "The rate at which energy storage decays.",
-            .1f
+            .05f
     );
     public final Settings.Parameter<Float> plantDecayRate = new Settings.Parameter<>(
             "Plant Decay Rate",

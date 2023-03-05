@@ -66,6 +66,14 @@ public class Food implements Serializable {
         return complexMoleculeMasses.getOrDefault(molecule, 0f);
     }
 
+    public float getMass() {
+        float totalMass = mass;
+        for (float complexMoleculeMass : complexMoleculeMasses.values()) {
+            totalMass += complexMoleculeMass;
+        }
+        return totalMass;
+    }
+
     public Collection<ComplexMolecule> getComplexMolecules() {
         return complexMoleculeMasses.keySet();
     }
@@ -104,10 +112,10 @@ public class Food implements Serializable {
     }
 
     public void decay(float delta) {
-        float decay = getDecayRate() * delta;
-        mass -= decay;
-        for (ComplexMolecule molecule : complexMoleculeMasses.keySet())
-            complexMoleculeMasses.put(molecule, complexMoleculeMasses.get(molecule)
-                    * Environment.settings.complexMoleculeDecayRate.get());
+        float decay = Math.max(0, 1f - getDecayRate() * delta);
+        mass = Math.max(0, mass - decay);
+        energy = Math.max(0, energy - decay);
+        complexMoleculeMasses.replaceAll((m, v) -> complexMoleculeMasses.get(m)
+                * Environment.settings.complexMoleculeDecayRate.get());
     }
 }

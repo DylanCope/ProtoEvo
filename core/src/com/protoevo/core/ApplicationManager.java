@@ -45,6 +45,8 @@ public class ApplicationManager {
         if (saveOnExit)
             saveAndCloseCurrentSimulation();
 
+        disposeSimulationIfPresent();
+
         System.exit(0);
     }
 
@@ -94,9 +96,8 @@ public class ApplicationManager {
     }
 
     public void saveAndCloseCurrentSimulation() {
-        if (hasSimulation()) {
+        if (hasSimulation())
             simulation.close();
-        }
     }
 
     public void exit() {
@@ -156,5 +157,12 @@ public class ApplicationManager {
         graphics = new GraphicsAdapter(this);
         // Creates graphics and runs updates from rendering loop
         new Lwjgl3Application(graphics, config);
+    }
+
+    public void disposeSimulationIfPresent() {
+        if (hasSimulation()) {
+            simulation.dispose();
+            simulation = null;
+        }
     }
 }

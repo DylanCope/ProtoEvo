@@ -225,9 +225,11 @@ public class Environment implements Serializable
 
 	public void initialisePopulation() {
 		populationStartCentres = new Vector2[Environment.settings.world.numPopulationStartClusters.get()];
+		final float clusterR = Environment.settings.world.populationClusterRadius.get();
 		for (int i = 0; i < populationStartCentres.length; i++)
 			populationStartCentres[i] = Geometry.randomPointInCircle(
-					Environment.settings.world.radius.get() / 2f, WorldGeneration.RANDOM);
+					Environment.settings.world.radius.get() - clusterR, WorldGeneration.RANDOM
+			);
 
 		buildSpawners();
 
@@ -461,17 +463,12 @@ public class Environment implements Serializable
 		Iterator<Statistics> protozoaStats = getCells().stream()
 				.filter(cell -> cell instanceof Protozoan)
 				.map(p -> {
-					if (allStats) {
-						Statistics stats = new Statistics(p.getStats());
-						for (SurfaceNode node : p.getSurfaceNodes())
-							stats.putAll("Node " + node.getIndex() +": ", node.getStats());
-						for (Organelle organelle : p.getOrganelles())
-							stats.putAll("Organelle " + organelle.getIndex() +": ", organelle.getStats());
-						return stats;
-					}
+					if (allStats)
+						return ((Protozoan) p).getAllStats();
 					return p.getStats();
 				})
 				.iterator();
+
 		Statistics stats = Statistics.computeSummaryStatistics(protozoaStats, computeLogStats);
 		final int protozoaCount = numberOfProtozoa();
 		stats.putCount("Protozoa Count", protozoaCount);
@@ -579,5 +576,9 @@ public class Environment implements Serializable
 
 	public float getRadius() {
 		return settings.world.radius.get();
+	}
+
+	public void dispose() {
+		world.dispose();
 	}
 }

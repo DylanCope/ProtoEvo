@@ -13,9 +13,8 @@ import com.protoevo.utils.Colour;
 import com.protoevo.utils.Utils;
 
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
+import java.io.Serializable;
+import java.util.*;
 
 public class Protozoan extends Cell implements Evolvable
 {
@@ -35,6 +34,21 @@ public class Protozoan extends Cell implements Evolvable
 	private final Vector2 thrust = new Vector2();
 	private float thrustAngle = (float) (2 * Math.PI * Math.random());
 	private float thrustTurn = 0, thrustMag;
+
+	public static class Tag implements Serializable {
+		public static final long serialVersionUID = 1L;
+		public String tag;
+		public float timeStamp;
+		public int generation;
+
+		public Tag(String tag, float timeStamp, int generation) {
+			this.tag = tag;
+			this.timeStamp = timeStamp;
+			this.generation = generation;
+		}
+	}
+
+	private final Set<Tag> tags = new HashSet<>();
 
 	@Override
 	public void update(float delta)
@@ -239,7 +253,13 @@ public class Protozoan extends Cell implements Evolvable
 		child.setRadius(r);
 		child.setEnv(getEnv());
 
+		child.tags.addAll(tags);
+
 		return child;
+	}
+
+	public void tag(String tag) {
+		tags.add(new Tag(tag, getEnv().getElapsedTime(), getGeneration()));
 	}
 
 	@Override
@@ -382,6 +402,22 @@ public class Protozoan extends Cell implements Evolvable
 		stats.putPercentage("Mean Mutation Chance", 100 * geneExpressionFunction.getMeanMutationRate());
 		stats.putCount("Num Mutations", geneExpressionFunction.getMutationCount());
 
+		int i = 0;
+		for (Tag tag : tags) {
+			stats.put("Tag " + i, tag.tag + " (Gen " + tag.generation + ")");
+			i++;
+		}
+
+		return stats;
+	}
+
+	public Statistics getAllStats() {
+		Statistics stats = new Statistics(getStats());
+		for (SurfaceNode node : getSurfaceNodes())
+			stats.putAll("Node " + node.getIndex() +": ", node.getStats());
+		for (Organelle organelle : getOrganelles())
+			stats.putAll("Organelle " + organelle.getIndex() +": ", organelle.getStats());
+		stats.putAll(getResourceStats());
 		return stats;
 	}
 

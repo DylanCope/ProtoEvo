@@ -6,13 +6,13 @@ public class WorldGenerationSettings extends Settings {
     public final Settings.Parameter<Integer> seed = new Settings.Parameter<>(
             "Seed", "World Generation Random Seed", 1);
     public final Settings.Parameter<Integer> numInitialProtozoa = new Settings.Parameter<>(
-            "Initial Protozoa", "Number of protozoa spawned on world generation.", 500);
+            "Initial Protozoa", "Number of protozoa spawned on world generation.", 300);
     public final Settings.Parameter<Integer> numInitialPlantPellets = new Settings.Parameter<>(
             "Initial Plants", "Number of plants spawned on world generation.", 2000);
     public final Settings.Parameter<Integer> numRingClusters = new Settings.Parameter<>(
             "Ring Clusters", "Number of ring clusters.", 4);
     public final Settings.Parameter<Integer> numPopulationStartClusters = new Settings.Parameter<>(
-            "Population Start Centres", "Number of spawn centres for cells.", 3);
+            "Population Start Centres", "Number of spawn centres for cells.", 1);
     public final Settings.Parameter<Float> rockClusterRadius = new Settings.Parameter<>(
             "Rock Cluster Size", "Size of Rock Clusters", 1f
     );
@@ -22,7 +22,7 @@ public class WorldGenerationSettings extends Settings {
     public final Settings.Parameter<Float> populationClusterRadius = new Settings.Parameter<>(
             "Population Cluster Radius",
             "Size of initial population spawn clusters.",
-            radius.get() / 2f
+            0.75f * radius.get()
     );
     public final Settings.Parameter<Float> maxRockSize = new Settings.Parameter<>(
             "", "", Environment.settings.maxParticleRadius.get() * 2.5f);

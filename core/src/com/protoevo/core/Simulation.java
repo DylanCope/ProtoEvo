@@ -286,8 +286,14 @@ public class Simulation implements Runnable
 		System.out.println("\nClosing simulation.");
 		String saveFile = save();
 		System.out.println("Saved environment to: " + saveFile);
-		environment.getWorld().dispose();
 		repl.close();
+	}
+
+	public void dispose() {
+		if (environment != null) {
+			environment.dispose();
+			environment = null;
+		}
 	}
 
 	public String getTimeStampString() {

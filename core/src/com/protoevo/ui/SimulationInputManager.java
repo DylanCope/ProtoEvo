@@ -50,10 +50,11 @@ public class SimulationInputManager {
         // Right side ui
 
         topBar.createRightBarImageButton("icons/x-button.png", () -> {
-            simulation.onOtherThread(() -> {
-                simulation.close();
-                graphics.exitApplication();
-            });
+            simulation.onOtherThread(simulation::close);
+            simulationScreen.addConditionalTask(
+                    () -> !simulation.isBusyOnOtherThread(),
+                    graphics::exitApplication
+            );
         });
 
         topBar.createRightBarImageButton("icons/back.png", () -> {

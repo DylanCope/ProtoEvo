@@ -66,8 +66,8 @@ public class SimulationScreen extends ScreenAdapter {
     private final Map<String, Callable<Statistics>> statGetters = new HashMap<>();
     private final Statistics debugStats = new Statistics();
     private Particle trackedParticle;
-    private final ImageButton saveTrackedParticleButton;
-    private final TextField saveTrackedParticleTextField;
+    private final ImageButton saveTrackedParticleButton, addTagButton;
+    private final TextField saveTrackedParticleTextField, addTagTextField;
     private final Set<ImageButton> buttons = new java.util.HashSet<>();
     private final Map<Supplier<Boolean>, Runnable> conditionalTasks = new HashMap<>();
 
@@ -147,6 +147,23 @@ public class SimulationScreen extends ScreenAdapter {
             return true;
         });
         saveTrackedParticleButton.setVisible(false);
+
+        addTagTextField = new TextField("", skin);
+        stage.addActor(addTagTextField);
+        addTagTextField.setVisible(false);
+        addTagTextField.setMessageText("Add tag...");
+
+        addTagButton = createImageButton(
+                "icons/add.png", topBar.getButtonSize(), topBar.getButtonSize(), event -> {
+            if (event.toString().equals("touchDown")) {
+                if (trackedParticle != null && trackedParticle instanceof Protozoan) {
+                    String tag = addTagTextField.getText();
+                    ((Protozoan) trackedParticle).tag(tag);
+                }
+            }
+            return true;
+        });
+        addTagButton.setVisible(false);
 
         statsSelectBox = new SelectBox<>(skin, "statsTitle");
         stage.addActor(statsSelectBox);
@@ -331,7 +348,7 @@ public class SimulationScreen extends ScreenAdapter {
         return renderStats(stats, 0, font);
     }
 
-    public void setSaveParticleTopBarUI() {
+    public void setParticleTopBarUI() {
         saveTrackedParticleButton.setVisible(true);
         float fieldWidthMul = 8f;
 
@@ -344,6 +361,26 @@ public class SimulationScreen extends ScreenAdapter {
                 fieldWidthMul * saveTrackedParticleButton.getWidth(),
                 saveTrackedParticleButton.getHeight()
         );
+
+        addTagButton.setVisible(true);
+        addTagButton.setPosition(
+                saveTrackedParticleTextField.getX() + saveTrackedParticleTextField.getWidth() + 10,
+                saveTrackedParticleTextField.getY()
+        );
+        addTagTextField.setVisible(true);
+        addTagTextField.setBounds(
+                addTagButton.getX() + addTagButton.getWidth() * 1.3f,
+                addTagButton.getY(),
+                fieldWidthMul * addTagButton.getWidth(),
+                addTagButton.getHeight()
+        );
+    }
+
+    public void hideParticleTopBarUI() {
+        saveTrackedParticleButton.setVisible(false);
+        saveTrackedParticleTextField.setVisible(false);
+        addTagButton.setVisible(false);
+        addTagTextField.setVisible(false);
     }
 
     public void setProtozoaStatOptions(Protozoan protozoan) {
@@ -351,6 +388,10 @@ public class SimulationScreen extends ScreenAdapter {
         ArrayList<String> statOptions = new ArrayList<>();
         statOptions.add("Protozoan Stats");
         statGetters.put("Protozoan Stats", protozoan::getStats);
+
+        statOptions.add("Resource Stats");
+        statGetters.put("Resource Stats", protozoan::getResourceStats);
+
         getStats = protozoan::getStats;
 
         layout.setText(statsSelectBox.getStyle().font, "Protozoan Stats");
@@ -401,11 +442,6 @@ public class SimulationScreen extends ScreenAdapter {
         statsSelectBox.setSelected("Simulation Stats");
     }
 
-    public void hideSaveParticleTopBarUI() {
-        saveTrackedParticleButton.setVisible(false);
-        saveTrackedParticleTextField.setVisible(false);
-    }
-
     public void renderStats() {
         float titleY = (float) (17 * graphicsHeight / 20f + 1.5 * statsTitle.getLineHeight());
 
@@ -418,12 +454,14 @@ public class SimulationScreen extends ScreenAdapter {
 
             if ((trackedParticle != particle)) {
                 if (particle instanceof Protozoan) {
-                    setSaveParticleTopBarUI();
+                    setParticleTopBarUI();
                     setProtozoaStatOptions((Protozoan) particle);
-                } else {
-                    hideSaveParticleTopBarUI();
+                } else if (particle instanceof Cell) {
+                    Cell cell = (Cell) particle;
+                    hideParticleTopBarUI();
                     statGetters.clear();
-                    addStatOption(particle.getPrettyName() + " Stats", particle::getStats);
+                    addStatOption(cell.getPrettyName() + " Stats", cell::getStats);
+                    addStatOption("Resource Stats", cell::getResourceStats);
                     statsSelectBox.setSelectedIndex(0);
                 }
                 trackedParticle = particle;
@@ -431,7 +469,7 @@ public class SimulationScreen extends ScreenAdapter {
         }
         else if (trackedParticle != null) {
             trackedParticle = null;
-            hideSaveParticleTopBarUI();
+            hideParticleTopBarUI();
             setEnvStatOptions();
         }
 

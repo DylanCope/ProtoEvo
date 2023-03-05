@@ -86,6 +86,7 @@ public class GraphicsAdapter extends Game {
 	}
 
 	public void moveToTitleScreen(Screen previousScreen) {
+		applicationManager.disposeSimulationIfPresent();
 		titleScreen = new TitleScreen(this);
 		setScreen(titleScreen);
 //		screen.dispose();
