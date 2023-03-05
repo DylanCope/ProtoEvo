@@ -23,6 +23,19 @@ public class Statistics implements Serializable, Iterable<Statistics.Stat> {
         StatType(Class<?> clazz) {
             this.clazz = clazz;
         }
+
+        public static StatType fromClass(Class<?> clazz) {
+            if (clazz == Boolean.class)
+                return BOOLEAN;
+            else if (clazz == Integer.class)
+                return INTEGER;
+            else if (clazz == Double.class || clazz == Float.class)
+                return DOUBLE;
+            else if (clazz == String.class)
+                return STRING;
+            else
+                return null;
+        }
     }
 
     public enum BaseUnit {

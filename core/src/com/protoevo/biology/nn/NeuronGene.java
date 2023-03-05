@@ -3,7 +3,7 @@ package com.protoevo.biology.nn;
 import com.badlogic.gdx.math.MathUtils;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.protoevo.core.Simulation;
-import com.protoevo.settings.SimulationSettings;
+import com.protoevo.env.Environment;
 import com.protoevo.utils.Utils;
 
 import java.io.Serializable;
@@ -19,9 +19,9 @@ public class NeuronGene implements Comparable<NeuronGene>, Serializable
     @JsonIgnore
     private Object[] tags;
     private boolean disabled;
-    private float mutationRate = SimulationSettings.globalMutationChance;
-    private float mutationRateMin = SimulationSettings.minMutationChance;
-    private float mutationRateMax = SimulationSettings.maxMutationChance;
+    private float mutationRate = Environment.settings.globalMutationChance.get();
+    private float mutationRateMin = Environment.settings.minMutationChance.get();
+    private float mutationRateMax = Environment.settings.maxMutationChance.get();
     private int nMutations = 0;
     private int nMutationRateMutations = 0;
     @JsonIgnore
@@ -94,7 +94,7 @@ public class NeuronGene implements Comparable<NeuronGene>, Serializable
             nMutationRateMutations++;
         }
 
-        if (Math.random() < SimulationSettings.deleteNeuronMutationRate && type == Neuron.Type.HIDDEN)
+        if (Math.random() < Environment.settings.deleteNeuronMutationRate.get() && type == Neuron.Type.HIDDEN)
             newGene.disable();
 
         return newGene;

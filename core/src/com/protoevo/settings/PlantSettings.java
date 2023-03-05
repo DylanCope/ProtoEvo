@@ -1,18 +1,58 @@
 package com.protoevo.settings;
 
+import com.protoevo.env.Environment;
 import com.protoevo.utils.Geometry;
 
-public class PlantSettings {
-    public static final float minMaxPlantRadius = 0.015f;
-    public static final float minPlantSplitRadius = 0.01f;
-    public static final float minPlantBirthRadius = 2f / 100f;
-    public static final float maxPlantBirthRadius = 8f / 100f;
+public class PlantSettings extends Settings {
 
-    public static final float minPlantGrowth = 0;
-    public static final float maxPlantGrowth = 1f;
-    public static final float plantCrowdingGrowthDecay = 1.0f;
-    public static final float plantCriticalCrowding = 6.0f;
-    public static final float plantRegen = .2f;
-    public static float collisionDestructionRate =
-            Geometry.getCircleArea(maxPlantBirthRadius) * SimulationSettings.basicParticleMassDensity;
+    public final Settings.Parameter<Float> minMaxPlantRadius = new Settings.Parameter<>(
+            "",
+            "",
+            0.015f);
+    public final Settings.Parameter<Float> minPlantSplitRadius = new Settings.Parameter<>(
+            "",
+            "",
+            0.01f);
+    public final Settings.Parameter<Float> minBirthRadius = new Settings.Parameter<>(
+            "",
+            "",
+            2f / 100f);
+    public final Settings.Parameter<Float> maxBirthRadius = new Settings.Parameter<>(
+            "",
+            "",
+            8f / 100f);
+    public final Settings.Parameter<Float> minPlantGrowth = new Settings.Parameter<>(
+            "",
+            "",
+            0f);
+    public final Settings.Parameter<Float> maxPlantGrowth = new Settings.Parameter<>(
+            "",
+            "",
+            1f);
+    public final Settings.Parameter<Float> plantCrowdingGrowthDecay = new Settings.Parameter<>(
+            "",
+            "",
+            1.0f);
+    public final Settings.Parameter<Float> plantCriticalCrowding = new Settings.Parameter<>(
+            "",
+            "",
+            6.0f);
+    public final Settings.Parameter<Float> plantRegen = new Settings.Parameter<>(
+            "",
+            "",
+            .2f);
+    public final Settings.Parameter<Float> collisionDestructionRate = new Settings.Parameter<>(
+            "",
+            "",
+            Geometry.getCircleArea(maxBirthRadius.get())
+                    * Environment.settings.basicParticleMassDensity.get()
+    );
+    public final Settings.Parameter<Float> minHealthToSplit = new Settings.Parameter<>(
+            "Min Health to Split",
+            "Minimum health required to produce children.",
+            0.15f);
+
+    public PlantSettings() {
+        super("Plant");
+    }
 }

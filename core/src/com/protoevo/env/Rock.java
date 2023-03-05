@@ -2,17 +2,13 @@ package com.protoevo.env;
 
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector2;
-import com.fasterxml.jackson.annotation.JsonIdentityInfo;
-import com.fasterxml.jackson.annotation.ObjectIdGenerators;
 import com.protoevo.physics.Shape;
 import com.protoevo.utils.Colour;
 import com.protoevo.utils.Geometry;
 
 import java.io.Serializable;
 
-@JsonIdentityInfo(
-        generator = ObjectIdGenerators.IntSequenceGenerator.class,
-        scope = Environment.class)
+
 public class Rock implements Serializable, Shape {
     public static final long serialVersionUID = 1L;
 

@@ -7,11 +7,10 @@ import com.protoevo.biology.nn.NeuralNetwork;
 import com.protoevo.biology.nodes.*;
 import com.protoevo.biology.organelles.Organelle;
 import com.protoevo.core.Statistics;
+import com.protoevo.env.Environment;
 import com.protoevo.physics.CollisionHandler;
-import com.protoevo.settings.ProtozoaSettings;
-import com.protoevo.settings.Settings;
-import com.protoevo.settings.SimulationSettings;
 import com.protoevo.utils.Colour;
+import com.protoevo.utils.Utils;
 
 
 import java.util.ArrayList;
@@ -32,7 +31,6 @@ public class Protozoan extends Cell implements Evolvable
 	private float damageRate = 0;
 	private float herbivoreFactor, splitRadius;
 	private float timeSinceLastGeneUpdate = 0;
-	private final static float geneUpdateTime = Settings.simulationUpdateDelta * 10;
 	private final Vector2 tmp = new Vector2();
 	private final Collection<Cell> engulfedCells = new ArrayList<>(0);
 	private final Vector2 thrust = new Vector2();
@@ -45,7 +43,7 @@ public class Protozoan extends Cell implements Evolvable
 		super.update(delta);
 
 		timeSinceLastGeneUpdate += delta;
-		if (timeSinceLastGeneUpdate >= geneUpdateTime) {
+		if (timeSinceLastGeneUpdate >= Environment.settings.protozoa.geneExpressionInterval.get()) {
 			geneExpressionFunction.update();
 			timeSinceLastGeneUpdate = 0;
 		}
@@ -57,7 +55,7 @@ public class Protozoan extends Cell implements Evolvable
 
 		for (Cell engulfedCell : engulfedCells) {
 			handleEngulfing(engulfedCell, delta);
-			eat(engulfedCell, ProtozoaSettings.engulfEatingRateMultiplier * delta);
+			eat(engulfedCell, Environment.settings.protozoa.engulfEatingRateMultiplier.get() * delta);
 		}
 		engulfedCells.removeIf(this::removeEngulfedCondition);
 
@@ -70,7 +68,7 @@ public class Protozoan extends Cell implements Evolvable
 	}
 
 	private void handleMating(float delta) {
-		if (SimulationSettings.matingEnabled && mateDesire && matingCooldown <= 0) {
+		if (Environment.settings.protozoa.matingEnabled.get() && mateDesire && matingCooldown <= 0) {
 			for (CollisionHandler.Collision contact : getContacts()) {
 				Object other = getOther(contact);
 				if (other instanceof Protozoan) {
@@ -128,11 +126,13 @@ public class Protozoan extends Cell implements Evolvable
 		setDigestionRate(Food.Type.Plant, herbivoreFactor);
 	}
 
-	@EvolvableFloat(name="Split Radius",
-			min=ProtozoaSettings.maxProtozoanBirthRadius,
-			max=SimulationSettings.maxParticleRadius)
+	@EvolvableFloat(name="Split Radius", min=0, max=1)
 	public void setSplitRadius(float splitRadius) {
-		this.splitRadius = splitRadius;
+		this.splitRadius = Utils.clampedLinearRemap(
+				splitRadius, 0, 1,
+				Environment.settings.protozoa.maxProtozoanBirthRadius.get(),
+				Environment.settings.maxParticleRadius.get()
+		);
 	}
 
 	@EvolvableObject(name="Cell Colour",
@@ -142,10 +142,13 @@ public class Protozoan extends Cell implements Evolvable
 		setDegradedColour(degradeColour(colour, 0.3f));
 	}
 
-	@EvolvableFloat(name="Growth Rate",
-					min=ProtozoaSettings.minProtozoanGrowthRate,
-					max=ProtozoaSettings.maxProtozoanGrowthRate)
+	@EvolvableFloat(name="Growth Rate", min=0, max=1)
 	public void setGrowth(float growthRate) {
+		growthRate = Utils.clampedLinearRemap(
+				growthRate, 0, 1,
+				Environment.settings.protozoa.minProtozoanGrowthRate.get(),
+				Environment.settings.protozoa.maxProtozoanGrowthRate.get()
+		);
 		setGrowthRate(growthRate);
 	}
 
@@ -161,11 +164,14 @@ public class Protozoan extends Cell implements Evolvable
 	}
 
 	@Override
-	@GeneRegulator(name="Size",
-			       min=SimulationSettings.minParticleRadius,
-			       max=SimulationSettings.maxParticleRadius)
+	@GeneRegulator(name="Size", min=0, max=1)
 	public float getRadius() {
-		return super.getRadius();
+		return Utils.clampedLinearRemap(
+				super.getRadius(),
+				Environment.settings.minParticleRadius.get(),
+				Environment.settings.maxParticleRadius.get(),
+				0, 1
+		);
 	}
 
 	@GeneRegulator(name="Construction Mass Available")
@@ -194,13 +200,13 @@ public class Protozoan extends Cell implements Evolvable
 
 	@ControlVariable(name="Cilia Thrust", min=0, max=1)
 	public void setCiliaThrust(float thrust) {
-		float sizePenalty = getRadius() / SimulationSettings.maxParticleRadius;
-		this.thrustMag = sizePenalty * thrust * ProtozoaSettings.maxCiliaThrust;
+		float sizePenalty = getRadius() / Environment.settings.maxParticleRadius.get();
+		this.thrustMag = sizePenalty * thrust * Environment.settings.protozoa.maxCiliaThrust.get();
 	}
 
 	@ControlVariable(name="Cilia Turn", min=0, max=1)
 	public void setCiliaTurn(float turn) {
-		this.thrustTurn = ProtozoaSettings.maxCiliaTurn * turn;
+		this.thrustTurn = Environment.settings.protozoa.maxCiliaTurn.get() * turn;
 	}
 
 	@ControlVariable(name="Mate Desire", min=0, max=1)
@@ -220,7 +226,8 @@ public class Protozoan extends Cell implements Evolvable
 	}
 
 	private boolean shouldSplit() {
-		return getRadius() > splitRadius && getHealth() > ProtozoaSettings.minHealthToSplit;
+		return getRadius() >= splitRadius
+				&& getHealth() >= Environment.settings.protozoa.minHealthToSplit.get();
 	}
 
 	private Protozoan createSplitChild(float r) {
@@ -282,7 +289,7 @@ public class Protozoan extends Cell implements Evolvable
 		// Move engulfed cell towards the centre of this cell
 		Vector2 vel = tmp.set(getPos()).sub(e.getPos());
 		float d2 = vel.len2();
-		vel.setLength(ProtozoaSettings.engulfForce * tmp.len2());
+		vel.setLength(Environment.settings.protozoa.engulfForce.get() * tmp.len2());
 		if (!e.isFullyEngulfed())
 			vel.add(getVel());
 		else
@@ -306,7 +313,7 @@ public class Protozoan extends Cell implements Evolvable
 			d2 = other.getPos().dst2(e.getPos());
 			if (other != e && d2 < rr*rr) {
 				tmp.set(e.getPos()).sub(other.getPos());
-				tmp.setLength(ProtozoaSettings.engulfForce * delta * (rr*rr - d2));
+				tmp.setLength(Environment.settings.protozoa.engulfForce.get() * delta * (rr*rr - d2));
 				e.getPos().add(tmp);
 			}
 		}
@@ -389,7 +396,7 @@ public class Protozoan extends Cell implements Evolvable
 	}
 
 	public void age(float delta) {
-		damageRate = getRadius() * ProtozoaSettings.protozoaStarvationFactor;
+		damageRate = getRadius() * Environment.settings.protozoa.starvationFactor.get();
 		damage(damageRate * delta, CauseOfDeath.OLD_AGE);
 	}
 

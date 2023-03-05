@@ -1,17 +1,11 @@
 package com.protoevo.biology.evolution;
 
 import com.badlogic.gdx.math.MathUtils;
-import com.fasterxml.jackson.annotation.JsonIdentityInfo;
-import com.fasterxml.jackson.annotation.ObjectIdGenerators;
-import com.protoevo.core.Simulation;
-import com.protoevo.env.Environment;
 
 import java.io.Serializable;
 import java.util.Map;
 
-@JsonIdentityInfo(
-        generator = ObjectIdGenerators.IntSequenceGenerator.class,
-        scope = Environment.class)
+
 public class FloatTrait implements Trait<Float>, Serializable {
 
 

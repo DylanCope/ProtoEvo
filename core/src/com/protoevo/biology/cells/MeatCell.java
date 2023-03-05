@@ -2,7 +2,6 @@ package com.protoevo.biology.cells;
 
 import com.badlogic.gdx.math.MathUtils;
 import com.protoevo.biology.CauseOfDeath;
-import com.protoevo.core.Simulation;
 import com.protoevo.env.Environment;
 import com.protoevo.utils.Colour;
 
@@ -24,7 +23,7 @@ public class MeatCell extends Cell {
     }
 
     public void age(float delta) {
-        float deathRate = getRadius() * delta * 50f;
+        float deathRate = getRadius() * delta * Environment.settings.meatDecayFactor.get();
         damage(getHealth() * deathRate, CauseOfDeath.MEAT_DECAY);
     }
 

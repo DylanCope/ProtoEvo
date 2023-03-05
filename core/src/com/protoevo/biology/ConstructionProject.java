@@ -1,23 +1,14 @@
 package com.protoevo.biology;
 
 import com.badlogic.gdx.math.MathUtils;
-import com.fasterxml.jackson.annotation.JsonIdentityInfo;
-import com.fasterxml.jackson.annotation.ObjectIdGenerators;
-import com.protoevo.env.Environment;
-
 
 import java.io.Serializable;
 import java.util.Collection;
 import java.util.Map;
 
 
-@JsonIdentityInfo(
-        generator = ObjectIdGenerators.IntSequenceGenerator.class,
-        scope = Environment.class)
 public class ConstructionProject implements Serializable {
 
-
-    
     private static final long serialVersionUID = 1L;
 
     private float timeSpent;

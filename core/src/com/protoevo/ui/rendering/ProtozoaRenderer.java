@@ -12,7 +12,7 @@ import com.protoevo.biology.nodes.*;
 import com.protoevo.biology.cells.Protozoan;
 import com.protoevo.physics.Particle;
 import com.protoevo.env.Rock;
-import com.protoevo.settings.RenderSettings;
+import com.protoevo.settings.legacy.LegacyRenderSettings;
 import com.protoevo.utils.Geometry;
 import com.protoevo.utils.Utils;
 
@@ -120,7 +120,7 @@ public class ProtozoaRenderer {
         public void draw(float delta, OrthographicCamera camera, SpriteBatch batch) {
             float cellAngle = protozoan.getAngle();
 
-            float criticalZoom = RenderSettings.cameraZoomForCellDetails;
+            float criticalZoom = LegacyRenderSettings.cameraZoomForCellDetails;
             float a = Utils.clampedLinearRemap(
                     camera.zoom, criticalZoom, .5f * criticalZoom, 0, 1f);
             Color c = protozoan.getColor();

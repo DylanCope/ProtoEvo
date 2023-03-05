@@ -18,7 +18,6 @@ import com.badlogic.gdx.scenes.scene2d.Touchable;
 import com.badlogic.gdx.scenes.scene2d.ui.*;
 import com.badlogic.gdx.scenes.scene2d.ui.TextField;
 import com.badlogic.gdx.scenes.scene2d.utils.Drawable;
-import com.badlogic.gdx.scenes.scene2d.utils.Layout;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 import com.badlogic.gdx.utils.ScreenUtils;
 import com.protoevo.biology.cells.Cell;
@@ -29,7 +28,6 @@ import com.protoevo.biology.organelles.Organelle;
 import com.protoevo.core.*;
 import com.protoevo.env.EnvFileIO;
 import com.protoevo.physics.Particle;
-import com.protoevo.settings.WorldGenerationSettings;
 import com.protoevo.env.Environment;
 import com.protoevo.input.ParticleTracker;
 import com.protoevo.ui.nn.MouseOverNeuronHandler;
@@ -98,8 +96,8 @@ public class SimulationScreen extends ScreenAdapter {
 
         camera = new OrthographicCamera();
         camera.setToOrtho(
-                false, WorldGenerationSettings.environmentRadius,
-                WorldGenerationSettings.environmentRadius * graphicsHeight / graphicsWidth);
+                false, Environment.settings.world.radius.get(),
+                Environment.settings.world.radius.get() * graphicsHeight / graphicsWidth);
         camera.position.set(0, 0, 0);
         camera.zoom = 1f;
 
@@ -602,7 +600,7 @@ public class SimulationScreen extends ScreenAdapter {
 
     public void resetCamera() {
         camera.position.set(0, 0, 0);
-        camera.zoom = WorldGenerationSettings.environmentRadius;
+        camera.zoom = 2f;
     }
 
     public GlyphLayout getLayout() {

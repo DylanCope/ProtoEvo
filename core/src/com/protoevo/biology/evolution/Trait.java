@@ -2,7 +2,8 @@ package com.protoevo.biology.evolution;
 
 import com.badlogic.gdx.math.MathUtils;
 import com.protoevo.core.Simulation;
-import com.protoevo.settings.SimulationSettings;
+import com.protoevo.env.Environment;
+import com.protoevo.settings.legacy.LegacySimulationSettings;
 
 import java.io.Serializable;
 import java.util.HashMap;
@@ -31,8 +32,8 @@ public interface Trait<T> extends Evolvable.Component, Serializable {
 
     default void mutateMutationRate() {
         setMutationRate(MathUtils.random(
-                SimulationSettings.minTraitMutationChance,
-                SimulationSettings.maxTraitMutationChance
+                Environment.settings.minTraitMutationChance.get(),
+                Environment.settings.maxTraitMutationChance.get()
         ));
     }
 

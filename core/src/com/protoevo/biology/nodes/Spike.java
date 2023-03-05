@@ -5,7 +5,7 @@ import com.badlogic.gdx.math.Vector2;
 import com.protoevo.biology.CauseOfDeath;
 import com.protoevo.biology.cells.Cell;
 import com.protoevo.core.Statistics;
-import com.protoevo.settings.ProtozoaSettings;
+import com.protoevo.env.Environment;
 import com.protoevo.utils.Geometry;
 import com.protoevo.utils.Utils;
 
@@ -63,7 +63,8 @@ public class Spike extends NodeAttachment implements Serializable {
 
                     float myAttack = (
                             2* cell.getHealth() +
-                            ProtozoaSettings.spikeDamage * woundDepth * getSpikeLength() / other.getRadius() +
+                            Environment.settings.protozoa.spikeDamage.get() *
+                                    woundDepth * getSpikeLength() / other.getRadius() +
                             2* MathUtils.random()
                     );
                     float theirDefense = other.getShieldFactor() * (

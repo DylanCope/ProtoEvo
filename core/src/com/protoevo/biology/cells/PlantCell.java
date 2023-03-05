@@ -6,9 +6,6 @@ import com.protoevo.core.Statistics;
 import com.protoevo.physics.CollisionHandler;
 import com.protoevo.env.Environment;
 import com.protoevo.env.JointsManager;
-import com.protoevo.settings.PlantSettings;
-import com.protoevo.settings.Settings;
-import com.protoevo.settings.SimulationSettings;
 import com.protoevo.utils.Colour;
 import com.protoevo.utils.Geometry;
 
@@ -16,19 +13,18 @@ public class PlantCell extends Cell {
     public static final long serialVersionUID = -3975433688803760076L;
 
     private final float maxRadius;
-    private float crowdingFactor;
 
     public PlantCell(float radius, Environment environment) {
         super();
-        setRadius(Math.max(radius, PlantSettings.minPlantBirthRadius));
+        setRadius(Math.max(radius, Environment.settings.plant.minBirthRadius.get()));
         addToEnv(environment);
         setGrowthRate(MathUtils.random(
-                PlantSettings.minPlantGrowth,
-                PlantSettings.maxPlantGrowth));
+                Environment.settings.plant.minPlantGrowth.get(),
+                Environment.settings.plant.maxPlantGrowth.get()));
 
         maxRadius = MathUtils.random(
-                1.5f * SimulationSettings.minParticleRadius,
-                SimulationSettings.maxParticleRadius / 2f);
+                1.5f * Environment.settings.minParticleRadius.get(),
+                Environment.settings.maxParticleRadius.get() / 2f);
 
         float darken = 0.9f;
         setHealthyColour(new Colour(
@@ -52,8 +48,8 @@ public class PlantCell extends Cell {
     }
 
     private static float randomPlantRadius() {
-        float range = PlantSettings.maxPlantBirthRadius * .5f - PlantSettings.minPlantBirthRadius;
-        return PlantSettings.minPlantBirthRadius + range * MathUtils.random();
+        float range = Environment.settings.plant.maxBirthRadius.get() * .5f - Environment.settings.plant.minBirthRadius.get();
+        return Environment.settings.plant.minBirthRadius.get() + range * MathUtils.random();
     }
 
     public PlantCell(Environment environment) {
@@ -62,13 +58,8 @@ public class PlantCell extends Cell {
 
     private boolean shouldSplit() {
         return hasNotBurst() && getRadius() >= 0.99f * maxRadius &&
-                getHealth() > Settings.minHealthToSplit;
+                getHealth() > Environment.settings.plant.minHealthToSplit.get();
     }
-
-    public float getCrowdingFactor() {
-        return crowdingFactor;
-    }
-
 
     @Override
     public void update(float delta) {
@@ -77,10 +68,10 @@ public class PlantCell extends Cell {
         if (isDead())
             return;
 
-        float photoRate = getArea() / Geometry.getCircleArea(SimulationSettings.maxParticleRadius);
+        float photoRate = getArea() / Geometry.getCircleArea(Environment.settings.maxParticleRadius.get());
 
-        addConstructionMass(delta * Settings.plantConstructionRate);
-        addAvailableEnergy(delta * photoRate * Settings.plantPhotosynthesizeEnergyRate);
+        addConstructionMass(delta * Environment.settings.plantConstructionRate.get());
+        addAvailableEnergy(delta * photoRate * Environment.settings.plantPhotosynthesizeEnergyRate.get());
 
         int nProtozoaContacts = 0;
         for (CollisionHandler.Collision collision : getContacts()) {
@@ -89,7 +80,7 @@ public class PlantCell extends Cell {
                 nProtozoaContacts++;
         }
         if (nProtozoaContacts >= 1) {
-            float dps = PlantSettings.collisionDestructionRate * nProtozoaContacts;
+            float dps = Environment.settings.plant.collisionDestructionRate.get() * nProtozoaContacts;
             removeMass(delta * dps, CauseOfDeath.OVERCROWDING);
         }
 
@@ -134,22 +125,6 @@ public class PlantCell extends Cell {
         }
     }
 
-    /**
-     * <a href="https://www.desmos.com/calculator/hmhjwdk0jc">Desmos Graph</a>
-     * @return The growth rate based on the crowding and current radius.
-     */
-//    @Override
-//    public float getGrowthRate() {
-//        float x = (-getCrowdingFactor() + PlantSettings.plantCriticalCrowding) / PlantSettings.plantCrowdingGrowthDecay;
-//        x = (float) (Math.tanh(x));// * Math.tanh(-0.01 + 50 * getCrowdingFactor() / Settings.plantCriticalCrowding));
-//        x = x < 0 ? (float) (1 - Math.exp(-PlantSettings.plantCrowdingGrowthDecay * x)) : x;
-//        float growthRate = super.getGrowthRate() * x;
-//        if (getRadius() > maxRadius)
-//            growthRate *= Math.exp(maxRadius - getRadius());
-//        growthRate = growthRate > 0 ? growthRate * getHealth() : growthRate;
-//        return growthRate;
-//    }
-
     public Statistics getStats() {
         Statistics stats = super.getStats();
         stats.putDistance("Split Radius", maxRadius);
@@ -164,21 +139,4 @@ public class PlantCell extends Cell {
     public int burstMultiplier() {
         return 3;
     }
-
-//    @Override
-//    public void interact(List<Object> interactions) {
-//        float maxDist2 = getInteractionRange() * getInteractionRange();
-//        float minDist2 = getRadius() * getRadius() * 1.1f * 1.1f;
-//        for (Object interaction : interactions) {
-//            if (interaction instanceof PlantCell) {
-//                PlantCell other = (PlantCell) interaction;
-//                Vector2 pos = other.getPos();
-//                float dist2 = pos.dst2(getPos());
-//                if (minDist2 < dist2 && dist2 < maxDist2) {
-//                    Vector2 impulse = pos.cpy().sub(getPos()).setLength(10f / dist2);
-//                    applyImpulse(impulse);
-//                }
-//            }
-//        }
-//    }
 }

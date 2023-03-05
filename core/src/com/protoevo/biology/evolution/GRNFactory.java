@@ -2,8 +2,7 @@ package com.protoevo.biology.evolution;
 
 import com.badlogic.gdx.math.MathUtils;
 import com.protoevo.biology.nn.*;
-import com.protoevo.settings.ProtozoaSettings;
-import com.protoevo.settings.SimulationSettings;
+import com.protoevo.env.Environment;
 
 import java.util.function.Supplier;
 
@@ -29,13 +28,13 @@ public class GRNFactory {
             NetworkGenome networkGenome, NeuronGene output) {
         NeuronGene sensor = getBias(networkGenome);
         output.setMutationRange(
-                SimulationSettings.minTraitMutationChance,
-                SimulationSettings.maxTraitMutationChance);
+                Environment.settings.minTraitMutationChance.get(),
+                Environment.settings.maxTraitMutationChance.get());
 
         SynapseGene synapseGene = networkGenome.addSynapse(sensor, output);
         synapseGene.setMutationRange(
-                SimulationSettings.minTraitMutationChance,
-                SimulationSettings.maxTraitMutationChance);
+                Environment.settings.minTraitMutationChance.get(),
+                Environment.settings.maxTraitMutationChance.get());
     }
 
     public static String getInputName(String geneName) {
@@ -62,8 +61,8 @@ public class GRNFactory {
         if (sensor == null) {
             sensor = networkGenome.addSensor("Bias");
             sensor.setMutationRange(
-                    SimulationSettings.minMutationChance,
-                    SimulationSettings.maxMutationChance);
+                    Environment.settings.minMutationChance.get(),
+                    Environment.settings.maxMutationChance.get());
         }
         return sensor;
     }
@@ -138,14 +137,14 @@ public class GRNFactory {
                     (GRNTag) fn -> fn.getExpressionNode(node.getName())
             );
             for (String regulator : regulators.keySet()) {
-                if (MathUtils.randomBoolean(ProtozoaSettings.initialGenomeConnectivity))
+                if (MathUtils.randomBoolean(Environment.settings.protozoa.initialGenomeConnectivity.get()))
                     continue;
 
                 SynapseGene synapseGene = networkGenome.addSynapse(
                         networkGenome.getNeuronGene(regulator), outputGene);
                 synapseGene.setMutationRange(
-                        SimulationSettings.minRegulationMutationChance,
-                        SimulationSettings.maxRegulationMutationChance);
+                        Environment.settings.minRegulationMutationChance.get(),
+                        Environment.settings.maxRegulationMutationChance.get());
             }
         }
 
@@ -176,8 +175,8 @@ public class GRNFactory {
                 NeuronGene regulatorSensor = networkGenome.addSensor(regulator,
                         (GRNTag) fn -> fn.getGeneRegulators().get(regulator));
                 regulatorSensor.setMutationRange(
-                        SimulationSettings.minRegulationMutationChance,
-                        SimulationSettings.maxRegulationMutationChance);
+                        Environment.settings.minRegulationMutationChance.get(),
+                        Environment.settings.maxRegulationMutationChance.get());
             }
         }
 
@@ -192,7 +191,7 @@ public class GRNFactory {
     {
         NetworkGenome networkGenome = createIO(new NetworkGenome(), geneExpressionFunction);
 
-        for (int i = 0; i < SimulationSettings.initialGRNMutations; i++) {
+        for (int i = 0; i < Environment.settings.initialGRNMutations.get(); i++) {
             networkGenome.mutate();
         }
 

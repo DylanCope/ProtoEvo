@@ -1,6 +1,5 @@
 package com.protoevo.env;
 
-import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.*;
@@ -18,10 +17,7 @@ import com.protoevo.biology.organelles.Organelle;
 import com.protoevo.core.Statistics;
 import com.protoevo.physics.Shape;
 import com.protoevo.physics.*;
-import com.protoevo.settings.Settings;
-import com.protoevo.settings.SimulationSettings;
-import com.protoevo.settings.WorldGenerationSettings;
-import com.protoevo.utils.Colour;
+import com.protoevo.settings.EnvironmentSettings;
 import com.protoevo.utils.Geometry;
 import com.protoevo.utils.SerializableFunction;
 
@@ -35,6 +31,9 @@ import java.util.concurrent.TimeUnit;
 public class Environment implements Serializable
 {
 	private static final long serialVersionUID = 2804817237950199223L;
+	public static EnvironmentSettings settings = new EnvironmentSettings();
+
+	private final EnvironmentSettings mySettings;
 	private transient World world;
 	private float elapsedTime, physicsStepTime;
 	private final Statistics stats = new Statistics();
@@ -69,17 +68,26 @@ public class Environment implements Serializable
 
 	public Environment()
 	{
+		this(settings);
+	}
+
+	public Environment(EnvironmentSettings settings) {
+		mySettings = settings;
+		Environment.settings = settings;
+
 		hasStarted = false;
 		createTransientObjects();
 		buildWorld();
 		jointsManager = new JointsManager(this);
 
 		System.out.println("Creating chemicals solution... ");
-		if (Settings.enableChemicalField) {
+		if (Environment.settings.enableChemicalField.get()) {
 			chemicalSolution = new ChemicalSolution(
 					this,
-					SimulationSettings.chemicalFieldResolution,
-					SimulationSettings.chemicalFieldRadius);
+					Environment.settings.chemicalFieldResolution.get(),
+					Environment.settings.chemicalFieldRadius.get());
+		} else {
+			chemicalSolution = null;
 		}
 
 		elapsedTime = 0;
@@ -104,6 +112,7 @@ public class Environment implements Serializable
 	}
 
 	public void rebuildWorld() {
+		settings = mySettings;
 		buildWorld();
 		createRockFixtures();
 		for (Cell cell : getCells())
@@ -121,8 +130,8 @@ public class Environment implements Serializable
 		long startTime = System.nanoTime();
 		world.step(
 				delta,
-				SimulationSettings.physicsVelocityIterations,
-				SimulationSettings.physicsPositionIterations);
+				Environment.settings.misc.physicsVelocityIterations.get(),
+				Environment.settings.misc.physicsPositionIterations.get());
 		physicsStepTime = TimeUnit.SECONDS.convert(
 				System.nanoTime() - startTime, TimeUnit.NANOSECONDS);
 
@@ -132,7 +141,7 @@ public class Environment implements Serializable
 
 		jointsManager.flushJoints();
 
-		if (Settings.enableChemicalField) {
+		if (Environment.settings.enableChemicalField.get()) {
 			chemicalSolution.update(delta);
 		}
 	}
@@ -204,7 +213,7 @@ public class Environment implements Serializable
 	private void buildSpawners() {
 		spawnPositionFns = new HashMap<>(3, 1);
 		if (populationStartCentres != null) {
-			final float clusterR = WorldGenerationSettings.populationClusterRadius;
+			final float clusterR = Environment.settings.world.populationClusterRadius.get();
 			spawnPositionFns.put(PlantCell.class, r -> randomPosition(r, populationStartCentres, 1.5f*clusterR));
 			spawnPositionFns.put(Protozoan.class, r -> randomPosition(r, populationStartCentres, clusterR));
 		}
@@ -215,15 +224,15 @@ public class Environment implements Serializable
 	}
 
 	public void initialisePopulation() {
-		populationStartCentres = new Vector2[WorldGenerationSettings.numPopulationStartClusters];
+		populationStartCentres = new Vector2[Environment.settings.world.numPopulationStartClusters.get()];
 		for (int i = 0; i < populationStartCentres.length; i++)
 			populationStartCentres[i] = Geometry.randomPointInCircle(
-					WorldGenerationSettings.environmentRadius / 2f, WorldGeneration.RANDOM);
+					Environment.settings.world.radius.get() / 2f, WorldGeneration.RANDOM);
 
 		buildSpawners();
 
 		System.out.println("Creating initial plant population...");
-		for (int i = 0; i < WorldGenerationSettings.numInitialPlantPellets; i++) {
+		for (int i = 0; i < Environment.settings.world.numInitialPlantPellets.get(); i++) {
 			PlantCell cell = new PlantCell(this);
 			if (cell.isDead()) {
 				System.out.println(
@@ -234,7 +243,7 @@ public class Environment implements Serializable
 		}
 
 		System.out.println("Creating initial protozoan population...");
-		for (int i = 0; i < WorldGenerationSettings.numInitialProtozoa; i++) {
+		for (int i = 0; i < Environment.settings.world.numInitialProtozoa.get(); i++) {
 			Protozoan p = Evolvable.createNew(Protozoan.class);
 			p.addToEnv(this);
 			if (p.isDead()) {
@@ -252,7 +261,7 @@ public class Environment implements Serializable
 	public Vector2 randomPosition(float entityRadius, Vector2[] clusterCentres) {
 		int clusterIdx = MathUtils.random(clusterCentres.length - 1);
 		Vector2 clusterCentre = clusterCentres[clusterIdx];
-		return randomPosition(entityRadius, clusterCentre, WorldGenerationSettings.populationClusterRadius);
+		return randomPosition(entityRadius, clusterCentre, Environment.settings.world.populationClusterRadius.get());
 	}
 
 	public Vector2 randomPosition(float entityRadius, Vector2[] clusterCentres, float clusterRadius) {
@@ -284,7 +293,7 @@ public class Environment implements Serializable
 	}
 
 	public Vector2 randomPosition(float entityRadius) {
-		return randomPosition(entityRadius, Geometry.ZERO, WorldGenerationSettings.rockClusterRadius);
+		return randomPosition(entityRadius, Geometry.ZERO, Environment.settings.world.rockClusterRadius.get());
 	}
 
 	public void tryAdd(Cell cell) {
@@ -342,7 +351,7 @@ public class Environment implements Serializable
 //	private final Colour plantColourDeposit = new Colour(Color.FOREST);
 
 	public void depositOnDeath(Cell cell) {
-		if (Settings.enableChemicalField) {
+		if (settings.enableChemicalField.get()) {
 			if (!cell.isEngulfed() && cell.hasNotBurst()) {
 				chemicalSolution.depositCircle(
 						cell.getPos(), cell.getRadius() * 1.25f,
@@ -567,6 +576,6 @@ public class Environment implements Serializable
 	}
 
 	public float getRadius() {
-		return WorldGenerationSettings.environmentRadius;
+		return settings.world.radius.get();
 	}
 }

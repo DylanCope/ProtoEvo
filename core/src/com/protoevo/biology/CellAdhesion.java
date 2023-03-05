@@ -2,8 +2,7 @@ package com.protoevo.biology;
 
 import com.badlogic.gdx.math.MathUtils;
 import com.protoevo.biology.cells.Cell;
-import com.protoevo.settings.Settings;
-import com.protoevo.core.Simulation;
+import com.protoevo.settings.legacy.LegacyGeneralSettings;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -50,13 +49,13 @@ public class CellAdhesion implements Serializable  {
 
         public static CAMJunctionType randomJunctionType() {
             ArrayList<CAMJunctionType> junctionTypes = new ArrayList<>();
-            if (Settings.enableAnchoringBinding)
+            if (LegacyGeneralSettings.enableAnchoringBinding)
                 junctionTypes.add(ANCHORING);
-            if (Settings.enableOccludingBinding)
+            if (LegacyGeneralSettings.enableOccludingBinding)
                 junctionTypes.add(OCCLUDING);
-            if (Settings.enableChannelFormingBinding)
+            if (LegacyGeneralSettings.enableChannelFormingBinding)
                 junctionTypes.add(CHANNEL_FORMING);
-            if (Settings.enableSignalRelayBinding)
+            if (LegacyGeneralSettings.enableSignalRelayBinding)
                 junctionTypes.add(SIGNAL_RELAYING);
             int idx = MathUtils.random(junctionTypes.size() - 1);
             return junctionTypes.get(idx);
@@ -102,12 +101,12 @@ public class CellAdhesion implements Serializable  {
         int getChemicalBindingSignature();
 
         default float getProductionCost() {
-            return Settings.camProductionEnergyCost;
+            return LegacyGeneralSettings.camProductionEnergyCost;
         }
     }
 
     private final static ConcurrentHashMap<Integer, CAM> existingCAMs =
-            new ConcurrentHashMap<>(Settings.numPossibleCAMs);
+            new ConcurrentHashMap<>(LegacyGeneralSettings.numPossibleCAMs);
 
     private static CAM newCAM(Function<Integer, CAM> camBuilder) {
         int newSignature = randomBindingSignature();
@@ -203,7 +202,7 @@ public class CellAdhesion implements Serializable  {
     }
 
     private static int randomBindingSignature() {
-        return MathUtils.random(Settings.numPossibleCAMs - 1);
+        return MathUtils.random(LegacyGeneralSettings.numPossibleCAMs - 1);
     }
 
 }

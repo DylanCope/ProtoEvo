@@ -1,6 +1,6 @@
 package com.protoevo.biology;
 
-import com.protoevo.settings.Settings;
+import com.protoevo.env.Environment;
 
 import java.io.Serializable;
 import java.util.Collection;
@@ -10,16 +10,17 @@ import java.util.Map;
 public class Food implements Serializable {
 
     public enum Type {
-        Plant(Settings.plantEnergyDensity), Meat(Settings.meatEnergyDensity);
-
-        private final float energyDensity;
-
-        Type(float energyDensity) {
-            this.energyDensity = energyDensity;
-        }
+        Plant, Meat;
 
         public float getEnergyDensity() {
-            return energyDensity;
+            switch (this) {
+                case Plant:
+                    return Environment.settings.plantEnergyDensity.get();
+                case Meat:
+                    return Environment.settings.meatEnergyDensity.get();
+                default:
+                    return 0;
+            }
         }
 
         public static int numTypes() {

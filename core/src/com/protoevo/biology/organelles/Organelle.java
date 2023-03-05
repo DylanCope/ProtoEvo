@@ -1,17 +1,12 @@
 package com.protoevo.biology.organelles;
 
-import com.fasterxml.jackson.annotation.JsonIdentityInfo;
-import com.fasterxml.jackson.annotation.ObjectIdGenerators;
 import com.protoevo.biology.cells.Cell;
 import com.protoevo.biology.evolution.Evolvable;
 import com.protoevo.biology.evolution.EvolvableFloat;
 import com.protoevo.biology.evolution.GeneExpressionFunction;
 import com.protoevo.core.Statistics;
-import com.protoevo.env.Environment;
 
-@JsonIdentityInfo(
-        generator = ObjectIdGenerators.IntSequenceGenerator.class,
-        scope = Environment.class)
+
 public class Organelle implements Evolvable.Element {
 
 

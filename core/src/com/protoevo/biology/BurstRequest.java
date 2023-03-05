@@ -2,21 +2,15 @@ package com.protoevo.biology;
 
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector2;
-import com.fasterxml.jackson.annotation.JsonIdentityInfo;
-import com.fasterxml.jackson.annotation.ObjectIdGenerators;
 import com.protoevo.biology.cells.Cell;
 import com.protoevo.core.Simulation;
 import com.protoevo.env.Environment;
-import com.protoevo.settings.SimulationSettings;
 import com.protoevo.utils.Geometry;
 import com.protoevo.utils.SerializableFunction;
 
 import java.io.Serializable;
-import java.util.function.Function;
 
-@JsonIdentityInfo(
-        generator = ObjectIdGenerators.IntSequenceGenerator.class,
-        scope = Environment.class)
+
 public class BurstRequest<T extends Cell> implements Serializable {
     public static final long serialVersionUID = 1L;
 
@@ -53,7 +47,7 @@ public class BurstRequest<T extends Cell> implements Serializable {
         float angle = (float) (2 * Math.PI * Simulation.RANDOM.nextDouble());
 
         float volume = Geometry.getSphereVolume(parent.getRadius());
-        float minVolume = Geometry.getSphereVolume(SimulationSettings.minParticleRadius);
+        float minVolume = Geometry.getSphereVolume(Environment.settings.minParticleRadius.get());
         int maxChildren = Math.min(6, (int) (volume / minVolume));
 
         int nChildren = 2;

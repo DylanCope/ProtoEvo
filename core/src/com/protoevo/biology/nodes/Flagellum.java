@@ -4,8 +4,7 @@ import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector2;
 import com.protoevo.biology.cells.Cell;
 import com.protoevo.core.Statistics;
-import com.protoevo.settings.ProtozoaSettings;
-import com.protoevo.settings.SimulationSettings;
+import com.protoevo.env.Environment;
 import com.protoevo.utils.Utils;
 
 
@@ -50,15 +49,15 @@ public class Flagellum extends NodeAttachment implements Serializable {
 
         Cell cell = node.getCell();
         // smaller flagella generate less thrust and torque
-        float sizePenalty = (float) (getConstructionProgress() * cell.getRadius() / SimulationSettings.maxParticleRadius);
+        float sizePenalty = getConstructionProgress() * cell.getRadius() / Environment.settings.maxParticleRadius.get();
 
         float thrust = MathUtils.clamp(input[0], -1f, 1f);
         torque = getConstructionProgress() * MathUtils.clamp(input[1], -1f, 1f);
 
         thrustVector.set(node.getRelativePos()).scl(-1).nor();
-        thrustVector.setLength(sizePenalty * thrust * ProtozoaSettings.maxFlagellumThrust);
+        thrustVector.setLength(sizePenalty * thrust * Environment.settings.protozoa.maxFlagellumThrust.get());
 
-        torque *= sizePenalty * ProtozoaSettings.maxFlagellumTorque;
+        torque *= sizePenalty * Environment.settings.protozoa.maxFlagellumTorque.get();
 
         float p = cell.generateMovement(thrustVector, torque);
         output[0] = Utils.clampedLinearRemap(p, 0, 1, -1, 1);

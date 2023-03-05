@@ -1,11 +1,11 @@
-package com.protoevo.settings;
+package com.protoevo.settings.legacy;
 
-public class SimulationSettings {
+public class LegacySimulationSettings {
     public static final long simulationSeed = 1;
     public static final float simulationUpdateDelta = 1f / 1000f;
     public static final int physicsPositionIterations = 1;
     public static final int physicsVelocityIterations = 1;
-    public static final float voidStartDistance = 1.25f * WorldGenerationSettings.environmentRadius;
+    public static final float voidStartDistance = 1.25f * LegacyWorldGenerationSettings.environmentRadius;
     public static final float voidStartDistance2 = voidStartDistance * voidStartDistance;
     public static final float voidDamagePerSecond = 1f;
     public static final float spatialHashRadius = voidStartDistance;

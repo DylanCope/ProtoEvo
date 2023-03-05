@@ -4,7 +4,7 @@ import com.badlogic.gdx.math.MathUtils;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.common.collect.Iterators;
 import com.protoevo.core.Simulation;
-import com.protoevo.settings.SimulationSettings;
+import com.protoevo.env.Environment;
 
 import java.io.Serializable;
 import java.util.*;
@@ -172,8 +172,8 @@ public class NetworkGenome implements Serializable
 		);
 
 		n.setMutationRange(
-				SimulationSettings.minRegulationMutationChance,
-				SimulationSettings.maxRegulationMutationChance);
+				Environment.settings.minRegulationMutationChance.get(),
+				Environment.settings.maxRegulationMutationChance.get());
 
 		hiddenNeuronGenes = Arrays.copyOf(hiddenNeuronGenes, hiddenNeuronGenes.length + 1);
 		hiddenNeuronGenes[hiddenNeuronGenes.length - 1] = n;
@@ -372,7 +372,7 @@ public class NetworkGenome implements Serializable
 				g = Simulation.RANDOM.nextBoolean() ?
 						myConnections.get(innovation) :
 						theirConnections.get(innovation);
-				if (g.isDisabled() && MathUtils.random() < SimulationSettings.globalMutationChance)
+				if (g.isDisabled() && MathUtils.random() < Environment.settings.globalMutationChance.get())
 					g.setDisabled(false);
 				childSynapses.add(g);
 				continue;

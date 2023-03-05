@@ -3,7 +3,7 @@ package com.protoevo.biology.organelles;
 import com.protoevo.biology.cells.Cell;
 import com.protoevo.biology.ComplexMolecule;
 import com.protoevo.core.Statistics;
-import com.protoevo.settings.SimulationSettings;
+import com.protoevo.env.Environment;
 import com.protoevo.utils.Utils;
 
 import java.io.Serializable;
@@ -12,7 +12,7 @@ public class MoleculeProductionOrganelle extends OrganelleFunction implements Se
 
     public static long serialVersionUID = 1L;
     private float productionSignature = 0;
-    private float productionChangeCooldown = SimulationSettings.simulationUpdateDelta * 50;
+    private float productionChangeCooldown = Environment.settings.simulationUpdateDelta.get() * 50;
     private float productionChangeTimer = 0f;
     private ComplexMolecule productionMolecule;
     private float lastRate;
@@ -37,7 +37,7 @@ public class MoleculeProductionOrganelle extends OrganelleFunction implements Se
         if (productionChangeTimer > 0)
             productionChangeTimer -= delta;
 
-        float rate = SimulationSettings.maxMoleculeProductionRate *
+        float rate = Environment.settings.maxMoleculeProductionRate.get() *
                 Utils.cyclicalLinearRemap(input[1], -1, 1,0, 1);;
         lastRate = rate;
 

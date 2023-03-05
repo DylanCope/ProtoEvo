@@ -4,7 +4,7 @@ import com.badlogic.gdx.math.Vector2;
 import com.protoevo.biology.CauseOfDeath;
 import com.protoevo.biology.cells.*;
 import com.protoevo.core.Statistics;
-import com.protoevo.settings.SimulationSettings;
+import com.protoevo.env.Environment;
 import com.protoevo.physics.CollisionHandler;
 
 
@@ -71,7 +71,7 @@ public class PhagocyticReceptor extends NodeAttachment implements Serializable {
         Cell cell = node.getCell();
         float progressFactor = 0.5f + 0.5f * getConstructionProgress();
         return other.getRadius() < progressFactor * cell.getRadius() * 0.8f
-                && cell.getRadius() > 2 * SimulationSettings.minParticleRadius;
+                && cell.getRadius() > 2 * Environment.settings.minParticleRadius.get();
     }
 
     private boolean notEngulfed(Cell other) {

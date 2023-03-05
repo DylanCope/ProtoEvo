@@ -1,6 +1,6 @@
-package com.protoevo.settings;
+package com.protoevo.settings.legacy;
 
-public class RenderSettings {
+public class LegacyRenderSettings {
     public final static float cameraZoomForCellDetails = .5f;
     public final static int msaaSamples = 16;
 }

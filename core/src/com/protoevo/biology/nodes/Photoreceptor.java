@@ -3,10 +3,9 @@ package com.protoevo.biology.nodes;
 import com.badlogic.gdx.math.Vector2;
 import com.protoevo.biology.cells.Cell;
 import com.protoevo.core.Statistics;
+import com.protoevo.env.Environment;
 import com.protoevo.physics.Shape;
 import com.protoevo.physics.Particle;
-import com.protoevo.settings.ProtozoaSettings;
-import com.protoevo.settings.SimulationSettings;
 import com.protoevo.utils.Colour;
 import com.protoevo.utils.Utils;
 
@@ -137,8 +136,8 @@ public class Photoreceptor extends NodeAttachment implements Serializable {
             return 0;
         return Utils.clampedLinearRemap(
                 node.getCell().getRadius(),
-                ProtozoaSettings.minProtozoanBirthRadius, SimulationSettings.maxParticleRadius,
-                node.getCell().getRadius() * 5f, ProtozoaSettings.protozoaLightRange);
+                Environment.settings.protozoa.minBirthRadius.get(), Environment.settings.maxParticleRadius.get(),
+                node.getCell().getRadius() * 5f, Environment.settings.protozoa.maxLightRange.get());
     }
 
     @Override

@@ -1,16 +1,13 @@
 package com.protoevo.biology.nodes;
 
 import com.badlogic.gdx.math.Vector2;
-import com.fasterxml.jackson.annotation.JsonIdentityInfo;
-import com.fasterxml.jackson.annotation.ObjectIdGenerators;
-import com.protoevo.biology.cells.Cell;
 import com.protoevo.biology.ComplexMolecule;
 import com.protoevo.biology.ConstructionProject;
 import com.protoevo.biology.MoleculeFunctionalContext;
+import com.protoevo.biology.cells.Cell;
 import com.protoevo.biology.evolution.*;
 import com.protoevo.core.Statistics;
 import com.protoevo.env.Environment;
-import com.protoevo.settings.SimulationSettings;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -18,9 +15,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
-@JsonIdentityInfo(
-        generator = ObjectIdGenerators.IntSequenceGenerator.class,
-        scope = Environment.class)
+
 public class SurfaceNode implements Evolvable.Element, Serializable {
 
 
@@ -179,7 +174,7 @@ public class SurfaceNode implements Evolvable.Element, Serializable {
     }
 
     public float requiredArcLength() {
-        return (float) (SimulationSettings.maxParticleRadius * 2 * Math.PI / 15f);
+        return (float) (Environment.settings.maxParticleRadius.get() * 2 * Math.PI / 15f);
     }
 
     public void tryCreate() {

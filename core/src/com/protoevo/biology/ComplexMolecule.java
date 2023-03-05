@@ -1,5 +1,7 @@
 package com.protoevo.biology;
 
+import com.protoevo.env.Environment;
+
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
@@ -11,11 +13,10 @@ public class ComplexMolecule implements Serializable {
 
     public static final long serialVersionUID = 1L;
 
-    public static final int possibleMolecules = 128;
-
     private final float signature, productionCost;
 
-    private final static Map<Float, ComplexMolecule> cache = new HashMap<>(possibleMolecules, 1);
+    private final static Map<Float, ComplexMolecule> cache = new HashMap<>(
+            Environment.settings.possibleMolecules.get(), 1);
 
     private ComplexMolecule(float signature, float productionCost) {
         this.signature = signature;
@@ -34,6 +35,7 @@ public class ComplexMolecule implements Serializable {
     }
 
     public static ComplexMolecule fromSignature(float signature) {
+        int possibleMolecules = Environment.settings.possibleMolecules.get();
         signature = (float) (Math.floor(signature * possibleMolecules) / possibleMolecules);
         if (!cache.containsKey(signature)) {
             ComplexMolecule molecule = new ComplexMolecule(signature, 1e3f);

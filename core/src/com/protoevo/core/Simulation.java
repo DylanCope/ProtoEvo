@@ -4,8 +4,6 @@ import com.github.javafaker.Faker;
 import com.protoevo.biology.cells.Protozoan;
 import com.protoevo.biology.nn.NetworkGenome;
 import com.protoevo.env.EnvFileIO;
-import com.protoevo.settings.Settings;
-import com.protoevo.settings.SimulationSettings;
 import com.protoevo.env.Environment;
 import com.protoevo.utils.FileIO;
 
@@ -30,7 +28,7 @@ public class Simulation implements Runnable
 	private static boolean paused = false;
 	private float timeDilation = 1, timeSinceSave = 0, timeSinceSnapshot = 0;
 	
-	public static Random RANDOM = new Random(SimulationSettings.simulationSeed);
+	public static Random RANDOM = new Random(Environment.settings.simulationSeed.get());
 	private boolean debug = false, initialised = false;
 
 	private final Supplier<Environment> environmentLoader;
@@ -39,7 +37,7 @@ public class Simulation implements Runnable
 	private final REPL repl = new REPL(this);
 
 	public Simulation() {
-		this(Settings.simulationSeed);
+		this(Environment.settings.simulationSeed.get());
 	}
 
 	public Simulation(long seed)
@@ -52,7 +50,7 @@ public class Simulation implements Runnable
 	}
 
 	public Simulation(String name) {
-		this(Settings.simulationSeed, name);
+		this(Environment.settings.simulationSeed.get(), name);
 	}
 
 	public Simulation(long seed, String name)
@@ -66,7 +64,7 @@ public class Simulation implements Runnable
 	}
 
 	public Simulation(String name, String save) {
-		this(Settings.simulationSeed, name, save);
+		this(Environment.settings.simulationSeed.get(), name, save);
 	}
 
 	public Simulation(long seed, String name, String save)
@@ -101,7 +99,7 @@ public class Simulation implements Runnable
 				faker.pokemon().name().toLowerCase().replaceAll(" ", "-"),
 				faker.lorem().word().toLowerCase().replaceAll(" ", "-"));
 	}
-	
+
 	public Environment newDefaultEnv()
 	{
 		newSaveDir();
@@ -212,7 +210,8 @@ public class Simulation implements Runnable
 	}
 
 	public boolean isFinished() {
-		return environment.hasStarted() && environment.numberOfProtozoa() <= 0 && Settings.finishOnProtozoaExtinction;
+		return environment.hasStarted() && environment.numberOfProtozoa() <= 0
+				&& Environment.settings.finishOnProtozoaExtinction.get();
 	}
 
 	public void requestSave() {
@@ -230,7 +229,7 @@ public class Simulation implements Runnable
 		if (isPaused() || busyOnOtherThread)
 			return;
 
-		float delta = timeDilation * SimulationSettings.simulationUpdateDelta;
+		float delta = timeDilation * Environment.settings.simulationUpdateDelta.get();
 
 		try {
 			environment.update(delta);
@@ -245,7 +244,7 @@ public class Simulation implements Runnable
 		timeSinceSave += delta;
 		timeSinceSnapshot += delta;
 
-		if (timeSinceSave >= Settings.timeBetweenSaves || saveRequested) {
+		if (timeSinceSave >= Environment.settings.misc.timeBetweenSaves.get() || saveRequested) {
 			timeSinceSave = 0;
 			if (saveRequested) {
 				saveRequested = false;
@@ -254,7 +253,7 @@ public class Simulation implements Runnable
 			saveOnOtherThread();
 		}
 
-		if (timeSinceSnapshot >= Settings.historySnapshotTime) {
+		if (timeSinceSnapshot >= Environment.settings.misc.historySnapshotTime.get()) {
 			timeSinceSnapshot = 0;
 			onOtherThread(this::makeStatisticsSnapshot);
 		}

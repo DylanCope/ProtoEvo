@@ -1,9 +1,5 @@
 package com.protoevo.biology.nn;
 
-import com.fasterxml.jackson.annotation.JsonIdentityInfo;
-import com.fasterxml.jackson.annotation.ObjectIdGenerators;
-import com.protoevo.env.Environment;
-
 import java.io.Serializable;
 import java.util.Comparator;
 
@@ -11,9 +7,6 @@ import java.util.Comparator;
  * Created by Dylan on 26/05/2017.
  */
 
-@JsonIdentityInfo(
-        generator = ObjectIdGenerators.IntSequenceGenerator.class,
-        scope = Environment.class)
 public class Neuron implements Comparable<Neuron>, Serializable {
 
     public enum Type implements Serializable {

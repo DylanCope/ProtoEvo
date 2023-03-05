@@ -10,7 +10,6 @@ import com.protoevo.env.ChemicalSolution;
 import com.protoevo.env.Environment;
 import com.protoevo.env.JointsManager;
 import com.protoevo.env.Rock;
-import com.protoevo.settings.SimulationSettings;
 import com.protoevo.utils.Colour;
 import com.protoevo.utils.Geometry;
 
@@ -30,7 +29,7 @@ public class Particle implements Shape, Serializable {
     private transient Body body;
     private transient Fixture dynamicsFixture, sensorFixture;
     private boolean dead = false, disposed = false;
-    private double radius = SimulationSettings.minParticleRadius * (1 + 2 * Math.random());
+    private double radius = Environment.settings.minParticleRadius.get() * (1 + 2 * Math.random());
     private final Vector2 pos = new Vector2(0, 0);
     private final Vector2 impulseToApply = new Vector2(0, 0);
     private final Vector2 forceToApply = new Vector2(0, 0);
@@ -112,7 +111,7 @@ public class Particle implements Shape, Serializable {
         dynamicsFixture.setUserData(this);
 
         body.setUserData(this);
-        body.setLinearDamping(SimulationSettings.fluidDragDampening);
+        body.setLinearDamping(Environment.settings.fluidDragDampening.get());
         body.setAngularDamping(5f);
         body.setSleepingAllowed(true);
 
@@ -221,7 +220,7 @@ public class Particle implements Shape, Serializable {
             vel.set(body.getLinearVelocity());
             pos.set(body.getPosition());
             angle = body.getAngle();
-            body.setLinearDamping(getDampeningFactor() * SimulationSettings.fluidDragDampening);
+            body.setLinearDamping(getDampeningFactor() * Environment.settings.fluidDragDampening.get());
 
             if (getSpeed() < getRadius() / 50f) {
                 body.setLinearVelocity(0, 0);
@@ -264,8 +263,8 @@ public class Particle implements Shape, Serializable {
     }
 
     public void setRadius(double radius) {
-        this.radius = Math.max(SimulationSettings.minParticleRadius, radius);
-        this.radius = Math.min(SimulationSettings.maxParticleRadius, this.radius);
+        this.radius = Math.max(Environment.settings.minParticleRadius.get(), radius);
+        this.radius = Math.min(Environment.settings.maxParticleRadius.get(), this.radius);
     }
 
     public boolean isPointInside(Vector2 point) {
@@ -313,7 +312,7 @@ public class Particle implements Shape, Serializable {
     }
 
     public float getMassDensity() {
-        return SimulationSettings.basicParticleMassDensity;
+        return Environment.settings.basicParticleMassDensity.get();
     }
 
     @Override

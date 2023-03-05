@@ -3,7 +3,6 @@ package com.protoevo.biology.cells;
 
 import com.badlogic.gdx.math.MathUtils;
 import com.protoevo.biology.evolution.Trait;
-import com.protoevo.core.Simulation;
 import com.protoevo.utils.Colour;
 
 import java.io.Serializable;

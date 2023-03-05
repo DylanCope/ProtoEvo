@@ -1,12 +1,12 @@
 package com.protoevo.biology.nodes;
 
-import com.protoevo.biology.*;
+import com.protoevo.biology.ComplexMolecule;
 import com.protoevo.biology.cells.Cell;
 import com.protoevo.biology.cells.Protozoan;
 import com.protoevo.core.Statistics;
-import com.protoevo.physics.CollisionHandler;
+import com.protoevo.env.Environment;
 import com.protoevo.env.JointsManager;
-import com.protoevo.settings.Settings;
+import com.protoevo.physics.CollisionHandler;
 
 public class AdhesionReceptor extends NodeAttachment {
 
@@ -90,7 +90,7 @@ public class AdhesionReceptor extends NodeAttachment {
             return;
 
         Cell other = (Cell) joining.getOther(cell);
-        float transferRate = Settings.cellBindingResourceTransport;
+        float transferRate = Environment.settings.cellBindingResourceTransport.get();
 
         float massDelta = cell.getConstructionMassAvailable() - other.getConstructionMassAvailable();
         constructionMassTransfer = Math.abs(transferRate * massDelta * delta);
@@ -121,7 +121,7 @@ public class AdhesionReceptor extends NodeAttachment {
 
     private void handleComplexMoleculeTransport(Cell src, Cell dst, ComplexMolecule molecule, float delta) {
         float massDelta = dst.getComplexMoleculeAvailable(molecule) - src.getComplexMoleculeAvailable(molecule);
-        float transferRate = Settings.occludingBindingEnergyTransport;
+        float transferRate = Environment.settings.cellBindingResourceTransport.get();
         if (massDelta > 0) {
             float massTransfer = transferRate * massDelta * delta;
             molecularMassTransfer += massTransfer;

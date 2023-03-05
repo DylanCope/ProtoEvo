@@ -9,7 +9,7 @@ import com.protoevo.biology.cells.Cell;
 import com.protoevo.biology.nodes.Flagellum;
 import com.protoevo.biology.nodes.SurfaceNode;
 import com.protoevo.core.Simulation;
-import com.protoevo.settings.ProtozoaSettings;
+import com.protoevo.settings.legacy.LegacyProtozoaSettings;
 import com.protoevo.utils.ImageUtils;
 import com.protoevo.utils.Utils;
 
@@ -50,7 +50,7 @@ public class FlagellumRenderer extends NodeRenderer {
             float thrust = attachment.getThrustVector().len();
             if (thrust > 0) {
                 float p = Utils.clampedLinearRemap(thrust,
-                        0, ProtozoaSettings.maxFlagellumThrust,
+                        0, LegacyProtozoaSettings.maxFlagellumThrust,
                         0.5f, 1f);
                 animationTime += animationSpeed * delta * p;
             }
@@ -83,7 +83,7 @@ public class FlagellumRenderer extends NodeRenderer {
         Vector2 pos = cell.getPos();
 
         Flagellum attachment = (Flagellum) node.getAttachment();
-        float maxThrust = ProtozoaSettings.maxFlagellumThrust;
+        float maxThrust = LegacyProtozoaSettings.maxFlagellumThrust;
         Vector2 thrust = attachment.getThrustVector().cpy().setLength(cell.getRadius()*1.5f);
         float mag = Utils.clampedLinearRemap(thrust.len(), 0, maxThrust, 0, 1.5f);
         sr.setColor(0, 1, 0, 1);

@@ -3,20 +3,18 @@ package com.protoevo.biology.cells;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector2;
-import com.badlogic.gdx.scenes.scene2d.ui.ImageButton;
 import com.protoevo.biology.CauseOfDeath;
 import com.protoevo.biology.ComplexMolecule;
 import com.protoevo.biology.ConstructionProject;
 import com.protoevo.biology.Food;
 import com.protoevo.biology.nodes.SurfaceNode;
 import com.protoevo.biology.organelles.Organelle;
+import com.protoevo.env.Environment;
 import com.protoevo.physics.Particle;
 import com.protoevo.core.Statistics;
 import com.protoevo.physics.CollisionHandler;
 import com.protoevo.env.JointsManager;
 import com.protoevo.env.Rock;
-import com.protoevo.settings.Settings;
-import com.protoevo.settings.SimulationSettings;
 import com.protoevo.utils.Colour;
 import com.protoevo.utils.Geometry;
 
@@ -37,8 +35,8 @@ public abstract class Cell extends Particle implements Serializable {
 	private float timeAlive = 0f;
 	private float health = 1f;
 	private float growthRate = 0.0f;
-	private float energyAvailable = SimulationSettings.startingAvailableCellEnergy;
-	private double constructionMassAvailable = SimulationSettings.startingAvailableConstructionMass;
+	private float energyAvailable = Environment.settings.startingAvailableCellEnergy.get();
+	private double constructionMassAvailable = Environment.settings.startingAvailableConstructionMass.get();
 	private double massChangeForGrowth = 0f;
 	private final Map<ComplexMolecule, Float> availableComplexMolecules = new ConcurrentHashMap<>(0);
 	private final Map<Long, Long> cellJoinings = new ConcurrentHashMap<>();  // maps cell id to joining id
@@ -77,11 +75,12 @@ public abstract class Cell extends Particle implements Serializable {
 
 	public void voidDamage(float delta) {
 		if (getPos().len2() > getVoidStartDistance2())
-			damage(delta * SimulationSettings.voidDamagePerSecond, CauseOfDeath.THE_VOID);
+			damage(delta * Environment.settings.voidDamagePerSecond.get(), CauseOfDeath.THE_VOID);
 	}
 
 	protected float getVoidStartDistance2() {
-		return SimulationSettings.voidStartDistance2;
+		return Environment.settings.world.voidStartDistance.get()
+				* Environment.settings.world.voidStartDistance.get();
 	}
 
 	public void requestJointRemoval(Long joiningId) {
@@ -169,7 +168,8 @@ public abstract class Cell extends Particle implements Serializable {
 
 		Food.Type foodType = engulfed instanceof PlantCell ? Food.Type.Plant : Food.Type.Meat;
 		float extractedMass = engulfed.getMass() * extraction;
-		engulfed.removeMass(Settings.engulfExtractionWasteMultiplier * extractedMass, CauseOfDeath.EATEN);
+		float removeMultiplier = Environment.settings.engulfExtractionWasteMultiplier.get();
+		engulfed.removeMass(removeMultiplier * extractedMass, CauseOfDeath.EATEN);
 
 		Food food;
 		if (foodToDigest.containsKey(foodType))
@@ -203,7 +203,7 @@ public abstract class Cell extends Particle implements Serializable {
 			return;  // avoids creating iterator if there's nothing to digest
 
 		for (Food food : foodToDigest.values()) {
-			float rate = delta * SimulationSettings.digestionFactor * getDigestionRate(food.getType());
+			float rate = delta * Environment.settings.digestionFactor.get() * getDigestionRate(food.getType());
 			if (food.getSimpleMass() > 0) {
 				float massExtracted = food.getSimpleMass() * rate;
 				addConstructionMass(massExtracted);
@@ -224,8 +224,8 @@ public abstract class Cell extends Particle implements Serializable {
 	public void repair(float delta) {
 		if (!isDead() && getHealth() < 1f && getRepairRate() > 0) {
 			float repair = delta * getRepairRate();
-			float massRequired = getBaseMass() * Settings.cellRepairMassFactor * repair;
-			float energyRequired = massRequired * Settings.cellRepairEnergyFactor;
+			float massRequired = getBaseMass() * Environment.settings.cellRepairMassFactor.get() * repair;
+			float energyRequired = massRequired * Environment.settings.cellRepairEnergyFactor.get();
 			if (massRequired < constructionMassAvailable && energyRequired < energyAvailable) {
 				depleteEnergy(energyRequired);
 				depleteConstructionMass(massRequired);
@@ -235,7 +235,7 @@ public abstract class Cell extends Particle implements Serializable {
 	}
 
 	private float getRepairRate() {
-		return Settings.cellRepairRate * repairRate;
+		return Environment.settings.cellRepairRate.get() * repairRate;
 	}
 
 	public boolean detachCellCondition(Map.Entry<Long, Long> entry) {
@@ -276,7 +276,7 @@ public abstract class Cell extends Particle implements Serializable {
 			return;
 
 		double gr = getGrowthRate();
-		double dr = SimulationSettings.cellGrowthFactor * gr * ((double) delta);
+		double dr = Environment.settings.cellGrowthFactor.get() * gr * ((double) delta);
 		double currR = getRadiusDouble();
 		double newR = currR + dr;
 
@@ -289,7 +289,8 @@ public abstract class Cell extends Particle implements Serializable {
 			return;
 
 		massChangeForGrowth = getMass(newR) - getMass(currR);
-		float energyForGrowth = (float) (massChangeForGrowth * SimulationSettings.energyRequiredForGrowth);
+		float energyForGrowth = (float) (massChangeForGrowth
+				* Environment.settings.energyRequiredForGrowth.get());
 
 		if (massChangeForGrowth > constructionMassAvailable) {
 			double dr2 = constructionMassAvailable / (Math.PI * getMassDensity());
@@ -297,7 +298,7 @@ public abstract class Cell extends Particle implements Serializable {
 			massChangeForGrowth = constructionMassAvailable;
 		}
 
-		if (newR > SimulationSettings.minParticleRadius
+		if (newR > Environment.settings.minParticleRadius.get()
 				&& massChangeForGrowth <= constructionMassAvailable
 				&& energyForGrowth <= energyAvailable) {
 			setRadius(newR);
@@ -311,11 +312,11 @@ public abstract class Cell extends Particle implements Serializable {
 	}
 
 	public float getMaxRadius() {
-		return SimulationSettings.maxParticleRadius;
+		return Environment.settings.maxParticleRadius.get();
 	}
 
 	public float getMinRadius() {
-		return SimulationSettings.minParticleRadius;
+		return Environment.settings.minParticleRadius.get();
 	}
 
 	public void setGrowthRate(float gr) {
@@ -587,7 +588,7 @@ public abstract class Cell extends Particle implements Serializable {
 	}
 
 	public float getMinBurstRadius() {
-		return 2 * SimulationSettings.minParticleRadius;
+		return 2 * Environment.settings.minParticleRadius.get();
 	}
 
 	public void setFoodToDigest(Food.Type foodType, Food food) {
@@ -615,7 +616,8 @@ public abstract class Cell extends Particle implements Serializable {
 	}
 
 	private float getAvailableEnergyCap() {
-		return SimulationSettings.startingAvailableCellEnergy * getRadius() / SimulationSettings.minParticleRadius;
+		return Environment.settings.startingAvailableCellEnergy.get() * getRadius()
+				/ Environment.settings.minParticleRadius.get();
 	}
 
 	public void setEnergyAvailable(float energy) {
@@ -715,7 +717,7 @@ public abstract class Cell extends Particle implements Serializable {
 		damage(percentRemoved, causeOfDeath);
 
 		double newR = (1 - percentRemoved) * getRadius();
-		if (newR < SimulationSettings.minParticleRadius * 0.5f)
+		if (newR < Environment.settings.minParticleRadius.get() * 0.5f)
 			kill(causeOfDeath);
 
 		setRadius(newR);

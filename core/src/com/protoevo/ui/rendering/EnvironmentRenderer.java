@@ -18,7 +18,7 @@ import com.protoevo.physics.SpatialHash;
 import com.protoevo.env.*;
 import com.protoevo.input.ParticleTracker;
 import com.protoevo.physics.CollisionHandler;
-import com.protoevo.settings.WorldGenerationSettings;
+import com.protoevo.settings.legacy.LegacyWorldGenerationSettings;
 import com.protoevo.ui.SimulationInputManager;
 import com.protoevo.ui.UIStyle;
 import com.protoevo.ui.shaders.ShaderLayers;
@@ -156,7 +156,7 @@ public class EnvironmentRenderer implements Renderer {
                 if (rock.isEdgeAttached(i))
                     continue;
                 Vector2[] edge = rock.getEdge(i);
-                float w = 0.05f * WorldGenerationSettings.maxRockSize;
+                float w = 0.05f * Environment.settings.world.maxRockSize.get();
                 Vector2 dir = edge[1].cpy().sub(edge[0]).setLength(w / 2f);
                 Vector2 start = edge[0].cpy().sub(dir);
                 Vector2 end = edge[1].cpy().add(dir);

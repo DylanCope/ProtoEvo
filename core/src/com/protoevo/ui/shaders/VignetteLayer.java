@@ -4,7 +4,8 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.glutils.ShaderProgram;
 import com.badlogic.gdx.math.Vector2;
-import com.protoevo.settings.SimulationSettings;
+import com.protoevo.env.Environment;
+import com.protoevo.settings.legacy.LegacySimulationSettings;
 import com.protoevo.input.ParticleTracker;
 
 public class VignetteLayer extends ShaderLayer {
@@ -26,7 +27,7 @@ public class VignetteLayer extends ShaderLayer {
         shaderProgram.setUniformMatrix("u_projTransInv", camera.invProjectionView);
         shaderProgram.setUniformf("u_resolution", graphicsWidth, graphicsHeight);
         shaderProgram.setUniformi("u_tracking", particleTracker.isTracking() ? 1 : 0);
-        shaderProgram.setUniformf("u_void_dist", SimulationSettings.voidStartDistance);
+        shaderProgram.setUniformf("u_void_dist", Environment.settings.world.voidStartDistance.get());
         shaderProgram.setUniformf("u_cam_pos", camera.position);
     }
 }

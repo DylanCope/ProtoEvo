@@ -7,7 +7,7 @@ import com.protoevo.biology.cells.PlantCell;
 import com.protoevo.biology.cells.Protozoan;
 import com.protoevo.physics.Particle;
 import com.protoevo.physics.SpatialHash;
-import com.protoevo.settings.SimulationSettings;
+import com.protoevo.settings.legacy.LegacySimulationSettings;
 
 import java.io.Serializable;
 import java.util.Collection;
@@ -26,17 +26,17 @@ public class Chunks implements Serializable {
         globalCellCounts = new ConcurrentHashMap<>(3, 1);
         globalCaps = new ConcurrentHashMap<>(3, 1);
 
-        globalCaps.put(Protozoan.class, SimulationSettings.maxProtozoa);
-        globalCaps.put(PlantCell.class, SimulationSettings.maxPlants);
-        globalCaps.put(MeatCell.class, SimulationSettings.maxMeat);
+        globalCaps.put(Protozoan.class, Environment.settings.misc.maxProtozoa.get());
+        globalCaps.put(PlantCell.class, Environment.settings.misc.maxPlants.get());
+        globalCaps.put(MeatCell.class, Environment.settings.misc.maxMeat.get());
 
-        int resolution = SimulationSettings.spatialHashResolution;
-        int protozoaLocalCap = SimulationSettings.protozoaLocalCap;
-        int plantLocalCap = SimulationSettings.plantLocalCap;
-        int meatLocalCap = SimulationSettings.meatLocalCap;
-        cellHashes.put(Protozoan.class, new SpatialHash<>(resolution, protozoaLocalCap, SimulationSettings.spatialHashRadius));
-        cellHashes.put(PlantCell.class, new SpatialHash<>(resolution, plantLocalCap, SimulationSettings.spatialHashRadius));
-        cellHashes.put(MeatCell.class, new SpatialHash<>(resolution, meatLocalCap, SimulationSettings.spatialHashRadius));
+        int resolution = Environment.settings.misc.spatialHashResolution.get();
+        int protozoaLocalCap = Environment.settings.misc.protozoaLocalCap.get();
+        int plantLocalCap = Environment.settings.misc.plantLocalCap.get();
+        int meatLocalCap = Environment.settings.misc.meatLocalCap.get();
+        cellHashes.put(Protozoan.class, new SpatialHash<>(resolution, protozoaLocalCap, Environment.settings.world.radius.get()));
+        cellHashes.put(PlantCell.class, new SpatialHash<>(resolution, plantLocalCap, Environment.settings.world.radius.get()));
+        cellHashes.put(MeatCell.class, new SpatialHash<>(resolution, meatLocalCap, Environment.settings.world.radius.get()));
     }
 
     public void add(Cell cell) {

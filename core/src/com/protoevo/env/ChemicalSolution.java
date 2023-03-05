@@ -1,21 +1,14 @@
 package com.protoevo.env;
 
 import com.badlogic.gdx.math.Vector2;
-import com.fasterxml.jackson.annotation.JsonIdentityInfo;
-import com.fasterxml.jackson.annotation.ObjectIdGenerators;
 import com.protoevo.biology.Food;
 import com.protoevo.biology.cells.Cell;
 import com.protoevo.biology.cells.Protozoan;
-import com.protoevo.settings.PerformanceSettings;
-import com.protoevo.settings.SimulationSettings;
 import com.protoevo.utils.*;
 
 import java.io.Serializable;
 import java.util.stream.IntStream;
 
-@JsonIdentityInfo(
-        generator = ObjectIdGenerators.IntSequenceGenerator.class,
-        scope = Environment.class)
 public class ChemicalSolution implements Serializable {
     public static final long serialVersionUID = 1L;
 
@@ -79,7 +72,7 @@ public class ChemicalSolution implements Serializable {
             initialised = true;
         }
 
-        if (PerformanceSettings.useGPU) {
+        if (Environment.settings.misc.useGPU.get()) {
             // has to be called on the same thread running the simulation
             if (DebugMode.isDebugMode())
                 System.out.println("Initialising chemical diffusion CUDA kernel...");
@@ -197,16 +190,18 @@ public class ChemicalSolution implements Serializable {
                         );
                         float overlapP = overlapArea / (cellWorldWidth * cellWorldHeight);
                         float extraction =
-                                SimulationSettings.chemicalExtractionFactor * delta * overlapP;
+                                Environment.settings.chemicalExtractionFactor.get() * delta * overlapP;
                         if (extraction > 0) {
 
                             if (colour.g > 0.5f && colour.g > 1.5f * colour.r && colour.g > 1.5f * colour.b)
                                 protozoan.addFood(Food.Type.Plant,
-                                        extraction * colour.g * colour.g * SimulationSettings.chemicalExtractionFoodConversion);
+                                        extraction * colour.g * colour.g
+                                                * Environment.settings.chemicalExtractionPlantConversion.get());
 
                             if (colour.r > 0.5f && colour.r > 1.5f * colour.g && colour.r > 1.5f * colour.b)
                                 protozoan.addFood(Food.Type.Meat,
-                                        extraction * colour.r * colour.r * SimulationSettings.chemicalExtractionFoodConversion);
+                                        extraction * colour.r * colour.r
+                                                * Environment.settings.chemicalExtractionMeatConversion.get());
 
                             colour.sub(extraction);
                             set(fieldX, fieldY, colour);
@@ -361,7 +356,7 @@ public class ChemicalSolution implements Serializable {
     }
 
     public void diffuse() {
-        if (PerformanceSettings.useGPU)
+        if (Environment.settings.misc.useGPU.get())
             cudaDiffuse();
         else
             cpuDiffuse();
@@ -373,7 +368,7 @@ public class ChemicalSolution implements Serializable {
         }
 
         timeSinceUpdate += delta;
-        if (timeSinceUpdate > SimulationSettings.chemicalDiffusionInterval) {
+        if (timeSinceUpdate > Environment.settings.chemicalDiffusionInterval.get()) {
             diffuse();
             timeSinceUpdate = 0;
         }

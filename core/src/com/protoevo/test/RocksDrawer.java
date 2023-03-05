@@ -1,8 +1,9 @@
 package com.protoevo.test;
 
+import com.protoevo.env.Environment;
 import com.protoevo.env.Rock;
 import com.protoevo.env.WorldGeneration;
-import com.protoevo.settings.WorldGenerationSettings;
+import com.protoevo.settings.legacy.LegacyWorldGenerationSettings;
 import com.protoevo.utils.Colour;
 
 import java.awt.Color;
@@ -51,10 +52,10 @@ public class RocksDrawer {
 //            rockWorldMaxX += (newWorldWidth - worldWidth) / 2;
 //        }
 
-        float rockWorldMinX = -WorldGenerationSettings.environmentRadius;
-        float rockWorldMinY = -WorldGenerationSettings.environmentRadius;
-        float rockWorldMaxX = WorldGenerationSettings.environmentRadius;
-        float rockWorldMaxY = WorldGenerationSettings.environmentRadius;
+        float rockWorldMinX = -Environment.settings.world.radius.get();
+        float rockWorldMinY = -Environment.settings.world.radius.get();
+        float rockWorldMaxX = Environment.settings.world.radius.get();
+        float rockWorldMaxY = Environment.settings.world.radius.get();
 
         for (Rock rock : rocks) {
             int[] xPoints = new int[3];
