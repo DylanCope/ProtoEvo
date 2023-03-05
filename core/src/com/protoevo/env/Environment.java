@@ -31,7 +31,7 @@ import java.util.concurrent.TimeUnit;
 public class Environment implements Serializable
 {
 	private static final long serialVersionUID = 2804817237950199223L;
-	public static EnvironmentSettings settings = new EnvironmentSettings();
+	public static EnvironmentSettings settings = EnvironmentSettings.createDefault();
 
 	private final EnvironmentSettings mySettings;
 	private transient World world;
@@ -85,7 +85,7 @@ public class Environment implements Serializable
 			chemicalSolution = new ChemicalSolution(
 					this,
 					Environment.settings.chemicalFieldResolution.get(),
-					Environment.settings.chemicalFieldRadius.get());
+					Environment.settings.world.chemicalFieldRadius.get());
 		} else {
 			chemicalSolution = null;
 		}
@@ -231,8 +231,9 @@ public class Environment implements Serializable
 
 		buildSpawners();
 
-		System.out.println("Creating initial plant population...");
-		for (int i = 0; i < Environment.settings.world.numInitialPlantPellets.get(); i++) {
+		int nPlants = Environment.settings.world.numInitialPlantPellets.get();
+		System.out.println("Creating population of " + nPlants + " plants..." );
+		for (int i = 0; i < nPlants; i++) {
 			PlantCell cell = new PlantCell(this);
 			if (cell.isDead()) {
 				System.out.println(
@@ -242,8 +243,9 @@ public class Environment implements Serializable
 			}
 		}
 
-		System.out.println("Creating initial protozoan population...");
-		for (int i = 0; i < Environment.settings.world.numInitialProtozoa.get(); i++) {
+		int nProtozoa = Environment.settings.world.numInitialProtozoa.get();
+		System.out.println("Creating population of " + nProtozoa + " protozoa...");
+		for (int i = 0; i < nProtozoa; i++) {
 			Protozoan p = Evolvable.createNew(Protozoan.class);
 			p.addToEnv(this);
 			if (p.isDead()) {

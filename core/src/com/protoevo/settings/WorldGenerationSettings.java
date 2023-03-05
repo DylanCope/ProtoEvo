@@ -60,4 +60,8 @@ public class WorldGenerationSettings {
             "",
             voidStartDistance.get()
     );
+    public final Settings.Parameter<Float> chemicalFieldRadius = new Settings.Parameter<>(
+            "",
+            "",
+            voidStartDistance.get());
 }

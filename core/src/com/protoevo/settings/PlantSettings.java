@@ -4,15 +4,7 @@ import com.protoevo.env.Environment;
 import com.protoevo.utils.Geometry;
 
 public class PlantSettings extends Settings {
-
-    public final Settings.Parameter<Float> minMaxPlantRadius = new Settings.Parameter<>(
-            "",
-            "",
-            0.015f);
-    public final Settings.Parameter<Float> minPlantSplitRadius = new Settings.Parameter<>(
-            "",
-            "",
-            0.01f);
+    
     public final Settings.Parameter<Float> minBirthRadius = new Settings.Parameter<>(
             "",
             "",
@@ -29,18 +21,6 @@ public class PlantSettings extends Settings {
             "",
             "",
             1f);
-    public final Settings.Parameter<Float> plantCrowdingGrowthDecay = new Settings.Parameter<>(
-            "",
-            "",
-            1.0f);
-    public final Settings.Parameter<Float> plantCriticalCrowding = new Settings.Parameter<>(
-            "",
-            "",
-            6.0f);
-    public final Settings.Parameter<Float> plantRegen = new Settings.Parameter<>(
-            "",
-            "",
-            .2f);
     public final Settings.Parameter<Float> collisionDestructionRate = new Settings.Parameter<>(
             "",
             "",

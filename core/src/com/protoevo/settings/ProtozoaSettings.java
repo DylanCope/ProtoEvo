@@ -19,7 +19,7 @@ public class ProtozoaSettings extends Settings {
             "",
             "",
             3f / 100f);
-    public final Settings.Parameter<Float> maxProtozoanBirthRadius = new Settings.Parameter<>(
+    public final Settings.Parameter<Float> maxBirthRadius = new Settings.Parameter<>(
             "",
             "",
             8f / 100f);
@@ -46,11 +46,11 @@ public class ProtozoaSettings extends Settings {
     public final Settings.Parameter<Float> maxProtozoanSplitRadius = new Settings.Parameter<>(
             "",
             "",
-            maxProtozoanBirthRadius.get() * 3f);
+            maxBirthRadius.get() * 3f);
     public final Settings.Parameter<Float> minProtozoanSplitRadius = new Settings.Parameter<>(
             "",
             "",
-            maxProtozoanBirthRadius.get() * 1.2f);
+            maxBirthRadius.get() * 1.2f);
     public final Settings.Parameter<Float> minProtozoanGrowthRate = new Settings.Parameter<>(
             "",
             "",

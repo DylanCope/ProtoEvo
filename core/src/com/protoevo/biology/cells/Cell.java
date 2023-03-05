@@ -31,7 +31,6 @@ public abstract class Cell extends Particle implements Serializable {
 	private final Colour fullyDegradedColour = new Colour(Color.WHITE);
 	private final Colour currentColour = new Colour();
 	private int generation = 1;
-	protected boolean hasHandledDeath = false;
 	private float timeAlive = 0f;
 	private float health = 1f;
 	private float growthRate = 0.0f;
@@ -40,12 +39,10 @@ public abstract class Cell extends Particle implements Serializable {
 	private double massChangeForGrowth = 0f;
 	private final Map<ComplexMolecule, Float> availableComplexMolecules = new ConcurrentHashMap<>(0);
 	private final Map<Long, Long> cellJoinings = new ConcurrentHashMap<>();  // maps cell id to joining id
-	//	private final Map<CellAdhesion.CAM, Float> surfaceCAMs = new HashMap<>(0);
 	private final Map<Food.Type, Float> foodDigestionRates = new HashMap<>(0);
 	private final Map<Food.Type, Food> foodToDigest = new HashMap<>(0);
 	private final Set<ConstructionProject> constructionProjects = new HashSet<>(0);
 	private final Set<Long> cellIdsOfConnected = new HashSet<>(0);
-	//	private final Map<CellAdhesion.CAM, Float> camProductionRates = new HashMap<>(0);
 	private ArrayList<Organelle> organelles = new ArrayList<>();
 	private boolean hasBurst = false;
 	private float repairRate = 1f;

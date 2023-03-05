@@ -153,10 +153,6 @@ public class EnvironmentSettings extends Settings {
             "",
             "",
             1024);
-    public final Settings.Parameter<Float> chemicalFieldRadius = new Settings.Parameter<>(
-            "",
-            "",
-            Environment.settings.world.voidStartDistance.get());
     public final Settings.Parameter<Float> basicParticleMassDensity = new Settings.Parameter<>(
             "",
             "",
@@ -199,12 +195,22 @@ public class EnvironmentSettings extends Settings {
             128
     );
 
-    public final WorldGenerationSettings world = new WorldGenerationSettings();
-    public final PlantSettings plant = new PlantSettings();
-    public final ProtozoaSettings protozoa = new ProtozoaSettings();
-    public final MiscSettings misc = new MiscSettings();
+    public WorldGenerationSettings world;
+    public PlantSettings plant;
+    public ProtozoaSettings protozoa;
+    public MiscSettings misc;
 
-    public EnvironmentSettings() {
+    private EnvironmentSettings() {
         super("Environment");
+    }
+
+    public static EnvironmentSettings createDefault() {
+        EnvironmentSettings settings = new EnvironmentSettings();
+        Environment.settings = settings;
+        settings.world = new WorldGenerationSettings();
+        settings.plant = new PlantSettings();
+        settings.protozoa = new ProtozoaSettings();
+        settings.misc = new MiscSettings();
+        return settings;
     }
 }

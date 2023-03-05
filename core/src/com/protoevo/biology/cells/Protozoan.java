@@ -19,7 +19,6 @@ import java.util.List;
 
 public class Protozoan extends Cell implements Evolvable
 {
-	
 	private static final long serialVersionUID = 2314292760446370751L;
 
 	private GeneExpressionFunction geneExpressionFunction;
@@ -130,7 +129,7 @@ public class Protozoan extends Cell implements Evolvable
 	public void setSplitRadius(float splitRadius) {
 		this.splitRadius = Utils.clampedLinearRemap(
 				splitRadius, 0, 1,
-				Environment.settings.protozoa.maxProtozoanBirthRadius.get(),
+				Environment.settings.protozoa.maxBirthRadius.get(),
 				Environment.settings.maxParticleRadius.get()
 		);
 	}
@@ -163,9 +162,8 @@ public class Protozoan extends Cell implements Evolvable
 		return super.getHealth();
 	}
 
-	@Override
 	@GeneRegulator(name="Size", min=0, max=1)
-	public float getRadius() {
+	public float getRadiusAsProportionOfMax() {
 		return Utils.clampedLinearRemap(
 				super.getRadius(),
 				Environment.settings.minParticleRadius.get(),
