@@ -68,6 +68,27 @@ public abstract class Cell extends Particle implements Serializable {
 			organelle.update(delta);
 
 		cellJoinings.entrySet().removeIf(this::detachCellCondition);
+
+		decayResources(delta);
+	}
+
+	public void decayResources(float delta) {
+		for (Food.Type type : foodDigestionRates.keySet()) {
+			Food food = foodToDigest.get(type);
+			if (food != null)
+				food.decay(delta);
+		}
+
+		energyAvailable -= delta * Environment.settings.energyDecayRate.get();
+
+		for (ComplexMolecule molecule : availableComplexMolecules.keySet()) {
+			float amount = availableComplexMolecules.get(molecule);
+			amount -= delta * Environment.settings.complexMoleculeDecayRate.get();
+			if (amount <= 0)
+				availableComplexMolecules.remove(molecule);
+			else
+				availableComplexMolecules.put(molecule, amount);
+		}
 	}
 
 	public void voidDamage(float delta) {
@@ -177,6 +198,7 @@ public abstract class Cell extends Particle implements Serializable {
 		}
 
 		food.addSimpleMass(extractedMass);
+		food.addEnergy(engulfed.getEnergyAvailable() * extraction);
 
 		for (ComplexMolecule molecule : engulfed.getComplexMolecules()) {
 			if (engulfed.getComplexMoleculeAvailable(molecule) > 0) {

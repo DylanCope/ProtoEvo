@@ -6,24 +6,24 @@ import com.protoevo.utils.Geometry;
 public class PlantSettings extends Settings {
     
     public final Settings.Parameter<Float> minBirthRadius = new Settings.Parameter<>(
-            "",
-            "",
+            "Min Birth Radius",
+            "The minimum radius of a plant at birth.",
             2f / 100f);
     public final Settings.Parameter<Float> maxBirthRadius = new Settings.Parameter<>(
-            "",
-            "",
+            "Max Birth Radius",
+            "The maximum radius of a plant at birth.",
             8f / 100f);
     public final Settings.Parameter<Float> minPlantGrowth = new Settings.Parameter<>(
-            "",
-            "",
+            "Min Plant Growth",
+            "The minimum growth factor a plant can have.",
             0f);
     public final Settings.Parameter<Float> maxPlantGrowth = new Settings.Parameter<>(
-            "",
-            "",
+            "Max Plant Growth",
+            "The maximum growth factor a plant can have.",
             1f);
     public final Settings.Parameter<Float> collisionDestructionRate = new Settings.Parameter<>(
-            "",
-            "",
+            "Contact Death Rate",
+            "The rate at which a plant's health is reduced when it collides with another non-plant object.",
             Geometry.getCircleArea(maxBirthRadius.get())
                     * Environment.settings.basicParticleMassDensity.get()
     );

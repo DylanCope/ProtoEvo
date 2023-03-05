@@ -70,7 +70,7 @@ public class EnvironmentSettings extends Settings {
     public final Settings.Parameter<Float> meatEnergyDensity = new Settings.Parameter<>(
             "Meat Energy Density",
             "Energy per unit mass of meat material.",
-            2e6f
+            1e6f
     );
 
     public final Settings.Parameter<Float> meatDecayFactor = new Settings.Parameter<>(
@@ -93,110 +93,131 @@ public class EnvironmentSettings extends Settings {
             "",
             1f);
     public final Settings.Parameter<Float> minParticleRadius = new Settings.Parameter<>(
-            "",
-            "",
+            "Minimum Particle Radius",
+            "Minimum radius of a particle.",
             3f / 100f);
     public final Settings.Parameter<Float> maxParticleRadius = new Settings.Parameter<>(
-            "",
-            "",
+            "Maximum Particle Radius",
+            "Maximum radius of a particle.",
             15f / 100f);
     public final Settings.Parameter<Float> startingAvailableCellEnergy = new Settings.Parameter<>(
-            "",
-            "",
+            "Starting Available Cell Energy",
+            "Starting amount of energy available to cells.",
             1f);
     public final Settings.Parameter<Float> startingAvailableConstructionMass = new Settings.Parameter<>(
-            "",
-            "",
+            "Starting Available Construction Mass",
+            "Starting amount of construction mass available to cells.",
             10e-3f);
     public final Settings.Parameter<Float> globalMutationChance = new Settings.Parameter<>(
-            "",
-            "",
+            "Global Mutation Chance",
+            "The fallback mutation chance for all mutations when there is no local choice.",
             0.05f);
     public final Settings.Parameter<Integer> initialGRNMutations = new Settings.Parameter<>(
-            "",
-            "",
+            "Initial GRN Mutations",
+            "The number of mutations to apply to the initial gene regulatory network (GRN).",
             3);
     public final Settings.Parameter<Float> minMutationChance = new Settings.Parameter<>(
-            "",
-            "",
+            "Minimum Mutation Chance",
+            "The minimum mutation chance for all mutations.",
             0.001f);
     public final Settings.Parameter<Float> maxMutationChance = new Settings.Parameter<>(
-            "",
-            "",
+            "Maximum Mutation Chance",
+            "Maximum mutation chance for all mutations.",
             0.1f);
     public final Settings.Parameter<Float> minTraitMutationChance = new Settings.Parameter<>(
-            "",
+            "Min Trait Mutation Chance",
             "",
             0.001f);
     public final Settings.Parameter<Float> maxTraitMutationChance = new Settings.Parameter<>(
-            "",
+            "Max Trait Mutation Chance",
             "",
             0.1f);
     public final Settings.Parameter<Float> minRegulationMutationChance = new Settings.Parameter<>(
-            "",
+            "Min Regulation Mutation Chance",
             "",
             0.001f);
     public final Settings.Parameter<Float> maxRegulationMutationChance = new Settings.Parameter<>(
-            "",
+            "Max Regulation Mutation Chance",
             "",
             0.05f);
     public final Settings.Parameter<Float> cellGrowthFactor = new Settings.Parameter<>(
-            "",
-            "",
+            "Cell Growth Factor",
+            "Controls how quickly cells can grow.",
             2e-2f);
     public final Settings.Parameter<Float> digestionFactor = new Settings.Parameter<>(
-            "",
-            "",
+            "Digestion Factor",
+            "Controls how quickly cells can digest food.",
             20f);
     public final Settings.Parameter<Float> chemicalDiffusionInterval = new Settings.Parameter<>(
-            "",
-            "",
+            "Chemical Diffusion Interval",
+            "How often to diffuse chemicals.",
             simulationUpdateDelta.get() * 20f);
     public final Settings.Parameter<Integer> chemicalFieldResolution = new Settings.Parameter<>(
-            "",
-            "",
+            "Chemical Field Resolution",
+            "How many cells wide the chemical field is.",
             1024);
     public final Settings.Parameter<Float> basicParticleMassDensity = new Settings.Parameter<>(
-            "",
-            "",
+            "Base Particle Mass Density",
+            "The mass density of a basic particle.",
             1f);
     public final Settings.Parameter<Float> maxMoleculeProductionRate = new Settings.Parameter<>(
-            "",
-            "",
+            "Max Molecule Production Rate",
+            "The maximum rate at which a cell can produce complex molecules.",
             .01f);
     public final Settings.Parameter<Double> deleteSynapseMutationRate = new Settings.Parameter<>(
-            "",
-            "",
+            "Delete Synapse Mutation Rate",
+            "The chance that a synapse will be deleted when mutating a cell.",
             0.1);
     public final Settings.Parameter<Double> deleteNeuronMutationRate = new Settings.Parameter<>(
-            "",
-            "",
+            "Delete Neuron Mutation Rate",
+            "The chance that a neuron will be deleted when mutating a cell.",
             0.1);
     public final Settings.Parameter<Float> chemicalExtractionPlantConversion = new Settings.Parameter<>(
-            "",
-            "",
-            3e-5f);
+            "Chemical Extraction Plant Conversion",
+            "The amount of food extracted from plant matter in the chemical solution.",
+            2e-5f);
     public final Settings.Parameter<Float> chemicalExtractionMeatConversion = new Settings.Parameter<>(
-            "",
-            "",
-            3e-5f);
+            "Chemical Extraction Meat Conversion",
+            "The amount of food extracted from meat matter in the chemical solution.",
+            5e-6f);
     public final Settings.Parameter<Float> chemicalExtractionFactor = new Settings.Parameter<>(
-            "",
-            "",
+            "Chemical Extraction Factor",
+            "The amount to dilute the chemical solution by when extracting food.",
             100f);
     public final Settings.Parameter<Double> energyRequiredForGrowth = new Settings.Parameter<>(
-            "",
-            "",
+            "Energy Required For Growth",
+            "Factor controlling how much energy is required for growth.",
             1e4);
     public final Settings.Parameter<Float> fluidDragDampening = new Settings.Parameter<>(
-            "",
-            "",
+            "Fluid Drag Dampening",
+            "Controls the viscosity of the fluid.",
             10f);
     public Settings.Parameter<Integer> possibleMolecules = new Settings.Parameter<>(
-            "",
-            "",
+            "Number of Possible Molecules",
+            "The number of possible molecules that can be produced in the simulation.",
             128
     );
+    public Settings.Parameter<Float> complexMoleculeDecayRate = new Settings.Parameter<>(
+            "Complex Molecule Decay Rate",
+            "The rate at which complex molecules decay.",
+            1e-6f
+    );
+    public Settings.Parameter<Float> energyDecayRate = new Settings.Parameter<>(
+            "Energy Decay Rate",
+            "The rate at which energy storage decays.",
+            .1f
+    );
+    public final Settings.Parameter<Float> plantDecayRate = new Settings.Parameter<>(
+            "Plant Decay Rate",
+            "The rate at which plant matter decays.",
+            1e-4f
+    );
+    public final Settings.Parameter<Float> meatDecayRate = new Settings.Parameter<>(
+            "Meat Decay Rate",
+            "The rate at which meat matter decays.",
+            1e-3f
+    );
+
 
     public WorldGenerationSettings world;
     public PlantSettings plant;

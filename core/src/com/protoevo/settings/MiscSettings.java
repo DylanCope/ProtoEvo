@@ -22,43 +22,43 @@ public class MiscSettings extends Settings {
     );
     public final Settings.Parameter<Integer> physicsPositionIterations = new Settings.Parameter<>(
             "Physics Position Iterations",
-            "",
+            "Number of iterations to run the physics engine's position solver.",
             1);
     public final Settings.Parameter<Integer> physicsVelocityIterations = new Settings.Parameter<>(
             "Physics Velocity Iterations",
-            "",
+            "Number of iterations to run the physics engine's velocity solver.",
             1);
     public final Settings.Parameter<Integer> maxPlants = new Settings.Parameter<>(
-            "",
-            "",
+            "Max Plants",
+            "The maximum number of plants that can exist in the simulation.",
             4000);
     public final Settings.Parameter<Integer> maxProtozoa = new Settings.Parameter<>(
-            "",
-            "",
+            "Max Protozoa",
+            "The maximum number of protozoa that can exist in the simulation.",
             2000);
     public final Settings.Parameter<Integer> maxMeat = new Settings.Parameter<>(
-            "",
-            "",
+            "Max Meat",
+            "The maximum number of meat that can exist in the simulation.",
             2000);
     public final Settings.Parameter<Integer> protozoaLocalCap = new Settings.Parameter<>(
-            "",
-            "",
+            "Local Protozoa Cap",
+            "The maximum number of protozoa that can exist in a local region (defined by the spatial hash resolution).",
             300);
     public final Settings.Parameter<Integer> plantLocalCap = new Settings.Parameter<>(
-            "",
-            "",
+            "Local Plant Cap",
+            "The maximum number of plants that can exist in a local region (defined by the spatial hash resolution).",
             75);
     public final Settings.Parameter<Integer> meatLocalCap = new Settings.Parameter<>(
-            "",
-            "",
+            "Local Meat Cap",
+            "The maximum number of meat that can exist in a local region (defined by the spatial hash resolution).",
             75);
     public final Settings.Parameter<Boolean> useGPU = new Settings.Parameter<>(
-            "",
-            "",
+            "Use GPU",
+            "Whether or not to use the GPU for accelerating calculations.",
             true);
     public final Settings.Parameter<Integer> spatialHashResolution = new Settings.Parameter<>(
-            "",
-            "",
+            "Spatial Hash Resolution",
+            "The resolution of the spatial hash used for local population caps.",
             15);
 
     public MiscSettings() {

@@ -28,7 +28,7 @@ public class Food implements Serializable {
         }
     }
 
-    private float mass;
+    private float mass, energy;
     private final Type type;
     private final Map<ComplexMolecule, Float> complexMoleculeMasses;
 
@@ -52,6 +52,10 @@ public class Food implements Serializable {
 
     public void addSimpleMass(float m) {
         mass += m;
+    }
+
+    public void addEnergy(float energy) {
+        mass += energy;
     }
 
     public void subtractSimpleMass(float m) {
@@ -86,11 +90,24 @@ public class Food implements Serializable {
     }
 
     public float getEnergy(float m) {
-        return type.getEnergyDensity() * m;
+        return energy + type.getEnergyDensity() * m;
     }
 
     @Override
     public String toString() {
         return type.name();
+    }
+
+    public float getDecayRate() {
+        return this.type == Type.Plant ?
+                Environment.settings.plantDecayRate.get() : Environment.settings.meatDecayRate.get();
+    }
+
+    public void decay(float delta) {
+        float decay = getDecayRate() * delta;
+        mass -= decay;
+        for (ComplexMolecule molecule : complexMoleculeMasses.keySet())
+            complexMoleculeMasses.put(molecule, complexMoleculeMasses.get(molecule)
+                    * Environment.settings.complexMoleculeDecayRate.get());
     }
 }
