@@ -1,5 +1,9 @@
 package com.protoevo.core;
 
+import com.protoevo.env.Environment;
+import com.protoevo.settings.EnvironmentSettings;
+import com.protoevo.settings.Settings;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -17,7 +21,7 @@ public class REPL implements Runnable
     private InputStreamReader input;
     private ApplicationManager manager;
 
-    private final Map<String, Function<Object[], Boolean>> commands = new HashMap<>();
+    private final Map<String, Function<String[], Boolean>> commands = new HashMap<>();
 
     public REPL(Simulation simulation)
     {
@@ -36,10 +40,13 @@ public class REPL implements Runnable
         commands.put("pause", this::pause);
         commands.put("togglepause", this::pause);
         commands.put("unpause", this::pause);
-//        commands.put("setparam", this::setParam);
+        commands.put("setparam", this::setParam);
+        commands.put("set", this::setParam);
+        commands.put("getparam", this::getParam);
+        commands.put("get", this::getParam);
     }
 
-    public Boolean help(Object[] args) {
+    public Boolean help(String[] args) {
         System.out.println("Available commands:");
         System.out.println("help - Display this help message.");
         System.out.println("toggleui - Toggle the UI.");
@@ -48,51 +55,120 @@ public class REPL implements Runnable
         System.out.println("gettime - Get the time dilation.");
         System.out.println("stats - Print simulation statistics.");
         System.out.println("pause - Pause the simulation.");
-//        System.out.println("setparam <param> <value> - Set a parameter. Available parameters are:");
-//        for (String param : Settings.paramsMap.keySet()) {
-//            System.out.println("\t- " + param);
-//        }
+        System.out.println("setparam <param> <value> - Set a parameter.");
+        System.out.println("setparam -help - Get help on setting parameters.");
+        System.out.println("getparam <param> - Get a parameter.");
         return true;
     }
 
-//    public Boolean setParam(Object[] args) {
-//        if (args.length != 3) {
-//            System.out.println("This command takes 2 arguments.");
-//            return false;
-//        }
-//        try {
-//            String param = (String) args[1];
-//            float value = Float.parseFloat((String) args[2]);
-//            if (!Settings.paramsMap.containsKey(param)) {
-//                System.out.println("Invalid parameter.");
-//                return false;
-//            }
-//            Settings.paramsMap.get(param).apply(value);
-//            System.out.println("Set " + param + " to " + value);
-//            return true;
-//        } catch (NumberFormatException e) {
-//            System.out.println("Invalid argument.");
-//        }
-//        return false;
-//    }
+    public Boolean setParam(String[] args) {
+        if (args.length == 2 && args[1].equals("-help")) {
+            System.out.println("This command takes 2 arguments.");
+            System.out.println("Usage: setparam <param> <value>");
+            System.out.println("Example: setparam protozoa.starvationRate 100");
+            System.out.println("Possible subsetting categories: world, protozoa, plant, misc");
+            System.out.println("Use setparam <subcategory> -help to get more information about a parameter.");
+            System.out.println("Available base parameters:");
+            for (Settings.Parameter<?> param : Environment.settings.getParameters())
+                System.out.println("\t- " + param.getFieldName() + ": "
+                        + param.getName() + "; " + param.getDescription());
+            return true;
+        }
+        if (args.length != 3) {
+            System.out.println("This command takes 2 arguments.");
+            return false;
+        }
+        try {
+            String paramName = args[1];
+            String subcategory = "base";
 
-    public Boolean pause(Object[] args) {
+            if (args[2].equals("-help"))
+                subcategory = paramName;
+            else if (args[1].contains(".")) {
+                String[] split = args[1].split("\\.");
+                subcategory = split[0];
+                paramName = split[1];
+            }
+
+            Settings settings = Environment.settings.getSettings(subcategory);
+
+            if (args[2].equals("-help")) {
+                System.out.println("Available parameters in " + subcategory + " category:");
+                for (Settings.Parameter<?> param : settings.getParameters())
+                    System.out.println("\t- " + param.getFieldName() + ": "
+                            + param.getName() + "; " + param.getDescription());
+                return true;
+            }
+
+            for (Settings.Parameter<?> param : settings.getParameters()) {
+                if (param.getFieldName().equals(paramName)) {
+                    try {
+                        param.set(args[2]);
+                    } catch (NumberFormatException e) {
+                        System.out.println("Invalid argument.");
+                        return false;
+                    }
+                    System.out.println("Set " + paramName + " to " + param.get());
+                    return true;
+                }
+            }
+            System.out.println("Could not find parameter " + paramName + " in " + subcategory + " category.");
+            return false;
+        } catch (NumberFormatException e) {
+            System.out.println("Invalid argument.");
+        }
+        return false;
+    }
+
+    public Boolean getParam(String[] args) {
+        if (args.length > 2) {
+            System.out.println("This command takes 1 argument.");
+            return false;
+        }
+        try {
+            String paramName = args[1];
+            String subcategory = "base";
+
+            if (args[1].contains(".")) {
+                String[] split = args[1].split("\\.");
+                subcategory = split[0];
+                paramName = split[1];
+            }
+
+            Settings settings = Environment.settings.getSettings(subcategory);
+
+            for (Settings.Parameter<?> param : settings.getParameters()) {
+                if (param.getFieldName().equals(paramName)) {
+                    System.out.println(paramName + " is " + param.get());
+                    return true;
+                }
+            }
+
+            System.out.println("Could not find parameter " + paramName + " in " + subcategory + " category.");
+            return false;
+        } catch (NumberFormatException e) {
+            System.out.println("Invalid argument.");
+        }
+        return false;
+    }
+
+    public Boolean pause(String[] args) {
         simulation.togglePause();
         return true;
     }
 
-    public Boolean getTimeDilation(Object[] args) {
+    public Boolean getTimeDilation(String[] args) {
         System.out.println("Time dilation is " + simulation.getTimeDilation());
         return true;
     }
 
-    public Boolean setTimeDilation(Object[] args) {
+    public Boolean setTimeDilation(String[] args) {
         if (args.length != 2) {
             System.out.println("This command takes 2 arguments.");
             return false;
         }
         try {
-            float d = Float.parseFloat((String) args[1]);
+            float d = Float.parseFloat(args[1]);
             simulation.setTimeDilation(d);
             return true;
         } catch (NumberFormatException e) {
@@ -101,7 +177,7 @@ public class REPL implements Runnable
         return false;
     }
 
-    public Boolean printStats(Object[] args) {
+    public Boolean printStats(String[] args) {
         simulation.printStats();
         if (args.length == 2 && args[1].equals("--debug")) {
             simulation.getEnv().getDebugStats().forEach(
@@ -114,7 +190,7 @@ public class REPL implements Runnable
         return true;
     }
 
-    public Boolean exit(Object[] args) {
+    public Boolean exit(String[] args) {
         System.out.println("Exit triggered...");
         if (manager != null) {
             running = false;
@@ -126,7 +202,7 @@ public class REPL implements Runnable
         return false;
     }
 
-    public Boolean toggleUI(Object[] args) {
+    public Boolean toggleUI(String[] args) {
         if (manager != null) {
             System.out.println("Toggling UI.");
             synchronized (simulation) {

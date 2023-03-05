@@ -2,7 +2,7 @@ package com.protoevo.settings;
 
 import com.protoevo.env.Environment;
 
-public class WorldGenerationSettings {
+public class WorldGenerationSettings extends Settings {
     public final Settings.Parameter<Integer> seed = new Settings.Parameter<>(
             "Seed", "World Generation Random Seed", 1);
     public final Settings.Parameter<Integer> numInitialProtozoa = new Settings.Parameter<>(
@@ -64,4 +64,8 @@ public class WorldGenerationSettings {
             "",
             "",
             voidStartDistance.get());
+
+    public WorldGenerationSettings() {
+        super("World Generation");
+    }
 }

@@ -3,6 +3,9 @@ package com.protoevo.settings;
 import com.protoevo.core.Statistics;
 import com.protoevo.env.Environment;
 
+import java.util.Arrays;
+import java.util.Collection;
+
 public class EnvironmentSettings extends Settings {
 
     public final Settings.Parameter<Long> simulationSeed = new Settings.Parameter<>(
@@ -206,11 +209,40 @@ public class EnvironmentSettings extends Settings {
 
     public static EnvironmentSettings createDefault() {
         EnvironmentSettings settings = new EnvironmentSettings();
+        settings.collectParameter();
         Environment.settings = settings;
+
         settings.world = new WorldGenerationSettings();
+        settings.world.collectParameter();
+
         settings.plant = new PlantSettings();
+        settings.plant.collectParameter();
+
         settings.protozoa = new ProtozoaSettings();
+        settings.protozoa.collectParameter();
+
         settings.misc = new MiscSettings();
+        settings.misc.collectParameter();
+
         return settings;
+    }
+
+    public Collection<Settings> getSettings() {
+        return Arrays.asList(this, world, plant, protozoa, misc);
+    }
+
+    public Settings getSettings(String basicName) {
+        switch (basicName) {
+            case "world":
+                return world;
+            case "protozoa":
+                return protozoa;
+            case "plant":
+                return plant;
+            case "misc":
+                return misc;
+            default:
+                return this;
+        }
     }
 }

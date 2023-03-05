@@ -7,7 +7,13 @@ public class GraphicsSettings extends Settings {
     public final Settings.Parameter<Integer> msaaSamples = new Settings.Parameter<>(
             "", "", 16);
 
-    public GraphicsSettings() {
+    private GraphicsSettings() {
         super("Graphics");
+    }
+
+    public static GraphicsSettings createDefault() {
+        GraphicsSettings settings = new GraphicsSettings();
+        settings.collectParameter();
+        return settings;
     }
 }

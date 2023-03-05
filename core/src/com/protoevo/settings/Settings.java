@@ -13,8 +13,7 @@ public abstract class Settings implements Serializable {
         private static final long serialVersionUID = 1L;
 
         private T value;
-        private String name;
-        private String description;
+        private String name, description, fieldName;
         private List<Runnable> onChange = new ArrayList<>();
         private boolean changeable = false;
         private Statistics.ComplexUnit unit = null;
@@ -92,15 +91,42 @@ public abstract class Settings implements Serializable {
         public boolean isChangeable() {
             return changeable;
         }
+
+        public String getFieldName() {
+            return fieldName;
+        }
+
+        public void setFieldName(String fieldName) {
+            this.fieldName = fieldName;
+        }
     }
 
     private final String name;
+    private final List<Parameter<?>> parameters;
 
     public Settings(String name) {
         this.name = name;
+        parameters = new ArrayList<>();
+    }
+
+    protected void collectParameter() {
+        for (java.lang.reflect.Field field : getClass().getFields()) {
+            try {
+                Object value = field.get(this);
+                if (value instanceof Parameter) {
+                    Parameter<?> parameter = (Parameter<?>) value;
+                    parameter.setFieldName(field.getName());
+                    parameters.add(parameter);
+                }
+            } catch (IllegalAccessException ignored) {}
+        }
     }
 
     public String getName() {
         return name;
+    }
+
+    public List<Parameter<?>> getParameters() {
+        return parameters;
     }
 }

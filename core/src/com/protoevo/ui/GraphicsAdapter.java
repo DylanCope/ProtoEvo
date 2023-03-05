@@ -10,7 +10,7 @@ import com.protoevo.settings.GraphicsSettings;
 import com.protoevo.utils.CursorUtils;
 
 public class GraphicsAdapter extends Game {
-	public static GraphicsSettings settings = new GraphicsSettings();
+	public static GraphicsSettings settings = GraphicsSettings.createDefault();
 	private final ApplicationManager applicationManager;
 	private SimulationScreen simulationScreen;
 	private LoadingScreen loadingScreen;
