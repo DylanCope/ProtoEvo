@@ -89,6 +89,8 @@ public class SimulationScreen extends ScreenAdapter {
         environment = simulation.getEnv();
         getStats = environment::getStats;
 
+
+
         CursorUtils.setDefaultCursor();
 
         graphicsHeight = Gdx.graphics.getHeight();
@@ -582,6 +584,7 @@ public class SimulationScreen extends ScreenAdapter {
         Optional<Cell> protozoan = simulation.getEnv().getCells().stream()
                 .filter(cell -> cell instanceof Protozoan)
                 .skip(MathUtils.random(nProtozoa - 1))
+                .filter(cell -> cell.getPos().len() < environment.getRadius() * 0.9f)
                 .findFirst();
 
         if (protozoan.isPresent())

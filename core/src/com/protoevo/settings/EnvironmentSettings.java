@@ -50,7 +50,7 @@ public class EnvironmentSettings extends Settings {
     public final Settings.Parameter<Float> cellBindingResourceTransport = new Settings.Parameter<>(
             "Binding Resource Transport",
             "Percentage of a cell's resources transported in one unit of time",
-            0.5f
+            2.0f
     );
     public final Settings.Parameter<Float> plantPhotosynthesizeEnergyRate = new Settings.Parameter<>(
             "Plant Photosynthesize Rate",

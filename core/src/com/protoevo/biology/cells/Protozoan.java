@@ -35,7 +35,7 @@ public class Protozoan extends Cell implements Evolvable
 	private float thrustAngle = (float) (2 * Math.PI * Math.random());
 	private float thrustTurn = 0, thrustMag;
 
-	public static class Tag implements Serializable {
+	public static class Tag implements Serializable, Comparable<Tag> {
 		public static final long serialVersionUID = 1L;
 		public String tag;
 		public float timeStamp;
@@ -45,6 +45,18 @@ public class Protozoan extends Cell implements Evolvable
 			this.tag = tag;
 			this.timeStamp = timeStamp;
 			this.generation = generation;
+		}
+
+		@Override
+		public int compareTo(Tag o) {
+			return Integer.compare(generation, o.generation);
+		}
+
+		@Override
+		public boolean equals(Object obj) {
+			if (!(obj instanceof Tag))
+				return false;
+			return tag.equals(((Tag) obj).tag);
 		}
 	}
 
