@@ -32,6 +32,11 @@ public class EnvironmentSettings extends Settings {
             "Multiplier of mass removed from engulfed cell for each unit extracted.",
             1.05f
     );
+//    public final Settings.Parameter<Float> engulfRangeFactor = new Settings.Parameter<>(
+//            "Engulf Range Factor",
+//            "Multiplier of mass removed from engulfed cell for each unit extracted.",
+//            1.05f
+//    );
     public final Settings.Parameter<Float> cellRepairRate = new Settings.Parameter<>(
             "Cell Repair Rate",
             "",

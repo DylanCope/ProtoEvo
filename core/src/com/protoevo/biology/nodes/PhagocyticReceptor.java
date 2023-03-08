@@ -80,8 +80,12 @@ public class PhagocyticReceptor extends NodeAttachment implements Serializable {
 
     private boolean closeEnough(Cell other) {
         Vector2 nodePos = node.getWorldPosition();
-        float d = other.getRadius() + node.getCell().getRadius() / 3f;
+        float d = other.getRadius() + engulfRange();
         return nodePos.dst2(other.getPos()) < d*d;
+    }
+
+    public float engulfRange() {
+        return node.getCell().getRadius() / 2f; // * Environment.settings.engulfRangeFactor.get();
     }
 
     public void engulf(Cell cell) {

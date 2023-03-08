@@ -321,7 +321,10 @@ public class Statistics implements Serializable, Iterable<Statistics.Stat> {
         }
 
         public double getMultipliedDouble() {
-            double number = getDouble();
+            return applyMultipliers(getDouble());
+        }
+
+        public double applyMultipliers(double number) {
             if (unit != null) {
                 for (Map.Entry<BaseUnit, Double> entry : unitMultipliers.entrySet()) {
                     if (unit.getExponent(entry.getKey()) != 0)
@@ -631,18 +634,27 @@ public class Statistics implements Serializable, Iterable<Statistics.Stat> {
             Statistics stats = iterator.next();
             for (Stat stat : stats) {
                 if (stat.canBeNumeric()) {
+                    double newValue = stat.getDouble();
+
                     if (!statNames.contains(stat.name)) {
                         summaryStats.put(stat.name + " Mean", 0f, stat.unit);
+                        summaryStats.put(stat.name + " Max", newValue, stat.unit);
+                        summaryStats.put(stat.name + " Min", newValue, stat.unit);
                         summaryStats.putCount(stat.name + " Count",0);
                         if (computeLogSummaries)
                             summaryStats.put(stat.name + " Log Mean", 0f);
+                    } else {
+                        summaryStats.stats.get(stat.name + " Max").setValue(
+                                Math.max(newValue, summaryStats.stats.get(stat.name + " Max").getDouble()));
+                        summaryStats.stats.get(stat.name + " Min").setValue(
+                                Math.min(newValue, summaryStats.stats.get(stat.name + " Min").getDouble()));
                     }
+
                     statNames.add(stat.name);
 
                     summaryStats.stats.get(stat.name + " Count").add(1);
                     Stat meanStat = summaryStats.stats.get(stat.name + " Mean");
 
-                    double newValue = stat.getDouble();
                     double mean = summaryStats.stats.get(stat.name + " Mean").getDouble();
                     double delta = newValue - mean;
                     int count = (int) summaryStats.stats.get(stat.name + " Count").getDouble();
@@ -653,7 +665,7 @@ public class Statistics implements Serializable, Iterable<Statistics.Stat> {
                     meanStat.error += delta * delta2;
 
                     if (computeLogSummaries) {
-                        double logValue = (double) Math.log(newValue);
+                        double logValue = Math.log(newValue);
                         Stat logMeanStat = summaryStats.stats.get(stat.name + " Log Mean");
                         double logMean = logMeanStat.getDouble();
                         double logDelta = logValue - logMean;
@@ -671,10 +683,10 @@ public class Statistics implements Serializable, Iterable<Statistics.Stat> {
             int count = (int) summaryStats.stats.get(name + " Count").getDouble();
             Stat meanStat = summaryStats.stats.get(name + " Mean");
             if (count > 1) {
-                meanStat.error = (double) Math.sqrt(meanStat.error / count);
+                meanStat.error = Math.sqrt(meanStat.error / count);
                 if (computeLogSummaries) {
                     Stat logMeanStat = summaryStats.stats.get(name + " Log Mean");
-                    logMeanStat.error = (double) Math.sqrt(logMeanStat.error / count);
+                    logMeanStat.error = Math.sqrt(logMeanStat.error / count);
                 }
             } else {
                 meanStat.error = 0;

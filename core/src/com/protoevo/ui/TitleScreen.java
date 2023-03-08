@@ -9,6 +9,7 @@ import com.badlogic.gdx.scenes.scene2d.ui.VerticalGroup;
 import com.badlogic.gdx.utils.ScreenUtils;
 import com.protoevo.core.Simulation;
 import com.protoevo.ui.rendering.EnvironmentRenderer;
+import com.protoevo.utils.DebugMode;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -51,13 +52,15 @@ public class TitleScreen extends ScreenAdapter {
         });
         buttons.add(newSimulationButton);
 
-//        TextButton sandboxButton = new TextButton("Start Sandbox", graphics.getSkin());
-//        sandboxButton.addListener(e -> {
-//            if (e.toString().equals("touchDown"))
-//                graphics.moveToSandbox();
-//            return true;
-//        });
-//        buttons.add(sandboxButton);
+        if (DebugMode.isDebugMode()) {
+            TextButton sandboxButton = new TextButton("Start Debug Sandbox", graphics.getSkin());
+            sandboxButton.addListener(e -> {
+                if (e.toString().equals("touchDown"))
+                    graphics.moveToSandbox();
+                return true;
+            });
+            buttons.add(sandboxButton);
+        }
 
         try (Stream<Path> paths = Files.list(Paths.get("saves"))) {
             paths.map(dir -> dir.getName(dir.getNameCount() - 1).toString())

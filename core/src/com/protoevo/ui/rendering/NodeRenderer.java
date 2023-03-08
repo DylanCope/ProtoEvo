@@ -3,8 +3,10 @@ package com.protoevo.ui.rendering;
 import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
+import com.badlogic.gdx.math.Vector2;
 import com.protoevo.biology.cells.Cell;
 import com.protoevo.biology.nodes.*;
+import com.protoevo.env.JointsManager;
 import com.protoevo.utils.ImageUtils;
 
 import java.util.HashMap;
@@ -27,7 +29,7 @@ public class NodeRenderer {
             attachmentSprites = new HashMap<Class<? extends NodeAttachment>, Sprite>() {
                 {
                     put(Photoreceptor.class, ImageUtils.loadSprite("cell/nodes/photoreceptor/base.png"));
-                    put(AdhesionReceptor.class, ImageUtils.loadSprite("cell/nodes/binding_node.png"));
+//                    put(AdhesionReceptor.class, ImageUtils.loadSprite("cell/nodes/binding_node.png"));
                     put(PhagocyticReceptor.class, ImageUtils.loadSprite("cell/nodes/phagoreceptor.png"));
                 }
             };

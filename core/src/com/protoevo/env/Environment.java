@@ -12,8 +12,6 @@ import com.protoevo.biology.cells.MeatCell;
 import com.protoevo.biology.cells.PlantCell;
 import com.protoevo.biology.cells.Protozoan;
 import com.protoevo.biology.evolution.Evolvable;
-import com.protoevo.biology.nodes.SurfaceNode;
-import com.protoevo.biology.organelles.Organelle;
 import com.protoevo.core.Statistics;
 import com.protoevo.physics.Shape;
 import com.protoevo.physics.*;
@@ -117,7 +115,7 @@ public class Environment implements Serializable
 		createRockFixtures();
 		for (Cell cell : getCells())
 			cell.setEnv(this);
-		jointsManager.rebuild();
+		jointsManager.rebuild(this);
 		updateChunkAllocations();
 	}
 
@@ -476,6 +474,7 @@ public class Environment implements Serializable
 			entry -> entry.getKey().endsWith("Count")
 					&& ((int) entry.getValue().getValue() == 0 || (int) entry.getValue().getValue() == protozoaCount)
 				|| (removeMoleculeStats && entry.getKey().contains("Molecule"))
+				|| (!allStats && (entry.getKey().contains("Min") || entry.getKey().contains("Max")))
 		);
 		return stats;
 	}

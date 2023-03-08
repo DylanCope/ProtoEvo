@@ -7,6 +7,8 @@ import com.protoevo.core.Statistics;
 import com.protoevo.env.Environment;
 import com.protoevo.env.JointsManager;
 import com.protoevo.physics.CollisionHandler;
+import com.protoevo.physics.Particle;
+import com.protoevo.utils.Geometry;
 
 public class AdhesionReceptor extends NodeAttachment {
 
@@ -89,7 +91,11 @@ public class AdhesionReceptor extends NodeAttachment {
         if (joining == null)
             return;
 
-        Cell other = (Cell) joining.getOther(cell);
+        Particle particle = joining.getOther(cell);
+        if (!(particle instanceof Cell))
+            return;
+        Cell other = (Cell) particle;
+
         float transferRate = Environment.settings.cellBindingResourceTransport.get();
 
         float massDelta = cell.getConstructionMassAvailable() - other.getConstructionMassAvailable();
@@ -165,8 +171,15 @@ public class AdhesionReceptor extends NodeAttachment {
 
         Cell cell = node.getCell();
         SurfaceNode otherNode = otherReceptor.getNode();
+
+//        float myAngle = node.getAngle();
+//        float otherAngle = otherNode.getAngle();
+
+        float myAngle = Geometry.angle(otherCell.getPos().cpy().sub(cell.getPos())) - cell.getAngle();
+        float otherAngle = Geometry.angle(cell.getPos().cpy().sub(otherCell.getPos())) - otherCell.getAngle();
+
         JointsManager.Joining joining = new JointsManager.Joining(
-                cell, otherCell, node.getAngle(), otherNode.getAngle());
+                cell, otherCell, myAngle, otherAngle);
 
         JointsManager jointsManager = cell.getEnv().getJointsManager();
         jointsManager.createJoint(joining);
@@ -185,8 +198,8 @@ public class AdhesionReceptor extends NodeAttachment {
     }
 
     private boolean createBindingCondition(SurfaceNode otherNode) {
-        return otherNode.exists() && notAlreadyBound(otherNode)
-                && isCloseEnough(otherNode);
+        return otherNode.exists() && notAlreadyBound(otherNode);
+//                && isCloseEnough(otherNode);
     }
 
     private boolean notAlreadyBound(SurfaceNode otherNode) {
@@ -202,6 +215,10 @@ public class AdhesionReceptor extends NodeAttachment {
     private boolean isCloseEnough(SurfaceNode otherNode) {
         float d = 1.25f * JointsManager.idealJointLength(otherNode.getCell(), node.getCell());
         return node.getWorldPosition().dst2(otherNode.getWorldPosition()) <= d*d;
+    }
+
+    public long getJoiningID() {
+        return joiningID;
     }
 
     @Override

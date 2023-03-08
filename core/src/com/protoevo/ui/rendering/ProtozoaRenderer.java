@@ -99,6 +99,7 @@ public class ProtozoaRenderer {
                 put(Flagellum.class, FlagellumRenderer::new);
                 put(Photoreceptor.class, PhotoreceptorRenderer::new);
                 put(Spike.class, SpikeRenderer::new);
+                put(AdhesionReceptor.class, AdhesionRenderer::new);
             }
         };
 

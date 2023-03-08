@@ -19,6 +19,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 
 public class JointsManager implements Serializable {
     public static long serialVersionUID = 1L;
+    private static JointsManager instance;
 
     @FunctionalInterface
     public interface JoiningListener extends Serializable {
@@ -29,7 +30,6 @@ public class JointsManager implements Serializable {
         public static long serialVersionUID = 1L;
         public final long id;
 
-        public transient Particle particleA, particleB;
         public long particleAId, particleBId;
         public float anchorAngleA, anchorAngleB;
         public boolean anchoredA, anchoredB;
@@ -37,8 +37,6 @@ public class JointsManager implements Serializable {
         private final Vector2 anchorB = new Vector2();
 
         public Joining(Particle particleA, Particle particleB) {
-            this.particleA = particleA;
-            this.particleB = particleB;
             particleAId = particleA.getId();
             particleBId = particleB.getId();
             id = particleAId ^ particleBId;
@@ -54,26 +52,37 @@ public class JointsManager implements Serializable {
             anchoredB = anchoredA = true;
         }
 
-        public Vector2 getAnchorA() {
-            if (!anchoredA)
-                return particleA.getPos();
+        public Particle getParticleA() {
+            return instance.environment.getCell(particleAId);
+        }
 
-            float t = anchorAngleA + particleA.getAngle();
-            float r = particleA.getRadius();
-            anchorA.set((float) (r * Math.cos(t)), (float) (r * Math.sin(t)))
-                    .add(particleA.getPos());
-            return anchorA;
+        public Particle getParticleB() {
+            return instance.environment.getCell(particleBId);
+        }
+
+        public boolean anyDied() {
+            Particle a = getParticleA();
+            Particle b = getParticleB();
+            return a == null || b == null || a.isDead() || b.isDead();
+        }
+
+        private Vector2 getAnchor(
+                Vector2 anchor, Particle particle, float anchorAngle, boolean anchored) {
+            if (!anchored)
+                return particle.getPos();
+
+            float t = anchorAngle + particle.getAngle();
+            float r = particle.getRadius();
+            return anchor.set((float) (r * Math.cos(t)), (float) (r * Math.sin(t)))
+                    .add(particle.getPos());
+        }
+
+        public Vector2 getAnchorA() {
+            return getAnchor(anchorA, getParticleA(), anchorAngleA, anchoredA);
         }
 
         public Vector2 getAnchorB() {
-            if (!anchoredB)
-                return particleB.getPos();
-
-            float t = anchorAngleB + particleB.getAngle();
-            float r = particleB.getRadius();
-            anchorB.set((float) (r * Math.cos(t)), (float) (r * Math.sin(t)))
-                    .add(particleB.getPos());
-            return anchorB;
+            return getAnchor(anchorB, getParticleB(), anchorAngleB, anchoredB);
         }
 
         public boolean notAnchored() {
@@ -96,15 +105,20 @@ public class JointsManager implements Serializable {
         }
 
         public Particle getOther(Particle particle) {
-            if (particle == particleA)
-                return particleB;
-            else if (particle == particleB)
-                return particleA;
+            if (particle.getId() == particleAId)
+                return getParticleB();
+            else if (particle.getId() == particleBId)
+                return getParticleA();
 
             throw new IllegalArgumentException("Particle is not part of this binding");
         }
 
         public Joint getJoint() {
+            Particle particleA = getParticleA();
+            Particle particleB = getParticleB();
+            if (particleA == null || particleB == null)
+                return null;
+
             Array<JointEdge> joints = particleA.getJoints();
             Body otherBody = particleB.getBody();
             if (joints == null) {
@@ -125,7 +139,7 @@ public class JointsManager implements Serializable {
         }
 
         public void destroy() {
-            Environment env = particleA.getEnv();
+            Environment env = instance.environment;
             Joint joint = getJoint();
             while (joint != null) {
                 env.getWorld().destroyJoint(joint);
@@ -134,6 +148,8 @@ public class JointsManager implements Serializable {
         }
 
         public float getIdealLength() {
+            Particle particleA = getParticleA();
+            Particle particleB = getParticleB();
             float len = JointsManager.idealJointLength(particleA, particleB);
             if (!anchoredA)
                 len += particleA.getRadius();
@@ -152,24 +168,21 @@ public class JointsManager implements Serializable {
     private final Collection<Long> jointRemovalRequests = new ConcurrentLinkedQueue<>();
     private final Map<Long, Joining> joinings = new ConcurrentHashMap<>();
 
-    public JointsManager() {}
-
     public JointsManager(Environment environment) {
         this.environment = environment;
+        instance = this;
     }
 
     public Collection<Joining> getJoinings() {
         return joinings.values();
     }
 
-    public void rebuild() {
-        for (Joining joining : joinings.values()) {
-            joining.particleA = environment.getCell(joining.particleAId);
-            joining.particleB = environment.getCell(joining.particleBId);
-        }
+    public void rebuild(Environment environment) {
+        this.environment = environment;
+        instance = this;
         joinings.entrySet().removeIf(
-                entry -> entry.getValue().particleA == null
-                        || entry.getValue().particleB == null
+                entry -> entry.getValue().getParticleA() == null
+                        || entry.getValue().getParticleB() == null
         );
         jointsToAdd.clear();
         jointsToAdd.addAll(joinings.values());
@@ -212,7 +225,7 @@ public class JointsManager implements Serializable {
         handleStaleJoints();
 
         for (Joining joining : jointsToAdd) {
-            if (joining.particleA.isDead() || joining.particleB.isDead()) {
+            if (joining.anyDied()) {
                 deregisterJoining(joining);
                 continue;
             }
@@ -230,7 +243,7 @@ public class JointsManager implements Serializable {
     public void handleStaleJoints() {
         for (Joining joining : joinings.values()) {
 
-            if (joining.particleA.isDead() || joining.particleB.isDead()) {
+            if (joining.anyDied()) {
                 requestJointRemoval(joining);
                 continue;
             }
@@ -285,8 +298,8 @@ public class JointsManager implements Serializable {
 
 
     private JointDef makeJointDef(Joining joining) {
-        Particle particleA = joining.particleA;
-        Particle particleB = joining.particleB;
+        Particle particleA = joining.getParticleA();
+        Particle particleB = joining.getParticleB();
         Vector2 anchorA = joining.getAnchorA();
         Vector2 anchorB = joining.getAnchorB();
 
@@ -331,10 +344,13 @@ public class JointsManager implements Serializable {
     private void deregisterJoining(Joining joining) {
         if (joining == null)
             return;
-        if (joining.particleA instanceof Cell)
-            ((Cell) joining.particleA).deregisterJoining(joining);
-        if (joining.particleB instanceof Cell)
-            ((Cell) joining.particleB).deregisterJoining(joining);
+        Particle particleA = joining.getParticleA();
+        Particle particleB = joining.getParticleB();
+
+        if (particleA instanceof Cell)
+            ((Cell) particleA).deregisterJoining(joining);
+        if (particleB instanceof Cell)
+            ((Cell) particleB).deregisterJoining(joining);
     }
 
     private void deregisterJoining(long id) {

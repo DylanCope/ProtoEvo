@@ -80,8 +80,8 @@ public class EnvironmentRenderer implements Renderer {
     }
 
     public void renderJoinedParticles(JointsManager.Joining joining) {
-        Particle p1 = joining.particleA;
-        Particle p2 = joining.particleB;
+        Particle p1 = joining.getParticleA();
+        Particle p2 = joining.getParticleB();
 
         if (circleNotVisible(p1.getPos(), p1.getRadius())
                 && circleNotVisible(p2.getPos(), p2.getRadius())) {
@@ -133,7 +133,7 @@ public class EnvironmentRenderer implements Renderer {
             protozoaRenderers.entrySet()
                     .removeIf(entry -> entry.getValue().isStale());
 
-            // Render rocks
+
             if (DebugMode.isInteractionInfo())
                 renderInteractionDebug();
             if (DebugMode.isDebugModePhysicsDebug())

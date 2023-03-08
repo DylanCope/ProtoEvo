@@ -74,9 +74,13 @@ public class Protozoan extends Cell implements Evolvable
 		}
 		age(delta);
 
-		if (surfaceNodes != null)
-			for (SurfaceNode node : surfaceNodes)
+		if (surfaceNodes != null) {
+			for (int i = 0; i < surfaceNodes.size(); i++) {
+				SurfaceNode node = surfaceNodes.get(i);
+				node.setIndex(i);
 				node.update(delta);
+			}
+		}
 
 		for (Cell engulfedCell : engulfedCells) {
 			handleEngulfing(engulfedCell, delta);

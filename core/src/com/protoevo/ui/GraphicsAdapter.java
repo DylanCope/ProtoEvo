@@ -14,7 +14,6 @@ public class GraphicsAdapter extends Game {
 	private final ApplicationManager applicationManager;
 	private SimulationScreen simulationScreen;
 	private LoadingScreen loadingScreen;
-	private SandboxScreen sandboxScreen;
 	private TitleScreen titleScreen;
 	private SpriteBatch batch;
 	private Skin skin;
@@ -68,8 +67,6 @@ public class GraphicsAdapter extends Game {
 			skin.dispose();
 		if (simulationScreen != null)
 			simulationScreen.dispose();
-		if (sandboxScreen != null)
-			sandboxScreen.dispose();
 		if (titleScreen != null)
 			titleScreen.dispose();
 		FrameBufferManager.dispose();
@@ -80,10 +77,7 @@ public class GraphicsAdapter extends Game {
 		return skin;
 	}
 
-	public void moveToSandbox() {
-		sandboxScreen = new SandboxScreen(this);
-		setScreen(sandboxScreen);
-	}
+	public void moveToSandbox() {}
 
 	public void moveToTitleScreen(Screen previousScreen) {
 		applicationManager.disposeSimulationIfPresent();

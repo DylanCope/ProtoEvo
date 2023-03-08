@@ -89,8 +89,6 @@ public class SimulationScreen extends ScreenAdapter {
         environment = simulation.getEnv();
         getStats = environment::getStats;
 
-
-
         CursorUtils.setDefaultCursor();
 
         graphicsHeight = Gdx.graphics.getHeight();
@@ -604,8 +602,10 @@ public class SimulationScreen extends ScreenAdapter {
     }
 
     private void pickRandomMeanderTarget() {
-        Vector2 meanderingTargetPosMid = meanderingTargetPos == null ? randomMeanderTargetPos() : meanderingTargetPos;
-        float meanderingTargetZoomMind = meanderingTargetPos == null ? randomMeanderZoom(camera.zoom, meanderingTargetPosMid) : meanderingTargetZoom;
+        Vector2 meanderingTargetPosMid = meanderingTargetPos == null
+                ? randomMeanderTargetPos() : meanderingTargetPos;
+        float meanderingTargetZoomMind = meanderingTargetPos == null
+                ? randomMeanderZoom(camera.zoom, meanderingTargetPosMid) : meanderingTargetZoom;
 
         meanderingTargetPos = randomMeanderTargetPos();
         meanderingTargetZoom = randomMeanderZoom(meanderingTargetZoomMind, meanderingTargetPos);

@@ -100,9 +100,11 @@ public abstract class Cell extends Particle implements Serializable {
 
 	public void requestJointRemoval(JointsManager.Joining joining) {
 		getEnv().getJointsManager().requestJointRemoval(joining);
-		Cell other = (Cell) joining.getOther(this);
-		cellJoinings.remove(other.getId());
-		other.cellJoinings.remove(getId());
+		Particle other = joining.getOther(this);
+		if (other instanceof Cell) {
+			cellJoinings.remove(other.getId());
+			((Cell) other).cellJoinings.remove(getId());
+		}
 	}
 
 	public Cell getCell(Long id) {
@@ -243,7 +245,6 @@ public abstract class Cell extends Particle implements Serializable {
 			}
 		}
 	}
-
 	private float getRepairRate() {
 		return Environment.settings.cellRepairRate.get() * repairRate;
 	}
@@ -339,11 +340,15 @@ public abstract class Cell extends Particle implements Serializable {
 
 	public void registerJoining(JointsManager.Joining joining) {
 		Particle other = joining.getOther(this);
+		if (other == null)
+			return;
 		cellJoinings.put(other.getId(), joining.id);
 	}
 
 	public void deregisterJoining(JointsManager.Joining joining) {
 		Particle other = joining.getOther(this);
+		if (other == null)
+			return;
 		cellJoinings.remove(other.getId());
 	}
 
