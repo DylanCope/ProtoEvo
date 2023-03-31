@@ -13,6 +13,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.protoevo.core.Simulation;
 import com.protoevo.core.Statistics;
 import com.protoevo.ui.rendering.EnvironmentRenderer;
+import com.protoevo.utils.DebugMode;
 import com.protoevo.utils.FileIO;
 import scala.Int;
 
@@ -34,6 +35,7 @@ public class LoadSaveScreen extends ScreenAdapter {
         this.simulationName = simulationName;
 
         this.stage = new Stage();
+        stage.setDebugAll(DebugMode.isDebugMode());
 
         TopBar topBar = new TopBar(this.stage, graphics.getSkin().getFont("default").getLineHeight());
 

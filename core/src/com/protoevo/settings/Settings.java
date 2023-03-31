@@ -99,6 +99,11 @@ public abstract class Settings implements Serializable {
         public void setFieldName(String fieldName) {
             this.fieldName = fieldName;
         }
+
+        @Override
+        public int hashCode() {
+            return fieldName.hashCode();
+        }
     }
 
     private final String name;

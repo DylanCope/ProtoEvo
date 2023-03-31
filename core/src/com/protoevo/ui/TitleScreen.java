@@ -32,6 +32,8 @@ public class TitleScreen extends ScreenAdapter {
         this.graphics = graphics;
 
         stage = new Stage();
+        stage.setDebugAll(DebugMode.isDebugMode());
+
         container = new VerticalGroup();
         container.center();
         stage.addActor(container);
@@ -47,7 +49,7 @@ public class TitleScreen extends ScreenAdapter {
         TextButton newSimulationButton = new TextButton("New Simulation", graphics.getSkin());
         newSimulationButton.addListener(e -> {
             if (e.toString().equals("touchDown"))
-                graphics.loadSimulation(new Simulation());
+                graphics.setScreen(new CreateSimulationScreen(graphics));
             return true;
         });
         buttons.add(newSimulationButton);
