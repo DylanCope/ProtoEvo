@@ -165,6 +165,10 @@ public class EnvironmentSettings extends Settings {
             "Chemical Field Resolution",
             "How many cells wide the chemical field is.",
             1024);
+    public final Settings.Parameter<Integer> lightMapResolution = new Settings.Parameter<>(
+            "Light map Resolution",
+            "How many cells wide the light map is.",
+            256);
     public final Settings.Parameter<Float> basicParticleMassDensity = new Settings.Parameter<>(
             "Base Particle Mass Density",
             "The mass density of a basic particle.",

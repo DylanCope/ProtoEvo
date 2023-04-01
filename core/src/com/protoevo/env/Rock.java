@@ -121,11 +121,6 @@ public class Rock implements Serializable, Shape {
         return !(hasNeg && hasPos);
     }
 
-    @Override
-    public boolean rayIntersects(Vector2 start, Vector2 end) {
-        return false;
-    }
-
     private final float[] intersectTs = new float[2];
     @Override
     public boolean rayCollisions(Vector2[] ray, Intersection[] intersections) {
@@ -210,7 +205,7 @@ public class Rock implements Serializable, Shape {
     }
 
     public static Colour randomRockColour() {
-        float darkener = 0.75f;
+        float darkener = 0.65f;
         int tone = 80 + MathUtils.random(20);
         int yellowing = MathUtils.random(20);
         return new Colour(

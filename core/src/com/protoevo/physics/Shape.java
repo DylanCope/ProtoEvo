@@ -19,7 +19,6 @@ public interface Shape {
     }
 
     boolean pointInside(Vector2 p);
-    boolean rayIntersects(Vector2 start, Vector2 end);
     boolean rayCollisions(Vector2[] ray, Intersection[] intersections);
 
     Colour getColour();

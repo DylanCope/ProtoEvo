@@ -81,7 +81,7 @@ public class EditSettingsScreen extends ScreenAdapter {
                         parameter.set(field.getText());
                     } catch (RuntimeException ex) {
                         System.err.println(
-                                "Failed to set parameter " + parameter.getName() + " to " + field.getText());
+                            "Failed to set parameter " + parameter.getName() + " to " + field.getText());
                     }
                 }
                 graphics.setScreen(previousScreen);
@@ -101,10 +101,10 @@ public class EditSettingsScreen extends ScreenAdapter {
         final Table inputTable = new Table();
 
         inputTable.add(label)
-                .width(scrollWidth / 2f)
+                .width(scrollWidth * 2 / 3f)
                 .align(Align.right);
         inputTable.add(textField)
-                .width(scrollWidth / 2f)
+                .width(scrollWidth / 3f)
                 .align(Align.left)
                 .row();
 

@@ -3,12 +3,12 @@ varying vec2 v_texCoord0;
 
 uniform sampler2D u_sample2D;        // texture to blur
 uniform vec2 u_resolution;           // texture resolution
-uniform float u_blurRadius;          // blur radius
+uniform float u_blurAmount;          // blur radius
 
 
 void main(){
-    float skipX = 0.3;
-    float skipY = 0.3 * u_resolution.y / u_resolution.x;
+    float skipX = 0.3 * u_blurAmount;
+    float skipY = 0.3 * u_blurAmount * u_resolution.y / u_resolution.x;
     vec4 filter_color = vec4(0.);
     int filter_radius = 8;
     float sd = filter_radius * (skipX + skipY) / 2.0;

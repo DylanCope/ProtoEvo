@@ -321,11 +321,6 @@ public class Particle implements Shape, Serializable {
     }
 
     @Override
-    public boolean rayIntersects(Vector2 start, Vector2 end) {
-        return false;
-    }
-
-    @Override
     public boolean rayCollisions(Vector2[] ray, Intersection[] intersection) {
         Vector2 start = ray[0], end = ray[1];
         float dirX = end.x - start.x, dirY = end.y - start.y;

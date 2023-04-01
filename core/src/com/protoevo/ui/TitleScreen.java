@@ -54,15 +54,15 @@ public class TitleScreen extends ScreenAdapter {
         });
         buttons.add(newSimulationButton);
 
-        if (DebugMode.isDebugMode()) {
-            TextButton sandboxButton = new TextButton("Start Debug Sandbox", graphics.getSkin());
-            sandboxButton.addListener(e -> {
-                if (e.toString().equals("touchDown"))
-                    graphics.moveToSandbox();
-                return true;
-            });
-            buttons.add(sandboxButton);
-        }
+//        if (DebugMode.isDebugMode()) {
+//            TextButton sandboxButton = new TextButton("Start Debug Sandbox", graphics.getSkin());
+//            sandboxButton.addListener(e -> {
+//                if (e.toString().equals("touchDown"))
+//                    graphics.moveToSandbox();
+//                return true;
+//            });
+//            buttons.add(sandboxButton);
+//        }
 
         try (Stream<Path> paths = Files.list(Paths.get("saves"))) {
             paths.map(dir -> dir.getName(dir.getNameCount() - 1).toString())

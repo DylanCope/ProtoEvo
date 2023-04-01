@@ -44,6 +44,7 @@ public class Environment implements Serializable
 	private Map<Class<? extends Particle>, SerializableFunction<Float, Vector2>> spawnPositionFns;
 
 	private final ChemicalSolution chemicalSolution;
+	private final LightMap light;
 	private final List<Rock> rocks = new ArrayList<>();
 	private final HashMap<Class<? extends Cell>, Long> bornCounts = new HashMap<>(3);
 	private final HashMap<Class<? extends Cell>, Long> generationCounts = new HashMap<>(3);
@@ -87,6 +88,9 @@ public class Environment implements Serializable
 		} else {
 			chemicalSolution = null;
 		}
+
+		int lightDim = Environment.settings.lightMapResolution.get();
+		light = new LightMap(lightDim, lightDim, Environment.settings.world.radius.get());
 
 		elapsedTime = 0;
 		hasInitialised = false;
@@ -192,6 +196,8 @@ public class Environment implements Serializable
 	public void initialise() {
 		System.out.println("Commencing world generation... ");
 		createRocks();
+		System.out.println("Baking shadows... ");
+		LightMap.bakeRockShadows(light, rocks);
 
 		initialisePopulation();
 
@@ -579,5 +585,9 @@ public class Environment implements Serializable
 
 	public void dispose() {
 		world.dispose();
+	}
+
+	public LightMap getLightMap() {
+		return light;
 	}
 }

@@ -43,7 +43,8 @@ public class EnvironmentRenderer implements Renderer {
     private final OrthographicCamera camera;
     private final Simulation simulation;
     private final SimulationInputManager inputManager;
-    private final Renderer chemicalsRenderer;
+    private final ChemicalsRenderer chemicalsRenderer;
+    private final LightRenderer lightRenderer;
     private final Vector2 tmpVec = new Vector2();
     private final Color tmpColor = new Color();
 
@@ -71,12 +72,11 @@ public class EnvironmentRenderer implements Renderer {
         debugRenderer.setAutoShapeType(true);
 
         if (environment.getChemicalSolution() != null)
-            chemicalsRenderer = new ShaderLayers(
-                    new ChemicalsRenderer(camera, environment)
-//                    new BlurLayer(camera)
-            );
+            chemicalsRenderer = new ChemicalsRenderer(camera, environment);
         else
             chemicalsRenderer = null;
+
+        lightRenderer = new LightRenderer(camera, environment);
     }
 
     public void renderJoinedParticles(JointsManager.Joining joining) {
@@ -110,35 +110,37 @@ public class EnvironmentRenderer implements Renderer {
 
     public void render(float delta) {
         ScreenUtils.clear(backgroundColor);
-        synchronized (environment) {
-            if (chemicalsRenderer != null)
-                chemicalsRenderer.render(delta);
+        if (chemicalsRenderer != null)
+            chemicalsRenderer.render(delta);
 
-            batch.enableBlending();
-            batch.setProjectionMatrix(camera.combined);
-            // Render Particles
-            batch.begin();
-            if (camera.zoom < 3)
-                environment.getJointsManager().getJoinings()
-                        .forEach(this::renderJoinedParticles);
-            environment.getParticles().stream()
-                    .filter(p -> !circleNotVisible(p.getPos(), p.getRadius()))
-                    .iterator()
-                    .forEachRemaining(p -> drawParticle(delta, p));
+        batch.enableBlending();
+        batch.setProjectionMatrix(camera.combined);
+        // Render Particles
+        batch.begin();
+        if (camera.zoom < 3)
+            environment.getJointsManager().getJoinings()
+                    .forEach(this::renderJoinedParticles);
+        environment.getParticles().stream()
+                .filter(p -> !circleNotVisible(p.getPos(), p.getRadius()))
+                .iterator()
+                .forEachRemaining(p -> drawParticle(delta, p));
+        batch.end();
 
-            renderRocks();
+        lightRenderer.render(delta);
 
-            batch.end();
+        batch.begin();
+        renderRocks();
+        batch.end();
 
-            protozoaRenderers.entrySet()
-                    .removeIf(entry -> entry.getValue().isStale());
+        protozoaRenderers.entrySet()
+                .removeIf(entry -> entry.getValue().isStale());
 
 
-            if (DebugMode.isInteractionInfo())
-                renderInteractionDebug();
-            if (DebugMode.isDebugModePhysicsDebug())
-                renderPhysicsDebug();
-        }
+        if (DebugMode.isInteractionInfo())
+            renderInteractionDebug();
+        if (DebugMode.isDebugModePhysicsDebug())
+            renderPhysicsDebug();
+
     }
 
     public void renderRocks() {

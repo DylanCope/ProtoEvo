@@ -56,9 +56,6 @@ public class ShaderLayers implements Renderer {
         baseRenderer.render(delta);
         fboManager.end();
 
-        float graphicsWidth = Gdx.graphics.getWidth();
-        float graphicsHeight = Gdx.graphics.getHeight();
-
         for (int i = 0; i < layers.size(); i++) {
             ShaderLayer layer = layers.get(i);
             if (layer.isEnabled()) {
@@ -70,24 +67,25 @@ public class ShaderLayers implements Renderer {
                 Sprite sprite = getFBOSprite();
                 if (i < layers.size() - 1) {
                     fboManager.begin(fbo);
-                    batch.begin();
-                    batch.draw(sprite, 0, 0, graphicsWidth, graphicsHeight);
-                    batch.end();
+                    draw(sprite);
                     fboManager.end();
                 } else {
-                    batch.begin();
-                    batch.draw(sprite, 0, 0, graphicsWidth, graphicsHeight);
-                    batch.end();
+                    draw(sprite);
                 }
             } else if (i == layers.size() - 1) {
-                Sprite sprite = getFBOSprite();
-                batch.begin();
-                batch.draw(sprite, 0, 0, graphicsWidth, graphicsHeight);
-                batch.end();
+                draw(getFBOSprite());
             }
             layer.update(delta);
         }
         batch.setShader(null);
+    }
+
+    private void draw(Sprite sprite) {
+        float graphicsWidth = Gdx.graphics.getWidth();
+        float graphicsHeight = Gdx.graphics.getHeight();
+        batch.begin();
+        batch.draw(sprite, 0, 0, graphicsWidth, graphicsHeight);
+        batch.end();
     }
 
     @Override
