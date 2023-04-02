@@ -29,6 +29,10 @@ public class SpatialHash<T> implements Serializable, Iterable<Collection<T>> {
         this.chunkContents = new ConcurrentHashMap<>();
     }
 
+    public SpatialHash(int resolution, float worldRadius) {
+        this(resolution, Integer.MAX_VALUE, worldRadius);
+    }
+
     public int size() {
         return size;
     }
@@ -98,6 +102,33 @@ public class SpatialHash<T> implements Serializable, Iterable<Collection<T>> {
         return add(t, x, y);
     }
 
+    public boolean add(T t, Vector2[] bounds) {
+        int x1 = getChunkX(bounds[0].x);
+        int y1 = getChunkY(bounds[0].y);
+        int x2 = getChunkX(bounds[1].x);
+        int y2 = getChunkY(bounds[1].y);
+
+        if (x1 > x2) {
+            int tmp = x1;
+            x1 = x2;
+            x2 = tmp;
+        }
+        if (y1 > y2) {
+            int tmp = y1;
+            y1 = y2;
+            y2 = tmp;
+        }
+
+        boolean added = false;
+        for (int i = x1; i <= x2; i++) {
+            for (int j = y1; j <= y2; j++) {
+                added |= add(t, i, j);
+            }
+        }
+
+        return added;
+    }
+
     public void clear() {
         size = 0;
         chunkContents.values().forEach(Collection::clear);
@@ -140,5 +171,10 @@ public class SpatialHash<T> implements Serializable, Iterable<Collection<T>> {
         if (chunkContents.containsKey(i))
             return chunkContents.get(i);
         return Collections.emptyList();
+    }
+
+    public Collection<T> getChunkContents(int i, int j) {
+        int idx = getChunkIndex(i, j);
+        return getChunkContents(idx);
     }
 }

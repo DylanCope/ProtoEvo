@@ -2,25 +2,38 @@ package com.protoevo.env;
 
 import com.badlogic.gdx.math.Vector2;
 import com.protoevo.physics.Shape;
+import com.protoevo.physics.SpatialHash;
 import com.protoevo.utils.Geometry;
 import com.protoevo.utils.Utils;
 
 import java.io.Serializable;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 import java.util.stream.IntStream;
 
 public class LightMap implements Serializable {
     public static long serialVersionUID = 1L;
 
     public static void bakeRockShadows(LightMap lightMap, List<Rock> rocks) {
+        float rayLen = Environment.settings.world.maxRockSize.get() * 3f;
+
+        int resolution = (int) (lightMap.getFieldWidth() / rayLen);
+
+        SpatialHash<Rock> rockSpatialHash = new SpatialHash<>(resolution, Environment.settings.world.radius.get());
+        for (Rock rock : rocks) {
+            rockSpatialHash.add(rock, rock.getBoundingBox());
+        }
+
+        collectLight(lightMap, rockSpatialHash, rayLen);
+    }
+
+    private static void collectLight(LightMap lightMap, SpatialHash<Rock> rockSpatialHash, float rayLen) {
 
         int lightSamples = 12;
-        float rayLen = Environment.settings.world.maxRockSize.get() * 3f;
+
+        final Vector2[] ray = new Vector2[2];
 
         final Shape.Intersection[] intersections =
                 new Shape.Intersection[]{new Shape.Intersection(), new Shape.Intersection()};
-        final Vector2[] ray = new Vector2[2];
 
         IntStream.range(0, lightMap.width * lightMap.height).forEach(i -> {
             int x = i % lightMap.width;
@@ -30,13 +43,28 @@ public class LightMap implements Serializable {
 
             float collisionValue = 0f;
 
+            int hashIMin = rockSpatialHash.getChunkX(cellPos.x - rayLen);
+            int hashIMax = rockSpatialHash.getChunkX(cellPos.x + rayLen);
+            int hashJMin = rockSpatialHash.getChunkY(cellPos.y - rayLen);
+            int hashJMax = rockSpatialHash.getChunkY(cellPos.y + rayLen);
+
+            Set<Rock> checkRocks = new HashSet<>();
+
             for (int a = 0; a < lightSamples; a++) {
                 float angle = (float) (a * Math.PI * 2 / lightSamples);
-//                float angle = MathUtils.random(MathUtils.PI2);
                 Vector2 rayDir = Geometry.fromAngle(angle).scl(rayLen);
                 ray[1] = cellPos.cpy().add(rayDir);
                 float dist = rayLen;
-                for (Rock rock : rocks) {
+
+                checkRocks.clear();
+
+                for (int hashI = hashIMin; hashI <= hashIMax; hashI++) {
+                    for (int hashJ = hashJMin; hashJ <= hashJMax; hashJ++) {
+                        checkRocks.addAll(rockSpatialHash.getChunkContents(hashI, hashJ));
+                    }
+                }
+
+                for (Rock rock : checkRocks) {
                     intersections[0].didCollide = false;
                     intersections[1].didCollide = false;
                     if (rock.rayCollisions(ray, intersections)) {
