@@ -67,7 +67,7 @@ public class SimulationInputManager {
 
         topBar.createRightBarImageButton("icons/save.png", simulation::saveOnOtherThread);
 
-        possibleCellsToAdd.put("Plant Cell", () -> new PlantCell(simulation.getEnv()));
+        possibleCellsToAdd.put("Plant Cell", () -> Evolvable.createNew(PlantCell.class));
         possibleCellsToAdd.put("Random Protozoan", () -> Evolvable.createNew(Protozoan.class));
         tryLoadSavedProtozoans();
 

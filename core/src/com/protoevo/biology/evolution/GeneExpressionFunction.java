@@ -211,7 +211,7 @@ public class GeneExpressionFunction implements Evolvable.Component, Serializable
         }
 
         public boolean acceptsEvolvable(Class<? extends Evolvable> evolvableType) {
-            return mapsToTrait() && getTraitSetter().getDeclaringClass().equals(evolvableType);
+            return mapsToTrait() && getTraitSetter().getDeclaringClass().isAssignableFrom(evolvableType);
         }
 
         public void setTraitValue(Evolvable target, Object traitValue) {

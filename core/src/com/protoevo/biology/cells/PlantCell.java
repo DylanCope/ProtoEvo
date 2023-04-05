@@ -2,17 +2,20 @@ package com.protoevo.biology.cells;
 
 import com.badlogic.gdx.math.MathUtils;
 import com.protoevo.biology.CauseOfDeath;
+import com.protoevo.biology.evolution.Evolvable;
+import com.protoevo.biology.evolution.EvolvableFloat;
 import com.protoevo.core.Statistics;
 import com.protoevo.physics.CollisionHandler;
 import com.protoevo.env.Environment;
 import com.protoevo.env.JointsManager;
 import com.protoevo.utils.Colour;
 import com.protoevo.utils.Geometry;
+import com.protoevo.utils.Utils;
 
-public class PlantCell extends Cell {
+public class PlantCell extends EvolvableCell {
     public static final long serialVersionUID = -3975433688803760076L;
 
-    private final float maxRadius;
+    private float maxRadius;
     private float photosynthesisRate = 0;
     private static final Statistics.ComplexUnit photosynthesisUnit =
             new Statistics.ComplexUnit(Statistics.BaseUnit.ENERGY).divide(Statistics.BaseUnit.TIME);
@@ -21,14 +24,24 @@ public class PlantCell extends Cell {
         super();
         setRadius(Math.max(radius, Environment.settings.plant.minBirthRadius.get()));
         addToEnv(environment);
-        setGrowthRate(MathUtils.random(
-                Environment.settings.plant.minPlantGrowth.get(),
-                Environment.settings.plant.maxPlantGrowth.get()));
+        setGrowthRate(MathUtils.random(minGrowthRate(), maxGrowthRate()));
 
         maxRadius = MathUtils.random(
                 1.5f * Environment.settings.minParticleRadius.get(),
                 Environment.settings.maxParticleRadius.get() / 2f);
 
+        setRandomPlantColour();
+    }
+
+    public PlantCell() {
+        super();
+        setRandomPlantColour();
+        maxRadius = MathUtils.random(
+                1.5f * Environment.settings.minParticleRadius.get(),
+                Environment.settings.maxParticleRadius.get() / 2f);
+    }
+
+    public void setRandomPlantColour() {
         float darken = 0.9f;
         setHealthyColour(new Colour(
                 darken * (30 + MathUtils.random(105)) / 255f,
@@ -43,6 +56,15 @@ public class PlantCell extends Cell {
     @Override
     public float getMaxRadius() {
         return maxRadius;
+    }
+
+    @EvolvableFloat(name="Split Radius", min=0, max=1)
+    public void setMaxRadius(float splitRadius) {
+        this.maxRadius = Utils.clampedLinearRemap(
+                splitRadius, 0, 1,
+                1.5f * Environment.settings.minParticleRadius.get(),
+                Environment.settings.maxParticleRadius.get() / 2f
+        );
     }
 
     @Override
@@ -65,6 +87,16 @@ public class PlantCell extends Cell {
     }
 
     @Override
+    public float minGrowthRate() {
+        return Environment.settings.plant.minPlantGrowth.get();
+    }
+
+    @Override
+    public float maxGrowthRate() {
+        return Environment.settings.plant.maxPlantGrowth.get();
+    }
+
+    @Override
     public void update(float delta) {
         super.update(delta);
 
@@ -72,7 +104,8 @@ public class PlantCell extends Cell {
             return;
 
         float light = getEnv().getLight(getPos());
-        float photoRate = light * getArea() / Geometry.getCircleArea(Environment.settings.maxParticleRadius.get());
+        float maxArea = Geometry.getCircleArea(Environment.settings.maxParticleRadius.get());
+        float photoRate = light * getArea() / maxArea;
         photosynthesisRate = photoRate * Environment.settings.plantPhotosynthesizeEnergyRate.get();
 
         addConstructionMass(delta * Environment.settings.plantConstructionRate.get());
@@ -99,12 +132,20 @@ public class PlantCell extends Cell {
     }
 
     @Override
+    public float getExpressionInterval() {
+        return Environment.settings.plant.geneExpressionInterval.get();
+    }
+
+    @Override
     protected float getVoidStartDistance2() {
         return super.getVoidStartDistance2() * 0.9f * 0.9f;
     }
 
     public PlantCell createChild(float r) {
-        return new PlantCell(r, getEnv());
+        PlantCell child = Evolvable.asexualClone(this);
+        child.setRadius(r);
+        child.setEnv(getEnv());
+        return child;
     }
 
     public void attach(Cell otherCell) {

@@ -21,6 +21,7 @@ import com.badlogic.gdx.scenes.scene2d.utils.Drawable;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 import com.badlogic.gdx.utils.ScreenUtils;
 import com.protoevo.biology.cells.Cell;
+import com.protoevo.biology.cells.EvolvableCell;
 import com.protoevo.biology.nn.NeuralNetwork;
 import com.protoevo.biology.nodes.SurfaceNode;
 import com.protoevo.biology.cells.Protozoan;
@@ -482,12 +483,12 @@ public class SimulationScreen extends ScreenAdapter {
         ParticleTracker particleTracker = inputManager.getParticleTracker();
         if (particleTracker.isTracking()) {
             Particle particle = particleTracker.getTrackedParticle();
-            if (particle instanceof Protozoan) {
-                Protozoan protozoan = (Protozoan) particle;
-                NeuralNetwork grn = protozoan.getGeneExpressionFunction().getRegulatoryNetwork();
+            if (particle instanceof EvolvableCell) {
+                EvolvableCell evolvableCell = (EvolvableCell) particle;
+                NeuralNetwork grn = evolvableCell.getGeneExpressionFunction().getRegulatoryNetwork();
                 if (grn != null) {
                     networkRenderer.setNeuralNetwork(grn);
-                    mouseOverNeuronHandler.setGeneExpressionFunction(protozoan.getGeneExpressionFunction());
+                    mouseOverNeuronHandler.setGeneExpressionFunction(evolvableCell.getGeneExpressionFunction());
                     networkRenderer.render(delta);
                 }
             }

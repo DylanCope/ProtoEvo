@@ -241,7 +241,9 @@ public class Environment implements Serializable
 		int nPlants = Environment.settings.world.numInitialPlantPellets.get();
 		System.out.println("Creating population of " + nPlants + " plants..." );
 		for (int i = 0; i < nPlants; i++) {
-			PlantCell cell = new PlantCell(this);
+//			PlantCell cell = new PlantCell(this);
+			PlantCell cell = Evolvable.createNew(PlantCell.class);
+			cell.addToEnv(this);
 			if (cell.isDead()) {
 				System.out.println(
 					"Failed to find position for plant pellet. " +
@@ -410,10 +412,10 @@ public class Environment implements Serializable
 		stats.putCount("Meat Pellets", getCount(MeatCell.class));
 
 		stats.putCount("Max Protozoa Generation",
-						generationCounts.get(Protozoan.class).intValue());
+						generationCounts.getOrDefault(Protozoan.class, 1L).intValue());
 
 		stats.putCount("Max Plant Generation",
-				generationCounts.get(PlantCell.class).intValue());
+				generationCounts.getOrDefault(PlantCell.class, 0L).intValue());
 
 		for (Class<? extends Cell> cellClass : bornCounts.keySet())
 			stats.putCount(cellClassNames.get(cellClass) + " Created",

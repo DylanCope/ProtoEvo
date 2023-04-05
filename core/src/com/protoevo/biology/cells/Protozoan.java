@@ -16,11 +16,10 @@ import com.protoevo.utils.Utils;
 import java.io.Serializable;
 import java.util.*;
 
-public class Protozoan extends Cell implements Evolvable
+public class Protozoan extends EvolvableCell
 {
 	private static final long serialVersionUID = 2314292760446370751L;
 
-	private GeneExpressionFunction geneExpressionFunction;
 	private GeneExpressionFunction crossOverGenome;
 	private float matingCooldown = 0;
 	private boolean mateDesire;
@@ -28,7 +27,6 @@ public class Protozoan extends Cell implements Evolvable
 
 	private float damageRate = 0;
 	private float herbivoreFactor, splitRadius;
-	private float timeSinceLastGeneUpdate = 0;
 	private final Vector2 tmp = new Vector2();
 	private final Collection<Cell> engulfedCells = new ArrayList<>(0);
 	private final Vector2 thrust = new Vector2();
@@ -66,12 +64,6 @@ public class Protozoan extends Cell implements Evolvable
 	public void update(float delta)
 	{
 		super.update(delta);
-
-		timeSinceLastGeneUpdate += delta;
-		if (timeSinceLastGeneUpdate >= Environment.settings.protozoa.geneExpressionInterval.get()) {
-			geneExpressionFunction.update();
-			timeSinceLastGeneUpdate = 0;
-		}
 		age(delta);
 
 		if (surfaceNodes != null) {
@@ -103,8 +95,9 @@ public class Protozoan extends Cell implements Evolvable
 				if (other instanceof Protozoan) {
 					Protozoan protozoan = (Protozoan) other;
 					if (protozoan.mateDesire) {
-						crossOverGenome = protozoan.geneExpressionFunction;
-						protozoan.crossOverGenome = geneExpressionFunction;
+
+						crossOverGenome = protozoan.getGeneExpressionFunction();
+						protozoan.crossOverGenome = getGeneExpressionFunction();
 						protozoan.matingCooldown = 1;
 					}
 				}
@@ -116,12 +109,6 @@ public class Protozoan extends Cell implements Evolvable
 
 	private boolean removeEngulfedCondition(Cell c) {
 		return c.getHealth() <= 0f;
-	}
-
-	@Override
-	@EvolvableComponent
-	public void setGeneExpressionFunction(GeneExpressionFunction fn) {
-		this.geneExpressionFunction = fn;
 	}
 
 	@EvolvableList(
@@ -171,42 +158,6 @@ public class Protozoan extends Cell implements Evolvable
 		setDegradedColour(degradeColour(colour, 0.3f));
 	}
 
-	@EvolvableFloat(name="Growth Rate", min=0, max=1)
-	public void setGrowth(float growthRate) {
-		growthRate = Utils.clampedLinearRemap(
-				growthRate, 0, 1,
-				Environment.settings.protozoa.minProtozoanGrowthRate.get(),
-				Environment.settings.protozoa.maxProtozoanGrowthRate.get()
-		);
-		setGrowthRate(growthRate);
-	}
-
-	@EvolvableFloat(name="Repair Rate")
-	public void setRepairRate(float repairRate) {
-		super.setRepairRate(repairRate);
-	}
-
-	@Override
-	@GeneRegulator(name="Health")
-	public float getHealth() {
-		return super.getHealth();
-	}
-
-	@GeneRegulator(name="Size", min=0, max=1)
-	public float getRadiusAsProportionOfMax() {
-		return Utils.clampedLinearRemap(
-				super.getRadius(),
-				Environment.settings.minParticleRadius.get(),
-				Environment.settings.maxParticleRadius.get(),
-				0, 1
-		);
-	}
-
-	@GeneRegulator(name="Construction Mass Available")
-	public float getConstructionMass() {
-		return getConstructionMassAvailable() / getConstructionMassCap();
-	}
-
 	@GeneRegulator(name="Plant to Digest")
 	public float getPlantToDigest() {
 		if (!getFoodToDigest().containsKey(Food.Type.Plant))
@@ -219,11 +170,6 @@ public class Protozoan extends Cell implements Evolvable
 		if (!getFoodToDigest().containsKey(Food.Type.Meat))
 			return 0;
 		return getFoodToDigest().get(Food.Type.Meat).getSimpleMass() / getFoodToDigestMassCap();
-	}
-
-	@GeneRegulator(name="Contact Sensor")
-	public float getContact() {
-		return getContacts().size() > 0 ? 1 : 0;
 	}
 
 	@ControlVariable(name="Cilia Thrust", min=0, max=1)
@@ -263,8 +209,9 @@ public class Protozoan extends Cell implements Evolvable
 		if (crossOverGenome != null) {
 			child = Evolvable.createChild(this.getClass(), this.getGeneExpressionFunction(), crossOverGenome);
 			getEnv().incrementCrossOverCount();
-		} else
+		} else {
 			child = Evolvable.asexualClone(this);
+		}
 
 		child.setRadius(r);
 		child.setEnv(getEnv());
@@ -347,7 +294,8 @@ public class Protozoan extends Cell implements Evolvable
 			d2 = other.getPos().dst2(e.getPos());
 			if (other != e && d2 < rr*rr) {
 				tmp.set(e.getPos()).sub(other.getPos());
-				tmp.setLength(Environment.settings.protozoa.engulfForce.get() * delta * (rr*rr - d2));
+				float force = Environment.settings.protozoa.engulfForce.get();
+				tmp.setLength(force * delta * (rr*rr - d2));
 				e.getPos().add(tmp);
 			}
 		}
@@ -396,6 +344,8 @@ public class Protozoan extends Cell implements Evolvable
 		int numSpikes = getNumSpikes();
 		if (numSpikes > 0)
 			stats.putCount("Num Spikes", numSpikes);
+
+		GeneExpressionFunction geneExpressionFunction = getGeneExpressionFunction();
 		NeuralNetwork grn = geneExpressionFunction.getRegulatoryNetwork();
 		if (grn != null) {
 			stats.putCount("GRN Depth", grn.getDepth());
@@ -464,11 +414,6 @@ public class Protozoan extends Cell implements Evolvable
 	}
 
 	@Override
-	public GeneExpressionFunction getGeneExpressionFunction() {
-		return geneExpressionFunction;
-	}
-
-	@Override
 	public List<SurfaceNode> getSurfaceNodes() {
 		return surfaceNodes;
 	}
@@ -479,5 +424,20 @@ public class Protozoan extends Cell implements Evolvable
 
 	public float getHerbivoreFactor() {
 		return herbivoreFactor;
+	}
+
+	@Override
+	public float getExpressionInterval() {
+		return Environment.settings.protozoa.geneExpressionInterval.get();
+	}
+
+	@Override
+	public float minGrowthRate() {
+		return Environment.settings.protozoa.minProtozoanGrowthRate.get();
+	}
+
+	@Override
+	public float maxGrowthRate() {
+		return Environment.settings.protozoa.maxProtozoanGrowthRate.get();
 	}
 }

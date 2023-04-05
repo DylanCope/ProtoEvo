@@ -1,5 +1,6 @@
 package com.protoevo.settings;
 
+import com.protoevo.core.Statistics;
 import com.protoevo.env.Environment;
 import com.protoevo.utils.Geometry;
 
@@ -31,6 +32,12 @@ public class PlantSettings extends Settings {
             "Min Health to Split",
             "Minimum health required to produce children.",
             0.15f);
+    public final Settings.Parameter<Float> geneExpressionInterval = new Settings.Parameter<>(
+            "Simulation Update Delta",
+            "Amount of time to step the simulation with each update.",
+            Environment.settings.simulationUpdateDelta.get() * 100f,
+            Statistics.ComplexUnit.TIME
+    );
 
     public PlantSettings() {
         super("Plant");
