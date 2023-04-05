@@ -44,7 +44,7 @@ public class Statistics implements Serializable, Iterable<Statistics.Stat> {
         ANGLE("°"),
         MASS("g"),
         ENERGY("J"),
-        TEMPERATURE("K"),
+        TEMPERATURE("°C"),
         DISTANCE("m"),
         TIME("s");
 
@@ -549,6 +549,9 @@ public class Statistics implements Serializable, Iterable<Statistics.Stat> {
         return put(name, time, ComplexUnit.TIME);
     }
 
+    public Stat putTemperature(String name, float temp) {
+        return put(name, temp, ComplexUnit.TEMPERATURE);
+    }
     public Stat putRate(String name, double rate) {
         return put(name, rate, ComplexUnit.FREQUENCY);
     }

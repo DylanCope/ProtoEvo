@@ -198,6 +198,7 @@ public class Environment implements Serializable
 		createRocks();
 		System.out.println("Baking shadows... ");
 		LightMap.bakeRockShadows(light, rocks);
+		light.generateNoiseLight(0);
 
 		initialisePopulation();
 
@@ -589,5 +590,13 @@ public class Environment implements Serializable
 
 	public LightMap getLightMap() {
 		return light;
+	}
+
+	public float getLight(Vector2 pos) {
+		return light.getLight(pos);
+	}
+
+	public float getTemperature(Vector2 pos) {
+		return light.getLight(pos) * 15f;
 	}
 }

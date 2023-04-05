@@ -4,6 +4,7 @@ import com.badlogic.gdx.math.Vector2;
 import com.protoevo.physics.Shape;
 import com.protoevo.physics.SpatialHash;
 import com.protoevo.utils.Geometry;
+import com.protoevo.utils.Perlin;
 import com.protoevo.utils.Utils;
 
 import java.io.Serializable;
@@ -14,7 +15,7 @@ public class LightMap implements Serializable {
     public static long serialVersionUID = 1L;
 
     public static void bakeRockShadows(LightMap lightMap, List<Rock> rocks) {
-        float rayLen = Environment.settings.world.maxRockSize.get() * 3f;
+        float rayLen = Environment.settings.world.maxRockSize.get() * 5f;
 
         int resolution = (int) (lightMap.getFieldWidth() / rayLen);
 
@@ -28,7 +29,7 @@ public class LightMap implements Serializable {
 
     private static void collectLight(LightMap lightMap, SpatialHash<Rock> rockSpatialHash, float rayLen) {
 
-        int lightSamples = 12;
+        int lightSamples = 16;
 
         final Vector2[] ray = new Vector2[2];
 
@@ -75,7 +76,7 @@ public class LightMap implements Serializable {
             }
 
             collisionValue /= lightSamples;
-            float t = 0.1f;
+            float t = 0.25f;
             float light = Utils.clampedLinearRemap(collisionValue, t, 1 - t, 1, 0);
 
             lightMap.setLight(x, y, light);
@@ -93,8 +94,9 @@ public class LightMap implements Serializable {
 
     private final float[][] lightMap;
     private final int width, height;
-    private float cellSizeX, cellSizeY;
-    private float xMin, yMin, xMax, yMax;
+    private final float cellSizeX, cellSizeY;
+    private final float xMin, yMin, xMax, yMax;
+    private final float radius;
 
     public LightMap(int width, int height, float radius) {
         this.width = width;
@@ -103,6 +105,7 @@ public class LightMap implements Serializable {
         this.yMin = -radius;
         this.xMax = radius;
         this.yMax = radius;
+        this.radius = radius;
         this.cellSizeX = (xMax - xMin) / width;
         this.cellSizeY = (yMax - yMin) / height;
 
@@ -111,8 +114,38 @@ public class LightMap implements Serializable {
             Arrays.fill(row, 1f);
     }
 
+    public void generateNoiseLight(float t) {
+        float[][] noise = Perlin.generatePerlinNoise(width, height, 0);
+        for (int i = 0; i < width; i++) {
+            for (int j = 0; j < height; j++) {
+                float light = Utils.clampedLinearRemap(
+                    1 + 2 * noise[i][j], 0f, 1f, 0.2f, 1f);
+                lightMap[i][j] *= light;
+
+                Vector2 pos = toEnvironmentCoords(i, j);
+                lightMap[i][j] = Utils.clampedLinearRemap(
+                        pos.len(),
+                        radius * 0.9f, radius,
+                        lightMap[i][j], 1f
+                );
+            }
+        }
+    }
+
     public float getLight(int x, int y) {
         return lightMap[x][y];
+    }
+
+    public float getLight(float x, float y) {
+        int i = (int) ((x - xMin) / cellSizeX);
+        int j = (int) ((y - yMin) / cellSizeY);
+        if (i < 0 || i >= width || j < 0 || j >= height)
+            return 1f;
+        return lightMap[i][j];
+    }
+
+    public float getLight(Vector2 pos) {
+        return getLight(pos.x, pos.y);
     }
 
     public void setLight(int x, int y, float light) {

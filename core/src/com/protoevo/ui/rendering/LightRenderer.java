@@ -34,7 +34,7 @@ public class LightRenderer implements Renderer {
         for (int x = 0; x < w; x++) {
             for (int y = 0; y < h; y++) {
                 float light = lightMap.getLight(x, y);
-                color.set(0f, 0f, 0f, 1 - light);
+                color.set(0.05f, 0f, 0.06f, 1 - light);
                 lightPixmap.drawPixel(x, h - y, Color.rgba8888(color));
             }
         }

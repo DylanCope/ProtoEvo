@@ -46,6 +46,7 @@ public abstract class Cell extends Particle implements Serializable {
 	private ArrayList<Organelle> organelles = new ArrayList<>();
 	private boolean hasBurst = false;
 	private float repairRate = 1f;
+	private float temperature = 0f;
 
 	private Cell engulfer = null;
 	private boolean fullyEngulfed = false;
@@ -68,6 +69,9 @@ public abstract class Cell extends Particle implements Serializable {
 			organelle.update(delta);
 
 		cellJoinings.entrySet().removeIf(this::detachCellCondition);
+
+		if (getEnv() != null)
+			temperature = getEnv().getTemperature(getPos());
 
 		decayResources(delta);
 	}
@@ -494,6 +498,8 @@ public abstract class Cell extends Particle implements Serializable {
 		}
 
 		stats.putBoolean("Being Engulfed", engulfer != null);
+		stats.putTemperature("Temperature", temperature);
+		stats.putPercentage("Light Level", 100f * getEnv().getLight(getPos()));
 
 		return stats;
 	}

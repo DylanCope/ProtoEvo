@@ -13,6 +13,9 @@ public class PlantCell extends Cell {
     public static final long serialVersionUID = -3975433688803760076L;
 
     private final float maxRadius;
+    private float photosynthesisRate = 0;
+    private static final Statistics.ComplexUnit photosynthesisUnit =
+            new Statistics.ComplexUnit(Statistics.BaseUnit.ENERGY).divide(Statistics.BaseUnit.TIME);
 
     public PlantCell(float radius, Environment environment) {
         super();
@@ -68,10 +71,12 @@ public class PlantCell extends Cell {
         if (isDead())
             return;
 
-        float photoRate = getArea() / Geometry.getCircleArea(Environment.settings.maxParticleRadius.get());
+        float light = getEnv().getLight(getPos());
+        float photoRate = light * getArea() / Geometry.getCircleArea(Environment.settings.maxParticleRadius.get());
+        photosynthesisRate = photoRate * Environment.settings.plantPhotosynthesizeEnergyRate.get();
 
         addConstructionMass(delta * Environment.settings.plantConstructionRate.get());
-        addAvailableEnergy(delta * photoRate * Environment.settings.plantPhotosynthesizeEnergyRate.get());
+        addAvailableEnergy(delta * photosynthesisRate);
 
         int nProtozoaContacts = 0;
         for (CollisionHandler.Collision collision : getContacts()) {
@@ -128,6 +133,7 @@ public class PlantCell extends Cell {
     public Statistics getStats() {
         Statistics stats = super.getStats();
         stats.putDistance("Split Radius", maxRadius);
+        stats.put("Photosynthesis Rate", photosynthesisRate, photosynthesisUnit);
         return stats;
     }
 

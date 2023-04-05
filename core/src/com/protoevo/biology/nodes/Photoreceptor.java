@@ -97,13 +97,18 @@ public class Photoreceptor extends NodeAttachment implements Serializable {
             return intersections;
 
         float sqLen = Float.MAX_VALUE;
-        for (Shape.Intersection intersection : intersections)
-            if (intersection.didCollide)
+        Shape.Intersection collisionIntersection = null;
+        for (Shape.Intersection intersection : intersections) {
+            if (intersection.didCollide) {
                 sqLen = Math.min(sqLen, intersection.point.dst2(ray[0]));
+                collisionIntersection = intersection;
+            }
+        }
 
-        if (sqLen < minSqLen) {
+        if (sqLen < minSqLen && collisionIntersection != null) {
             minSqLen = sqLen;
-            float w = getConstructionProgress() * computeColourFalloffWeight();
+            float light = node.getCell().getEnv().getLight(collisionIntersection.point);
+            float w = light * getConstructionProgress() * computeColourFalloffWeight();
             r += o.getColor().r * w;
             g += o.getColor().g * w;
             b += o.getColor().b * w;
