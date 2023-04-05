@@ -64,7 +64,8 @@ public abstract class EvolvableCell extends Cell implements Evolvable {
     public float getNormalisedTemperature() {
         if (getEnv() == null)
             return 0;
-        return getEnv().getTemperature(getPos()) / 7.5f - 7.5f;
+        float t = Environment.settings.maxLightEnvTemp.get() / 2f;
+        return (getEnv().getTemperature(getPos()) - t) / t;
     }
 
     @Override

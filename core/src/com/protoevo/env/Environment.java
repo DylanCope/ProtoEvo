@@ -599,6 +599,6 @@ public class Environment implements Serializable
 	}
 
 	public float getTemperature(Vector2 pos) {
-		return light.getLight(pos) * 15f;
+		return light.getLight(pos) * settings.maxLightEnvTemp.get();
 	}
 }

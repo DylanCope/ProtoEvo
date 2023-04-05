@@ -169,6 +169,10 @@ public class EnvironmentSettings extends Settings {
             "Light map Resolution",
             "How many cells wide the light map is.",
             256);
+    public final Settings.Parameter<Float> maxLightEnvTemp = new Settings.Parameter<>(
+            "Environment Light Temperature",
+            "Environment temperature at in regions of maximum light.",
+            15f);
     public final Settings.Parameter<Float> basicParticleMassDensity = new Settings.Parameter<>(
             "Base Particle Mass Density",
             "The mass density of a basic particle.",
