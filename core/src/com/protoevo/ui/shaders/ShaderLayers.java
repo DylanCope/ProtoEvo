@@ -21,11 +21,12 @@ public class ShaderLayers implements Renderer {
     private final SpriteBatch batch;
     private final FrameBuffer fbo;
     private final OrthographicCamera camera;
-    private final FrameBufferManager fboManager = new FrameBufferManager();
+    private final FrameBufferManager fboManager;
 
     public ShaderLayers(Renderer baseLayer, ShaderLayer... shaderLayers) {
         this.baseRenderer = baseLayer;
         layers = Arrays.asList(shaderLayers);
+        fboManager = FrameBufferManager.getInstance();
 
         if (!layers.isEmpty()) {
             camera = layers.get(0).getCamera();

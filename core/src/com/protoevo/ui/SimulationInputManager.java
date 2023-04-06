@@ -57,14 +57,7 @@ public class SimulationInputManager {
             );
         });
 
-        topBar.createRightBarImageButton("icons/back.png", () -> {
-            simulation.onOtherThread(simulation::close);
-            simulationScreen.addConditionalTask(
-                    () -> !simulation.isBusyOnOtherThread(),
-                    () -> graphics.moveToTitleScreen(simulationScreen)
-            );
-        });
-
+        topBar.createRightBarImageButton("icons/gear.png", simulationScreen::moveToPauseScreen);
         topBar.createRightBarImageButton("icons/save.png", simulation::saveOnOtherThread);
 
         possibleCellsToAdd.put("Plant Cell", () -> Evolvable.createNew(PlantCell.class));

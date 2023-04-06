@@ -21,25 +21,28 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.Callable;
+import java.util.function.Consumer;
 
 public class EditSettingsScreen extends ScreenAdapter {
     private final Stage stage;
     private final GraphicsAdapter graphics;
     private final String simulationName;
     private final Skin skin;
+    private Consumer<Float> drawBackground;
+    private final ScreenAdapter previousScreen;
 
     public EditSettingsScreen(ScreenAdapter previousScreen, GraphicsAdapter graphics, String settingsName, Settings settings) {
         this.graphics = graphics;
         this.simulationName = settingsName;
+        this.previousScreen = previousScreen;
 
         this.stage = new Stage();
         stage.setDebugAll(DebugMode.isDebugMode());
 
         TopBar topBar = new TopBar(this.stage, graphics.getSkin().getFont("default").getLineHeight());
 
-        topBar.createRightBarImageButton("icons/back.png", () -> {
-            graphics.setScreen(previousScreen);
-        });
+        topBar.createRightBarImageButton("icons/back.png", this::returnToPreviousScreen);
 
         skin = graphics.getSkin();
         final Table scrollTable = new Table();
@@ -84,7 +87,7 @@ public class EditSettingsScreen extends ScreenAdapter {
                             "Failed to set parameter " + parameter.getName() + " to " + field.getText());
                     }
                 }
-                graphics.setScreen(previousScreen);
+                returnToPreviousScreen();
             }
             return true;
         });
@@ -92,6 +95,16 @@ public class EditSettingsScreen extends ScreenAdapter {
         table.add(applyButton).padTop(applyButton.getHeight()).width(applyButton.getWidth() * 1.2f);
 
         this.stage.addActor(table);
+    }
+
+    private void returnToPreviousScreen() {
+        graphics.setScreen(previousScreen);
+        if (previousScreen instanceof SimulationScreen) {
+            ((SimulationScreen) previousScreen).getSimulation().setPaused(false);
+        } else if (previousScreen instanceof PauseScreen) {
+            PauseScreen pauseScreen = (PauseScreen) previousScreen;
+            pauseScreen.setTimePaused(pauseScreen.getFadeTime());
+        }
     }
 
     private TextField createParameterInput(Settings.Parameter<?> parameter, Table table) {
@@ -127,7 +140,12 @@ public class EditSettingsScreen extends ScreenAdapter {
     @Override
     public void render(float delta) {
         this.stage.act(delta);
-        ScreenUtils.clear(EnvironmentRenderer.backgroundColor);
+
+        if (drawBackground != null)
+            drawBackground.accept(delta);
+        else
+            ScreenUtils.clear(EnvironmentRenderer.backgroundColor);
+
         this.stage.draw();
     }
 
@@ -139,4 +157,8 @@ public class EditSettingsScreen extends ScreenAdapter {
     @Override public void pause() {}
     @Override public void resume() {}
     @Override public void dispose() {}
+
+    public void setBackgroundRenderer(Consumer<Float> drawBackground) {
+        this.drawBackground = drawBackground;
+    }
 }

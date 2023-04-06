@@ -7,6 +7,7 @@ import com.protoevo.env.EnvFileIO;
 import com.protoevo.env.Environment;
 import com.protoevo.settings.EnvironmentSettings;
 import com.protoevo.settings.Settings;
+import com.protoevo.ui.SimulationScreen;
 import com.protoevo.utils.FileIO;
 
 import java.awt.*;
@@ -241,7 +242,7 @@ public class Simulation implements Runnable
 
 	public void update()
 	{
-		if (isPaused() || busyOnOtherThread)
+		if (isPaused() || busyOnOtherThread || environment == null)
 			return;
 
 		float delta = timeDilation * Environment.settings.simulationUpdateDelta.get();
@@ -316,6 +317,8 @@ public class Simulation implements Runnable
 	}
 
 	public String save() {
+		if (environment == null)
+			return null;
 		String timeStamp = getTimeStampString();
 		String fileName = "saves/" + name + "/env/" + timeStamp;
 		EnvFileIO.saveEnvironment(environment, fileName);
@@ -345,6 +348,10 @@ public class Simulation implements Runnable
 
 	public void togglePause() {
 		paused = !paused;
+	}
+
+	public void setPaused(boolean paused) {
+		Simulation.paused = paused;
 	}
 
 	public boolean inDebugMode() {

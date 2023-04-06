@@ -6,8 +6,8 @@ import com.protoevo.env.Environment;
 
 public class ProtozoaSettings extends Settings {
     public final Settings.Parameter<Float> geneExpressionInterval = new Settings.Parameter<>(
-            "Simulation Update Delta",
-            "Amount of time to step the simulation with each update.",
+            "Gene Expression Interval",
+            "The amount of in-simulation time between ticking the Gene Regulatory Networks of protozoa.",
             Environment.settings.simulationUpdateDelta.get() * 10f,
             Statistics.ComplexUnit.TIME
     );

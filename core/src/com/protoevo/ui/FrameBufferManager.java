@@ -9,7 +9,7 @@ public class FrameBufferManager {
 
     private static FrameBufferManager instance;
 
-    public FrameBufferManager getInstance() {
+    public static FrameBufferManager getInstance() {
         if (instance == null) {
             instance = new FrameBufferManager();
         }

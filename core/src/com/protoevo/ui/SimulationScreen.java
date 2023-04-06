@@ -1,6 +1,7 @@
 package com.protoevo.ui;
 
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.Input;
 import com.badlogic.gdx.ScreenAdapter;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Texture;
@@ -49,7 +50,7 @@ public class SimulationScreen extends ScreenAdapter {
     private final Simulation simulation;
     private final Environment environment;
     private final SimulationInputManager inputManager;
-    private final Renderer renderer;
+    private final Renderer environmentRenderer;
     private final SpriteBatch uiBatch;
     private final Stage stage;
     private final GlyphLayout layout = new GlyphLayout();
@@ -125,7 +126,7 @@ public class SimulationScreen extends ScreenAdapter {
         topBar = new TopBar(stage, font.getLineHeight());
 
         inputManager = new SimulationInputManager(this);
-        renderer = new ShaderLayers(
+        environmentRenderer = new ShaderLayers(
                 new EnvironmentRenderer(camera, simulation, inputManager),
                 new ShockWaveLayer(camera),
                 new VignetteLayer(camera, inputManager.getParticleTracker())
@@ -182,8 +183,21 @@ public class SimulationScreen extends ScreenAdapter {
                 boxXStart, boxYStart, boxWidth, boxHeight, infoTextSize);
     }
 
+    public void moveToPauseScreen() {
+        simulation.setPaused(true);
+        graphics.setScreen(new PauseScreen(graphics, this));
+    }
+
+    public void renderEnvironment(float delta) {
+        environmentRenderer.render(delta);
+    }
+
     @Override
     public void render(float delta) {
+
+        if (Gdx.input.isButtonJustPressed(Input.Keys.ESCAPE))
+            moveToPauseScreen();
+
         conditionalTasks.forEach((condition, task) -> {
             if (condition.get())
                 task.run();
@@ -207,7 +221,7 @@ public class SimulationScreen extends ScreenAdapter {
                 camera.position.set(particleTracker.getTrackedParticlePosition());
         }
 
-        renderer.render(delta);
+        renderEnvironment(delta);
 
         if (uiHidden)
             return;
@@ -527,7 +541,7 @@ public class SimulationScreen extends ScreenAdapter {
         uiBatch.dispose();
         font.dispose();
         topBar.dispose();
-        renderer.dispose();
+        environmentRenderer.dispose();
         networkRenderer.dispose();
         inputManager.dispose();
         for (ImageButton button : buttons)

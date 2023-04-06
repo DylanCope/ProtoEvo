@@ -33,8 +33,8 @@ public class PlantSettings extends Settings {
             "Minimum health required to produce children.",
             0.15f);
     public final Settings.Parameter<Float> geneExpressionInterval = new Settings.Parameter<>(
-            "Simulation Update Delta",
-            "Amount of time to step the simulation with each update.",
+            "Gene Expression Interval",
+            "The amount of in-simulation time between ticking the Gene Regulatory Networks of plants.",
             Environment.settings.simulationUpdateDelta.get() * 100f,
             Statistics.ComplexUnit.TIME
     );
