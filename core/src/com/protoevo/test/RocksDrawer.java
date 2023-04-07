@@ -4,6 +4,7 @@ import com.protoevo.env.Environment;
 import com.protoevo.env.LightMap;
 import com.protoevo.env.Rock;
 import com.protoevo.env.WorldGeneration;
+import com.protoevo.ui.DefaultBackgroundRenderer;
 import com.protoevo.utils.Colour;
 
 import java.awt.Color;
@@ -76,6 +77,7 @@ public class RocksDrawer {
     }
 
     public static void main(String[] args) {
+        Environment.settings = DefaultBackgroundRenderer.createBgEnvSettings();
         List<Rock> rocks = WorldGeneration.generate();
         drawRocks(rocks);
 

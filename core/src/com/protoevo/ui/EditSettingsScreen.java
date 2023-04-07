@@ -91,6 +91,7 @@ public class EditSettingsScreen extends ScreenAdapter {
             }
             return true;
         });
+        applyButton.pad(applyButton.getHeight() / 2f);
 
         table.add(applyButton).padTop(applyButton.getHeight()).width(applyButton.getWidth() * 1.2f);
 
@@ -144,7 +145,7 @@ public class EditSettingsScreen extends ScreenAdapter {
         if (drawBackground != null)
             drawBackground.accept(delta);
         else
-            ScreenUtils.clear(EnvironmentRenderer.backgroundColor);
+            GraphicsAdapter.renderBackground(delta);
 
         this.stage.draw();
     }

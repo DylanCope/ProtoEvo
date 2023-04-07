@@ -34,6 +34,7 @@ public class Environment implements Serializable
 	private final EnvironmentSettings mySettings;
 	private transient World world;
 	private float elapsedTime, physicsStepTime;
+	private String loadingStatus;
 	private final Statistics stats = new Statistics();
 	private final Statistics debugStats = new Statistics();
 	public final ConcurrentHashMap<CauseOfDeath, Integer> causeOfDeathCounts =
@@ -195,18 +196,26 @@ public class Environment implements Serializable
 
 	public void initialise() {
 		System.out.println("Commencing world generation... ");
+		loadingStatus = "Generating World";
 		createRocks();
+		loadingStatus = "Creating Light";
 		System.out.println("Baking shadows... ");
-		LightMap.bakeRockShadows(light, rocks);
-		light.generateNoiseLight(0);
+		if (settings.world.bakeRockLights.get())
+			LightMap.bakeRockShadows(light, rocks);
+		if (settings.world.generateLightNoiseTexture.get())
+			light.generateNoiseLight(0);
 
+		loadingStatus = "Creating Population";
 		initialisePopulation();
 
 		flushEntitiesToAdd();
 
-		if (chemicalSolution != null)
+		if (chemicalSolution != null) {
+			loadingStatus = "Creating Chemicals";
 			chemicalSolution.initialise();
+		}
 
+		loadingStatus = "Initialisation Complete";
 		hasInitialised = true;
 		System.out.println("Environment initialisation complete.");
 	}
@@ -240,8 +249,8 @@ public class Environment implements Serializable
 
 		int nPlants = Environment.settings.world.numInitialPlantPellets.get();
 		System.out.println("Creating population of " + nPlants + " plants..." );
+		loadingStatus = "Seeding Plants";
 		for (int i = 0; i < nPlants; i++) {
-//			PlantCell cell = new PlantCell(this);
 			PlantCell cell = Evolvable.createNew(PlantCell.class);
 			cell.addToEnv(this);
 			if (cell.isDead()) {
@@ -254,6 +263,7 @@ public class Environment implements Serializable
 
 		int nProtozoa = Environment.settings.world.numInitialProtozoa.get();
 		System.out.println("Creating population of " + nProtozoa + " protozoa...");
+		loadingStatus = "Spawning Protozoa";
 		for (int i = 0; i < nProtozoa; i++) {
 			Protozoan p = Evolvable.createNew(Protozoan.class);
 			p.addToEnv(this);
@@ -600,5 +610,9 @@ public class Environment implements Serializable
 
 	public float getTemperature(Vector2 pos) {
 		return light.getLight(pos) * settings.maxLightEnvTemp.get();
+	}
+
+	public String getLoadingStatus() {
+		return loadingStatus;
 	}
 }

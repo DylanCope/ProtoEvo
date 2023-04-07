@@ -127,7 +127,7 @@ public class SimulationScreen extends ScreenAdapter {
 
         inputManager = new SimulationInputManager(this);
         environmentRenderer = new ShaderLayers(
-                new EnvironmentRenderer(camera, simulation, inputManager),
+                new EnvironmentRenderer(camera, simulation.getEnv(), inputManager),
                 new ShockWaveLayer(camera),
                 new VignetteLayer(camera, inputManager.getParticleTracker())
         );
@@ -255,6 +255,7 @@ public class SimulationScreen extends ScreenAdapter {
 
     @Override
     public void show() {
+        CursorUtils.setDefaultCursor();
         inputManager.registerAsInputProcessor();
     }
 

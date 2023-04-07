@@ -19,7 +19,7 @@ public class ChemicalSolution implements Serializable {
     private int chemicalTextureHeight;
     private int chemicalTextureWidth;
     private transient boolean initialised = false;
-    private transient byte[] byteBuffer;
+    private byte[] byteBuffer;
     private Colour[][] colours;
     private float timeSinceUpdate = 0;
     private transient JCudaKernelRunner diffusionKernel;

@@ -13,6 +13,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.protoevo.core.Simulation;
 import com.protoevo.core.Statistics;
 import com.protoevo.ui.rendering.EnvironmentRenderer;
+import com.protoevo.utils.CursorUtils;
 import com.protoevo.utils.DebugMode;
 import com.protoevo.utils.FileIO;
 import scala.Int;
@@ -23,27 +24,27 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Consumer;
 
 public class LoadSaveScreen extends ScreenAdapter {
     private final Stage stage;
     private final GraphicsAdapter graphics;
     private final String simulationName;
     private final Skin skin;
+    private Consumer<Float> drawBackground;
+    private final ScreenAdapter previousScreen;
 
-    public LoadSaveScreen(GraphicsAdapter graphics, String simulationName) {
+    public LoadSaveScreen(GraphicsAdapter graphics, String simulationName, ScreenAdapter previousScreen) {
         this.graphics = graphics;
         this.simulationName = simulationName;
+        this.previousScreen = previousScreen;
 
         this.stage = new Stage();
         stage.setDebugAll(DebugMode.isDebugMode());
 
         TopBar topBar = new TopBar(this.stage, graphics.getSkin().getFont("default").getLineHeight());
-
         topBar.createRightBarImageButton("icons/x-button.png", graphics::exitApplication);
-
-        topBar.createRightBarImageButton("icons/back.png", () -> {
-            graphics.moveToTitleScreen(this);
-        });
+        topBar.createRightBarImageButton("icons/back.png", this::returnToPreviousScreen);
 
         skin = graphics.getSkin();
         final Table scrollTable = new Table();
@@ -82,6 +83,16 @@ public class LoadSaveScreen extends ScreenAdapter {
         int second = Integer.parseInt(splitTimeStamp[5]);
 
         return String.format("%02d/%02d/%d %02d:%02d:%02d", day, month, year, hour, minute, second);
+    }
+
+    private void returnToPreviousScreen() {
+        graphics.setScreen(previousScreen);
+        if (previousScreen instanceof SimulationScreen) {
+            ((SimulationScreen) previousScreen).getSimulation().setPaused(false);
+        } else if (previousScreen instanceof PauseScreen) {
+            PauseScreen pauseScreen = (PauseScreen) previousScreen;
+            pauseScreen.setTimePaused(pauseScreen.getFadeTime());
+        }
     }
 
     private Map<String, String> getStatsMap(Path savePath) {
@@ -132,6 +143,7 @@ public class LoadSaveScreen extends ScreenAdapter {
                 graphics.loadSimulation(new Simulation(simulationName, saveTimeStamp));
             }
         });
+
         loadButton.align(Align.right).pad(loadButton.getHeight() / 5f);
 
         scrollTable.add(statsTable).width(scrollWidth).padBottom(loadButton.getHeight() / 2f);
@@ -143,6 +155,7 @@ public class LoadSaveScreen extends ScreenAdapter {
 
     @Override
     public void show() {
+        CursorUtils.setDefaultCursor();
         Gdx.input.setInputProcessor(this.stage);
     }
 
@@ -153,8 +166,12 @@ public class LoadSaveScreen extends ScreenAdapter {
 
     @Override
     public void render(float delta) {
+        if (drawBackground != null)
+            drawBackground.accept(delta);
+        else
+            GraphicsAdapter.renderBackground(delta);
+
         this.stage.act(delta);
-        ScreenUtils.clear(EnvironmentRenderer.backgroundColor);
         this.stage.draw();
     }
 
@@ -166,4 +183,8 @@ public class LoadSaveScreen extends ScreenAdapter {
     @Override public void pause() {}
     @Override public void resume() {}
     @Override public void dispose() {}
+
+    public void setBackgroundRenderer(Consumer<Float> drawBackground) {
+        this.drawBackground = drawBackground;
+    }
 }

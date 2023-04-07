@@ -64,6 +64,14 @@ public class WorldGenerationSettings extends Settings {
             "",
             "",
             voidStartDistance.get());
+    public final Settings.Parameter<Boolean> generateLightNoiseTexture = new Settings.Parameter<>(
+            "",
+            "",
+            true);
+    public final Settings.Parameter<Boolean> bakeRockLights = new Settings.Parameter<>(
+            "",
+            "",
+            true);
 
     public WorldGenerationSettings() {
         super("World Generation");

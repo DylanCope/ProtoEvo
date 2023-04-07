@@ -1,8 +1,11 @@
 package com.protoevo.ui;
 
 import com.badlogic.gdx.Game;
+import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.Graphics;
 import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.graphics.glutils.ShaderProgram;
 import com.badlogic.gdx.scenes.scene2d.ui.Skin;
 import com.protoevo.core.ApplicationManager;
 import com.protoevo.core.Simulation;
@@ -17,6 +20,7 @@ public class GraphicsAdapter extends Game {
 	private TitleScreen titleScreen;
 	private SpriteBatch batch;
 	private Skin skin;
+	private static DefaultBackgroundRenderer defaultBackgroundRenderer;
 
 	public GraphicsAdapter(ApplicationManager applicationManager) {
 		this.applicationManager = applicationManager;
@@ -24,12 +28,20 @@ public class GraphicsAdapter extends Game {
 
 	@Override
 	public void create() {
+		Graphics.DisplayMode displayMode = Gdx.graphics.getDisplayMode();
+		Gdx.graphics.setUndecorated(true);
+		Gdx.graphics.setWindowedMode(displayMode.width, displayMode.height);
+
 		CursorUtils.setDefaultCursor();
 		batch = new SpriteBatch();
+		ShaderProgram.pedantic = false;
+
+		defaultBackgroundRenderer = DefaultBackgroundRenderer.getInstance();
 
 		loadingScreen = new LoadingScreen(this, applicationManager);
 
 		skin = UIStyle.getUISkin();
+
 		if (applicationManager.hasSimulation()) {
 			Simulation simulation = applicationManager.getSimulation();
 			if (simulation.isReady())
@@ -41,6 +53,10 @@ public class GraphicsAdapter extends Game {
 			titleScreen = new TitleScreen(this);
 			setScreen(titleScreen);
 		}
+	}
+
+	public static void renderBackground(float delta) {
+		defaultBackgroundRenderer.render(delta);
 	}
 
 	public void notifySimulationReady() {
@@ -71,6 +87,7 @@ public class GraphicsAdapter extends Game {
 			titleScreen.dispose();
 		FrameBufferManager.dispose();
 		CursorUtils.dispose();
+		DefaultBackgroundRenderer.disposeInstance();
 	}
 
 	public Skin getSkin() {
@@ -92,7 +109,7 @@ public class GraphicsAdapter extends Game {
 	}
 
 	public void moveToLoadSaveScreen(String simulationName) {
-		LoadSaveScreen loadSaveScreen = new LoadSaveScreen(this, simulationName);
+		LoadSaveScreen loadSaveScreen = new LoadSaveScreen(this, simulationName, titleScreen);
 		setScreen(loadSaveScreen);
 	}
 

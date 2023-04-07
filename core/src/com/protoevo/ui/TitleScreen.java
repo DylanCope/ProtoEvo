@@ -9,8 +9,10 @@ import com.badlogic.gdx.scenes.scene2d.ui.VerticalGroup;
 import com.badlogic.gdx.utils.ScreenUtils;
 import com.protoevo.core.Simulation;
 import com.protoevo.ui.rendering.EnvironmentRenderer;
+import com.protoevo.utils.CursorUtils;
 import com.protoevo.utils.DebugMode;
 
+import java.awt.*;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -97,7 +99,7 @@ public class TitleScreen extends ScreenAdapter {
 
     @Override
     public void render(float delta) {
-        ScreenUtils.clear(EnvironmentRenderer.backgroundColor);
+        GraphicsAdapter.renderBackground(delta);
         stage.act(delta);
         stage.draw();
     }
@@ -124,6 +126,8 @@ public class TitleScreen extends ScreenAdapter {
 
     @Override
     public void show() {
+        DefaultBackgroundRenderer.getInstance().resumeSimulation();
+        CursorUtils.setDefaultCursor();
         createButtons();
         Gdx.input.setInputProcessor(stage);
     }

@@ -1,7 +1,9 @@
 package com.protoevo.ui.rendering;
 
 import com.badlogic.gdx.Gdx;
-import com.badlogic.gdx.graphics.*;
+import com.badlogic.gdx.graphics.Color;
+import com.badlogic.gdx.graphics.OrthographicCamera;
+import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
@@ -12,23 +14,21 @@ import com.badlogic.gdx.physics.box2d.Box2DDebugRenderer;
 import com.badlogic.gdx.utils.ScreenUtils;
 import com.protoevo.biology.cells.Cell;
 import com.protoevo.biology.cells.Protozoan;
-import com.protoevo.physics.Particle;
-import com.protoevo.core.Simulation;
-import com.protoevo.physics.SpatialHash;
-import com.protoevo.env.*;
+import com.protoevo.env.Environment;
+import com.protoevo.env.JointsManager;
+import com.protoevo.env.Rock;
 import com.protoevo.input.ParticleTracker;
 import com.protoevo.physics.CollisionHandler;
+import com.protoevo.physics.Particle;
+import com.protoevo.physics.SpatialHash;
 import com.protoevo.ui.SimulationInputManager;
 import com.protoevo.ui.UIStyle;
-import com.protoevo.ui.shaders.ShaderLayers;
 import com.protoevo.utils.DebugMode;
 import com.protoevo.utils.Utils;
 import space.earlygrey.shapedrawer.ShapeDrawer;
 
 import java.util.Collection;
 import java.util.HashMap;
-
-import static com.protoevo.utils.Utils.lerp;
 
 public class EnvironmentRenderer implements Renderer {
     public static Color backgroundColor = new Color(0, 0.1f, 0.2f, 1);
@@ -41,7 +41,6 @@ public class EnvironmentRenderer implements Renderer {
     private final ShapeDrawer shapeDrawer;
     private final Environment environment;
     private final OrthographicCamera camera;
-    private final Simulation simulation;
     private final SimulationInputManager inputManager;
     private final ChemicalsRenderer chemicalsRenderer;
     private final LightRenderer lightRenderer;
@@ -54,11 +53,10 @@ public class EnvironmentRenderer implements Renderer {
         return new Sprite(texture);
     }
 
-    public EnvironmentRenderer(OrthographicCamera camera, Simulation simulation, SimulationInputManager inputManager) {
+    public EnvironmentRenderer(OrthographicCamera camera, Environment environment, SimulationInputManager inputManager) {
         this.camera = camera;
-        this.simulation = simulation;
         this.inputManager = inputManager;
-        environment = simulation.getEnv();
+        this.environment = environment;
 
         physicsDebugRenderer = new Box2DDebugRenderer();
         batch = new SpriteBatch();
@@ -82,6 +80,8 @@ public class EnvironmentRenderer implements Renderer {
     public void renderJoinedParticles(JointsManager.Joining joining) {
         Particle p1 = joining.getParticleA();
         Particle p2 = joining.getParticleB();
+        if (p1 == null || p2 == null)
+            return;
 
         if (circleNotVisible(p1.getPos(), p1.getRadius())
                 && circleNotVisible(p2.getPos(), p2.getRadius())) {
@@ -179,12 +179,12 @@ public class EnvironmentRenderer implements Renderer {
     }
 
     public void renderPhysicsDebug() {
-        physicsDebugRenderer.render(simulation.getEnv().getWorld(), camera.combined);
+        physicsDebugRenderer.render(environment.getWorld(), camera.combined);
         debugRenderer.begin();
         debugRenderer.setColor(Color.GOLD);
         debugRenderer.set(ShapeRenderer.ShapeType.Line);
 
-        SpatialHash<Cell> spatialHash = simulation.getEnv().getSpatialHash(Protozoan.class);
+        SpatialHash<Cell> spatialHash = environment.getSpatialHash(Protozoan.class);
         float size = spatialHash.getChunkSize();
         for (int i = 0; i < spatialHash.getResolution(); i++) {
             float x = spatialHash.getOriginX() + i * size;
@@ -199,6 +199,9 @@ public class EnvironmentRenderer implements Renderer {
     }
 
     public void renderInteractionDebug() {
+        if (inputManager == null)
+            return;
+
         debugRenderer.begin();
         ParticleTracker particleTracker = inputManager.getParticleTracker();
 

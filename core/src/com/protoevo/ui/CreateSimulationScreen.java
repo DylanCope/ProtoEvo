@@ -13,6 +13,7 @@ import com.protoevo.core.Simulation;
 import com.protoevo.settings.EnvironmentSettings;
 import com.protoevo.settings.Settings;
 import com.protoevo.ui.rendering.EnvironmentRenderer;
+import com.protoevo.utils.CursorUtils;
 import com.protoevo.utils.DebugMode;
 import com.protoevo.utils.FileIO;
 
@@ -72,8 +73,8 @@ public class CreateSimulationScreen extends ScreenAdapter {
         nameText.setWrap(true);
 
         table.setFillParent(true);
-        table.add(nameText).width(Gdx.graphics.getWidth() / 2f).height(Gdx.graphics.getHeight() / 5f).row();
-        table.add(scroller).width(Gdx.graphics.getWidth() / 2f).height(Gdx.graphics.getHeight() * 4 / 7f).row();
+        table.add(nameText).width(Gdx.graphics.getWidth() / 2f).height(Gdx.graphics.getHeight() / 7f).row();
+        table.add(scroller).width(Gdx.graphics.getWidth() / 2f).height(Gdx.graphics.getHeight() * 3 / 7f).row();
 
         final TextButton createButton = new TextButton("Create", skin);
         createButton.addListener(e -> {
@@ -81,6 +82,7 @@ public class CreateSimulationScreen extends ScreenAdapter {
                 graphics.loadSimulation(new Simulation(nameField.getText(), settings));
             return true;
         });
+        createButton.pad(createButton.getHeight() / 2f);
 
         table.add(createButton).padTop(createButton.getHeight()).width(createButton.getWidth() * 1.2f);
 
@@ -95,11 +97,13 @@ public class CreateSimulationScreen extends ScreenAdapter {
                 graphics.setScreen(new EditSettingsScreen(this, graphics, name, settings));
             return true;
         });
+        button.pad(button.getHeight() / 4f);
         table.add(button).padBottom(button.getHeight() / 2f).row();
     }
 
     @Override
     public void show() {
+        CursorUtils.setDefaultCursor();
         Gdx.input.setInputProcessor(this.stage);
     }
 
@@ -110,8 +114,8 @@ public class CreateSimulationScreen extends ScreenAdapter {
 
     @Override
     public void render(float delta) {
+        GraphicsAdapter.renderBackground(delta);
         this.stage.act(delta);
-        ScreenUtils.clear(EnvironmentRenderer.backgroundColor);
         this.stage.draw();
     }
 
@@ -122,5 +126,7 @@ public class CreateSimulationScreen extends ScreenAdapter {
 
     @Override public void pause() {}
     @Override public void resume() {}
-    @Override public void dispose() {}
+    @Override public void dispose() {
+        stage.dispose();
+    }
 }

@@ -1,6 +1,7 @@
 package com.protoevo.core;
 
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.Graphics;
 import com.badlogic.gdx.backends.lwjgl3.Lwjgl3Application;
 import com.badlogic.gdx.backends.lwjgl3.Lwjgl3ApplicationConfiguration;
 import com.protoevo.ui.GraphicsAdapter;
@@ -12,7 +13,7 @@ import static com.protoevo.utils.Utils.parseArgs;
 
 public class ApplicationManager {
 
-    private static boolean windowed = true;
+    public final static boolean windowed = false, borderlessWindowed = true;
     private volatile boolean headless = false, applicationRunning = true, saveOnExit = true;
     private Simulation simulation;
     private GraphicsAdapter graphics;
@@ -51,6 +52,7 @@ public class ApplicationManager {
     }
 
     public void setSimulation(Simulation simulation) {
+        disposeSimulationIfPresent();
         this.simulation = simulation;
         simulation.setManager(this);
 
@@ -142,8 +144,12 @@ public class ApplicationManager {
         if (isDebug)
             DebugMode.setMode(DebugMode.SIMPLE_INFO);
 
-        if (isDebug | windowed) {
+        if (isDebug | windowed | borderlessWindowed) {
             config.setWindowedMode(1920, 1080);
+//        } else if (borderlessWindowed) {
+//            Graphics.DisplayMode displayMode = Gdx.graphics.getDisplayMode();
+//            Gdx.graphics.setUndecorated(true);
+//            Gdx.graphics.setWindowedMode(displayMode.width, displayMode.height);
         } else {
             config.setFullscreenMode(Lwjgl3ApplicationConfiguration.getDisplayMode());
         }

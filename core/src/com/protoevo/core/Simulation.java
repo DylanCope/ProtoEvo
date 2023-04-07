@@ -400,4 +400,13 @@ public class Simulation implements Runnable
 		else
 			timeDilation = 1f;
 	}
+
+	public String getLoadingStatus() {
+		if (initialised)
+			return "Ready to Simulate";
+		else if (environment == null)
+			return "Creating Environment";
+		else
+			return environment.getLoadingStatus();
+	}
 }

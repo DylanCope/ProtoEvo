@@ -39,7 +39,7 @@ public class UIStyle {
         skin.add("white", getWhite1x1());
 
         Color transparent = new Color(0, 0, 0, 0);
-        Color selectionColor = new Color(0, 0, 0.8f, 0.95f);
+        Color selectionColor = new Color(0, 0, 0.8f, 0.85f);
 
         float graphicsHeight = Gdx.graphics.getHeight();
         int infoTextSize = (int) (graphicsHeight / 50f);

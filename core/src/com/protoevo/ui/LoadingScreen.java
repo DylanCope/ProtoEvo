@@ -6,7 +6,9 @@ import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.utils.ScreenUtils;
 import com.protoevo.core.ApplicationManager;
+import com.protoevo.core.Simulation;
 import com.protoevo.ui.rendering.EnvironmentRenderer;
+import com.protoevo.utils.CursorUtils;
 
 public class LoadingScreen extends ScreenAdapter {
 
@@ -28,6 +30,8 @@ public class LoadingScreen extends ScreenAdapter {
 
     @Override
     public void show() {
+        DefaultBackgroundRenderer.getInstance().pauseSimulation();
+        CursorUtils.setDefaultCursor();
         simulationReady = false;
         updateCounts = 0;
     }
@@ -39,17 +43,21 @@ public class LoadingScreen extends ScreenAdapter {
     }
 
     public void loadingString(String text) {
-        ScreenUtils.clear(EnvironmentRenderer.backgroundColor);
         elapsedTime += Gdx.graphics.getDeltaTime();
 
-        batch.begin();
         StringBuilder textWithDots = new StringBuilder(text);
         for (int i = 0; i < Math.max(0, (int) (elapsedTime * 2) % 4); i++)
             textWithDots.append(".");
 
         float x = 3 * font.getLineHeight();
+        batch.begin();
         font.draw(batch, textWithDots.toString(), x, x);
         batch.end();
+    }
+
+    public void renderBackground() {
+        DefaultBackgroundRenderer renderer = DefaultBackgroundRenderer.getInstance();
+        renderer.drawBlurredBackground();
     }
 
     @Override
@@ -61,7 +69,17 @@ public class LoadingScreen extends ScreenAdapter {
         if (updateCounts > updatesBeforeRendering) {
             graphicsAdapter.setSimulationScreen();
         }
-        loadingString("Loading Simulation");
+        renderBackground();
+        Simulation simulation = applicationManager.getSimulation();
+        if (simulation == null) {
+            loadingString("Creating Simulation");
+            return;
+        }
+        String loadingStatus = simulation.getLoadingStatus();
+        if (loadingStatus != null)
+            loadingString(loadingStatus);
+        else
+            loadingString("Loading Simulation");
     }
 
     public void notifySimulationReady() {

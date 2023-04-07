@@ -3,6 +3,7 @@ package com.protoevo.ui;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.ScreenAdapter;
 import com.badlogic.gdx.graphics.Pixmap;
+import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.glutils.FrameBuffer;
@@ -16,8 +17,13 @@ import com.protoevo.core.Simulation;
 import com.protoevo.env.Environment;
 import com.protoevo.settings.EnvironmentSettings;
 import com.protoevo.settings.Settings;
+import com.protoevo.utils.CursorUtils;
 import com.protoevo.utils.DebugMode;
 import com.protoevo.utils.Utils;
+
+import java.util.HashMap;
+import java.util.Map;
+import java.util.function.Supplier;
 
 public class PauseScreen extends ScreenAdapter {
 
@@ -29,6 +35,8 @@ public class PauseScreen extends ScreenAdapter {
     private final Stage stage;
     private float timePaused = 0;
     private final float fadeTime = 0.15f;
+    private String busyMessage = null;
+    private final Map<Supplier<Boolean>, Runnable> conditionalTasks = new HashMap<>();
 
     public PauseScreen(GraphicsAdapter graphics, SimulationScreen simulationScreen) {
         this.simulationScreen = simulationScreen;
@@ -52,13 +60,19 @@ public class PauseScreen extends ScreenAdapter {
 
         final Table scrollTable = new Table();
 
+        addButton(graphics, "Return to Simulation", this::returnToSimulation, scrollTable);
+        addButton(graphics, "Create Save", () -> {
+            busyMessage = "Saving...";
+            simulationScreen.getSimulation().saveOnOtherThread();
+        }, scrollTable);
+        addButton(graphics, "Load Save", this::toLoadSaveScreen, scrollTable);
+
         addSettingsButton(graphics, "General", settings, scrollTable);
         addSettingsButton(graphics, "Protozoa", settings.protozoa, scrollTable);
         addSettingsButton(graphics, "Plant", settings.plant, scrollTable);
         addSettingsButton(graphics, "Misc", settings.misc, scrollTable);
 
         addButton(graphics, "Exit to Title Screen", this::exitToTitleScreen, scrollTable);
-        addButton(graphics, "Return to Simulation", this::returnToSimulation, scrollTable);
 
         final com.badlogic.gdx.scenes.scene2d.ui.ScrollPane scroller =
                 new com.badlogic.gdx.scenes.scene2d.ui.ScrollPane(scrollTable);
@@ -76,16 +90,23 @@ public class PauseScreen extends ScreenAdapter {
         table.add(nameText)
                 .width(Gdx.graphics.getWidth() / 2f).height(Gdx.graphics.getHeight() / 7f).row();
         table.add(scroller)
-                .width(Gdx.graphics.getWidth() / 2f).height(Gdx.graphics.getHeight() * 3 / 7f).row();
+                .width(Gdx.graphics.getWidth() / 2f).height(Gdx.graphics.getHeight() * 4 / 7f).row();
 
         stage.addActor(table);
     }
 
+    private void toLoadSaveScreen() {
+        LoadSaveScreen loadSaveScreen = new LoadSaveScreen(
+                graphics, simulationScreen.getSimulation().getName(), this);
+        loadSaveScreen.setBackgroundRenderer(this::drawBackground);
+        graphics.setScreen(loadSaveScreen);
+    }
+
     private void exitToTitleScreen() {
-        returnToSimulation();
         Simulation simulation = simulationScreen.getSimulation();
         simulation.onOtherThread(simulation::close);
-        simulationScreen.addConditionalTask(
+        busyMessage = "Saving and closing...";
+        addConditionalTask(
                 () -> !simulation.isBusyOnOtherThread(),
                 () -> graphics.moveToTitleScreen(simulationScreen)
         );
@@ -93,6 +114,7 @@ public class PauseScreen extends ScreenAdapter {
 
     @Override
     public void show() {
+        CursorUtils.setDefaultCursor();
         timePaused = 0;
         Gdx.input.setInputProcessor(stage);
     }
@@ -145,7 +167,7 @@ public class PauseScreen extends ScreenAdapter {
         shader.bind();
         shader.setUniformf("u_resolution", Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
         shader.setUniformf("u_blurAmount",
-                Utils.clampedLinearRemap(timePaused, 0, fadeTime, 0, 6f));
+                Utils.clampedLinearRemap(timePaused, 0, fadeTime, 0, 10f));
         shader.setUniformf("u_darkenAmount",
                 Utils.clampedLinearRemap(timePaused, 0, fadeTime, 1f, 0.75f));
         batch.setShader(shader);
@@ -167,14 +189,43 @@ public class PauseScreen extends ScreenAdapter {
         return fadeTime;
     }
 
+    private void drawBusyText() {
+        StringBuilder textWithDots = new StringBuilder(busyMessage);
+        for (int i = 0; i < Math.max(0, (int) (timePaused * 2) % 4); i++)
+            textWithDots.append(".");
+
+        BitmapFont font = graphics.getSkin().getFont("default");
+        float x = 3 * font.getLineHeight();
+        batch.setShader(null);
+        batch.begin();
+        font.draw(batch, textWithDots.toString(), x, x);
+        batch.end();
+    }
+
     @Override
     public void render(float delta) {
         timePaused += delta;
 
+        conditionalTasks.forEach((condition, task) -> {
+            if (condition.get())
+                task.run();
+        });
+        conditionalTasks.entrySet().removeIf(entry -> entry.getKey().get());
+
         drawBackground(delta);
 
-        stage.act(delta);
+        if (simulationScreen.getSimulation().isBusyOnOtherThread())
+            drawBusyText();
+        else {
+            busyMessage = null;
+            stage.act(delta);
+        }
+
         stage.draw();
+    }
+
+    public void addConditionalTask(Supplier<Boolean> trigger, Runnable action) {
+        conditionalTasks.put(trigger, action);
     }
 
 }
