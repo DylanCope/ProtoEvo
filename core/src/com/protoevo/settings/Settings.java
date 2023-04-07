@@ -24,6 +24,12 @@ public abstract class Settings implements Serializable {
             this.description = description;
         }
 
+        public Parameter(String name, String description, ParamGenerator<T> generator) {
+            this.value = generator.generate();
+            this.name = name;
+            this.description = description;
+        }
+
         public Parameter(String name, String description, T defaultValue, Statistics.ComplexUnit unit) {
             this.value = defaultValue;
             this.name = name;

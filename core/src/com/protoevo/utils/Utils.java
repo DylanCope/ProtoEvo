@@ -10,7 +10,7 @@ import java.util.UUID;
 
 public class Utils {
 
-    public static long newID() {
+    public static long randomLong() {
         return UUID.randomUUID().getMostSignificantBits();
     }
 

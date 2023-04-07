@@ -209,6 +209,7 @@ public class NetworkRenderer extends InputAdapter implements Renderer {
             maxWidth = Math.max(maxWidth, width);
 
         nodeSpacing = boxHeight / maxWidth;
+        nodeSpacing = Math.min(nodeSpacing, boxHeight / 15f);
         nn.setGraphicsNodeSpacing(nodeSpacing);
 
         final TreeMap<String, Neuron> sortedNeurons = new TreeMap<>();

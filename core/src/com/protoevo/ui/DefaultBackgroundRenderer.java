@@ -3,6 +3,7 @@ package com.protoevo.ui;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Pixmap;
+import com.badlogic.gdx.graphics.PixmapIO;
 import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.glutils.FrameBuffer;
@@ -45,7 +46,7 @@ public class DefaultBackgroundRenderer {
         camera.position.set(0, 0, 0);
         camera.zoom = 1f;
 
-        settings = createBgEnvSettings();
+        settings = DefaultBackgroundGenerator.createBgEnvSettings();
         environment = new Environment(settings);
         environment.initialise();
 
@@ -63,23 +64,6 @@ public class DefaultBackgroundRenderer {
         }
     }
 
-    public static EnvironmentSettings createBgEnvSettings() {
-        EnvironmentSettings settings = EnvironmentSettings.createDefault();
-        settings.world.radius.set(3f);
-        settings.world.numRingClusters.set(2);
-        settings.world.rockGenerationIterations.set(100);
-        settings.world.numInitialProtozoa.set(100);
-        settings.world.numInitialPlantPellets.set(500);
-        settings.world.generateLightNoiseTexture.set(false);
-        settings.world.bakeRockLights.set(false);
-        settings.misc.maxProtozoa.set(500);
-        settings.misc.maxPlants.set(2000);
-        settings.chemicalFieldResolution.set(512);
-        settings.lightMapResolution.set(64);
-        settings.world.populationClusterRadius.set(settings.world.radius.get());
-        return settings;
-    }
-
     public void pauseSimulation() {
         simulate = false;
     }
@@ -90,11 +74,15 @@ public class DefaultBackgroundRenderer {
         simulate = true;
     }
 
+    public void simulateEnv() {
+        if (simulate)
+            environment.update(settings.simulationUpdateDelta.get());
+    }
+
     public void render(Float delta) {
         ScreenUtils.clear(EnvironmentRenderer.backgroundColor);
 
-        if (simulate)
-            environment.update(settings.simulationUpdateDelta.get());
+        simulateEnv();
 
         camera.update();
         FrameBufferManager fboManager = FrameBufferManager.getInstance();
@@ -116,6 +104,7 @@ public class DefaultBackgroundRenderer {
         batch.setShader(shader);
 
         batch.begin();
+        batch.setColor(1f, 1f, 1f, 0.7f);
         batch.draw(sprite, 0, 0, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
         batch.end();
     }

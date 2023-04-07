@@ -116,7 +116,7 @@ public class TitleScreen extends ScreenAdapter {
         container.clear();
 
         for (TextButton button : buttons)
-            button.pad(button.getHeight() * .5f);
+            button.pad(button.getHeight() / 3f);
 
         container.addActor(paddingLabel);
 

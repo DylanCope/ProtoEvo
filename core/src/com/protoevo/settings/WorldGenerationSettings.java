@@ -1,10 +1,11 @@
 package com.protoevo.settings;
 
 import com.protoevo.env.Environment;
+import com.protoevo.utils.Utils;
 
 public class WorldGenerationSettings extends Settings {
-    public final Settings.Parameter<Integer> seed = new Settings.Parameter<>(
-            "Seed", "World Generation Random Seed", 1);
+    public final Settings.Parameter<Long> seed = new Settings.Parameter<>(
+            "Seed", "World Generation Random Seed", Utils::randomLong);
     public final Settings.Parameter<Integer> numInitialProtozoa = new Settings.Parameter<>(
             "Initial Protozoa", "Number of protozoa spawned on world generation.", 300);
     public final Settings.Parameter<Integer> numInitialPlantPellets = new Settings.Parameter<>(

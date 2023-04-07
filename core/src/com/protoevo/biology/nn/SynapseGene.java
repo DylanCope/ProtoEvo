@@ -28,7 +28,7 @@ public class SynapseGene implements Comparable<SynapseGene>, Serializable
         disabled = false;
         this.weight = weight;
         this.innovation = innovation;
-        signature = Utils.newID();
+        signature = Utils.randomLong();
     }
 
     public SynapseGene(SynapseGene other) {

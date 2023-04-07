@@ -59,8 +59,8 @@ public class EditSettingsScreen extends ScreenAdapter {
 
         final ScrollPane scroller = new ScrollPane(scrollTable);
         scroller.setScrollbarsVisible(true);
-        scroller.setScrollbarsVisible(true);
-
+        scroller.setScrollingDisabled(true, false);
+        
         final Table table = new Table();
 
         final Label nameText = new Label(settingsName + " Settings", skin, "mainTitle");
@@ -112,6 +112,7 @@ public class EditSettingsScreen extends ScreenAdapter {
         float scrollWidth = Gdx.graphics.getWidth() / 2f;
         final Label label = new Label(parameter.getName() + ": ", skin);
         final TextField textField = new TextField(parameter.get().toString(), skin);
+        textField.setWidth(scrollWidth / 3f);
         final Table inputTable = new Table();
 
         inputTable.add(label)

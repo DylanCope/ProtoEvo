@@ -21,7 +21,7 @@ public class GeneExpressionFunction implements Evolvable.Component, Serializable
 
 
     public static abstract class Node {
-        public final long id = Utils.newID();
+        public final long id = Utils.randomLong();
 
         public long getID() {
             return id;

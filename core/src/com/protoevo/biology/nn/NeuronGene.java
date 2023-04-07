@@ -49,7 +49,7 @@ public class NeuronGene implements Comparable<NeuronGene>, Serializable
 
     public NeuronGene(int id, Neuron.Type type, ActivationFn activation, String label)
     {
-        signature = Utils.newID();
+        signature = Utils.randomLong();
         this.id = id;
         this.type = type;
         this.activation = activation;

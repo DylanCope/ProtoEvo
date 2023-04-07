@@ -62,7 +62,7 @@ public class PauseScreen extends ScreenAdapter {
 
         addButton(graphics, "Return to Simulation", this::returnToSimulation, scrollTable);
         addButton(graphics, "Create Save", () -> {
-            busyMessage = "Saving...";
+            busyMessage = "Saving";
             simulationScreen.getSimulation().saveOnOtherThread();
         }, scrollTable);
         addButton(graphics, "Load Save", this::toLoadSaveScreen, scrollTable);
@@ -105,7 +105,7 @@ public class PauseScreen extends ScreenAdapter {
     private void exitToTitleScreen() {
         Simulation simulation = simulationScreen.getSimulation();
         simulation.onOtherThread(simulation::close);
-        busyMessage = "Saving and closing...";
+        busyMessage = "Saving and closing";
         addConditionalTask(
                 () -> !simulation.isBusyOnOtherThread(),
                 () -> graphics.moveToTitleScreen(simulationScreen)
@@ -173,6 +173,8 @@ public class PauseScreen extends ScreenAdapter {
         batch.setShader(shader);
 
         batch.begin();
+        batch.setColor(1, 1, 1,
+                Utils.clampedLinearRemap(timePaused, 0, fadeTime, 1f, 0.75f));
         batch.draw(sprite, 0, 0, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
         batch.end();
     }

@@ -7,9 +7,11 @@ import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.glutils.ShaderProgram;
 import com.badlogic.gdx.scenes.scene2d.ui.Skin;
+import com.badlogic.gdx.utils.ScreenUtils;
 import com.protoevo.core.ApplicationManager;
 import com.protoevo.core.Simulation;
 import com.protoevo.settings.GraphicsSettings;
+import com.protoevo.ui.rendering.EnvironmentRenderer;
 import com.protoevo.utils.CursorUtils;
 
 public class GraphicsAdapter extends Game {
@@ -88,6 +90,12 @@ public class GraphicsAdapter extends Game {
 		FrameBufferManager.dispose();
 		CursorUtils.dispose();
 		DefaultBackgroundRenderer.disposeInstance();
+	}
+
+	@Override
+	public void render() {
+		ScreenUtils.clear(EnvironmentRenderer.backgroundColor);
+		super.render();
 	}
 
 	public Skin getSkin() {
