@@ -16,7 +16,7 @@ public class ChemicalsRenderer implements Renderer {
     private final SpriteBatch batch;
     private final ShaderProgram shader;
     private final Texture chemicalTexture;
-    private Pixmap chemicalPixmap;
+    private final Pixmap chemicalPixmap;
     private final OrthographicCamera camera;
 
     public ChemicalsRenderer(OrthographicCamera camera, Environment environment) {

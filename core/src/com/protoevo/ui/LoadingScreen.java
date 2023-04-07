@@ -30,7 +30,6 @@ public class LoadingScreen extends ScreenAdapter {
 
     @Override
     public void show() {
-        DefaultBackgroundRenderer.getInstance().pauseSimulation();
         CursorUtils.setDefaultCursor();
         simulationReady = false;
         updateCounts = 0;

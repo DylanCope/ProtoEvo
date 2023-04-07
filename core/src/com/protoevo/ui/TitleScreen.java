@@ -126,7 +126,6 @@ public class TitleScreen extends ScreenAdapter {
 
     @Override
     public void show() {
-        DefaultBackgroundRenderer.getInstance().resumeSimulation();
         CursorUtils.setDefaultCursor();
         createButtons();
         Gdx.input.setInputProcessor(stage);

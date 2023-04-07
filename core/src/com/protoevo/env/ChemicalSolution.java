@@ -1,5 +1,6 @@
 package com.protoevo.env;
 
+import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector2;
 import com.protoevo.biology.Food;
 import com.protoevo.biology.cells.Cell;
@@ -72,7 +73,10 @@ public class ChemicalSolution implements Serializable {
             initialised = true;
         }
 
-        if (Environment.settings.misc.useGPU.get()) {
+        if (!JCudaKernelRunner.cudaAvailable())
+            Environment.settings.misc.useCUDA.set(false);
+
+        if (Environment.settings.misc.useCUDA.get()) {
             // has to be called on the same thread running the simulation
             if (DebugMode.isDebugMode())
                 System.out.println("Initialising chemical diffusion CUDA kernel...");
@@ -271,92 +275,89 @@ public class ChemicalSolution implements Serializable {
         unloadFromByteBuffer();
     }
 
+    private void diffuseAt(int x, int y) {
+
+        // See voidStartDistance in SimulationSettings
+        float world_radius = Environment.settings.world.voidStartDistance.get();
+
+        int width = this.chemicalTextureWidth;
+        int height = this.chemicalTextureHeight;
+        float cellSizeX = 2 * world_radius / ((float) width);
+        float cellSizeY = 2 * world_radius / ((float) height);
+        float world_x = -world_radius + cellSizeX * x;
+        float world_y = -world_radius + cellSizeY * y;
+        float dist2_to_world_centre = world_x*world_x + world_y*world_y;
+
+        // set alpha decay to zero as we approach the void
+        float decay;
+
+        float void_p = 0.9f;
+        if (dist2_to_world_centre > void_p * void_p * world_radius * world_radius) {
+            float dist_to_world_centre = (float) Math.sqrt(dist2_to_world_centre);
+            // lerp from 1.0 to 0.0 for distance between void_p*world_radius and world_radius
+            decay = 0.9995f * (1.0f - (dist_to_world_centre - void_p * world_radius) / ((1.0f - void_p) * world_radius));
+            if (decay < 0.0) {
+                decay = 0.0f;
+            }
+        } else {
+            decay = 0.9995f;
+        }
+        int channels = 4;
+        int FILTER_SIZE = 3;
+        float final_alpha = 0.0f;
+        int radius = (FILTER_SIZE - 1) / 2;
+
+        Colour newColour = new Colour();
+        for (int i = -radius; i <= radius; i++) {
+            for (int j = -radius; j <= radius; j++) {
+                int x_ = x + i, y_ = y + j;
+                if (x_ < 0 || x_ >= width || y_ < 0 || y_ >= height) {
+                    continue;
+                }
+                final_alpha += colours[x_][y_].a;
+            }
+        }
+        final_alpha = decay * final_alpha / ((float) (FILTER_SIZE*FILTER_SIZE));
+        newColour.a = final_alpha;
+
+        if (final_alpha < 5.0 / 255.0) {
+            return;
+        }
+
+        float[] tmp = new float[channels - 1];
+        for (int i = -radius; i <= radius; i++) {
+            for (int j = -radius; j <= radius; j++) {
+                int x_ = x + i, y_ = y + j;
+                if (x_ < 0 || x_ >= width || y_ < 0 || y_ >= height) {
+                    continue;
+                }
+                Colour pixel = colours[x_][y_];
+                tmp[0] += decay * pixel.r * pixel.a;
+                tmp[1] += decay * pixel.g * pixel.a;
+                tmp[2] += decay * pixel.b * pixel.a;
+            }
+            tmp[0] = tmp[0] / ((float) (FILTER_SIZE*FILTER_SIZE)) * decay / final_alpha;
+            tmp[1] = tmp[1] / ((float) (FILTER_SIZE*FILTER_SIZE)) * decay / final_alpha;
+            tmp[2] = tmp[2] / ((float) (FILTER_SIZE*FILTER_SIZE)) * decay / final_alpha;
+        }
+        newColour.r = tmp[0];
+        newColour.g = tmp[1];
+        newColour.b = tmp[2];
+
+        set(x, y, newColour);
+    }
+
     public void cpuDiffuse() {
-//        IntStream.range(0, chemicalTextureWidth * chemicalTextureHeight).parallel()
-//                .forEach(idx -> {
-//                    int x = idx % chemicalTextureWidth;
-//                    int y = idx / chemicalTextureWidth;
-//
-//                    // See voidStartDistance in SimulationSettings
-//                    float world_radius = 30.0f;
-//
-//                    int width = this.chemicalTextureWidth;
-//                    int height = this.chemicalTextureHeight;
-//                    float cellSizeX = 2 * world_radius / ((float) width);
-//                    float cellSizeY = 2 * world_radius / ((float) height);
-//                    float world_x = -world_radius + cellSizeX * x;
-//                    float world_y = -world_radius + cellSizeY * y;
-//                    float dist2_to_world_centre = world_x*world_x + world_y*world_y;
-//
-//                    // set alpha decay to zero as we approach the void
-//                    float decay = 0.0f;
-//
-//                    float void_p = 0.9f;
-//                    if (dist2_to_world_centre > void_p * void_p * world_radius * world_radius) {
-//                        float dist_to_world_centre = (float) Math.sqrt(dist2_to_world_centre);
-//                        // lerp from 1.0 to 0.0 for distance between void_p*world_radius and world_radius
-//                        decay = 0.9995f * (1.0f - (dist_to_world_centre - void_p * world_radius) / ((1.0f - void_p) * world_radius));
-//                        if (decay < 0.0) {
-//                            decay = 0.0f;
-//                        }
-//                    } else {
-//                        decay = 0.9995f;
-//                    }
-//                    int channels = 4;
-//                    int FILTER_SIZE = 3;
-//                    int alpha_channel = channels - 1;
-//                    float final_alpha = 0.0f;
-//                    int radius = (FILTER_SIZE - 1) / 2;
-//
-//                    Color color = new Color(), tmpColour = new Color();
-//                    for (int i = -radius; i <= radius; i++) {
-//                        for (int j = -radius; j <= radius; j++) {
-//                            int x_ = x + i, y_ = y + j;
-//                            if (x_ < 0 || x_ >= width || y_ < 0 || y_ >= height) {
-//                                continue;
-//                            }
-//                            Color.rgba8888ToColor(color, chemicalPixmap.getPixel(x_, y_));
-//                            final_alpha += color.a;
-//                        }
-//                    }
-//                    final_alpha = decay * final_alpha / ((float) (FILTER_SIZE*FILTER_SIZE));
-//                    color.a = final_alpha;
-//
-//                    if (final_alpha < 5.0 / 255.0) {
-//                        chemicalPixmap.setColor(0);
-//                        return;
-//                    }
-//
-//                    float[] tmp = new float[channels - 1];
-//                    for (int i = -radius; i <= radius; i++) {
-//                        for (int j = -radius; j <= radius; j++) {
-//                            int x_ = x + i, y_ = y + j;
-//                            if (x_ < 0 || x_ >= width || y_ < 0 || y_ >= height) {
-//                                continue;
-//                            }
-//                            Color.rgba8888ToColor(tmpColour, chemicalPixmap.getPixel(x_, y_));
-//                            tmp[0] += decay * tmpColour.r * tmpColour.a;
-//                            tmp[1] += decay * tmpColour.g * tmpColour.a;
-//                            tmp[2] += decay * tmpColour.b * tmpColour.a;
-//                        }
-//                        tmp[0] = tmp[0] / ((float) (FILTER_SIZE*FILTER_SIZE)) * decay / final_alpha;
-//                        tmp[1] = tmp[1] / ((float) (FILTER_SIZE*FILTER_SIZE)) * decay / final_alpha;
-//                        tmp[2] = tmp[2] / ((float) (FILTER_SIZE*FILTER_SIZE)) * decay / final_alpha;
-//                    }
-//                    color.r = tmp[0];
-//                    color.g = tmp[1];
-//                    color.b = tmp[2];
-//
-//                    swapPixmap.drawPixel(x, y, Color.rgba8888(color));
-//                });
-//
-//        Pixmap tmp = chemicalPixmap;
-//        chemicalPixmap = swapPixmap;
-//        swapPixmap = tmp;
+        for (int sample = 0; sample < Environment.settings.misc.chemicalCPUIterations.get(); sample++) {
+            int i = MathUtils.random(chemicalTextureWidth * chemicalTextureHeight);
+            int x = i % chemicalTextureWidth;
+            int y = i / chemicalTextureWidth;
+            diffuseAt(x, y);
+        }
     }
 
     public void diffuse() {
-        if (Environment.settings.misc.useGPU.get())
+        if (Environment.settings.misc.useCUDA.get())
             cudaDiffuse();
         else
             cpuDiffuse();

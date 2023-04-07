@@ -52,10 +52,14 @@ public class MiscSettings extends Settings {
             "Local Meat Cap",
             "The maximum number of meat that can exist in a local region (defined by the spatial hash resolution).",
             75);
-    public final Settings.Parameter<Boolean> useGPU = new Settings.Parameter<>(
-            "Use GPU",
-            "Whether or not to use the GPU for accelerating calculations.",
+    public final Settings.Parameter<Boolean> useCUDA = new Settings.Parameter<>(
+            "Use CUDA",
+            "Whether or not to use the CUDA for accelerating calculations on the GPU.",
             true);
+    public final Settings.Parameter<Integer> chemicalCPUIterations = new Settings.Parameter<>(
+            "CPU Chemical Diffusion Iterations",
+            "Number of chemical diffusion iterations to perform when running on the CPU.",
+            100000);
     public final Settings.Parameter<Integer> spatialHashResolution = new Settings.Parameter<>(
             "Spatial Hash Resolution",
             "The resolution of the spatial hash used for local population caps.",

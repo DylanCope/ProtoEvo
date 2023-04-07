@@ -5,6 +5,7 @@ import jcuda.Pointer;
 import jcuda.Sizeof;
 import jcuda.driver.*;
 
+import java.io.File;
 import java.io.IOException;
 
 import static jcuda.driver.JCudaDriver.*;
@@ -14,6 +15,15 @@ public class JCudaKernelRunner {
     private CUfunction function;
     private final int blockSizeX, blockSizeY;
     private final String kernelName, functionName;
+
+    public static boolean cudaAvailable() {
+        try {
+            new JCudaKernelRunner("diffusion");
+            return true;
+        } catch (RuntimeException ignored) {
+            return false;
+        }
+    }
 
     public JCudaKernelRunner(String kernelName) {
         this(kernelName, "kernel", 32, 32);
@@ -53,7 +63,8 @@ public class JCudaKernelRunner {
             cuModuleGetFunction(function, module, functionName);
 
         } catch (IOException e) {
-            throw new RuntimeException("Was unable to compile " + kernelName + ":\n" + e);
+            if (!new File(kernelName).exists())
+                throw new RuntimeException("Was unable to compile " + kernelName + ":\n" + e);
         }
     }
 

@@ -34,8 +34,7 @@ public class JCudaUtils {    /**
         }
         String modelString = "-m" + System.getProperty("sun.arch.data.model");
         String command =
-                "nvcc " + modelString + " -ptx "+
-                        cuFile.getPath() + " -o " + ptxFileName;
+                "nvcc " + modelString + " -ptx " + cuFile.getPath() + " -o " + ptxFileName;
 
         if (DebugMode.isDebugMode())
             System.out.println(command);
