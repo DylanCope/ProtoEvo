@@ -1,5 +1,6 @@
 package com.protoevo.env;
 
+import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector2;
 import com.protoevo.physics.Shape;
 import com.protoevo.physics.SpatialHash;
@@ -11,23 +12,23 @@ import java.io.Serializable;
 import java.util.*;
 import java.util.stream.IntStream;
 
-public class LightMap implements Serializable {
+public class LightManager implements Serializable {
     public static long serialVersionUID = 1L;
 
-    public static void bakeRockShadows(LightMap lightMap, List<Rock> rocks) {
+    public static void bakeRockShadows(LightManager lightManager, List<Rock> rocks) {
         float rayLen = Environment.settings.world.maxRockSize.get() * 5f;
 
-        int resolution = (int) (lightMap.getFieldWidth() / rayLen);
+        int resolution = (int) (lightManager.getFieldWidth() / rayLen);
 
         SpatialHash<Rock> rockSpatialHash = new SpatialHash<>(resolution, Environment.settings.world.radius.get());
         for (Rock rock : rocks) {
             rockSpatialHash.add(rock, rock.getBoundingBox());
         }
 
-        collectLight(lightMap, rockSpatialHash, rayLen);
+        collectLight(lightManager, rockSpatialHash, rayLen);
     }
 
-    private static void collectLight(LightMap lightMap, SpatialHash<Rock> rockSpatialHash, float rayLen) {
+    private static void collectLight(LightManager lightManager, SpatialHash<Rock> rockSpatialHash, float rayLen) {
 
         int lightSamples = 16;
 
@@ -36,10 +37,10 @@ public class LightMap implements Serializable {
         final Shape.Intersection[] intersections =
                 new Shape.Intersection[]{new Shape.Intersection(), new Shape.Intersection()};
 
-        IntStream.range(0, lightMap.width * lightMap.height).forEach(i -> {
-            int x = i % lightMap.width;
-            int y = i / lightMap.width;
-            Vector2 cellPos = lightMap.toEnvironmentCoords(x, y);
+        IntStream.range(0, lightManager.width * lightManager.height).forEach(i -> {
+            int x = i % lightManager.width;
+            int y = i / lightManager.width;
+            Vector2 cellPos = lightManager.toEnvironmentCoords(x, y);
             ray[0] = cellPos;
 
             float collisionValue = 0f;
@@ -79,7 +80,7 @@ public class LightMap implements Serializable {
             float t = 0.25f;
             float light = Utils.clampedLinearRemap(collisionValue, t, 1 - t, 1, 0);
 
-            lightMap.setLight(x, y, light);
+            lightManager.setCellLight(x, y, light);
         });
     }
 
@@ -97,8 +98,10 @@ public class LightMap implements Serializable {
     private final float cellSizeX, cellSizeY;
     private final float xMin, yMin, xMax, yMax;
     private final float radius;
+    private float environmentLight = 1f;
+    private TimeManager timeManager;
 
-    public LightMap(int width, int height, float radius) {
+    public LightManager(int width, int height, float radius) {
         this.width = width;
         this.height = height;
         this.xMin = -radius;
@@ -112,6 +115,10 @@ public class LightMap implements Serializable {
         lightMap = new float[width][height];
         for (float[] row : lightMap)
             Arrays.fill(row, 1f);
+    }
+
+    public void setTimeManager(TimeManager timeManager) {
+        this.timeManager = timeManager;
     }
 
     public void generateNoiseLight(float t) {
@@ -132,11 +139,38 @@ public class LightMap implements Serializable {
         }
     }
 
-    public float getLight(int x, int y) {
+    public void update(float delta) {
+        if (timeManager == null)
+            return;
+
+        float t = timeManager.getTimeOfDayPercentage();
+
+        float transition = Environment.settings.misc.dayNightTransition.get();
+        float night = Environment.settings.misc.nightPercentage.get();
+        float nightLightLevel = Environment.settings.misc.nightLightLevel.get();
+
+        if (t < 1 - 2*transition - night) {
+            environmentLight = 1f;
+        }
+        else if (t <= 1 - transition - night) {
+            environmentLight = Utils.clampedLinearRemap(
+                    t, 1 - 2*transition - night, 1 - transition - night,
+                    1f, nightLightLevel);
+        }
+        else if (t <= 1 - transition) {
+            environmentLight = nightLightLevel;
+        }
+        else {
+            environmentLight = Utils.clampedLinearRemap(
+                    t, 1 - transition, 1, nightLightLevel, 1f);
+        }
+    }
+
+    public float getCellLight(int x, int y) {
         return lightMap[x][y];
     }
 
-    public float getLight(float x, float y) {
+    private float getLightLevel(float x, float y) {
         int i = (int) ((x - xMin) / cellSizeX);
         int j = (int) ((y - yMin) / cellSizeY);
         if (i < 0 || i >= width || j < 0 || j >= height)
@@ -144,11 +178,12 @@ public class LightMap implements Serializable {
         return lightMap[i][j];
     }
 
-    public float getLight(Vector2 pos) {
-        return getLight(pos.x, pos.y);
+    public float getLightLevel(Vector2 pos) {
+        float light = getLightLevel(pos.x, pos.y);
+        return MathUtils.clamp(environmentLight * light, 0f, 1f);
     }
 
-    public void setLight(int x, int y, float light) {
+    public void setCellLight(int x, int y, float light) {
         lightMap[x][y] = light;
     }
 
@@ -188,5 +223,9 @@ public class LightMap implements Serializable {
 
     public float getYMax() {
         return yMax;
+    }
+
+    public float getEnvLight() {
+        return environmentLight;
     }
 }

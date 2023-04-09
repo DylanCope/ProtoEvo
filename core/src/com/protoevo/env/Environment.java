@@ -33,7 +33,7 @@ public class Environment implements Serializable
 
 	private final EnvironmentSettings mySettings;
 	private transient World world;
-	private float elapsedTime, physicsStepTime;
+	private float physicsStepTime;
 	private String loadingStatus;
 	private final Statistics stats = new Statistics();
 	private final Statistics debugStats = new Statistics();
@@ -45,7 +45,8 @@ public class Environment implements Serializable
 	private Map<Class<? extends Particle>, SerializableFunction<Float, Vector2>> spawnPositionFns;
 
 	private final ChemicalSolution chemicalSolution;
-	private final LightMap light;
+	private final LightManager light;
+	private final TimeManager timeManager;
 	private final List<Rock> rocks = new ArrayList<>();
 	private final HashMap<Class<? extends Cell>, Long> bornCounts = new HashMap<>(3);
 	private final HashMap<Class<? extends Cell>, Long> generationCounts = new HashMap<>(3);
@@ -90,10 +91,12 @@ public class Environment implements Serializable
 			chemicalSolution = null;
 		}
 
-		int lightDim = Environment.settings.lightMapResolution.get();
-		light = new LightMap(lightDim, lightDim, Environment.settings.world.radius.get());
+		timeManager = new TimeManager();
 
-		elapsedTime = 0;
+		int lightDim = Environment.settings.lightMapResolution.get();
+		light = new LightManager(lightDim, lightDim, Environment.settings.world.radius.get());
+		light.setTimeManager(timeManager);
+
 		hasInitialised = false;
 	}
 
@@ -129,7 +132,9 @@ public class Environment implements Serializable
 		hasStarted = true;
 		getCells().forEach(Particle::physicsUpdate);
 
-		elapsedTime += delta;
+		timeManager.update(delta);
+		light.update(delta);
+
 		long startTime = System.nanoTime();
 		world.step(
 				delta,
@@ -201,7 +206,7 @@ public class Environment implements Serializable
 		loadingStatus = "Creating Light";
 		System.out.println("Baking shadows... ");
 		if (settings.world.bakeRockLights.get())
-			LightMap.bakeRockShadows(light, rocks);
+			LightManager.bakeRockShadows(light, rocks);
 		if (settings.world.generateLightNoiseTexture.get())
 			light.generateNoiseLight(0);
 
@@ -416,10 +421,13 @@ public class Environment implements Serializable
 
 	public Statistics getStats() {
 		Statistics stats = new Statistics();
-		stats.putTime("Time Elapsed", elapsedTime);
+		stats.putTime("Time Elapsed", timeManager.getTimeElapsed());
+		stats.putTime("Time of Day", timeManager.getTimeOfDay());
 		stats.putCount("Protozoa", numberOfProtozoa());
 		stats.putCount("Plants", getCount(PlantCell.class));
 		stats.putCount("Meat Pellets", getCount(MeatCell.class));
+
+		stats.putPercentage("Sky Light Level", 100 * light.getEnvLight());
 
 		stats.putCount("Max Protozoa Generation",
 						generationCounts.getOrDefault(Protozoan.class, 1L).intValue());
@@ -523,7 +531,7 @@ public class Environment implements Serializable
 	}
 
 	public float getElapsedTime() {
-		return elapsedTime;
+		return timeManager.getTimeElapsed();
 	}
 
 	public ChemicalSolution getChemicalSolution() {
@@ -600,16 +608,16 @@ public class Environment implements Serializable
 		world.dispose();
 	}
 
-	public LightMap getLightMap() {
+	public LightManager getLightMap() {
 		return light;
 	}
 
 	public float getLight(Vector2 pos) {
-		return light.getLight(pos);
+		return light.getLightLevel(pos);
 	}
 
 	public float getTemperature(Vector2 pos) {
-		return light.getLight(pos) * settings.maxLightEnvTemp.get();
+		return light.getLightLevel(pos) * settings.maxLightEnvTemp.get();
 	}
 
 	public String getLoadingStatus() {

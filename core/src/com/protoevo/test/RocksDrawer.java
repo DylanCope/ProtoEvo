@@ -1,11 +1,10 @@
 package com.protoevo.test;
 
 import com.protoevo.env.Environment;
-import com.protoevo.env.LightMap;
+import com.protoevo.env.LightManager;
 import com.protoevo.env.Rock;
 import com.protoevo.env.WorldGeneration;
 import com.protoevo.ui.DefaultBackgroundGenerator;
-import com.protoevo.ui.DefaultBackgroundRenderer;
 import com.protoevo.utils.Colour;
 
 import java.awt.Color;
@@ -53,17 +52,17 @@ public class RocksDrawer {
         }
     }
 
-    public static void drawLightMap(LightMap lightMap) {
+    public static void drawLightMap(LightManager lightManager) {
         // Create a new BufferedImage with white background
-        int width = lightMap.getWidth();
-        int height = lightMap.getHeight();
+        int width = lightManager.getWidth();
+        int height = lightManager.getHeight();
         BufferedImage image = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
         Graphics2D g = image.createGraphics();
         // Save the image as a PNG
 
         for (int x = 0; x < width; x++) {
             for (int y = 0; y < height; y++) {
-                float light = lightMap.getLight(x, y);
+                float light = lightManager.getCellLight(x, y);
                 g.setColor(new Color(light, light, light));
                 g.fillRect(x, y, 1, 1);
             }
@@ -82,9 +81,9 @@ public class RocksDrawer {
         List<Rock> rocks = WorldGeneration.generate();
         drawRocks(rocks);
 
-        LightMap lightMap = new LightMap(256, 256, Environment.settings.world.radius.get());
-        LightMap.bakeRockShadows(lightMap, rocks);
-        drawLightMap(lightMap);
+        LightManager lightManager = new LightManager(256, 256, Environment.settings.world.radius.get());
+        LightManager.bakeRockShadows(lightManager, rocks);
+        drawLightMap(lightManager);
     }
 }
 

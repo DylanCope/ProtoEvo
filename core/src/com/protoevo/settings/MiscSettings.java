@@ -64,6 +64,22 @@ public class MiscSettings extends Settings {
             "Spatial Hash Resolution",
             "The resolution of the spatial hash used for local population caps.",
             15);
+    public final Settings.Parameter<Float> dayNightCycleLength = new Settings.Parameter<>(
+            "Day/Night Cycle Length",
+            "The amount of time to cycle a day.",
+            250f);
+    public final Settings.Parameter<Float> nightPercentage = new Settings.Parameter<>(
+            "Night Time Percentage",
+            "Percentage of day/night cycle to spend in night.",
+            0.15f);
+    public final Settings.Parameter<Float> nightLightLevel = new Settings.Parameter<>(
+            "Night Light Level",
+            "The light level at night.",
+            0.15f);
+    public final Settings.Parameter<Float> dayNightTransition = new Settings.Parameter<>(
+            "Day/Night Transition",
+            "Percentage of day/night cycle spent transitioning between day and night.",
+            0.05f);
 
     public MiscSettings() {
         super("Misc");
