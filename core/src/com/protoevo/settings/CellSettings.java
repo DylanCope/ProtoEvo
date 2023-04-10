@@ -35,10 +35,22 @@ public class CellSettings extends Settings {
             "Digestion Factor",
             "Controls how quickly cells can digest food.",
             20f);
-    public final Settings.Parameter<Float> cellTemperatureDeathRate = new Settings.Parameter<>(
-            "Cell Temperature Death Rate",
+    public final Settings.Parameter<Float> temperatureDeathRate = new Settings.Parameter<>(
+            "Temperature Death Rate",
             "Rate at which a cell looses health when outside its temperature tolerance range.",
+            .2f);
+    public final Settings.Parameter<Float> minTemperatureTolerance = new Settings.Parameter<>(
+            "Min Temperature Tolerance",
+            "Minimum temperature tolerance (+/- degrees before suffering adverse effects).",
             2f);
+    public final Settings.Parameter<Float> maxTemperatureTolerance = new Settings.Parameter<>(
+            "Max Temperature Tolerance",
+            "Maximum temperature tolerance (+/- degrees before suffering adverse effects).",
+            5f);
+    public final Settings.Parameter<Float> temperatureToleranceEnergyCost = new Settings.Parameter<>(
+            "Temperature Tolerance Energy Cost",
+            "Energy cost per degree of temperature tolerance per unit time.",
+            5f);
     public final Settings.Parameter<Float> activityHeatGeneration = new Settings.Parameter<>(
             "Cell Temperature Death Rate",
             "Heat generated per unit activity per unit time.",
@@ -103,6 +115,11 @@ public class CellSettings extends Settings {
             "Cell Digestion Activity",
             "Amount of activity generated per mass generated.",
             1f
+    );
+    public final Settings.Parameter<Float> kineticEnergyActivity = new Settings.Parameter<>(
+            "Kinetic Energy Activity",
+            "Amount of activity generated per kinetic energy generated.",
+            .1f
     );
     public final Settings.Parameter<Float> grnHiddenNodeActivity = new Settings.Parameter<>(
             "GRN Node Activity",

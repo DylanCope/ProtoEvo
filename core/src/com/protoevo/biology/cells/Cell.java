@@ -50,8 +50,9 @@ public abstract class Cell extends Particle implements Serializable {
 	private float activity = 0f, lastActivity = 0f;
 	private float idealTemperature = Environment.settings.env.maxLightEnvTemp.get();
 	private float temperature = idealTemperature;
-	private float temperatureTolerance = 1f;
+	private float temperatureTolerance = Environment.settings.cell.minTemperatureTolerance.get();
 	private float membraneThermalConductance = 1f;
+	private float temperatureSatisfaction = 0f;
 
 	private Cell engulfer = null;
 	private boolean fullyEngulfed = false;
@@ -88,7 +89,58 @@ public abstract class Cell extends Particle implements Serializable {
 			temperature = Utils.lerp(
 					temperature, envTemp, membraneThermalConductance * delta);
 		}
+		for (Long otherId : getAttachedCellIDs()) {
+			Cell other = getCell(otherId);
+			if (other != null)
+				temperature = Utils.lerp(
+						temperature, other.getInternalTemperature(), membraneThermalConductance * delta
+				);
+		}
+
 		temperature += delta * activity * Environment.settings.cell.activityHeatGeneration.get();
+
+		updateTemperatureSatisfaction(delta);
+		handleTemperatureDamage(delta);
+	}
+
+	private void updateTemperatureSatisfaction(float delta) {
+		float tolerance = temperatureTolerance;
+
+		float energyRequired = delta * tolerance * Environment.settings.cell.temperatureToleranceEnergyCost.get();
+		if (getEnergyAvailable() < energyRequired) {
+			tolerance = Math.max(
+					Environment.settings.cell.minTemperatureTolerance.get(),
+					tolerance * getEnergyAvailable() / energyRequired);
+		}
+		depleteEnergy(energyRequired);
+
+		if (temperature < idealTemperature - tolerance) {
+			temperatureSatisfaction = Utils.clampedLinearRemap(
+					temperature,
+					idealTemperature - tolerance,
+					idealTemperature - tolerance*1.5f,
+					1, 0
+			);
+		} else if (temperature > idealTemperature + tolerance) {
+			temperatureSatisfaction = Utils.clampedLinearRemap(
+					temperature,
+					idealTemperature + tolerance,
+					idealTemperature + tolerance*1.5f,
+					1, 0
+			);
+		} else {
+			temperatureSatisfaction = 1f;
+		}
+	}
+
+	private void handleTemperatureDamage(float delta) {
+		if (temperatureSatisfaction < 1f) {
+			float damage = delta * (1 - temperatureSatisfaction) * Environment.settings.cell.temperatureDeathRate.get();
+			if (temperature < idealTemperature)
+				damage(damage, CauseOfDeath.HYPOTHERMIA);
+			else
+				damage(damage, CauseOfDeath.HYPERTHERMIA);
+		}
 	}
 
 	public float getExternalTemperature() {
@@ -101,12 +153,24 @@ public abstract class Cell extends Particle implements Serializable {
 		return temperature;
 	}
 
+	public void setIdealTemperature(float t) {
+		idealTemperature = t;
+	}
+
 	public float getIdealTemperature() {
 		return idealTemperature;
 	}
 
 	public float getTemperatureTolerance() {
 		return temperatureTolerance;
+	}
+
+	public void setTemperatureTolerance(float t) {
+		temperatureTolerance = t;
+	}
+
+	public void setThermalConductance(float t) {
+		membraneThermalConductance = t;
 	}
 
 	public void decayResources(float delta) {
@@ -454,6 +518,7 @@ public abstract class Cell extends Particle implements Serializable {
 		// TODO: add work to apply torque
 
 		if (enoughEnergyAvailable(work)) {
+			activity += work * Environment.settings.cell.kineticEnergyActivity.get();
 			depleteEnergy(work);
 			applyImpulse(thrustVector);
 			applyTorque(torque);
@@ -535,10 +600,13 @@ public abstract class Cell extends Particle implements Serializable {
 		}
 
 		stats.putBoolean("Being Engulfed", engulfer != null);
+
+		stats.putPercentage("Light Level", 100f * getEnv().getLight(getPos()));
 		stats.putTemperature("Temperature (Internal)", temperature);
 		stats.putTemperature("Temperature (External)", getExternalTemperature());
 		stats.put("Thermal Conductance", membraneThermalConductance);
-		stats.putPercentage("Light Level", 100f * getEnv().getLight(getPos()));
+		stats.putTemperature("Temperature Tolerance", temperatureTolerance);
+		stats.putTemperature("Ideal Temperature", idealTemperature);
 
 		return stats;
 	}

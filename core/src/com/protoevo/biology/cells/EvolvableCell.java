@@ -29,6 +29,42 @@ public abstract class EvolvableCell extends Cell implements Evolvable {
     }
 
     @Override
+    @EvolvableFloat(
+            name="Temperature Tolerance",
+            min=0, max=1, regulated = false
+    )
+    public void setTemperatureTolerance(float t) {
+        float tolerance = Utils.clampedLinearRemap(
+                t, 0, 1,
+                Environment.settings.cell.minTemperatureTolerance.get(),
+                Environment.settings.cell.maxTemperatureTolerance.get()
+        );
+        super.setTemperatureTolerance(tolerance);
+    }
+
+    @Override
+    @EvolvableFloat(
+            name="Ideal Temperature",
+            min=0, max=1, regulated = false
+    )
+    public void setIdealTemperature(float t) {
+        float temp = Utils.clampedLinearRemap(
+                t, 0, 1,
+                0, Environment.settings.env.maxLightEnvTemp.get()
+        );
+        super.setIdealTemperature(temp);
+    }
+
+    @Override
+    @ControlVariable(
+            name="Thermal Conductance",
+            min=0, max=2
+    )
+    public void setThermalConductance(float t) {
+        super.setThermalConductance(t);
+    }
+
+    @Override
     @GeneRegulator(name="Health")
     public float getHealth() {
         return super.getHealth();
