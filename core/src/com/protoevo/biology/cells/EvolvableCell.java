@@ -1,6 +1,7 @@
 package com.protoevo.biology.cells;
 
 import com.protoevo.biology.evolution.*;
+import com.protoevo.biology.nn.Neuron;
 import com.protoevo.env.Environment;
 import com.protoevo.utils.Utils;
 
@@ -64,8 +65,9 @@ public abstract class EvolvableCell extends Cell implements Evolvable {
     public float getNormalisedTemperature() {
         if (getEnv() == null)
             return 0;
-        float t = Environment.settings.env.maxLightEnvTemp.get() / 2f;
-        return (getEnv().getTemperature(getPos()) - t) / t;
+        float t = getIdealTemperature();
+        float dt = getTemperatureTolerance();
+        return (getInternalTemperature() - t) / dt;
     }
 
     @Override
@@ -87,6 +89,11 @@ public abstract class EvolvableCell extends Cell implements Evolvable {
         if (timeSinceLastGeneExpression >= getExpressionInterval()) {
             geneExpressionFunction.update();
             timeSinceLastGeneExpression = 0;
+
+            for (Neuron n : geneExpressionFunction.getRegulatoryNetwork().getNeurons()) {
+                if (n.getType().equals(Neuron.Type.HIDDEN))
+                    addActivity(Environment.settings.cell.grnHiddenNodeActivity.get() * n.getLastState());
+            }
         }
     }
 

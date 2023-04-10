@@ -47,9 +47,9 @@ public abstract class Cell extends Particle implements Serializable {
 	private ArrayList<Organelle> organelles = new ArrayList<>();
 	private boolean hasBurst = false;
 	private float repairRate = 1f;
-	private float activity = 0f;
-	private float temperature = 0f;
+	private float activity = 0f, lastActivity = 0f;
 	private float idealTemperature = Environment.settings.env.maxLightEnvTemp.get();
+	private float temperature = idealTemperature;
 	private float temperatureTolerance = 1f;
 	private float membraneThermalConductance = 1f;
 
@@ -61,6 +61,9 @@ public abstract class Cell extends Particle implements Serializable {
 			kill(CauseOfDeath.HEALTH_TOO_LOW);
 			return;
 		}
+
+		handleTemperature(delta);
+		lastActivity = activity;
 		activity = 0f;
 
 		super.update(delta);
@@ -76,17 +79,34 @@ public abstract class Cell extends Particle implements Serializable {
 
 		cellJoinings.entrySet().removeIf(this::detachCellCondition);
 
-		handleTemperature(delta);
 		decayResources(delta);
 	}
 
 	public void handleTemperature(float delta) {
 		if (getEnv() != null) {
-			float envTemp = getEnv().getTemperature(getPos());
+			float envTemp = getExternalTemperature();
 			temperature = Utils.lerp(
 					temperature, envTemp, membraneThermalConductance * delta);
 		}
 		temperature += delta * activity * Environment.settings.cell.activityHeatGeneration.get();
+	}
+
+	public float getExternalTemperature() {
+		if (getEnv() == null)
+			return 0f;
+		return getEnv().getTemperature(getPos());
+	}
+
+	public float getInternalTemperature() {
+		return temperature;
+	}
+
+	public float getIdealTemperature() {
+		return idealTemperature;
+	}
+
+	public float getTemperatureTolerance() {
+		return temperatureTolerance;
 	}
 
 	public void decayResources(float delta) {
@@ -233,6 +253,7 @@ public abstract class Cell extends Particle implements Serializable {
 
 		for (Food food : foodToDigest.values()) {
 			float rate = delta * Environment.settings.cell.digestionFactor.get() * getDigestionRate(food.getType());
+			activity += rate * Environment.settings.cell.digestionActivity.get();
 			if (food.getSimpleMass() > 0) {
 				float massExtracted = food.getSimpleMass() * rate;
 				addConstructionMass(massExtracted);
@@ -259,6 +280,7 @@ public abstract class Cell extends Particle implements Serializable {
 				depleteEnergy(energyRequired);
 				depleteConstructionMass(massRequired);
 				heal(repair);
+				activity += Environment.settings.cell.repairActivity.get() * repair;
 			}
 		}
 	}
@@ -334,6 +356,7 @@ public abstract class Cell extends Particle implements Serializable {
 				depleteConstructionMass(massChangeForGrowth);
 				depleteEnergy(energyForGrowth);
 			}
+			activity += Environment.settings.cell.growthActivity.get() * newR / currR;
 		}
 		if (newR < getMinRadius())
 			kill(CauseOfDeath.GREW_TOO_SMALL);
@@ -495,6 +518,7 @@ public abstract class Cell extends Particle implements Serializable {
 
 	public Statistics getStats() {
 		Statistics stats = super.getStats();
+		stats.put("Activity", lastActivity);
 		stats.putTime("Age", timeAlive);
 		stats.putPercentage("Health", 100 * getHealth());
 		stats.putCount("Generation", getGeneration());
@@ -511,7 +535,9 @@ public abstract class Cell extends Particle implements Serializable {
 		}
 
 		stats.putBoolean("Being Engulfed", engulfer != null);
-		stats.putTemperature("Temperature", temperature);
+		stats.putTemperature("Temperature (Internal)", temperature);
+		stats.putTemperature("Temperature (External)", getExternalTemperature());
+		stats.put("Thermal Conductance", membraneThermalConductance);
 		stats.putPercentage("Light Level", 100f * getEnv().getLight(getPos()));
 
 		return stats;
@@ -792,7 +818,7 @@ public abstract class Cell extends Particle implements Serializable {
 	}
 
 	public float getActivity() {
-		return activity;
+		return lastActivity;
 	}
 
 	public void setActivity(float activity) {
