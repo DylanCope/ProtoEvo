@@ -335,11 +335,13 @@ public class Simulation implements Runnable
 
 		FileIO.writeJson(stats, "saves/" + name + "/stats/summaries/" + timeStamp);
 
-		List<NetworkGenome> protozoaGenomes = environment.getCells().stream()
-				.filter(cell -> cell instanceof Protozoan)
-				.map(cell -> ((Protozoan) cell).getGeneExpressionFunction().getGRNGenome())
-				.collect(Collectors.toList());
-		FileIO.writeJson(protozoaGenomes, "saves/" + name + "/stats/protozoa-genomes/" + timeStamp);
+		if (Environment.settings.misc.writeGenomes.get()) {
+			List<NetworkGenome> protozoaGenomes = environment.getCells().stream()
+					.filter(cell -> cell instanceof Protozoan)
+					.map(cell -> ((Protozoan) cell).getGeneExpressionFunction().getGRNGenome())
+					.collect(Collectors.toList());
+			FileIO.writeJson(protozoaGenomes, "saves/" + name + "/stats/protozoa-genomes/" + timeStamp);
+		}
 	}
 
 	public void toggleDebug() {

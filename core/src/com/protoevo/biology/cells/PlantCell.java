@@ -106,9 +106,9 @@ public class PlantCell extends EvolvableCell {
         float light = getEnv().getLight(getPos());
         float maxArea = Geometry.getCircleArea(Environment.settings.maxParticleRadius.get());
         float photoRate = light * getArea() / maxArea;
-        photosynthesisRate = photoRate * Environment.settings.plantPhotosynthesizeEnergyRate.get();
+        photosynthesisRate = photoRate * Environment.settings.plant.photosynthesizeEnergyRate.get();
 
-        addConstructionMass(delta * Environment.settings.plantConstructionRate.get());
+        addConstructionMass(delta * Environment.settings.plant.constructionRate.get());
         addAvailableEnergy(delta * photosynthesisRate);
 
         int nProtozoaContacts = 0;
@@ -142,9 +142,13 @@ public class PlantCell extends EvolvableCell {
     }
 
     public PlantCell createChild(float r) {
-        PlantCell child = Evolvable.asexualClone(this);
-        child.setRadius(r);
-        child.setEnv(getEnv());
+        PlantCell child;
+        if (Environment.settings.plant.evolutionEnabled.get()) {
+            child = Evolvable.asexualClone(this);
+            child.setRadius(r);
+            child.setEnv(getEnv());
+        } else
+            child = new PlantCell(r, getEnv());
         return child;
     }
 

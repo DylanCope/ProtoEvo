@@ -7,7 +7,7 @@ public class MiscSettings extends Settings {
     public final Settings.Parameter<Float> timeBetweenSaves = new Settings.Parameter<>(
             "Time Between Saves",
             "Amount of in-simulation time to wait until making a new save.",
-            50.0f,
+            500.0f,
             Statistics.ComplexUnit.TIME
     );
     public final Settings.Parameter<Float> historySnapshotTime = new Settings.Parameter<>(

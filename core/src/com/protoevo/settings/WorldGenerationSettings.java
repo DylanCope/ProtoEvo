@@ -23,7 +23,7 @@ public class WorldGenerationSettings extends Settings {
     public final Settings.Parameter<Float> populationClusterRadius = new Settings.Parameter<>(
             "Population Cluster Radius",
             "Size of initial population spawn clusters.",
-            0.75f * radius.get()
+            radius.get()
     );
     public final Settings.Parameter<Float> maxRockSize = new Settings.Parameter<>(
             "", "", Environment.settings.maxParticleRadius.get() * 2.5f);

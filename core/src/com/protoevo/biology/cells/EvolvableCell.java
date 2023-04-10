@@ -84,7 +84,8 @@ public abstract class EvolvableCell extends Cell implements Evolvable {
         super.update(delta);
 
         timeSinceLastGeneExpression += delta;
-        if (timeSinceLastGeneExpression >= getExpressionInterval()) {
+        if (geneExpressionFunction != null
+                && timeSinceLastGeneExpression >= getExpressionInterval()) {
             geneExpressionFunction.update();
             timeSinceLastGeneExpression = 0;
         }

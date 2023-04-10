@@ -85,7 +85,7 @@ public class Geometry {
             return new Vector2(x, y);
 
         // if that fails, sample from polar coordinates
-        float length = (float) Math.sqrt(MathUtils.random() * circleR * circleR);
+        float length = circleR * (float) Math.sqrt(MathUtils.random());
         return Geometry.randomVector(length);
     }
 

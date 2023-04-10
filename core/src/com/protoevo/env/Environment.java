@@ -242,7 +242,7 @@ public class Environment implements Serializable
 		final float clusterR = Environment.settings.world.populationClusterRadius.get();
 		for (int i = 0; i < populationStartCentres.length; i++)
 			populationStartCentres[i] = Geometry.randomPointInCircle(
-					Environment.settings.world.radius.get() - clusterR, WorldGeneration.RANDOM
+				Environment.settings.world.radius.get() - clusterR, WorldGeneration.RANDOM
 			);
 
 		buildSpawners();
@@ -251,8 +251,14 @@ public class Environment implements Serializable
 		System.out.println("Creating population of " + nPlants + " plants..." );
 		loadingStatus = "Seeding Plants";
 		for (int i = 0; i < nPlants; i++) {
-			PlantCell cell = Evolvable.createNew(PlantCell.class);
-			cell.addToEnv(this);
+			PlantCell cell;
+			if (Environment.settings.plant.evolutionEnabled.get()) {
+				cell = Evolvable.createNew(PlantCell.class);
+				cell.addToEnv(this);
+			} else {
+				cell = new PlantCell(this);
+			}
+
 			if (cell.isDead()) {
 				System.out.println(
 					"Failed to find position for plant pellet. " +
@@ -293,8 +299,8 @@ public class Environment implements Serializable
 
 	public Vector2 randomPosition(float entityRadius, Vector2 centre, float clusterRadius) {
 		for (int i = 0; i < 20; i++) {
-			float r = WorldGeneration.RANDOM.nextFloat() * clusterRadius;
-			Vector2 pos = Geometry.randomPointInCircle(r, WorldGeneration.RANDOM);
+//			float r = WorldGeneration.RANDOM.nextFloat() * clusterRadius;
+			Vector2 pos = Geometry.randomPointInCircle(clusterRadius, WorldGeneration.RANDOM);
 			pos.add(centre);
 			Optional<? extends Shape> collision = getCollision(pos, entityRadius);
 			if (collision.isPresent() && collision.get() instanceof PlantCell) {
@@ -314,7 +320,7 @@ public class Environment implements Serializable
 	}
 
 	public Vector2 randomPosition(float entityRadius) {
-		return randomPosition(entityRadius, Geometry.ZERO, Environment.settings.world.rockClusterRadius.get());
+		return randomPosition(entityRadius, Geometry.ZERO, Environment.settings.world.radius.get());
 	}
 
 	public void tryAdd(Cell cell) {

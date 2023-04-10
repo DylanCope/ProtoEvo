@@ -23,6 +23,7 @@ import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 import com.badlogic.gdx.utils.ScreenUtils;
 import com.protoevo.biology.cells.Cell;
 import com.protoevo.biology.cells.EvolvableCell;
+import com.protoevo.biology.evolution.GeneExpressionFunction;
 import com.protoevo.biology.nn.NeuralNetwork;
 import com.protoevo.biology.nodes.SurfaceNode;
 import com.protoevo.biology.cells.Protozoan;
@@ -500,8 +501,9 @@ public class SimulationScreen extends ScreenAdapter {
             Particle particle = particleTracker.getTrackedParticle();
             if (particle instanceof EvolvableCell) {
                 EvolvableCell evolvableCell = (EvolvableCell) particle;
-                NeuralNetwork grn = evolvableCell.getGeneExpressionFunction().getRegulatoryNetwork();
-                if (grn != null) {
+                GeneExpressionFunction gef = evolvableCell.getGeneExpressionFunction();
+                if (gef != null) {
+                    NeuralNetwork grn = gef.getRegulatoryNetwork();
                     networkRenderer.setNeuralNetwork(grn);
                     mouseOverNeuronHandler.setGeneExpressionFunction(evolvableCell.getGeneExpressionFunction());
                     networkRenderer.render(delta);
@@ -595,14 +597,16 @@ public class SimulationScreen extends ScreenAdapter {
     private Vector2 randomMeanderTargetPos() {
         int nProtozoa = simulation.getEnv().numberOfProtozoa();
 
-        Optional<Cell> protozoan = simulation.getEnv().getCells().stream()
-                .filter(cell -> cell instanceof Protozoan)
-                .skip(MathUtils.random(nProtozoa - 1))
-                .filter(cell -> cell.getPos().len() < environment.getRadius() * 0.9f)
-                .findFirst();
+        if (nProtozoa > 0) {
+            Optional<Cell> protozoan = simulation.getEnv().getCells().stream()
+                    .filter(cell -> cell instanceof Protozoan)
+                    .skip(MathUtils.random(nProtozoa - 1))
+                    .filter(cell -> cell.getPos().len() < environment.getRadius() * 0.9f)
+                    .findFirst();
 
-        if (protozoan.isPresent())
-            return protozoan.get().getPos();
+            if (protozoan.isPresent())
+                return protozoan.get().getPos();
+        }
 
         return new Vector2(0, 0);
     }
