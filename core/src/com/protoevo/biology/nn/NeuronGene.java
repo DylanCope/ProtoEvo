@@ -19,9 +19,9 @@ public class NeuronGene implements Comparable<NeuronGene>, Serializable
     @JsonIgnore
     private Object[] tags;
     private boolean disabled;
-    private float mutationRate = Environment.settings.globalMutationChance.get();
-    private float mutationRateMin = Environment.settings.minMutationChance.get();
-    private float mutationRateMax = Environment.settings.maxMutationChance.get();
+    private float mutationRate = Environment.settings.evo.globalMutationChance.get();
+    private float mutationRateMin = Environment.settings.evo.minMutationChance.get();
+    private float mutationRateMax = Environment.settings.evo.maxMutationChance.get();
     private int nMutations = 0;
     private int nMutationRateMutations = 0;
     @JsonIgnore
@@ -94,7 +94,7 @@ public class NeuronGene implements Comparable<NeuronGene>, Serializable
             nMutationRateMutations++;
         }
 
-        if (Math.random() < Environment.settings.deleteNeuronMutationRate.get() && type == Neuron.Type.HIDDEN)
+        if (Math.random() < Environment.settings.evo.deleteNeuronMutationRate.get() && type == Neuron.Type.HIDDEN)
             newGene.disable();
 
         return newGene;

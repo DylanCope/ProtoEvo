@@ -2,39 +2,32 @@ package com.protoevo.ui;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.ScreenAdapter;
-import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.*;
-import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 import com.badlogic.gdx.utils.Align;
-import com.badlogic.gdx.utils.ScreenUtils;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.protoevo.core.Simulation;
 import com.protoevo.settings.Settings;
-import com.protoevo.ui.rendering.EnvironmentRenderer;
 import com.protoevo.utils.DebugMode;
-import com.protoevo.utils.FileIO;
 
-import java.io.IOException;
-import java.nio.file.Path;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
-import java.util.concurrent.Callable;
+import java.util.*;
+import java.util.List;
 import java.util.function.Consumer;
 
 public class EditSettingsScreen extends ScreenAdapter {
     private final Stage stage;
     private final GraphicsAdapter graphics;
-    private final String simulationName;
+    private final String settingsName;
     private final Skin skin;
     private Consumer<Float> drawBackground;
     private final ScreenAdapter previousScreen;
 
-    public EditSettingsScreen(ScreenAdapter previousScreen, GraphicsAdapter graphics, String settingsName, Settings settings) {
+    public EditSettingsScreen(
+            ScreenAdapter previousScreen,
+            GraphicsAdapter graphics,
+            Settings settings,
+            List<Settings> otherSettings
+    ) {
         this.graphics = graphics;
-        this.simulationName = settingsName;
+        this.settingsName = settings.getName();
         this.previousScreen = previousScreen;
 
         this.stage = new Stage();
@@ -63,12 +56,38 @@ public class EditSettingsScreen extends ScreenAdapter {
         
         final Table table = new Table();
 
-        final Label nameText = new Label(settingsName + " Settings", skin, "mainTitle");
+        final Label nameText = new Label(settingsName + " Settings", skin, "mediumTitle");
         nameText.setAlignment(Align.center);
         nameText.setWrap(true);
 
         table.setFillParent(true);
-        table.add(nameText).width(Gdx.graphics.getWidth() / 2f).height(Gdx.graphics.getHeight() / 5f).row();
+        table.add(nameText).width(Gdx.graphics.getWidth() / 2f).height(Gdx.graphics.getHeight() / 7f).row();
+
+        if (otherSettings != null && otherSettings.size() > 0) {
+            Table settingsOptionsTable = new Table();
+            float height = 0;
+            for (Settings option : otherSettings) {
+                if (option == settings)
+                    continue;
+                final TextButton goToSettings = new TextButton(option.getName(), skin);
+                goToSettings.addListener(e -> {
+                    if (e.toString().equals("touchDown")) {
+                        graphics.setScreen(new EditSettingsScreen(
+                                previousScreen, graphics, option, otherSettings
+                        ));
+                    }
+                    return true;
+                });
+                goToSettings.pad(goToSettings.getHeight() / 2f);
+                height = Math.max(height, goToSettings.getHeight());
+                settingsOptionsTable.add(goToSettings);
+            }
+            ScrollPane optionsScroller = new ScrollPane(settingsOptionsTable);
+            optionsScroller.setScrollbarsVisible(true);
+            optionsScroller.setScrollingDisabled(false, true);
+            table.add(optionsScroller).width(4 * Gdx.graphics.getWidth() / 5f).height(4*height).row();
+        }
+
         table.add(scroller).width(Gdx.graphics.getWidth() / 2f).height(Gdx.graphics.getHeight() * 4 / 7f).row();
 
         final TextButton applyButton = new TextButton("Apply", skin);
@@ -87,7 +106,6 @@ public class EditSettingsScreen extends ScreenAdapter {
                             "Failed to set parameter " + parameter.getName() + " to " + field.getText());
                     }
                 }
-                returnToPreviousScreen();
             }
             return true;
         });

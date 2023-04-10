@@ -100,8 +100,8 @@ public class SimulationScreen extends ScreenAdapter {
 
         camera = new OrthographicCamera();
         camera.setToOrtho(
-                false, Environment.settings.world.radius.get(),
-                Environment.settings.world.radius.get() * graphicsHeight / graphicsWidth);
+                false, Environment.settings.worldgen.radius.get(),
+                Environment.settings.worldgen.radius.get() * graphicsHeight / graphicsWidth);
         camera.position.set(0, 0, 0);
         camera.zoom = 1f;
 

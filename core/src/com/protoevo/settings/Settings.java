@@ -120,7 +120,7 @@ public abstract class Settings implements Serializable {
         parameters = new ArrayList<>();
     }
 
-    protected void collectParameter() {
+    protected void collectParameters() {
         for (java.lang.reflect.Field field : getClass().getFields()) {
             try {
                 Object value = field.get(this);

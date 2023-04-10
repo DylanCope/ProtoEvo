@@ -106,9 +106,9 @@ public class PlantCell extends EvolvableCell {
         float light = getEnv().getLight(getPos());
         float maxArea = Geometry.getCircleArea(Environment.settings.maxParticleRadius.get());
         float photoRate = light * getArea() / maxArea;
-        photosynthesisRate = photoRate * Environment.settings.plantPhotosynthesizeEnergyRate.get();
+        photosynthesisRate = photoRate * Environment.settings.plant.photosynthesizeEnergyRate.get();
 
-        addConstructionMass(delta * Environment.settings.plantConstructionRate.get());
+        addConstructionMass(delta * Environment.settings.plant.constructionRate.get());
         addAvailableEnergy(delta * photosynthesisRate);
 
         int nProtozoaContacts = 0;

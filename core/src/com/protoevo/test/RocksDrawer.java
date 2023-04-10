@@ -26,10 +26,10 @@ public class RocksDrawer {
         g.setColor(new Color(0, 0, 0, 0));
         g.fillRect(0, 0, width, height);
 
-        float rockWorldMinX = -Environment.settings.world.radius.get();
-        float rockWorldMinY = -Environment.settings.world.radius.get();
-        float rockWorldMaxX = Environment.settings.world.radius.get();
-        float rockWorldMaxY = Environment.settings.world.radius.get();
+        float rockWorldMinX = -Environment.settings.worldgen.radius.get();
+        float rockWorldMinY = -Environment.settings.worldgen.radius.get();
+        float rockWorldMaxX = Environment.settings.worldgen.radius.get();
+        float rockWorldMaxY = Environment.settings.worldgen.radius.get();
 
         for (Rock rock : rocks) {
             int[] xPoints = new int[3];
@@ -81,7 +81,7 @@ public class RocksDrawer {
         List<Rock> rocks = WorldGeneration.generate();
         drawRocks(rocks);
 
-        LightManager lightManager = new LightManager(256, 256, Environment.settings.world.radius.get());
+        LightManager lightManager = new LightManager(256, 256, Environment.settings.worldgen.radius.get());
         LightManager.bakeRockShadows(lightManager, rocks);
         drawLightMap(lightManager);
     }

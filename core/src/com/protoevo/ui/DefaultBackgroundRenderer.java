@@ -2,16 +2,11 @@ package com.protoevo.ui;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.OrthographicCamera;
-import com.badlogic.gdx.graphics.Pixmap;
-import com.badlogic.gdx.graphics.PixmapIO;
 import com.badlogic.gdx.graphics.Texture;
-import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
-import com.badlogic.gdx.graphics.glutils.FrameBuffer;
 import com.badlogic.gdx.graphics.glutils.ShaderProgram;
 import com.badlogic.gdx.utils.ScreenUtils;
-import com.protoevo.env.Environment;
-import com.protoevo.settings.EnvironmentSettings;
+import com.protoevo.settings.SimulationSettings;
 import com.protoevo.ui.rendering.EnvironmentRenderer;
 import com.protoevo.utils.ImageUtils;
 
@@ -35,8 +30,8 @@ public class DefaultBackgroundRenderer {
     public DefaultBackgroundRenderer() {
         float graphicsHeight = Gdx.graphics.getHeight();
         float graphicsWidth = Gdx.graphics.getWidth();
-        EnvironmentSettings settings = DefaultBackgroundGenerator.createBgEnvSettings();
-        r = settings.world.radius.get();
+        SimulationSettings settings = DefaultBackgroundGenerator.createBgEnvSettings();
+        r = settings.worldgen.radius.get();
 
         camera = new OrthographicCamera();
         camera.setToOrtho(false, r, r * graphicsHeight / graphicsWidth);

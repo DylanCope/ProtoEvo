@@ -116,6 +116,6 @@ public class Food implements Serializable {
         mass = Math.max(0, mass - decay);
         energy = Math.max(0, energy - decay);
         complexMoleculeMasses.replaceAll((m, v) -> complexMoleculeMasses.get(m)
-                * Environment.settings.complexMoleculeDecayRate.get());
+                * Environment.settings.cell.complexMoleculeDecayRate.get());
     }
 }

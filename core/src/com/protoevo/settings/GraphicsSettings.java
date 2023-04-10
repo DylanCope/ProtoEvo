@@ -13,7 +13,7 @@ public class GraphicsSettings extends Settings {
 
     public static GraphicsSettings createDefault() {
         GraphicsSettings settings = new GraphicsSettings();
-        settings.collectParameter();
+        settings.collectParameters();
         return settings;
     }
 }

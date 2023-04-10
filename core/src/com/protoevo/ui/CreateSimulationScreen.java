@@ -2,27 +2,16 @@ package com.protoevo.ui;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.ScreenAdapter;
-import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.*;
-import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 import com.badlogic.gdx.utils.Align;
-import com.badlogic.gdx.utils.ScreenUtils;
-import com.fasterxml.jackson.databind.JsonNode;
 import com.protoevo.core.Simulation;
-import com.protoevo.settings.EnvironmentSettings;
+import com.protoevo.settings.SimulationSettings;
 import com.protoevo.settings.Settings;
-import com.protoevo.ui.rendering.EnvironmentRenderer;
 import com.protoevo.utils.CursorUtils;
 import com.protoevo.utils.DebugMode;
-import com.protoevo.utils.FileIO;
 
-import java.io.IOException;
-import java.nio.file.Path;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
+import java.util.Objects;
 
 public class CreateSimulationScreen extends ScreenAdapter {
     private final Stage stage;
@@ -32,7 +21,7 @@ public class CreateSimulationScreen extends ScreenAdapter {
         stage = new Stage();
         stage.setDebugAll(DebugMode.isDebugMode());
 
-        EnvironmentSettings settings = EnvironmentSettings.createDefault();
+        SimulationSettings settings = SimulationSettings.createDefault();
 
         TopBar topBar = new TopBar(this.stage, graphics.getSkin().getFont("default").getLineHeight());
 
@@ -56,11 +45,20 @@ public class CreateSimulationScreen extends ScreenAdapter {
                 .padBottom(nameField.getHeight() * 2f)
                 .row();
 
-        addSettingsButton(graphics, "World Generation", settings.world, scrollTable);
-        addSettingsButton(graphics, "General", settings, scrollTable);
-        addSettingsButton(graphics, "Protozoa", settings.protozoa, scrollTable);
-        addSettingsButton(graphics, "Plant", settings.plant, scrollTable);
-        addSettingsButton(graphics, "Misc", settings.misc, scrollTable);
+//        addSettingsButton(graphics, "World Generation", settings.worldgen, scrollTable);
+//        addSettingsButton(graphics, "General", settings, scrollTable);
+//        addSettingsButton(graphics, "Protozoa", settings.protozoa, scrollTable);
+//        addSettingsButton(graphics, "Plant", settings.plant, scrollTable);
+//        addSettingsButton(graphics, "Misc", settings.misc, scrollTable);
+        final TextButton button = new TextButton("Edit Settings", skin);
+        button.addListener(e -> {
+            if (e.toString().equals("touchDown"))
+                graphics.setScreen(new EditSettingsScreen(
+                        this, graphics, settings.worldgen, settings.getSettings()));
+            return true;
+        });
+        button.pad(button.getHeight() / 4f);
+        scrollTable.add(button).padBottom(button.getHeight() / 2f).row();
 
         final ScrollPane scroller = new ScrollPane(scrollTable);
         scroller.setScrollbarsVisible(true);
@@ -90,16 +88,17 @@ public class CreateSimulationScreen extends ScreenAdapter {
         this.stage.addActor(table);
     }
 
-    public void addSettingsButton(GraphicsAdapter graphics, String name, Settings settings, Table table) {
-        final TextButton button = new TextButton("Edit " + name + " Settings", skin);
-        button.addListener(e -> {
-            if (e.toString().equals("touchDown"))
-                graphics.setScreen(new EditSettingsScreen(this, graphics, name, settings));
-            return true;
-        });
-        button.pad(button.getHeight() / 4f);
-        table.add(button).padBottom(button.getHeight() / 2f).row();
-    }
+//    public void addSettingsButton(GraphicsAdapter graphics, String name, Settings settings, Table table) {
+//        String text = Objects.equals(name, "") ? "Edit Settings" : "Edit " + name + " Settings";
+//        final TextButton button = new TextButton(text, skin);
+//        button.addListener(e -> {
+//            if (e.toString().equals("touchDown"))
+//                graphics.setScreen(new EditSettingsScreen(this, graphics, name, settings));
+//            return true;
+//        });
+//        button.pad(button.getHeight() / 4f);
+//        table.add(button).padBottom(button.getHeight() / 2f).row();
+//    }
 
     @Override
     public void show() {

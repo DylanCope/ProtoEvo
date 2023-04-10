@@ -17,9 +17,9 @@ public class SynapseGene implements Comparable<SynapseGene>, Serializable
     private NeuronGene in, out;
     private float weight;
     private boolean disabled;
-    private float mutationRate = Environment.settings.globalMutationChance.get();
-    private float mutationRateMin = Environment.settings.minMutationChance.get();
-    private float mutationRateMax = Environment.settings.maxMutationChance.get();
+    private float mutationRate = Environment.settings.evo.globalMutationChance.get();
+    private float mutationRateMin = Environment.settings.evo.minMutationChance.get();
+    private float mutationRateMax = Environment.settings.evo.maxMutationChance.get();
     private int nMutations, nMutationRateMutations;
 
     public SynapseGene(NeuronGene in, NeuronGene out, float weight, int innovation) {
@@ -102,7 +102,7 @@ public class SynapseGene implements Comparable<SynapseGene>, Serializable
             nMutationRateMutations++;
         }
 
-        if (Math.random() < Environment.settings.deleteSynapseMutationRate.get())
+        if (Math.random() < Environment.settings.evo.deleteSynapseMutationRate.get())
             newGene.setDisabled(true);
 
         return newGene;

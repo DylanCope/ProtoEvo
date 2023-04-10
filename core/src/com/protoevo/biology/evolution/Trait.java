@@ -31,8 +31,8 @@ public interface Trait<T> extends Evolvable.Component, Serializable {
 
     default void mutateMutationRate() {
         setMutationRate(MathUtils.random(
-                Environment.settings.minTraitMutationChance.get(),
-                Environment.settings.maxTraitMutationChance.get()
+                Environment.settings.evo.minTraitMutationChance.get(),
+                Environment.settings.evo.maxTraitMutationChance.get()
         ));
     }
 

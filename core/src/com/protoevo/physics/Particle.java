@@ -111,7 +111,7 @@ public class Particle implements Shape, Serializable {
         dynamicsFixture.setUserData(this);
 
         body.setUserData(this);
-        body.setLinearDamping(Environment.settings.fluidDragDampening.get());
+        body.setLinearDamping(Environment.settings.env.fluidDragDampening.get());
         body.setAngularDamping(5f);
         body.setSleepingAllowed(true);
 
@@ -220,7 +220,7 @@ public class Particle implements Shape, Serializable {
             vel.set(body.getLinearVelocity());
             pos.set(body.getPosition());
             angle = body.getAngle();
-            body.setLinearDamping(getDampeningFactor() * Environment.settings.fluidDragDampening.get());
+            body.setLinearDamping(getDampeningFactor() * Environment.settings.env.fluidDragDampening.get());
 
             if (getSpeed() < getRadius() / 50f) {
                 body.setLinearVelocity(0, 0);
@@ -312,7 +312,7 @@ public class Particle implements Shape, Serializable {
     }
 
     public float getMassDensity() {
-        return Environment.settings.basicParticleMassDensity.get();
+        return Environment.settings.cell.basicParticleMassDensity.get();
     }
 
     @Override

@@ -194,18 +194,18 @@ public class ChemicalSolution implements Serializable {
                         );
                         float overlapP = overlapArea / (cellWorldWidth * cellWorldHeight);
                         float extraction =
-                                Environment.settings.chemicalExtractionFactor.get() * delta * overlapP;
+                                Environment.settings.cell.chemicalExtractionFactor.get() * delta * overlapP;
                         if (extraction > 0) {
 
                             if (colour.g > 0.5f && colour.g > 1.5f * colour.r && colour.g > 1.5f * colour.b)
                                 protozoan.addFood(Food.Type.Plant,
                                         extraction * colour.g * colour.g
-                                                * Environment.settings.chemicalExtractionPlantConversion.get());
+                                                * Environment.settings.cell.chemicalExtractionPlantConversion.get());
 
                             if (colour.r > 0.5f && colour.r > 1.5f * colour.g && colour.r > 1.5f * colour.b)
                                 protozoan.addFood(Food.Type.Meat,
                                         extraction * colour.r * colour.r
-                                                * Environment.settings.chemicalExtractionMeatConversion.get());
+                                                * Environment.settings.cell.chemicalExtractionMeatConversion.get());
 
                             colour.sub(extraction);
                             set(fieldX, fieldY, colour);
@@ -278,7 +278,7 @@ public class ChemicalSolution implements Serializable {
     private void diffuseAt(int x, int y) {
 
         // See voidStartDistance in SimulationSettings
-        float world_radius = Environment.settings.world.voidStartDistance.get();
+        float world_radius = Environment.settings.worldgen.voidStartDistance.get();
 
         int width = this.chemicalTextureWidth;
         int height = this.chemicalTextureHeight;
@@ -369,7 +369,7 @@ public class ChemicalSolution implements Serializable {
         }
 
         timeSinceUpdate += delta;
-        if (timeSinceUpdate > Environment.settings.chemicalDiffusionInterval.get()) {
+        if (timeSinceUpdate > delta * Environment.settings.env.chemicalDiffusionInterval.get()) {
             diffuse();
             timeSinceUpdate = 0;
         }

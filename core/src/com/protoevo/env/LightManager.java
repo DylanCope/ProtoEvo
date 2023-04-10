@@ -16,11 +16,11 @@ public class LightManager implements Serializable {
     public static long serialVersionUID = 1L;
 
     public static void bakeRockShadows(LightManager lightManager, List<Rock> rocks) {
-        float rayLen = Environment.settings.world.maxRockSize.get() * 5f;
+        float rayLen = Environment.settings.worldgen.maxRockSize.get() * 5f;
 
         int resolution = (int) (lightManager.getFieldWidth() / rayLen);
 
-        SpatialHash<Rock> rockSpatialHash = new SpatialHash<>(resolution, Environment.settings.world.radius.get());
+        SpatialHash<Rock> rockSpatialHash = new SpatialHash<>(resolution, Environment.settings.worldgen.radius.get());
         for (Rock rock : rocks) {
             rockSpatialHash.add(rock, rock.getBoundingBox());
         }
@@ -145,9 +145,9 @@ public class LightManager implements Serializable {
 
         float t = timeManager.getTimeOfDayPercentage();
 
-        float transition = Environment.settings.misc.dayNightTransition.get();
-        float night = Environment.settings.misc.nightPercentage.get();
-        float nightLightLevel = Environment.settings.misc.nightLightLevel.get();
+        float transition = Environment.settings.env.dayNightTransition.get();
+        float night = Environment.settings.env.nightPercentage.get();
+        float nightLightLevel = Environment.settings.env.nightLightLevel.get();
 
         if (t < 1 - 2*transition - night) {
             environmentLight = 1f;

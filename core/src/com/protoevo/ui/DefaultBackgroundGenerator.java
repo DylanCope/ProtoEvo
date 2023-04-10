@@ -10,7 +10,7 @@ import com.badlogic.gdx.graphics.PixmapIO;
 import com.badlogic.gdx.graphics.glutils.FrameBuffer;
 import com.badlogic.gdx.graphics.glutils.ShaderProgram;
 import com.protoevo.env.Environment;
-import com.protoevo.settings.EnvironmentSettings;
+import com.protoevo.settings.SimulationSettings;
 import com.protoevo.ui.rendering.EnvironmentRenderer;
 
 public class DefaultBackgroundGenerator extends Game {
@@ -21,12 +21,12 @@ public class DefaultBackgroundGenerator extends Game {
     public void create() {
         OrthographicCamera camera = new OrthographicCamera();
         camera.setToOrtho(
-                false, Environment.settings.world.radius.get(),
-                Environment.settings.world.radius.get());
+                false, Environment.settings.worldgen.radius.get(),
+                Environment.settings.worldgen.radius.get());
         camera.position.set(0, 0, 0);
         camera.zoom = 2f;
 
-        EnvironmentSettings settings = createBgEnvSettings();
+        SimulationSettings settings = createBgEnvSettings();
         Environment environment = new Environment(settings);
         environment.initialise();
 
@@ -58,21 +58,9 @@ public class DefaultBackgroundGenerator extends Game {
         new Lwjgl3Application(new DefaultBackgroundGenerator(), new Lwjgl3ApplicationConfiguration());
     }
 
-    public static EnvironmentSettings createBgEnvSettings() {
-        EnvironmentSettings settings = EnvironmentSettings.createDefault();
-        settings.world.seed.set(3L);
-//        settings.world.radius.set(3f);
-//        settings.world.numRingClusters.set(2);
-//        settings.world.rockGenerationIterations.set(100);
-//        settings.world.numInitialProtozoa.set(100);
-//        settings.world.numInitialPlantPellets.set(500);
-//        settings.world.generateLightNoiseTexture.set(false);
-//        settings.world.bakeRockLights.set(false);
-//        settings.misc.maxProtozoa.set(500);
-//        settings.misc.maxPlants.set(2000);
-//        settings.chemicalFieldResolution.set(512);
-//        settings.lightMapResolution.set(64);
-//        settings.world.populationClusterRadius.set(settings.world.radius.get());
+    public static SimulationSettings createBgEnvSettings() {
+        SimulationSettings settings = SimulationSettings.createDefault();
+        settings.worldgen.seed.set(3L);
         return settings;
     }
 }

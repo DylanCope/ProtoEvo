@@ -31,7 +31,7 @@ public class TimeManager implements Serializable {
     }
 
     public float getDayNightCycleLength() {
-        return Environment.settings.misc.dayNightCycleLength.get();
+        return Environment.settings.env.dayNightCycleLength.get();
     }
 
     public float getTimeOfDayPercentage() {

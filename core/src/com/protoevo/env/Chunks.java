@@ -33,9 +33,9 @@ public class Chunks implements Serializable {
         int protozoaLocalCap = Environment.settings.misc.protozoaLocalCap.get();
         int plantLocalCap = Environment.settings.misc.plantLocalCap.get();
         int meatLocalCap = Environment.settings.misc.meatLocalCap.get();
-        cellHashes.put(Protozoan.class, new SpatialHash<>(resolution, protozoaLocalCap, Environment.settings.world.radius.get()));
-        cellHashes.put(PlantCell.class, new SpatialHash<>(resolution, plantLocalCap, Environment.settings.world.radius.get()));
-        cellHashes.put(MeatCell.class, new SpatialHash<>(resolution, meatLocalCap, Environment.settings.world.radius.get()));
+        cellHashes.put(Protozoan.class, new SpatialHash<>(resolution, protozoaLocalCap, Environment.settings.worldgen.radius.get()));
+        cellHashes.put(PlantCell.class, new SpatialHash<>(resolution, plantLocalCap, Environment.settings.worldgen.radius.get()));
+        cellHashes.put(MeatCell.class, new SpatialHash<>(resolution, meatLocalCap, Environment.settings.worldgen.radius.get()));
     }
 
     public void add(Cell cell) {

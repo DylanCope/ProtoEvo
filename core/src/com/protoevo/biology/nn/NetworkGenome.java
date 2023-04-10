@@ -172,8 +172,8 @@ public class NetworkGenome implements Serializable
 		);
 
 		n.setMutationRange(
-				Environment.settings.minRegulationMutationChance.get(),
-				Environment.settings.maxRegulationMutationChance.get());
+				Environment.settings.evo.minRegulationMutationChance.get(),
+				Environment.settings.evo.maxRegulationMutationChance.get());
 
 		hiddenNeuronGenes = Arrays.copyOf(hiddenNeuronGenes, hiddenNeuronGenes.length + 1);
 		hiddenNeuronGenes[hiddenNeuronGenes.length - 1] = n;
@@ -372,7 +372,7 @@ public class NetworkGenome implements Serializable
 				g = Simulation.RANDOM.nextBoolean() ?
 						myConnections.get(innovation) :
 						theirConnections.get(innovation);
-				if (g.isDisabled() && MathUtils.random() < Environment.settings.globalMutationChance.get())
+				if (g.isDisabled() && MathUtils.random() < Environment.settings.evo.globalMutationChance.get())
 					g.setDisabled(false);
 				childSynapses.add(g);
 				continue;
