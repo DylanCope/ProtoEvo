@@ -40,7 +40,7 @@ public class CellSettings extends Settings {
             "Rate at which a cell looses health when outside its temperature tolerance range.",
             2f);
     public final Settings.Parameter<Float> activityHeatGeneration = new Settings.Parameter<>(
-            "Cell Temperature Death Rate",
+            "Activity Heat Generation",
             "Heat generated per unit activity per unit time.",
             2f);
     public final Settings.Parameter<Float> basicParticleMassDensity = new Settings.Parameter<>(

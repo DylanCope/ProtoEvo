@@ -68,6 +68,10 @@ public class SimulationSettings extends Settings {
             "Max Molecule Production Rate",
             "The maximum rate at which a cell can produce complex molecules.",
             .01f);
+    public final Settings.Parameter<Float> moleculeProductionEnergyCost = new Settings.Parameter<>(
+            "Molecule Production Energy Cost",
+            "The energy cost for producing molecule.",
+            1e4f);
     public Settings.Parameter<Integer> possibleMolecules = new Settings.Parameter<>(
             "Number of Possible Molecules",
             "The number of possible molecules that can be produced in the simulation.",

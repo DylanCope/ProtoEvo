@@ -52,7 +52,7 @@ public class ProtozoaColourTrait implements Trait<Colour>, Serializable {
 
         if (p < 1 / 3f) {
             float v = MathUtils.clamp(colour.r + valChange, maxVal, minVal);
-            return new Colour(v, colour.g, v, 1f);
+            return new Colour(v, colour.g, colour.b, 1f);
         } else if (p < 2 / 3f) {
             float v = MathUtils.clamp(colour.g + valChange, maxVal, minVal);
             return new Colour(colour.r, v, colour.b, 1f);

@@ -38,7 +38,8 @@ public class ComplexMolecule implements Serializable {
         int possibleMolecules = Environment.settings.possibleMolecules.get();
         signature = (float) (Math.floor(signature * possibleMolecules) / possibleMolecules);
         if (!cache.containsKey(signature)) {
-            ComplexMolecule molecule = new ComplexMolecule(signature, 1e3f);
+            ComplexMolecule molecule = new ComplexMolecule(
+                    signature, Environment.settings.moleculeProductionEnergyCost.get());
             cache.put(signature, molecule);
             return molecule;
         }
