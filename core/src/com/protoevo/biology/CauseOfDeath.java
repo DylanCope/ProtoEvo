@@ -17,7 +17,9 @@ public enum CauseOfDeath {
     HEALED_TO_DEATH("being healed to death?...", true),  // should never happen
     FAILED_TO_CONSTRUCT("failure to construct", true),
     OVERCROWDING("overcrowding", false),
-    MEAT_DECAY("decay", true);
+    MEAT_DECAY("decay", true),
+    HYPOTHERMIA("hypothermia", false),
+    HYPERTHERMIA("hyperthermia", false);
 
     private final String reason;
     private final boolean debug;
