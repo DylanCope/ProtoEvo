@@ -5,9 +5,7 @@ import com.protoevo.biology.cells.Protozoan;
 import com.protoevo.biology.nn.NetworkGenome;
 import com.protoevo.env.EnvFileIO;
 import com.protoevo.env.Environment;
-import com.protoevo.settings.EnvironmentSettings;
-import com.protoevo.settings.Settings;
-import com.protoevo.ui.SimulationScreen;
+import com.protoevo.settings.SimulationSettings;
 import com.protoevo.utils.FileIO;
 
 import java.awt.*;
@@ -56,7 +54,7 @@ public class Simulation implements Runnable
 		this(Environment.settings.simulationSeed.get(), name);
 	}
 
-	public Simulation(String name, EnvironmentSettings settings) {
+	public Simulation(String name, SimulationSettings settings) {
 		RANDOM = new Random(settings.simulationSeed.get());
 		this.name = name;
 		simulate = true;
@@ -116,7 +114,7 @@ public class Simulation implements Runnable
 		return new Environment();
 	}
 
-	public Environment newEnvironment(EnvironmentSettings settings)
+	public Environment newEnvironment(SimulationSettings settings)
 	{
 		newSaveDir();
 		return new Environment(settings);
@@ -196,6 +194,7 @@ public class Simulation implements Runnable
 
 	public void prepare()
 	{
+		paused = false;
 		environment = environmentLoader.get();
 		if (!initialised) {
 			environment.initialise();

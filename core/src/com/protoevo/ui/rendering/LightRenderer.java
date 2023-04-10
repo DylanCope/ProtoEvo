@@ -7,14 +7,13 @@ import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.glutils.ShaderProgram;
-import com.protoevo.env.ChemicalSolution;
 import com.protoevo.env.Environment;
-import com.protoevo.env.LightMap;
+import com.protoevo.env.LightManager;
 import com.protoevo.utils.DebugMode;
 
 public class LightRenderer implements Renderer {
     private final Environment environment;
-    private final LightMap lightMap;
+    private final LightManager lightManager;
     private final SpriteBatch batch;
     private final ShaderProgram shader;
     private final Texture lightTexture;
@@ -24,16 +23,16 @@ public class LightRenderer implements Renderer {
         this.environment = environment;
         this.camera = camera;
 
-        lightMap = environment.getLightMap();
-        int w = lightMap.getWidth();
-        int h = lightMap.getHeight();
+        lightManager = environment.getLightMap();
+        int w = lightManager.getWidth();
+        int h = lightManager.getHeight();
 
         Pixmap lightPixmap = new Pixmap(w, h, Pixmap.Format.RGBA8888);
 
         Color color = new Color();
         for (int x = 0; x < w; x++) {
             for (int y = 0; y < h; y++) {
-                float light = lightMap.getLight(x, y);
+                float light = lightManager.getCellLight(x, y);
                 color.set(0.05f, 0f, 0.06f, 1 - light);
                 lightPixmap.drawPixel(x, h - y, Color.rgba8888(color));
             }
@@ -65,8 +64,8 @@ public class LightRenderer implements Renderer {
 
         batch.begin();
         batch.setColor(1, 1, 1, 0.7f);
-        batch.draw(lightTexture, lightMap.getXMin(), lightMap.getYMin(),
-                lightMap.getFieldWidth(), lightMap.getFieldWidth());
+        batch.draw(lightTexture, lightManager.getXMin(), lightManager.getYMin(),
+                lightManager.getFieldWidth(), lightManager.getFieldWidth());
         batch.end();
     }
 

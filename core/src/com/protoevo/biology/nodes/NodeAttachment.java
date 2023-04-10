@@ -29,7 +29,7 @@ public abstract class NodeAttachment implements Serializable, Constructable {
     private final Map<ComplexMolecule, Float> requiredComplexMolecules = new HashMap<>();
 
     public float getRequiredMass() {
-        float density = Environment.settings.basicParticleMassDensity.get();
+        float density = Environment.settings.cell.basicParticleMassDensity.get();
         float area = Geometry.getCircleArea(Environment.settings.maxParticleRadius.get());
         return density * area / 40f;
     }

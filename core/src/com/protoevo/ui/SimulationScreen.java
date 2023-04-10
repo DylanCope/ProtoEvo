@@ -36,6 +36,7 @@ import com.protoevo.input.ParticleTracker;
 import com.protoevo.ui.nn.MouseOverNeuronHandler;
 import com.protoevo.ui.nn.NetworkRenderer;
 import com.protoevo.ui.rendering.*;
+import com.protoevo.ui.shaders.BrightnessLayer;
 import com.protoevo.ui.shaders.ShaderLayers;
 import com.protoevo.ui.shaders.ShockWaveLayer;
 import com.protoevo.ui.shaders.VignetteLayer;
@@ -84,6 +85,7 @@ public class SimulationScreen extends ScreenAdapter {
     private Vector2 meanderingTargetPos;
     private final CatmullRomSpline<Vector3> meanderingSpline = new CatmullRomSpline<>();
     private float meanderingT = 0f, meanderTThreshold = 0f;
+    private final BrightnessLayer brightnessLayer;
 
 
     public SimulationScreen(GraphicsAdapter graphics, Simulation simulation) {
@@ -99,8 +101,8 @@ public class SimulationScreen extends ScreenAdapter {
 
         camera = new OrthographicCamera();
         camera.setToOrtho(
-                false, Environment.settings.world.radius.get(),
-                Environment.settings.world.radius.get() * graphicsHeight / graphicsWidth);
+                false, Environment.settings.worldgen.radius.get(),
+                Environment.settings.worldgen.radius.get() * graphicsHeight / graphicsWidth);
         camera.position.set(0, 0, 0);
         camera.zoom = 1f;
 
@@ -127,10 +129,12 @@ public class SimulationScreen extends ScreenAdapter {
         topBar = new TopBar(stage, font.getLineHeight());
 
         inputManager = new SimulationInputManager(this);
+        brightnessLayer = new BrightnessLayer(camera);
         environmentRenderer = new ShaderLayers(
                 new EnvironmentRenderer(camera, simulation.getEnv(), inputManager),
                 new ShockWaveLayer(camera),
-                new VignetteLayer(camera, inputManager.getParticleTracker())
+                new VignetteLayer(camera, inputManager.getParticleTracker()),
+                brightnessLayer
         );
 
         saveTrackedParticleTextField = new TextField("", skin);
@@ -190,6 +194,11 @@ public class SimulationScreen extends ScreenAdapter {
     }
 
     public void renderEnvironment(float delta) {
+        float envLight = Utils.clampedLinearRemap(
+                environment.getLightMap().getEnvLight(),
+                0f, 1f, 0.5f, 1f
+        );
+        brightnessLayer.setBrightness(envLight);
         environmentRenderer.render(delta);
     }
 

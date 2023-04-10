@@ -10,22 +10,22 @@ import java.util.Random;
 
 public class WorldGeneration {
     
-    public static Random RANDOM = new Random(Environment.settings.world.seed.get());
+    public static Random RANDOM = new Random(Environment.settings.worldgen.seed.get());
 
     public static List<Rock> generate() {
-        RANDOM = new Random(Environment.settings.world.seed.get());
+        RANDOM = new Random(Environment.settings.worldgen.seed.get());
         
         List<Rock> rocks = new ArrayList<>();
 
-        float minR = Environment.settings.world.rockClusterRadius.get();
-        float maxR = 4 * Environment.settings.world.rockClusterRadius.get();
-        int numClusterCentres = Environment.settings.world.numRingClusters.get();
+        float minR = Environment.settings.worldgen.rockClusterRadius.get();
+        float maxR = 4 * Environment.settings.worldgen.rockClusterRadius.get();
+        int numClusterCentres = Environment.settings.worldgen.numRingClusters.get();
 
         WorldGeneration.generateClustersOfRocks(
                 rocks, numClusterCentres, minR, maxR,
-                Environment.settings.world.radius.get() - maxR);
+                Environment.settings.worldgen.radius.get() - maxR);
 
-        generateRocks(rocks, Environment.settings.world.rockGenerationIterations.get());
+        generateRocks(rocks, Environment.settings.worldgen.rockGenerationIterations.get());
         
         return rocks;
     }
@@ -37,7 +37,7 @@ public class WorldGeneration {
     }
 
     public static Vector2 randomPosition(float entityRadius) {
-        return randomPosition(Geometry.ZERO, entityRadius, Environment.settings.world.radius.get());
+        return randomPosition(Geometry.ZERO, entityRadius, Environment.settings.worldgen.radius.get());
     }
 
     public static Vector2 randomPosition(float minR, float maxR) {
@@ -54,22 +54,22 @@ public class WorldGeneration {
     }
 
     public static void generateRingOfRocks(List<Rock> rocks, Vector2 ringCentre, float ringRadius) {
-        generateRingOfRocks(rocks, ringCentre, ringRadius, Environment.settings.world.ringBreakProbability.get());
+        generateRingOfRocks(rocks, ringCentre, ringRadius, Environment.settings.worldgen.ringBreakProbability.get());
     }
 
     public static void generateRingOfRocks(List<Rock> rocks, Vector2 ringCentre, float ringRadius, float breakProb) {
-        float angleDelta = (float) (2 * Math.asin(Environment.settings.world.minRockSize.get() / (20 * ringRadius)));
+        float angleDelta = (float) (2 * Math.asin(Environment.settings.worldgen.minRockSize.get() / (20 * ringRadius)));
         Rock currentRock = null;
         for (float angle = 0; angle < 2*Math.PI; angle += angleDelta) {
             if (breakProb > 0 && RANDOM.nextFloat() < breakProb) {
                 currentRock = null;
-                angle += Environment.settings.world.ringBreakAngleMinSkip.get() +
-                        RANDOM.nextFloat() * (Environment.settings.world.ringBreakAngleMaxSkip.get()
-                                                - Environment.settings.world.ringBreakAngleMinSkip.get());
+                angle += Environment.settings.worldgen.ringBreakAngleMinSkip.get() +
+                        RANDOM.nextFloat() * (Environment.settings.worldgen.ringBreakAngleMaxSkip.get()
+                                                - Environment.settings.worldgen.ringBreakAngleMinSkip.get());
             }
             if (currentRock == null || currentRock.allEdgesAttached()) {
                 currentRock = newCircumferenceRockAtAngle(ringCentre, ringRadius, angle);
-                if (isRockObstructed(currentRock, rocks, Environment.settings.world.minRockOpeningSize.get())) {
+                if (isRockObstructed(currentRock, rocks, Environment.settings.worldgen.minRockOpeningSize.get())) {
                     currentRock = null;
                 } else {
                     rocks.add(currentRock);
@@ -79,9 +79,9 @@ public class WorldGeneration {
                 float bestRockDistToCirc = Float.MAX_VALUE;
                 int bestRockAttachIdx = -1;
                 for (int i = 0; i < currentRock.getEdges().length; i++) {
-                    float sizeRange = (Environment.settings.world.maxRockSize.get()
-                            - Environment.settings.world.minRockOpeningSize.get());
-                    float rockSize = 1.5f * Environment.settings.world.minRockOpeningSize.get()
+                    float sizeRange = (Environment.settings.worldgen.maxRockSize.get()
+                            - Environment.settings.worldgen.minRockOpeningSize.get());
+                    float rockSize = 1.5f * Environment.settings.worldgen.minRockOpeningSize.get()
                             + sizeRange * RANDOM.nextFloat();
                     if (!currentRock.isEdgeAttached(i)) {
                         Rock newRock = newAttachedRock(currentRock, i, rocks, rockSize);
@@ -120,7 +120,7 @@ public class WorldGeneration {
 
         for (int i = 0; i < nIterations; i++) {
             if (unattachedRocks.size() == 0
-                    || RANDOM.nextFloat() > Environment.settings.world.rockClustering.get()) {
+                    || RANDOM.nextFloat() > Environment.settings.worldgen.rockClustering.get()) {
                 Rock rock = newRock(rocks);
                 if (tryAdd(rock, rocks)) {
                     unattachedRocks.add(rock);
@@ -160,11 +160,11 @@ public class WorldGeneration {
     public static Rock newAttachedRock(Rock toAttach, int edgeIdx, List<Rock> rocks) {
         float attachedSize = toAttach.getSize();
         float sizeMin = Math.max(
-                Environment.settings.world.minRockSize.get(),
-                attachedSize * (1 - Environment.settings.world.attachedRockSizeChange.get()));
+                Environment.settings.worldgen.minRockSize.get(),
+                attachedSize * (1 - Environment.settings.worldgen.attachedRockSizeChange.get()));
         float sizeMax = Math.min(
-                Environment.settings.world.maxRockSize.get(),
-                attachedSize * (1 + Environment.settings.world.attachedRockSizeChange.get()));
+                Environment.settings.worldgen.maxRockSize.get(),
+                attachedSize * (1 + Environment.settings.worldgen.attachedRockSizeChange.get()));
         float sizeRange = (sizeMax - sizeMin);
         float rockSize = sizeMin + sizeRange * RANDOM.nextFloat();
         return newAttachedRock(toAttach, edgeIdx, rocks, rockSize);
@@ -180,7 +180,7 @@ public class WorldGeneration {
         Vector2[] newEdge1 = new Vector2[]{p1, p3};
         Vector2[] newEdge2 = new Vector2[]{p2, p3};
         if (notInAnyRocks(newEdge1, newEdge2, rocks, toAttach)
-                && leavesOpening(p3, rocks, Environment.settings.world.minRockOpeningSize.get())) {
+                && leavesOpening(p3, rocks, Environment.settings.worldgen.minRockOpeningSize.get())) {
             return new Rock(p1, p2, p3);
         }
         return null;
@@ -230,7 +230,7 @@ public class WorldGeneration {
     }
 
     public static Rock newRock(List<Rock> rocks) {
-        float centreR = Environment.settings.world.radius.get() * RANDOM.nextFloat();
+        float centreR = Environment.settings.worldgen.radius.get() * RANDOM.nextFloat();
         float centreT = (float) (2*Math.PI * RANDOM.nextFloat());
         Vector2 centre = Geometry.fromAngle(centreT).setLength(centreR);
         return newRockAt(centre);
@@ -242,14 +242,14 @@ public class WorldGeneration {
     }
 
     public static Rock newRockAt(Vector2 centre, Vector2 dir) {
-        float sizeRange = (Environment.settings.world.maxRockSize.get()
-                - Environment.settings.world.minRockSize.get());
-        float rockSize = Environment.settings.world.minRockSize.get()
+        float sizeRange = (Environment.settings.worldgen.maxRockSize.get()
+                - Environment.settings.worldgen.minRockSize.get());
+        float rockSize = Environment.settings.worldgen.minRockSize.get()
                 + sizeRange * RANDOM.nextFloat();
 
         Vector2 p1 = centre.cpy().add(dir.cpy().setLength(rockSize));
 
-        float dt = Environment.settings.world.minRockSpikiness.get() / 2f;
+        float dt = Environment.settings.worldgen.minRockSpikiness.get() / 2f;
         float tMin = 2 * MathUtils.PI / 3 - dt;
         float tMax = 2 * MathUtils.PI / 3 + dt;
 

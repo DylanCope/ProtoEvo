@@ -7,11 +7,6 @@ import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.json.JsonMapper;
-import com.fasterxml.jackson.databind.module.SimpleModule;
-import com.protoevo.biology.ComplexMolecule;
-import com.protoevo.biology.MoleculeFunctionalContext;
-import com.protoevo.biology.cells.Cell;
-import com.protoevo.utils.file.ParticleKeyDeserializer;
 
 import java.io.*;
 import java.nio.file.Files;
@@ -42,13 +37,6 @@ public class FileIO
 //		PolymorphicTypeValidator ptv = BasicPolymorphicTypeValidator.builder().build();
 //		mapper.activateDefaultTyping(ptv); // default to using DefaultTyping.OBJECT_AND_NON_CONCRETE
 //		mapper.activateDefaultTyping(ptv, ObjectMapper.DefaultTyping.NON_FINAL);
-
-		SimpleModule simpleModule = new SimpleModule();
-		simpleModule.addKeyDeserializer(ComplexMolecule.class, new ParticleKeyDeserializer());
-		simpleModule.addKeyDeserializer(Cell.class, new ParticleKeyDeserializer());
-		simpleModule.addKeyDeserializer(MoleculeFunctionalContext.MoleculeFunction.class, new ParticleKeyDeserializer());
-
-		mapper.registerModule(simpleModule);
 
 		return mapper;
 	}

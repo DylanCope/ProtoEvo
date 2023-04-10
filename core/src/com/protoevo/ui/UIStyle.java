@@ -49,10 +49,9 @@ public class UIStyle {
         debugFont.setColor(Color.GOLD);
         skin.add("debug", debugFont);
 
-        BitmapFont statsTitleFont = UIStyle.createFiraCode((int) (graphicsHeight / 40f));
-        skin.add("statsTitle", statsTitleFont);
-
+        skin.add("statsTitle", UIStyle.createFiraCode((int) (graphicsHeight / 40f)));
         skin.add("mainTitle", UIStyle.createFiraCode((int) (graphicsHeight / 20f)));
+        skin.add("mediumTitle", UIStyle.createFiraCode((int) (graphicsHeight / 30f)));
 
         Label.LabelStyle labelStyle = new Label.LabelStyle();
         labelStyle.font = skin.getFont("default");
@@ -68,6 +67,11 @@ public class UIStyle {
         statsTitleLabelStyle.font = skin.getFont("statsTitle");
         statsTitleLabelStyle.fontColor = Color.WHITE;
         skin.add("statsTitle", statsTitleLabelStyle);
+
+        Label.LabelStyle mediumTitleLabelStyle = new Label.LabelStyle();
+        mediumTitleLabelStyle.font = skin.getFont("mediumTitle");
+        mediumTitleLabelStyle.fontColor = Color.WHITE;
+        skin.add("mediumTitle", mediumTitleLabelStyle);
 
         Label.LabelStyle mainTitleLabelStyle = new Label.LabelStyle();
         mainTitleLabelStyle.font = skin.getFont("mainTitle");

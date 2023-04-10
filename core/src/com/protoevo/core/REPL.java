@@ -1,11 +1,9 @@
 package com.protoevo.core;
 
 import com.protoevo.env.Environment;
-import com.protoevo.settings.EnvironmentSettings;
 import com.protoevo.settings.Settings;
 
 import java.io.BufferedReader;
-import java.io.IOException;
 import java.io.InputStreamReader;
 
 

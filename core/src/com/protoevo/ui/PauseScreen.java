@@ -15,13 +15,17 @@ import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.gdx.utils.Align;
 import com.protoevo.core.Simulation;
 import com.protoevo.env.Environment;
-import com.protoevo.settings.EnvironmentSettings;
+import com.protoevo.env.WorldGeneration;
+import com.protoevo.settings.SimulationSettings;
 import com.protoevo.settings.Settings;
+import com.protoevo.settings.WorldGenerationSettings;
 import com.protoevo.utils.CursorUtils;
 import com.protoevo.utils.DebugMode;
 import com.protoevo.utils.Utils;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
 
@@ -56,7 +60,7 @@ public class PauseScreen extends ScreenAdapter {
         stage = new Stage();
         stage.setDebugAll(DebugMode.isDebugMode());
 
-        EnvironmentSettings settings = Environment.settings;
+        SimulationSettings settings = Environment.settings;
 
         final Table scrollTable = new Table();
 
@@ -67,11 +71,15 @@ public class PauseScreen extends ScreenAdapter {
         }, scrollTable);
         addButton(graphics, "Load Save", this::toLoadSaveScreen, scrollTable);
 
-        addSettingsButton(graphics, "General", settings, scrollTable);
-        addSettingsButton(graphics, "Protozoa", settings.protozoa, scrollTable);
-        addSettingsButton(graphics, "Plant", settings.plant, scrollTable);
-        addSettingsButton(graphics, "Misc", settings.misc, scrollTable);
-
+        addButton(graphics, "Edit Settings", () -> {
+            List<Settings> settingsOptions = settings.getSettings();
+            List<Settings> optionsWithoutWorldGen = new ArrayList<>();
+            for (Settings option : settingsOptions)
+                if (!(option instanceof WorldGenerationSettings))
+                    optionsWithoutWorldGen.add(option);
+            graphics.setScreen(new EditSettingsScreen(
+                            this, graphics, settings, optionsWithoutWorldGen));
+        }, scrollTable);
         addButton(graphics, "Exit to Title Screen", this::exitToTitleScreen, scrollTable);
 
         final com.badlogic.gdx.scenes.scene2d.ui.ScrollPane scroller =
@@ -135,20 +143,20 @@ public class PauseScreen extends ScreenAdapter {
         table.add(button).padBottom(button.getHeight() / 4f).row();
     }
 
-    public void addSettingsButton(GraphicsAdapter graphics, String name, Settings settings, Table table) {
-        final TextButton button = new TextButton("Edit " + name + " Settings", graphics.getSkin());
-        button.addListener(e -> {
-            if (e.toString().equals("touchDown")) {
-                EditSettingsScreen editSettingsScreen =
-                        new EditSettingsScreen(this, graphics, name, settings);
-                editSettingsScreen.setBackgroundRenderer(this::drawBackground);
-                graphics.setScreen(editSettingsScreen);
-            }
-            return true;
-        });
-        button.pad(button.getHeight() * .5f);
-        table.add(button).padBottom(button.getHeight() / 4f).row();
-    }
+//    public void addSettingsButton(GraphicsAdapter graphics, String name, Settings settings, Table table) {
+//        final TextButton button = new TextButton("Edit " + name + " Settings", graphics.getSkin());
+//        button.addListener(e -> {
+//            if (e.toString().equals("touchDown")) {
+//                EditSettingsScreen editSettingsScreen =
+//                        new EditSettingsScreen(this, graphics, name, settings);
+//                editSettingsScreen.setBackgroundRenderer(this::drawBackground);
+//                graphics.setScreen(editSettingsScreen);
+//            }
+//            return true;
+//        });
+//        button.pad(button.getHeight() * .5f);
+//        table.add(button).padBottom(button.getHeight() / 4f).row();
+//    }
 
     private void returnToSimulation() {
         simulationScreen.getSimulation().setPaused(false);

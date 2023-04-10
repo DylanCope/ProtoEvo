@@ -96,7 +96,7 @@ public class AdhesionReceptor extends NodeAttachment {
             return;
         Cell other = (Cell) particle;
 
-        float transferRate = Environment.settings.cellBindingResourceTransport.get();
+        float transferRate = Environment.settings.cell.bindingResourceTransport.get();
 
         float massDelta = cell.getConstructionMassAvailable() - other.getConstructionMassAvailable();
         constructionMassTransfer = Math.abs(transferRate * massDelta * delta);
@@ -127,7 +127,7 @@ public class AdhesionReceptor extends NodeAttachment {
 
     private void handleComplexMoleculeTransport(Cell src, Cell dst, ComplexMolecule molecule, float delta) {
         float massDelta = dst.getComplexMoleculeAvailable(molecule) - src.getComplexMoleculeAvailable(molecule);
-        float transferRate = Environment.settings.cellBindingResourceTransport.get();
+        float transferRate = Environment.settings.cell.bindingResourceTransport.get();
         if (massDelta > 0) {
             float massTransfer = transferRate * massDelta * delta;
             molecularMassTransfer += massTransfer;

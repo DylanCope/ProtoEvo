@@ -28,13 +28,13 @@ public class GRNFactory {
             NetworkGenome networkGenome, NeuronGene output) {
         NeuronGene sensor = getBias(networkGenome);
         output.setMutationRange(
-                Environment.settings.minTraitMutationChance.get(),
-                Environment.settings.maxTraitMutationChance.get());
+                Environment.settings.evo.minTraitMutationChance.get(),
+                Environment.settings.evo.maxTraitMutationChance.get());
 
         SynapseGene synapseGene = networkGenome.addSynapse(sensor, output);
         synapseGene.setMutationRange(
-                Environment.settings.minTraitMutationChance.get(),
-                Environment.settings.maxTraitMutationChance.get());
+                Environment.settings.evo.minTraitMutationChance.get(),
+                Environment.settings.evo.maxTraitMutationChance.get());
     }
 
     public static String getInputName(String geneName) {
@@ -61,8 +61,8 @@ public class GRNFactory {
         if (sensor == null) {
             sensor = networkGenome.addSensor("Bias");
             sensor.setMutationRange(
-                    Environment.settings.minMutationChance.get(),
-                    Environment.settings.maxMutationChance.get());
+                    Environment.settings.evo.minMutationChance.get(),
+                    Environment.settings.evo.maxMutationChance.get());
         }
         return sensor;
     }
@@ -143,8 +143,8 @@ public class GRNFactory {
                 SynapseGene synapseGene = networkGenome.addSynapse(
                         networkGenome.getNeuronGene(regulator), outputGene);
                 synapseGene.setMutationRange(
-                        Environment.settings.minRegulationMutationChance.get(),
-                        Environment.settings.maxRegulationMutationChance.get());
+                        Environment.settings.evo.minRegulationMutationChance.get(),
+                        Environment.settings.evo.maxRegulationMutationChance.get());
             }
         }
 
@@ -175,8 +175,8 @@ public class GRNFactory {
                 NeuronGene regulatorSensor = networkGenome.addSensor(regulator,
                         (GRNTag) fn -> fn.getGeneRegulators().get(regulator));
                 regulatorSensor.setMutationRange(
-                        Environment.settings.minRegulationMutationChance.get(),
-                        Environment.settings.maxRegulationMutationChance.get());
+                        Environment.settings.evo.minRegulationMutationChance.get(),
+                        Environment.settings.evo.maxRegulationMutationChance.get());
             }
         }
 
@@ -191,7 +191,7 @@ public class GRNFactory {
     {
         NetworkGenome networkGenome = createIO(new NetworkGenome(), geneExpressionFunction);
 
-        for (int i = 0; i < Environment.settings.initialGRNMutations.get(); i++) {
+        for (int i = 0; i < Environment.settings.evo.initialGRNMutations.get(); i++) {
             networkGenome.mutate();
         }
 

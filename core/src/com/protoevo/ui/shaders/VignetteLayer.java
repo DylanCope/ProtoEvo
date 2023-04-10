@@ -26,7 +26,7 @@ public class VignetteLayer extends ShaderLayer {
         shaderProgram.setUniformMatrix("u_projTransInv", camera.invProjectionView);
         shaderProgram.setUniformf("u_resolution", graphicsWidth, graphicsHeight);
         shaderProgram.setUniformi("u_tracking", particleTracker.isTracking() ? 1 : 0);
-        shaderProgram.setUniformf("u_void_dist", Environment.settings.world.voidStartDistance.get());
+        shaderProgram.setUniformf("u_void_dist", Environment.settings.worldgen.voidStartDistance.get());
         shaderProgram.setUniformf("u_cam_pos", camera.position);
     }
 }

@@ -65,6 +65,10 @@ public class WorldGenerationSettings extends Settings {
             "",
             "",
             voidStartDistance.get());
+    public final Settings.Parameter<Integer> chemicalFieldResolution = new Settings.Parameter<>(
+            "Chemical Field Resolution",
+            "How many cells wide the chemical field is.",
+            1024);
     public final Settings.Parameter<Boolean> generateLightNoiseTexture = new Settings.Parameter<>(
             "",
             "",
@@ -73,6 +77,10 @@ public class WorldGenerationSettings extends Settings {
             "",
             "",
             true);
+    public final Settings.Parameter<Integer> lightMapResolution = new Settings.Parameter<>(
+            "Light Map Resolution",
+            "How many cells wide the light map is.",
+            256);
 
     public WorldGenerationSettings() {
         super("World Generation");

@@ -157,7 +157,7 @@ public class EnvironmentRenderer implements Renderer {
                 if (rock.isEdgeAttached(i))
                     continue;
                 Vector2[] edge = rock.getEdge(i);
-                float w = 0.05f * Environment.settings.world.maxRockSize.get();
+                float w = 0.05f * Environment.settings.worldgen.maxRockSize.get();
                 Vector2 dir = edge[1].cpy().sub(edge[0]).setLength(w / 2f);
                 Vector2 start = edge[0].cpy().sub(dir);
                 Vector2 end = edge[1].cpy().add(dir);
