@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.common.collect.Iterators;
 import com.protoevo.core.Simulation;
 import com.protoevo.env.Environment;
+import org.apache.commons.lang3.ArrayUtils;
 
 import java.io.Serializable;
 import java.util.*;
@@ -554,5 +555,18 @@ public class NetworkGenome implements Serializable
 
 	public Iterator<SynapseGene> iterateSynapseGenes() {
 		return Iterators.forArray(synapseGenes);
+	}
+
+	public void merge(NetworkGenome other) {
+		sensorNeuronGenes = ArrayUtils.addAll(sensorNeuronGenes, other.sensorNeuronGenes);
+		hiddenNeuronGenes = ArrayUtils.addAll(hiddenNeuronGenes, other.hiddenNeuronGenes);
+		outputNeuronGenes = ArrayUtils.addAll(outputNeuronGenes, other.outputNeuronGenes);
+		synapseGenes = ArrayUtils.addAll(synapseGenes, other.synapseGenes);
+//		for (NeuronGene gene : other.hiddenNeuronGenes)
+//			addNeuronGene(gene);
+//		for (NeuronGene gene : other.outputNeuronGenes)
+//			addNeuronGene(gene);
+//		for (SynapseGene gene : other.synapseGenes)
+//			addSynapseGene(gene);
 	}
 }

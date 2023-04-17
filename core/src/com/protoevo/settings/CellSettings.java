@@ -50,7 +50,7 @@ public class CellSettings extends Settings {
     public final Settings.Parameter<Float> temperatureToleranceEnergyCost = new Settings.Parameter<>(
             "Temperature Tolerance Energy Cost",
             "Energy cost per degree of temperature tolerance per unit time.",
-            5f);
+            1f);
     public final Settings.Parameter<Float> activityHeatGeneration = new Settings.Parameter<>(
             "Activity Heat Generation",
             "Heat generated per unit activity per unit time.",

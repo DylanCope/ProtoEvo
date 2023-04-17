@@ -14,7 +14,7 @@ public class ProtozoaSettings extends Settings {
     public final Settings.Parameter<Boolean> matingEnabled = new Settings.Parameter<>(
             "Mating Enabled",
             "Is mating enabled?",
-            false);
+            true);
     public final Settings.Parameter<Float> minBirthRadius = new Settings.Parameter<>(
             "Min Birth Radius",
             "The minimum radius of a protozoan at birth.",

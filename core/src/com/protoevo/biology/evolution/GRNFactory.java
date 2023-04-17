@@ -181,7 +181,8 @@ public class GRNFactory {
         }
 
         for (GeneExpressionFunction.ExpressionNode node : expressionNodes.values()) {
-            addExpressionIO(networkGenome, regulators, node);
+            if (!networkGenome.hasOutput(getOutputName(node.getName())))
+                addExpressionIO(networkGenome, regulators, node);
         }
 
         return networkGenome;

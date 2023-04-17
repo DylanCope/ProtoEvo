@@ -291,7 +291,11 @@ public class GeneExpressionFunction implements Evolvable.Component, Serializable
     }
 
     public void buildGeneRegulatoryNetwork() {
-        grnGenome = GRNFactory.createNetworkGenome(this);
+        if (grnGenome == null)
+            grnGenome = GRNFactory.createNetworkGenome(this);
+        else  // ensure grn IO is up to date
+            GRNFactory.createIO(grnGenome, this);
+
         geneRegulatoryNetwork = grnGenome.phenotype();
 
         for (int i = 0; i < geneRegulatoryNetwork.getDepth() + 1; i++)
@@ -507,6 +511,8 @@ public class GeneExpressionFunction implements Evolvable.Component, Serializable
         other.expressionNodes.forEach(expressionNodes::putIfAbsent);
         other.regulators.forEach(regulators::putIfAbsent);
         other.targetMap.forEach(targetMap::putIfAbsent);
+        if (other.grnGenome != null && grnGenome != null)
+            grnGenome.merge(other.grnGenome);
     }
 
     public Regulators getGeneRegulators() {

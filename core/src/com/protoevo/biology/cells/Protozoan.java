@@ -95,16 +95,20 @@ public class Protozoan extends EvolvableCell
 				if (other instanceof Protozoan) {
 					Protozoan protozoan = (Protozoan) other;
 					if (protozoan.mateDesire) {
-
-						crossOverGenome = protozoan.getGeneExpressionFunction();
-						protozoan.crossOverGenome = getGeneExpressionFunction();
-						protozoan.matingCooldown = 1;
+						setMate(protozoan);
+						return;
 					}
 				}
 			}
 		} else {
 			matingCooldown -= delta;
 		}
+	}
+
+	public void setMate(Protozoan other) {
+		crossOverGenome = other.getGeneExpressionFunction();
+		other.crossOverGenome = getGeneExpressionFunction();
+		other.matingCooldown = 1;
 	}
 
 	private boolean removeEngulfedCondition(Cell c) {
