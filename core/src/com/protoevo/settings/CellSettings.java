@@ -14,11 +14,11 @@ public class CellSettings extends Settings {
     public final Settings.Parameter<Float> chemicalExtractionPlantConversion = new Settings.Parameter<>(
             "Chemical Extraction Plant Conversion",
             "The amount of food extracted from plant matter in the chemical solution.",
-            5e-4f);
+            1e-3f);
     public final Settings.Parameter<Float> chemicalExtractionMeatConversion = new Settings.Parameter<>(
             "Chemical Extraction Meat Conversion",
             "The amount of food extracted from meat matter in the chemical solution.",
-            5e-6f);
+            1e-4f);
     public final Settings.Parameter<Float> chemicalExtractionFactor = new Settings.Parameter<>(
             "Chemical Extraction Factor",
             "The amount to dilute the chemical solution by when extracting food.",
@@ -26,11 +26,11 @@ public class CellSettings extends Settings {
     public final Settings.Parameter<Double> energyRequiredForGrowth = new Settings.Parameter<>(
             "Energy Required For Growth",
             "Factor controlling how much energy is required for growth.",
-            1e4);
+            1e3);
     public final Settings.Parameter<Float> growthFactor = new Settings.Parameter<>(
             "Cell Growth Factor",
             "Controls how quickly cells can grow.",
-            2e-2f);
+            3e-2f);
     public final Settings.Parameter<Float> digestionFactor = new Settings.Parameter<>(
             "Digestion Factor",
             "Controls how quickly cells can digest food.",
@@ -38,7 +38,7 @@ public class CellSettings extends Settings {
     public final Settings.Parameter<Float> temperatureDeathRate = new Settings.Parameter<>(
             "Temperature Death Rate",
             "Rate at which a cell looses health when outside its temperature tolerance range.",
-            .2f);
+            .02f);
     public final Settings.Parameter<Float> minTemperatureTolerance = new Settings.Parameter<>(
             "Min Temperature Tolerance",
             "Minimum temperature tolerance (+/- degrees before suffering adverse effects).",
@@ -50,9 +50,9 @@ public class CellSettings extends Settings {
     public final Settings.Parameter<Float> temperatureToleranceEnergyCost = new Settings.Parameter<>(
             "Temperature Tolerance Energy Cost",
             "Energy cost per degree of temperature tolerance per unit time.",
-            1f);
+            5f);
     public final Settings.Parameter<Float> activityHeatGeneration = new Settings.Parameter<>(
-            "Activity Heat Generation",
+            "Cell Temperature Death Rate",
             "Heat generated per unit activity per unit time.",
             2f);
     public final Settings.Parameter<Float> basicParticleMassDensity = new Settings.Parameter<>(

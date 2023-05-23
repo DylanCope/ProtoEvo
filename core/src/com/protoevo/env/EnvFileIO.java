@@ -32,8 +32,9 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class EnvFileIO {
-    private static final FSTConfiguration fstConfig = FSTConfiguration.createDefaultConfiguration();
-    static {
+
+    public static FSTConfiguration getFSTConfig() {
+        FSTConfiguration fstConfig = FSTConfiguration.createDefaultConfiguration();
         fstConfig.registerClass(
                 Environment.class,
                 Particle.class,
@@ -81,9 +82,8 @@ public class EnvFileIO {
                 CollectionTrait.class,
                 Vector2.class
         );
-    }
-
-    public static FSTConfiguration getFSTConfig() {
+//        fstConfig.setShareReferences(false);
+//        fstConfig.set
         return fstConfig;
     }
 
@@ -129,11 +129,11 @@ public class EnvFileIO {
 
         serialize(env, Environment.class, filename + "/environment.dat");
 
-        env.updateChunkAllocations();
-        env.getChunks().getChunkIndices().forEach(i -> {
-            List<Cell> cells = chunks.getChunkStream(i).collect(Collectors.toList());
-            serialize(cells, cells.getClass(), filename + "/chunks/" + i + ".chunk");
-        });
+//        env.updateChunkAllocations();
+//        env.getChunks().getChunkIndices().forEach(i -> {
+//            List<Cell> cells = chunks.getChunkStream(i).collect(Collectors.toList());
+//            serialize(cells, cells.getClass(), filename + "/chunks/" + i + ".chunk");
+//        });
     }
 
     public static void deserializeChunk(String filename, List<Cell> cells) {
@@ -146,17 +146,17 @@ public class EnvFileIO {
         Environment env = deserialize(filename + "/environment.dat", Environment.class);
         env.createTransientObjects();
 
-        Path chunksDir = Paths.get(filename + "/chunks");
-        List<Cell> cells = new ArrayList<>();
-        try (Stream<Path> pathStream = Files.list(chunksDir)) {
-            pathStream.filter(f -> !Files.isDirectory(f) && f.toString().endsWith(".chunk"))
-                    .forEach(f -> deserializeChunk(f.toString(), cells));
-        } catch (IOException e) {
-            throw new RuntimeException("Invalid input directory: " + chunksDir, e);
-        }
-
-        for (Cell cell : cells)
-            env.add(cell);
+//        Path chunksDir = Paths.get(filename + "/chunks");
+//        List<Cell> cells = new ArrayList<>();
+//        try (Stream<Path> pathStream = Files.list(chunksDir)) {
+//            pathStream.filter(f -> !Files.isDirectory(f) && f.toString().endsWith(".chunk"))
+//                    .forEach(f -> deserializeChunk(f.toString(), cells));
+//        } catch (IOException e) {
+//            throw new RuntimeException("Invalid input directory: " + chunksDir, e);
+//        }
+//
+//        for (Cell cell : cells)
+//            env.add(cell);
 
         env.rebuildWorld();
         return env;

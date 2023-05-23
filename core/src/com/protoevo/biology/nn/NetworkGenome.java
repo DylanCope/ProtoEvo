@@ -326,7 +326,7 @@ public class NetworkGenome implements Serializable
 	}
 
 	public void mutateSynapseGene(int idx) {
-		if (Simulation.RANDOM.nextBoolean())
+		if (Simulation.RANDOM.nextFloat() < Environment.settings.evo.structuralMutationChance.get())
 			synapseGenes[idx] = synapseGenes[idx].cloneWithMutation();
 		else if (Math.random() < synapseGenes[idx].getMutationRate())
 			createHiddenBetween(synapseGenes[idx]);
@@ -355,9 +355,15 @@ public class NetworkGenome implements Serializable
 	public NetworkGenome crossover(NetworkGenome other)
 	{
 		Map<Integer, SynapseGene> myConnections = Arrays.stream(synapseGenes)
-				.collect(Collectors.toMap(SynapseGene::getInnovation, Function.identity()));
+				.collect(Collectors.toMap(
+						SynapseGene::getInnovation,
+						Function.identity(),
+						(x1, x2) -> random.nextBoolean() ? x1 : x2));
 		Map<Integer, SynapseGene> theirConnections = Arrays.stream(other.synapseGenes)
-				.collect(Collectors.toMap(SynapseGene::getInnovation, Function.identity()));
+				.collect(Collectors.toMap(
+						SynapseGene::getInnovation,
+						Function.identity(),
+						(x1, x2) -> random.nextBoolean() ? x1 : x2));
 
 		Set<Integer> innovationNumbers = new HashSet<>();
 		innovationNumbers.addAll(myConnections.keySet());
@@ -471,10 +477,15 @@ public class NetworkGenome implements Serializable
 		for (SynapseGene g : synapseGenes) {
 			if (g.isDisabled())
 				continue;
-			int i = inputCounts[g.getOut().getId()];
-			neurons[g.getOut().getId()].getInputs()[i] = neurons[g.getIn().getId()];
-			neurons[g.getOut().getId()].getWeights()[i] = g.getWeight();
-			inputCounts[g.getOut().getId()]++;
+			int inIdx = g.getIn().getId();
+			int outIdx = g.getOut().getId();
+			if (inIdx >= neurons.length || outIdx >= neurons.length
+					|| neurons[outIdx].getInputs().length == 0)
+				continue;
+			int i = inputCounts[outIdx];
+			neurons[outIdx].getInputs()[i] = neurons[inIdx];
+			neurons[outIdx].getWeights()[i] = g.getWeight();
+			inputCounts[outIdx]++;
 		}
 
 		return new NeuralNetwork(neurons);

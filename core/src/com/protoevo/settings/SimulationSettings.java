@@ -17,7 +17,7 @@ public class SimulationSettings extends Settings {
     public final Settings.Parameter<Float> simulationUpdateDelta = new Settings.Parameter<>(
             "Simulation Update Delta",
             "Amount of time to step the simulation with each update.",
-            1f / 1000f,
+            5f / 1000f,
             Statistics.ComplexUnit.TIME
     );
     public final Settings.Parameter<Boolean> finishOnProtozoaExtinction = new Settings.Parameter<>(

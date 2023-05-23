@@ -1,5 +1,6 @@
 package com.protoevo.biology.evolution;
 
+import com.protoevo.biology.nn.NetworkGenome;
 import com.protoevo.core.Simulation;
 
 import java.io.Serializable;
@@ -134,13 +135,16 @@ public interface Evolvable extends Serializable {
     }
 
     static <T extends Evolvable> T createNew(Class<T> clazz, GeneExpressionFunction fn) {
+        NetworkGenome grnGenome = fn.getGRNGenome();
         Supplier<T> constructor = createEvolvableConstructor(clazz, fn);
         T newEvolvable = createNew(constructor, fn);
-        fn = newEvolvable.getGeneExpressionFunction();
-        fn.registerTargetEvolvable(newEvolvable.name(), newEvolvable);
-        fn.build();
+        GeneExpressionFunction newFn = newEvolvable.getGeneExpressionFunction();
+        if (grnGenome != null)
+            newFn.setGRNGenome(grnGenome);
+        newFn.registerTargetEvolvable(newEvolvable.name(), newEvolvable);
+        newFn.build();
         newEvolvable.build();
-        fn.update();
+        newFn.update();
         return newEvolvable;
     }
 

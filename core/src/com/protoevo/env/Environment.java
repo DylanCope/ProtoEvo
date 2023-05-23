@@ -40,7 +40,7 @@ public class Environment implements Serializable
 	public final ConcurrentHashMap<CauseOfDeath, Integer> causeOfDeathCounts =
 			new ConcurrentHashMap<>(CauseOfDeath.values().length, 1);
 
-	private final Chunks chunks = new Chunks();
+	private transient Chunks chunks;
 
 	private Map<Class<? extends Particle>, SerializableFunction<Float, Vector2>> spawnPositionFns;
 
@@ -60,7 +60,7 @@ public class Environment implements Serializable
 
 	@JsonIgnore
 	private transient Set<Cell> cellsToAdd;
-	private transient ConcurrentHashMap<Long, Cell> cells;
+	private final ConcurrentHashMap<Long, Cell> cells = new ConcurrentHashMap<>();
 	private boolean hasInitialised, hasStarted;
 	private Vector2[] populationStartCentres;
 	private final JointsManager jointsManager;
@@ -102,7 +102,8 @@ public class Environment implements Serializable
 
 	public void createTransientObjects() {
 		cellsToAdd = new HashSet<>();
-		cells = new ConcurrentHashMap<>();
+//		cells = new ConcurrentHashMap<>();
+		chunks = new Chunks();
 		chunks.initialise();
 	}
 
@@ -319,7 +320,7 @@ public class Environment implements Serializable
 	}
 
 	public Vector2 randomPosition(float entityRadius) {
-		return randomPosition(entityRadius, Geometry.ZERO, Environment.settings.worldgen.rockClusterRadius.get());
+		return randomPosition(entityRadius, Geometry.ZERO, Environment.settings.worldgen.minRockClusterRadius.get());
 	}
 
 	public void tryAdd(Cell cell) {
