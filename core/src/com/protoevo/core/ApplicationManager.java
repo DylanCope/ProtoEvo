@@ -15,17 +15,22 @@ public class ApplicationManager {
 
     public final static boolean windowed = false, borderlessWindowed = true;
     private volatile boolean headless = false, applicationRunning = true, saveOnExit = true;
+    private boolean onlyHeadless = false;
     private Simulation simulation;
     private GraphicsAdapter graphics;
 
     public static void main(String[] args) {
         System.out.println("Current JVM version: " + System.getProperty("java.version"));
         Map<String, String> argsMap = parseArgs(args);
+        System.out.println("Parsed arguments: " + argsMap);
 
         ApplicationManager app = new ApplicationManager();
 
-        if (argsMap.containsKey("headless") && Boolean.parseBoolean(argsMap.get("headless"))) {
-            app.switchToHeadlessMode();
+        boolean headless = argsMap.containsKey("headless") 
+                            && Boolean.parseBoolean(argsMap.get("headless"));
+        
+        if (headless) {
+            app.setOnlyHeadless();
             app.setSimulation(new Simulation());
         }
 
@@ -65,6 +70,15 @@ public class ApplicationManager {
         } else {
             notifySimulationReady();
         }
+    }
+
+    public void setOnlyHeadless() {
+        onlyHeadless = true;
+        switchToHeadlessMode();
+    }
+
+    public boolean isOnlyHeadless() {
+        return onlyHeadless;
     }
 
     public boolean hasSimulation() {

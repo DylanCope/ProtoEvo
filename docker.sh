@@ -1,0 +1,1 @@
+docker run --gpus all --rm -it --name gradle -v $(pwd):/home/gradle gradle:8.1.1-jdk8 bash

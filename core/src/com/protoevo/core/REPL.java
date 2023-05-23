@@ -201,6 +201,11 @@ public class REPL implements Runnable
     }
 
     public Boolean toggleUI(String[] args) {
+        if (manager.isOnlyHeadless()) {
+            System.out.println("Cannot toggle UI when only headless.");
+            return false;
+        }
+
         if (manager != null) {
             System.out.println("Toggling UI.");
             synchronized (simulation) {
