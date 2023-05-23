@@ -96,9 +96,12 @@ public class NeuralNetwork implements Serializable
         visited[neuron.getId()] = true;
         int maxDepth = 0;
         for (Neuron input : neuron.getInputs()) {
+            try {
             if (visited[input.getId()])
                 continue;
-
+            } catch (NullPointerException e) {
+                throw e;
+            }
             int depth = computeDepth(input, visited);
             maxDepth = Math.max(maxDepth, depth);
         }

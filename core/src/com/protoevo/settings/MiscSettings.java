@@ -64,6 +64,12 @@ public class MiscSettings extends Settings {
             "Spatial Hash Resolution",
             "The resolution of the spatial hash used for local population caps.",
             15);
+    public final Settings.Parameter<Float> checkCellJoiningsInterval = new Settings.Parameter<>(
+            "Check Cell Joinings Interval",
+            "The amount of time between checking for cell joinings.",
+            0.1f
+    );
+
 
     public MiscSettings() {
         super("Misc");

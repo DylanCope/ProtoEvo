@@ -40,10 +40,11 @@ public abstract class Cell extends Particle implements Serializable {
 	private double massChangeForGrowth = 0f;
 	private final Map<ComplexMolecule, Float> availableComplexMolecules = new ConcurrentHashMap<>(0);
 	private final Map<Long, Long> cellJoinings = new ConcurrentHashMap<>();  // maps cell id to joining id
+	private final Collection<Long> attachedCellIDs = new LinkedHashSet<>(0); // cells attached to this cell
+	private final Set<Long> cellIdsInMultiCellGroup = new HashSet<>(0); // cells in the same multi-cell group
 	private final Map<Food.Type, Float> foodDigestionRates = new HashMap<>(0);
 	private final Map<Food.Type, Food> foodToDigest = new HashMap<>(0);
-	private final Set<ConstructionProject> constructionProjects = new HashSet<>(0);
-	private final Set<Long> cellIdsOfConnected = new HashSet<>(0);
+	private final Set<ConstructionProject> constructionProjects = new LinkedHashSet<>(0);
 	private ArrayList<Organelle> organelles = new ArrayList<>();
 	private boolean hasBurst = false;
 	private float repairRate = 1f;
@@ -56,6 +57,7 @@ public abstract class Cell extends Particle implements Serializable {
 
 	private Cell engulfer = null;
 	private boolean fullyEngulfed = false;
+	private float joiningCheckCounter = 0f;
 
 	public void update(float delta) {
 		if (health <= 0.05f && !super.isDead()) {
@@ -78,7 +80,14 @@ public abstract class Cell extends Particle implements Serializable {
 		for (Organelle organelle : organelles)
 			organelle.update(delta);
 
-		cellJoinings.entrySet().removeIf(this::detachCellCondition);
+
+		if (joiningCheckCounter >= Environment.settings.misc.checkCellJoiningsInterval.get()) {
+			cellJoinings.entrySet().removeIf(this::detachCellCondition);
+			attachedCellIDs.clear();
+			attachedCellIDs.addAll(cellJoinings.keySet());
+			joiningCheckCounter = 0;
+		}
+		joiningCheckCounter += delta;
 
 		decayResources(delta);
 	}
@@ -215,11 +224,11 @@ public abstract class Cell extends Particle implements Serializable {
 	}
 
 	public Collection<Long> getAttachedCellIDs() {
-		return cellJoinings.keySet();
+		return attachedCellIDs;
 	}
 
 	public boolean isAttachedTo(Cell other) {
-		return cellJoinings.containsKey(other.getId());
+		return attachedCellIDs.contains(other.getId());
 	}
 
 	public void setOrganelles(ArrayList<Organelle> organelles) {
@@ -474,8 +483,8 @@ public abstract class Cell extends Particle implements Serializable {
 
 	public boolean notBoundTo(Cell otherCell) {
 		return !(
-			cellJoinings.containsKey(otherCell.getId())
-			|| otherCell.cellJoinings.containsKey(getId())
+			attachedCellIDs.contains(otherCell.getId())
+			|| otherCell.attachedCellIDs.contains(getId())
 		);
 	}
 
@@ -537,15 +546,16 @@ public abstract class Cell extends Particle implements Serializable {
 
 	@Override
 	public float getDampeningFactor() {
-		if (cellJoinings.size() == 0 || getVel().len2() < 1e-12f)
+		if (getNumAttachedCells() == 0 || getVel().len2() < 1e-12f)
 			return super.getDampeningFactor();
 
 		float k = 0;
-		for (long cellId : cellJoinings.keySet()) {
+		float speed = getSpeed();
+		for (long cellId : getAttachedCellIDs()) {
 			Cell otherCell = getCell(cellId);
 			if (otherCell != null) {
 				tmp.set(otherCell.getPos()).sub(getPos()).nor();
-				k += tmp.dot(getVel()) / getVel().len();
+				k += tmp.dot(getVel()) / speed;
 			}
 			if (k >= 1)
 				return 0;
@@ -594,7 +604,7 @@ public abstract class Cell extends Particle implements Serializable {
 		stats.put("Repair Rate", 100 * getRepairRate(),
 				Statistics.ComplexUnit.PERCENTAGE_PER_TIME);
 
-		if (cellJoinings.size() > 0) {
+		if (getNumAttachedCells() > 0) {
 			stats.putCount("Num Cell Bindings", cellJoinings.size());
 			stats.putCount("Multicell Structure Size", getNumCellsInMulticellularOrganism());
 		}
@@ -612,9 +622,9 @@ public abstract class Cell extends Particle implements Serializable {
 	}
 
 	public int getNumCellsInMulticellularOrganism() {
-		cellIdsOfConnected.clear();
-		cellIdsOfConnected.add(getId());
-		return getNumCellsInMulticellularOrganism(cellIdsOfConnected);
+		cellIdsInMultiCellGroup.clear();
+		cellIdsInMultiCellGroup.add(getId());
+		return getNumCellsInMulticellularOrganism(cellIdsInMultiCellGroup);
 	}
 
 	public int getNumCellsInMulticellularOrganism(Set<Long> visited) {
@@ -653,6 +663,7 @@ public abstract class Cell extends Particle implements Serializable {
 				other.cellJoinings.remove(this.getId());
 		}
 		cellJoinings.clear();
+		attachedCellIDs.clear();
 		super.kill(causeOfDeath);
 	}
 
@@ -846,7 +857,7 @@ public abstract class Cell extends Particle implements Serializable {
 	}
 
 	public int getNumAttachedCells() {
-		return cellJoinings.size();
+		return attachedCellIDs.size();
 	}
 
 	public float getShieldFactor() {

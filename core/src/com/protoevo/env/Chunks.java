@@ -9,7 +9,9 @@ import com.protoevo.physics.Particle;
 import com.protoevo.physics.SpatialHash;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -17,7 +19,7 @@ import java.util.stream.Stream;
 public class Chunks implements Serializable {
     public static final long serialVersionUID = 1L;
 
-    private transient ConcurrentHashMap<Class<? extends Cell>, SpatialHash<Cell>> cellHashes;
+    private ConcurrentHashMap<Class<? extends Cell>, SpatialHash<Cell>> cellHashes;
     private ConcurrentHashMap<Class<? extends Cell>, Integer> globalCellCounts, globalCaps;
 
     public void initialise() {
@@ -87,6 +89,14 @@ public class Chunks implements Serializable {
     public Stream<Cell> getChunkStream(int i) {
         return cellHashes.values().stream()
                 .flatMap(hash -> hash.getChunkContents(i).stream());
+    }
+
+    public List<Cell> getChunkCells(int i) {
+        List<Cell> chunkCells = new ArrayList<>();
+        for (SpatialHash<Cell> hash : cellHashes.values()) {
+            chunkCells.addAll(hash.getChunkContents(i));
+        }
+        return chunkCells;
     }
 
     public Collection<Integer> getChunkIndices() {

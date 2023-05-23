@@ -511,8 +511,6 @@ public class GeneExpressionFunction implements Evolvable.Component, Serializable
         other.expressionNodes.forEach(expressionNodes::putIfAbsent);
         other.regulators.forEach(regulators::putIfAbsent);
         other.targetMap.forEach(targetMap::putIfAbsent);
-        if (other.grnGenome != null && grnGenome != null)
-            grnGenome.merge(other.grnGenome);
     }
 
     public Regulators getGeneRegulators() {
