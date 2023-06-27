@@ -164,18 +164,6 @@ public class EnvironmentRenderer implements Renderer {
                 shapeDrawer.line(start, end, w);
             }
         }
-
-//        g.setStroke(new BasicStroke(toRenderSpace(0.02f * Settings.maxRockSize)));
-////			g.drawPolygon(xPoints, yPoints, screenPoints.length);
-//        for (int i = 0; i < rock.getEdges().length; i++) {
-//            if (rock.isEdgeAttached(i))
-//                continue;
-//            Vector2[] edge = rock.getEdge(i);
-//            Vector2 start = toRenderSpace(edge[0]);
-//            Vector2 end = toRenderSpace(edge[1]);
-//            g.drawLine((int) start.getX(), (int) start.getY(),
-//                    (int) end.getX(), (int) end.getY());
-//        }
     }
 
     public void renderPhysicsDebug() {

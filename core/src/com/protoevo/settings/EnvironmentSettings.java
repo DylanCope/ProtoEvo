@@ -28,7 +28,7 @@ public class EnvironmentSettings extends Settings {
     public final Settings.Parameter<Float> nightLightLevel = new Settings.Parameter<>(
             "Night Light Level",
             "The light level at night.",
-            0.15f);
+            0.3f);
     public final Settings.Parameter<Float> dayNightTransition = new Settings.Parameter<>(
             "Day/Night Transition",
             "Percentage of day/night cycle spent transitioning between day and night.",

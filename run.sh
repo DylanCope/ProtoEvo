@@ -1,1 +1,0 @@
-gradle run --args="--headless" --console=plain

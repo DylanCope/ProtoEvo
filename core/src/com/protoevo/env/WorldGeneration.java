@@ -18,7 +18,7 @@ public class WorldGeneration {
         List<Rock> rocks = new ArrayList<>();
 
         if (Environment.settings.worldgen.closedRingBorder.get()) {
-            generateRingOfRocks(rocks, Vector2.Zero.cpy(), 1.05f * Environment.settings.worldgen.radius.get(), 0);
+            generateRingOfRocks(rocks, Vector2.Zero.cpy(), 1.15f * Environment.settings.worldgen.radius.get(), 0);
         }
 
         float minR = Environment.settings.worldgen.minRockClusterRadius.get();

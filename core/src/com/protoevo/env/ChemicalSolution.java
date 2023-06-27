@@ -467,6 +467,13 @@ public class ChemicalSolution implements Serializable {
     }
 
     public float getCellSize() {
-        return cellSizeX;
+        return (getMaxX() - getMinX()) / getNXCells();
     }
+
+    public Colour getColour(float x, float y) {
+        int gridX = toChemicalGridX(x);
+        int gridY = toChemicalGridY(y);
+        return colours[gridX][gridY];
+    }
+
 }

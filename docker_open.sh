@@ -1,0 +1,1 @@
+docker run --gpus all --rm -it --name protoevo -v $(pwd):/home/gradle dylan/protoevo:latest bash

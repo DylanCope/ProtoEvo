@@ -38,7 +38,7 @@ public class CellSettings extends Settings {
     public final Settings.Parameter<Float> temperatureDeathRate = new Settings.Parameter<>(
             "Temperature Death Rate",
             "Rate at which a cell looses health when outside its temperature tolerance range.",
-            .02f);
+            .01f);
     public final Settings.Parameter<Float> minTemperatureTolerance = new Settings.Parameter<>(
             "Min Temperature Tolerance",
             "Minimum temperature tolerance (+/- degrees before suffering adverse effects).",
@@ -54,7 +54,7 @@ public class CellSettings extends Settings {
     public final Settings.Parameter<Float> activityHeatGeneration = new Settings.Parameter<>(
             "Cell Temperature Death Rate",
             "Heat generated per unit activity per unit time.",
-            2f);
+            3f);
     public final Settings.Parameter<Float> basicParticleMassDensity = new Settings.Parameter<>(
             "Base Particle Mass Density",
             "The mass density of a basic particle.",

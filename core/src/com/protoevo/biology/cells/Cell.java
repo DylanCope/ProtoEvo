@@ -22,6 +22,7 @@ import com.protoevo.utils.Utils;
 import java.io.Serializable;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 import static com.protoevo.utils.Utils.lerp;
 
@@ -40,7 +41,7 @@ public abstract class Cell extends Particle implements Serializable {
 	private double massChangeForGrowth = 0f;
 	private final Map<ComplexMolecule, Float> availableComplexMolecules = new ConcurrentHashMap<>(0);
 	private final Map<Long, Long> cellJoinings = new ConcurrentHashMap<>();  // maps cell id to joining id
-	private final Collection<Long> attachedCellIDs = new LinkedHashSet<>(0); // cells attached to this cell
+	private final Collection<Long> attachedCellIDs = new ConcurrentLinkedQueue<>(); // cells attached to this cell
 	private final Set<Long> cellIdsInMultiCellGroup = new HashSet<>(0); // cells in the same multi-cell group
 	private final Map<Food.Type, Float> foodDigestionRates = new HashMap<>(0);
 	private final Map<Food.Type, Food> foodToDigest = new HashMap<>(0);

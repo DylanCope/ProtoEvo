@@ -1,7 +1,6 @@
 package com.protoevo.core;
 
 import com.badlogic.gdx.Gdx;
-import com.badlogic.gdx.Graphics;
 import com.badlogic.gdx.backends.lwjgl3.Lwjgl3Application;
 import com.badlogic.gdx.backends.lwjgl3.Lwjgl3ApplicationConfiguration;
 import com.protoevo.ui.GraphicsAdapter;
@@ -25,6 +24,10 @@ public class ApplicationManager {
         System.out.println("Parsed arguments: " + argsMap);
 
         ApplicationManager app = new ApplicationManager();
+
+        if (argsMap.containsKey("debug")) {
+            DebugMode.setMode(DebugMode.SIMPLE_INFO);
+        }
 
         boolean headless = argsMap.containsKey("headless") 
                             && Boolean.parseBoolean(argsMap.get("headless"));
