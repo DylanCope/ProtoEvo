@@ -8,6 +8,7 @@ import com.protoevo.env.Environment;
 import com.protoevo.settings.SimulationSettings;
 import com.protoevo.utils.EnvironmentImageRenderer;
 import com.protoevo.utils.FileIO;
+import com.protoevo.utils.PythonRunner;
 import com.protoevo.utils.TimedEventsManager;
 
 import java.awt.*;
@@ -378,6 +379,8 @@ public class Simulation implements Runnable
 					.collect(Collectors.toList());
 			FileIO.writeJson(protozoaGenomes, "saves/" + name + "/stats/protozoa-genomes/" + timeStamp);
 		}
+
+		PythonRunner.runPython("pyprotoevo.create_plots", "--quiet --simulation " + name);
 	}
 
 	public void toggleDebug() {

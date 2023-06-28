@@ -18,7 +18,8 @@ def unit_to_string(unit: dict) -> str:
         'ENERGY': 'J',
         'COUNT': '',
         'ANGLE': 'rad',
-        'PERCENTAGE': '%'
+        'PERCENTAGE': '%',
+        'TEMPERATURE': '°C',
     }
     return ''.join([
         units[key] + ('' if val == 1 else '^{' + str(val) + '}')

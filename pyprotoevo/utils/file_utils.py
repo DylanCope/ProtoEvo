@@ -37,24 +37,26 @@ class SimulationFiles:
             return None
 
         stats_df = pd.DataFrame([
-                {
+                {'Time Stamp': self.time_from_string(time_stamp), **{
                     stat: self.get_stat_value(time_stamp, stat)
                     for stat in self.basic_stat_names
                     if self.has_stat(time_stamp, stat)
-                }
+                }}
                 for time_stamp in self.stats
             ] + [
-                {
+                {'Time Stamp': self.time_from_string(time_stamp), **{
                     f'{stat} Error': self.get_stat_error(time_stamp, stat)
                     for stat in self.basic_stat_names
                     if self.has_stat(time_stamp, stat)
-                }
+                }}
                 for time_stamp in self.stats
             ])
 
         stats_df.fillna(0, inplace=True)
         stats_df.replace(to_replace='NaN', value=np.nan, inplace=True)
         stats_df.head()
+
+        stats_df['Wall Time'] = stats_df['Time Stamp'] - stats_df['Time Stamp'].min()
 
         return stats_df
 
@@ -74,6 +76,15 @@ class SimulationFiles:
             if all(x not in stat for x in black_list)
         ]
 
+    @cached_property
+    def stat_types(self) -> dict:
+        return {
+            stat: record['unit']['units']
+            for time_stamp in self.stats.keys()
+            for stat, record in self.stats[time_stamp]['stats'].items()
+            if record['unit'] is not None
+        }
+
     def get_stats_at_time(self, time_stamp) -> dict:
         return self.stats[time_stamp]['stats']
 
@@ -86,11 +97,14 @@ class SimulationFiles:
     def has_stat(self, time_stamp, stat_name) -> bool:
         return stat_name in self.stats[time_stamp]['stats']
 
+    def time_from_string(self, time_stamp: str) -> datetime:
+        return datetime(*map(int, time_stamp.split('-')))
+
     @cached_property
     def generations_df(self) -> pd.DataFrame:
         generation_df = pd.DataFrame([
             {
-                'Time': datetime(*map(int, time_stamp.split('-'))),
+                'Time': self.time_from_string(time_stamp),
                 'Time Stamp': time_stamp,
                 'Generation': self.get_stat_value(time_stamp, 'Max Protozoa Generation'),
             }
