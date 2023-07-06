@@ -44,6 +44,12 @@ public class JCudaUtils {    /**
                 new String(toByteArray(process.getErrorStream()));
         String outputMessage =
                 new String(toByteArray(process.getInputStream()));
+
+        if (DebugMode.isDebugMode()) {
+            System.out.println(outputMessage);
+            System.out.println(errorMessage);
+        }
+
         int exitValue = 0;
         try
         {

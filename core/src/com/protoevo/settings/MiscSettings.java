@@ -4,22 +4,29 @@ import com.protoevo.core.Statistics;
 
 public class MiscSettings extends Settings {
 
-    public final Settings.Parameter<Float> timeBetweenSaves = new Settings.Parameter<>(
+    public final Settings.Parameter<Float> timeBetweenHistoricalSaves = new Settings.Parameter<>(
             "Time Between Saves",
-            "Amount of in-simulation time to wait until making a new save.",
+            "Amount of in-simulation time to wait until making a new historical save.",
             500.0f,
-            Statistics.ComplexUnit.TIME
-    );
-    public final Settings.Parameter<Float> historySnapshotTime = new Settings.Parameter<>(
+            Statistics.ComplexUnit.TIME);
+    public final Settings.Parameter<Float> timeBetweenAutoSaves = new Settings.Parameter<>(
+            "Time Between Auto Saves",
+            "Amount of in-simulation time to wait until making a new autosave.",
+            50.0f,
+            Statistics.ComplexUnit.TIME);
+    public final Settings.Parameter<Integer> numberOfAutoSaves = new Settings.Parameter<>(
+            "Number of Auto Saves",
+            "Number of autosaves to keep.",
+            3,
+            Statistics.ComplexUnit.COUNT);
+    public final Settings.Parameter<Float> statisticsSnapshotTime = new Settings.Parameter<>(
             "Save Statistics Time",
             "Amount of in-simulation time between making a new snapshot of the summary statistics.",
-            20.0f, Statistics.ComplexUnit.TIME
-    );
+            20.0f, Statistics.ComplexUnit.TIME);
     public final Settings.Parameter<Boolean> writeGenomes = new Settings.Parameter<>(
             "Write Genomes",
             "Whether or not to write genome information (warning: generates lots of data).",
-            false
-    );
+            false);
     public final Settings.Parameter<Integer> physicsPositionIterations = new Settings.Parameter<>(
             "Physics Position Iterations",
             "Number of iterations to run the physics engine's position solver.",

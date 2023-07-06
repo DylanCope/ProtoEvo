@@ -1,6 +1,5 @@
 package com.protoevo.utils;
 
-import com.badlogic.gdx.Gdx;
 import jcuda.Pointer;
 import jcuda.Sizeof;
 import jcuda.driver.*;
@@ -21,6 +20,8 @@ public class JCudaKernelRunner {
             new JCudaKernelRunner("diffusion");
             return true;
         } catch (RuntimeException ignored) {
+            if (DebugMode.isDebugMode())
+                System.out.println("CUDA is not available.");
             return false;
         }
     }

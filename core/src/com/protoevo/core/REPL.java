@@ -2,11 +2,10 @@ package com.protoevo.core;
 
 import com.protoevo.env.Environment;
 import com.protoevo.settings.Settings;
+import com.protoevo.utils.EnvironmentImageRenderer;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
-
-
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Function;
@@ -42,6 +41,7 @@ public class REPL implements Runnable
         commands.put("set", this::setParam);
         commands.put("getparam", this::getParam);
         commands.put("get", this::getParam);
+        commands.put("screenshot", this::screenshot);
     }
 
     public Boolean help(String[] args) {
@@ -56,6 +56,21 @@ public class REPL implements Runnable
         System.out.println("setparam <param> <value> - Set a parameter.");
         System.out.println("setparam -help - Get help on setting parameters.");
         System.out.println("getparam <param> - Get a parameter.");
+        return true;
+    }
+
+    public Boolean screenshot(String[] args) {
+        try {
+            EnvironmentImageRenderer renderer = new EnvironmentImageRenderer(
+                    1024, 1024, simulation.getEnv()
+            );
+            String outputDir = simulation.getSaveFolder() + "/screenshots";
+            renderer.render(outputDir);
+            System.out.println("Created images in directory: " + outputDir);
+        } catch (Exception e) {
+            System.out.println("Failed to create screenshot: " + e);
+            return false;
+        }
         return true;
     }
 
@@ -201,6 +216,11 @@ public class REPL implements Runnable
     }
 
     public Boolean toggleUI(String[] args) {
+        if (manager.isOnlyHeadless()) {
+            System.out.println("Cannot toggle UI when only headless.");
+            return false;
+        }
+
         if (manager != null) {
             System.out.println("Toggling UI.");
             synchronized (simulation) {

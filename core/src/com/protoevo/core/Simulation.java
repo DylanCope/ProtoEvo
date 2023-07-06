@@ -6,11 +6,16 @@ import com.protoevo.biology.nn.NetworkGenome;
 import com.protoevo.env.EnvFileIO;
 import com.protoevo.env.Environment;
 import com.protoevo.settings.SimulationSettings;
+import com.protoevo.utils.EnvironmentImageRenderer;
 import com.protoevo.utils.FileIO;
+import com.protoevo.utils.PythonRunner;
+import com.protoevo.utils.TimedEventsManager;
 
 import java.awt.*;
 import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -27,7 +32,8 @@ public class Simulation implements Runnable
 	private ApplicationManager manager;
 	private volatile boolean simulate, saveRequested = false, busyOnOtherThread = false;
 	private static boolean paused = false;
-	private float timeDilation = 1, timeSinceSave = 0, timeSinceSnapshot = 0;
+	private float timeDilation = 1, timeSinceSave = 0, timeSinceSnapshot = 0, timeSinceAutoSave = 0;
+	private TimedEventsManager timedEventsManager;
 	
 	public static Random RANDOM = new Random(Environment.settings.simulationSeed.get());
 	private boolean debug = false, initialised = false;
@@ -206,6 +212,9 @@ public class Simulation implements Runnable
 		if (manager != null) {
 			manager.notifySimulationReady();
 		}
+
+//		timedEventsManager = new TimedEventsManager();
+//		timedEventsManager.add();
 	}
 
 	public void run() {
@@ -244,34 +253,58 @@ public class Simulation implements Runnable
 		if (isPaused() || busyOnOtherThread || environment == null)
 			return;
 
-		float delta = timeDilation * Environment.settings.simulationUpdateDelta.get();
-
 		try {
-			environment.update(delta);
-		} catch (Exception e) {
-			e.printStackTrace();
-			System.out.println("Error occurred during simulation. Saving and exiting.");
-			save();
-			repl.close();
-			System.exit(0);
-		}
+			float delta = timeDilation * Environment.settings.simulationUpdateDelta.get();
 
-		timeSinceSave += delta;
-		timeSinceSnapshot += delta;
-
-		if (timeSinceSave >= Environment.settings.misc.timeBetweenSaves.get() || saveRequested) {
-			timeSinceSave = 0;
-			if (saveRequested) {
-				saveRequested = false;
-				System.out.println("\nSaving environment.");
+			try {
+				environment.update(delta);
+			} catch (Exception e) {
+				e.printStackTrace();
+				System.out.println("Error occurred during simulation. Saving and exiting.");
+				save();
+				repl.close();
+				throw e;
 			}
-			saveOnOtherThread();
-		}
 
-		if (timeSinceSnapshot >= Environment.settings.misc.historySnapshotTime.get()) {
-			timeSinceSnapshot = 0;
-			onOtherThread(this::makeStatisticsSnapshot);
+			timeSinceSave += delta;
+			timeSinceSnapshot += delta;
+
+			if (timeSinceSave >= Environment.settings.misc.timeBetweenHistoricalSaves.get() || saveRequested) {
+				timeSinceSave = 0;
+				if (saveRequested) {
+					saveRequested = false;
+					System.out.println("\nSaving environment.");
+				}
+				save();
+			}
+
+			if (timeSinceSnapshot >= Environment.settings.misc.statisticsSnapshotTime.get()) {
+				timeSinceSnapshot = 0;
+				onOtherThread(this::makeStatisticsSnapshot);
+			}
+		} catch (Exception e) {
+			handleCrash(e);
 		}
+	}
+
+	public void handleCrash(Exception e) {
+		String crashFolder = getSaveFolder() + "/crash";
+		try {
+			Files.createDirectories(Paths.get(crashFolder));
+			FileWriter fileWriter = new FileWriter(crashFolder + "/report.txt");
+			PrintWriter printWriter = new PrintWriter(fileWriter);
+			printWriter.println("Timestamp: " + new Date());
+			printWriter.println("Operating system: " + System.getProperty("os.name"));
+			printWriter.println("Operating system version: " + System.getProperty("os.version"));
+			printWriter.println("Free memory: " + Runtime.getRuntime().freeMemory());
+			printWriter.println("Stack Trace:");
+			e.printStackTrace(printWriter);
+			printWriter.close();
+			System.out.println("Wrote crash report to: " + crashFolder);
+		} catch (IOException ioException) {
+			System.err.println("Failed to create crash report: " + ioException + "\nWhen handling exception: " + e);
+		}
+		System.exit(0);
 	}
 
 	public void saveOnOtherThread() {
@@ -320,6 +353,11 @@ public class Simulation implements Runnable
 			return null;
 		String timeStamp = getTimeStampString();
 		String fileName = "saves/" + name + "/env/" + timeStamp;
+
+		EnvironmentImageRenderer renderer = new EnvironmentImageRenderer(1024, 1024, environment);
+		renderer.render(fileName);
+		System.out.println("Created screenshot in directory: " + fileName);
+
 		EnvFileIO.saveEnvironment(environment, fileName);
 		return fileName;
 	}
@@ -341,6 +379,8 @@ public class Simulation implements Runnable
 					.collect(Collectors.toList());
 			FileIO.writeJson(protozoaGenomes, "saves/" + name + "/stats/protozoa-genomes/" + timeStamp);
 		}
+
+		PythonRunner.runPython("pyprotoevo.create_plots", "--quiet --simulation " + name);
 	}
 
 	public void toggleDebug() {

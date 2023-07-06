@@ -1,7 +1,6 @@
 package com.protoevo.core;
 
 import com.badlogic.gdx.Gdx;
-import com.badlogic.gdx.Graphics;
 import com.badlogic.gdx.backends.lwjgl3.Lwjgl3Application;
 import com.badlogic.gdx.backends.lwjgl3.Lwjgl3ApplicationConfiguration;
 import com.protoevo.ui.GraphicsAdapter;
@@ -15,17 +14,26 @@ public class ApplicationManager {
 
     public final static boolean windowed = false, borderlessWindowed = true;
     private volatile boolean headless = false, applicationRunning = true, saveOnExit = true;
+    private boolean onlyHeadless = false;
     private Simulation simulation;
     private GraphicsAdapter graphics;
 
     public static void main(String[] args) {
         System.out.println("Current JVM version: " + System.getProperty("java.version"));
         Map<String, String> argsMap = parseArgs(args);
+        System.out.println("Parsed arguments: " + argsMap);
 
         ApplicationManager app = new ApplicationManager();
 
-        if (argsMap.containsKey("headless") && Boolean.parseBoolean(argsMap.get("headless"))) {
-            app.switchToHeadlessMode();
+        if (argsMap.containsKey("debug")) {
+            DebugMode.setMode(DebugMode.SIMPLE_INFO);
+        }
+
+        boolean headless = argsMap.containsKey("headless") 
+                            && Boolean.parseBoolean(argsMap.get("headless"));
+        
+        if (headless) {
+            app.setOnlyHeadless();
             app.setSimulation(new Simulation());
         }
 
@@ -65,6 +73,15 @@ public class ApplicationManager {
         } else {
             notifySimulationReady();
         }
+    }
+
+    public void setOnlyHeadless() {
+        onlyHeadless = true;
+        switchToHeadlessMode();
+    }
+
+    public boolean isOnlyHeadless() {
+        return onlyHeadless;
     }
 
     public boolean hasSimulation() {
