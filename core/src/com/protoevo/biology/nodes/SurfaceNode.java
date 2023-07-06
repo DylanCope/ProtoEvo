@@ -144,7 +144,7 @@ public class SurfaceNode implements Evolvable.Element, Serializable {
     }
 
     public Vector2 getRelativePos() {
-        float t = cell.getAngle() + angle;
+        float t = cell.getParticle().getAngle() + angle;
         relativePosition.set((float) Math.cos(t), (float) Math.sin(t)).scl(cell.getRadius());
         return relativePosition;
     }

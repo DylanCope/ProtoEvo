@@ -15,12 +15,12 @@ import com.badlogic.gdx.utils.ScreenUtils;
 import com.protoevo.biology.cells.Cell;
 import com.protoevo.biology.cells.Protozoan;
 import com.protoevo.env.Environment;
-import com.protoevo.env.JointsManager;
+import com.protoevo.physics.*;
 import com.protoevo.env.Rock;
 import com.protoevo.input.ParticleTracker;
-import com.protoevo.physics.CollisionHandler;
-import com.protoevo.physics.Particle;
-import com.protoevo.physics.SpatialHash;
+import com.protoevo.physics.box2d.Box2DParticle;
+import com.protoevo.physics.Collision;
+import com.protoevo.physics.box2d.Box2DPhysics;
 import com.protoevo.ui.SimulationInputManager;
 import com.protoevo.ui.UIStyle;
 import com.protoevo.utils.DebugMode;
@@ -29,6 +29,7 @@ import space.earlygrey.shapedrawer.ShapeDrawer;
 
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.Optional;
 
 public class EnvironmentRenderer implements Renderer {
     public static Color backgroundColor = new Color(0, 0.1f, 0.2f, 1);
@@ -77,11 +78,14 @@ public class EnvironmentRenderer implements Renderer {
         lightRenderer = new LightRenderer(camera, environment);
     }
 
-    public void renderJoinedParticles(JointsManager.Joining joining) {
-        Particle p1 = joining.getParticleA();
-        Particle p2 = joining.getParticleB();
-        if (p1 == null || p2 == null)
+    public void renderJoinedParticles(Joining joining) {
+        Optional<Particle> maybeP1 = joining.getParticleA();
+        Optional<Particle> maybeP2 = joining.getParticleB();
+        if (!maybeP1.isPresent() || !maybeP2.isPresent())
             return;
+
+        Particle p1 = maybeP1.get();
+        Particle p2 = maybeP2.get();
 
         if (circleNotVisible(p1.getPos(), p1.getRadius())
                 && circleNotVisible(p2.getPos(), p2.getRadius())) {
@@ -101,7 +105,7 @@ public class EnvironmentRenderer implements Renderer {
         float angle = 90 + tmpVec.set(particle1Position).sub(particle2Position).angleDeg();
         jointSprite.setRotation(angle);
 
-        tmpColor.set(p1.getColor()).lerp(p2.getColor(), .5f);
+        tmpColor.set(p1.getUserData(Cell.class).getColor()).lerp(p2.getUserData(Cell.class).getColor(), .5f);
         tmpColor.a = 1f;
         jointSprite.setColor(tmpColor);
 
@@ -120,7 +124,7 @@ public class EnvironmentRenderer implements Renderer {
         if (camera.zoom < 3)
             environment.getJointsManager().getJoinings()
                     .forEach(this::renderJoinedParticles);
-        environment.getParticles().stream()
+        environment.getParticles()
                 .filter(p -> !circleNotVisible(p.getPos(), p.getRadius()))
                 .iterator()
                 .forEachRemaining(p -> drawParticle(delta, p));
@@ -179,8 +183,12 @@ public class EnvironmentRenderer implements Renderer {
     }
 
     public void renderPhysicsDebug() {
-        physicsDebugRenderer.render(environment.getWorld(), camera.combined);
+        Physics physics = environment.getPhysics();
+        if (physics instanceof Box2DPhysics) {
+            physicsDebugRenderer.render(((Box2DPhysics) physics).getWorld(), camera.combined);
+        }
         debugRenderer.begin();
+        debugRenderer.setProjectionMatrix(camera.combined);
         debugRenderer.setColor(Color.GOLD);
         debugRenderer.set(ShapeRenderer.ShapeType.Line);
 
@@ -195,6 +203,7 @@ public class EnvironmentRenderer implements Renderer {
                 debugRenderer.box(x, y, 0, size, size, 0);
             }
         }
+
         debugRenderer.end();
     }
 
@@ -203,36 +212,38 @@ public class EnvironmentRenderer implements Renderer {
             return;
 
         debugRenderer.begin();
+        debugRenderer.setProjectionMatrix(camera.combined);
         ParticleTracker particleTracker = inputManager.getParticleTracker();
 
         if (particleTracker.isTracking()) {
             Particle particle = particleTracker.getTrackedParticle();
             debugRenderer.setColor(0, 1, 0, 1);
 
-            float maxDistance = particle.getInteractionRange();
+            float maxDistance = particle.getUserData(Cell.class).getInteractionRange();
             debugRenderer.box(
                     particle.getPos().x - maxDistance,
                     particle.getPos().y - maxDistance, 0,
                     2*maxDistance, 2*maxDistance, 0);
 
-            for (CollisionHandler.Collision contact : particle.getContacts()) {
-                Object other = particle.getOther(contact);
+            for (Collision contact : particle.getContacts()) {
+                Object other = contact.getOther(particle);
                 if (other instanceof Particle) {
-                    Vector2 otherPos = ((Particle) other).getPos();
-                    float otherR = ((Particle) other).getRadius();
+                    Particle otherParticle = (Particle) other;
+                    Vector2 otherPos = otherParticle.getPos();
+                    float otherR = otherParticle.getRadius();
                     debugRenderer.setColor(1, 0, 0, 1);
                     debugRenderer.circle(otherPos.x, otherPos.y, otherR);
                 }
             }
 
-            if (particle instanceof Cell) {
-                Cell cell = (Cell) particle;
+            if (particle.getUserData() instanceof Cell) {
+                Cell cell = particle.getUserData(Cell.class);
                 debugRenderer.setColor(0, 0, 1, 1);
                 for (Long otherId : cell.getAttachedCellIDs()) {
-                    Cell other = cell.getCell(otherId);
-                    if (other == null)
+                    Optional<Cell> maybeOther = cell.getCell(otherId);
+                    if (!maybeOther.isPresent())
                         continue;
-
+                    Cell other = maybeOther.get();
                     Vector2 otherPos = other.getPos();
                     float otherR = other.getRadius();
                     debugRenderer.setColor(Color.ORANGE);
@@ -264,12 +275,12 @@ public class EnvironmentRenderer implements Renderer {
     }
 
     public void drawParticle(float delta, Particle p) {
-        if (p instanceof Protozoan) {
+        if (p.getUserData() instanceof Protozoan) {
+            Protozoan protozoan = p.getUserData(Protozoan.class);
             ProtozoaRenderer protozoanRenderer = protozoaRenderers
-                    .computeIfAbsent((Protozoan) p, ProtozoaRenderer::new);
+                    .computeIfAbsent(protozoan, ProtozoaRenderer::new);
             protozoanRenderer.render(delta, camera, batch);
 
-            Protozoan protozoan = (Protozoan) p;
             Collection<Cell> engulfedCells = protozoan.getEngulfedCells();
             if (engulfedCells != null) {
                 for (Cell cell : protozoan.getEngulfedCells()) {
@@ -291,7 +302,7 @@ public class EnvironmentRenderer implements Renderer {
             float x = p.getPos().x - p.getRadius();
             float y = p.getPos().y - p.getRadius();
             float r = p.getRadius() * 2;
-            Color c = p.getColor();
+            Color c = p.getUserData(Cell.class).getColor();
             batch.setColor(c.r, c.g, c.b, 1.0f);
             batch.draw(particleTexture, x, y, r, r);
         }

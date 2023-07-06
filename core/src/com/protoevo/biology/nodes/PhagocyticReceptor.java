@@ -5,7 +5,8 @@ import com.protoevo.biology.CauseOfDeath;
 import com.protoevo.biology.cells.*;
 import com.protoevo.core.Statistics;
 import com.protoevo.env.Environment;
-import com.protoevo.physics.CollisionHandler;
+import com.protoevo.physics.Collision;
+import com.protoevo.physics.Particle;
 
 
 import java.io.Serializable;
@@ -41,10 +42,15 @@ public class PhagocyticReceptor extends NodeAttachment implements Serializable {
                 output[2] = 1f;
         }
 
-        for (CollisionHandler.Collision contact : cell.getContacts()) {
-            Object collided = cell.getOther(contact);
-            if (collided instanceof Cell && engulfCondition((Cell) collided)) {
-                engulf((Cell) collided);
+        for (Collision contact : cell.getParticle().getContacts()) {
+            Object collided = contact.getOther(cell.getParticle());
+            if (!(collided instanceof Particle
+                    && ((Particle) collided).getUserData() instanceof Cell))
+                continue;
+
+            Cell collidingCell = ((Particle) collided).getUserData(Cell.class);
+            if (engulfCondition(collidingCell)) {
+                engulf(collidingCell);
             }
         }
     }
@@ -60,11 +66,11 @@ public class PhagocyticReceptor extends NodeAttachment implements Serializable {
     }
 
     private boolean roomFor(Cell other) {
-        float areaAvailable = .8f * node.getCell().getArea();
+        float areaAvailable = .8f * node.getCell().getParticle().getArea();
         for (Cell c : ((Protozoan) node.getCell()).getEngulfedCells()) {
-            areaAvailable -= c.getArea();
+            areaAvailable -= c.getParticle().getArea();
         }
-        return areaAvailable > other.getArea();
+        return areaAvailable > other.getParticle().getArea();
     }
 
     private boolean correctSizes(Cell other) {

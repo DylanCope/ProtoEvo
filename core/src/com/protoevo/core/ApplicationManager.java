@@ -132,14 +132,18 @@ public class ApplicationManager {
             headless = false;
     }
 
+    public static boolean launchedWithDebug() {
+        return java.lang.management.ManagementFactory.getRuntimeMXBean().
+                getInputArguments().toString().contains("-agentlib:jdwp");
+    }
+
     public void createGraphics() {
         headless = false;
         saveOnExit = false;
 
         Lwjgl3ApplicationConfiguration config = new Lwjgl3ApplicationConfiguration();
         config.setForegroundFPS(60);
-        boolean isDebug = java.lang.management.ManagementFactory.getRuntimeMXBean().
-                getInputArguments().toString().contains("-agentlib:jdwp");
+        boolean isDebug = launchedWithDebug();
 
         if (isDebug)
             DebugMode.setMode(DebugMode.SIMPLE_INFO);

@@ -21,12 +21,6 @@ public interface Shape {
     boolean pointInside(Vector2 p);
     boolean rayCollisions(Vector2[] ray, Intersection[] intersections);
 
-    Colour getColour();
-
-    default Color getColor() {
-        return getColour().getColor();
-    }
-
     Vector2[] getBoundingBox();
 
     Vector2 getPos();

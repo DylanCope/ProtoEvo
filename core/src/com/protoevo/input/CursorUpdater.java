@@ -5,10 +5,13 @@ import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector3;
 import com.protoevo.physics.Particle;
+import com.protoevo.physics.box2d.Box2DParticle;
 import com.protoevo.ui.SimulationInputManager;
 import com.protoevo.ui.SimulationScreen;
 import com.protoevo.utils.CursorUtils;
 import com.protoevo.utils.Geometry;
+
+import java.util.Optional;
 
 public class CursorUpdater extends InputAdapter {
     private final SimulationScreen simulationScreen;
@@ -36,25 +39,28 @@ public class CursorUpdater extends InputAdapter {
 
         float cameraScaling = camera.project(new Vector3(1, 0, 0)).len();
         synchronized (simulationScreen.getEnvironment()) {
-            for (Particle particle : simulationScreen.getEnvironment().getParticles()) {
-                float screenR = particle.getRadius() * cameraScaling;
-                if (screenR > 30 && Geometry.isPointInsideCircle(particle.getPos(), particle.getRadius(), touchPos)) {
-                    if (inputManager.getLightningButton().canStrike()) {
-                        CursorUtils.setLightningCursor();
-                    } else if (inputManager.getMoveParticleButton().getState() == MoveParticleButton.State.HOLDING)
-                        CursorUtils.setClosedHandCursor();
-                    else if (inputManager.getMoveParticleButton().couldHold())
-                        CursorUtils.setOpenHandCursor();
-                    else if (inputManager.getParticleTracker().canTrack() &&
-                            inputManager.getParticleTracker().getTrackedParticle() != particle)
-                        CursorUtils.setMagnifyingGlassCursor();
-                    else
-                        CursorUtils.setDefaultCursor();
+            Optional<Particle> particleOptional = simulationScreen.getEnvironment().getParticles()
+                    .filter(p -> p.getRadius() * cameraScaling > 30 && Geometry.isPointInsideCircle(p.getPos(), p.getRadius(), touchPos))
+                    .findFirst();
 
-                    return true;
-                }
+            if (particleOptional.isPresent()) {
+                Particle particle = particleOptional.get();
+                if (inputManager.getLightningButton().canStrike()) {
+                    CursorUtils.setLightningCursor();
+                } else if (inputManager.getMoveParticleButton().getState() == MoveParticleButton.State.HOLDING)
+                    CursorUtils.setClosedHandCursor();
+                else if (inputManager.getMoveParticleButton().couldHold())
+                    CursorUtils.setOpenHandCursor();
+                else if (inputManager.getParticleTracker().canTrack() &&
+                        inputManager.getParticleTracker().getTrackedParticle() != particle)
+                    CursorUtils.setMagnifyingGlassCursor();
+                else
+                    CursorUtils.setDefaultCursor();
+
+                return true;
             }
         }
+
         CursorUtils.setDefaultCursor();
         return false;
     }

@@ -11,7 +11,7 @@ import com.badlogic.gdx.math.Vector2;
 import com.protoevo.biology.cells.Protozoan;
 import com.protoevo.biology.nodes.*;
 import com.protoevo.env.Rock;
-import com.protoevo.physics.Particle;
+import com.protoevo.physics.box2d.Box2DParticle;
 import com.protoevo.ui.GraphicsAdapter;
 import com.protoevo.utils.Geometry;
 import com.protoevo.utils.Utils;
@@ -119,7 +119,7 @@ public class ProtozoaRenderer {
         }
 
         public void draw(float delta, OrthographicCamera camera, SpriteBatch batch) {
-            float cellAngle = protozoan.getAngle();
+            float cellAngle = protozoan.getParticle().getAngle();
 
             float criticalZoom = GraphicsAdapter.settings.cameraZoomForCellDetails.get();
             float a = Utils.clampedLinearRemap(
@@ -199,8 +199,8 @@ public class ProtozoaRenderer {
 
         sr.setColor(1, 0, 1, 1);
         for (Object obj : protozoan.getInteractionQueue()) {
-            if (obj instanceof Particle) {
-                Particle particle = (Particle) obj;
+            if (obj instanceof Box2DParticle) {
+                Box2DParticle particle = (Box2DParticle) obj;
                 sr.circle(particle.getPos().x,
                           particle.getPos().y,
                           particle.getRadius() * 1.1f, 15);

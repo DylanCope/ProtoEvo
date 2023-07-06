@@ -13,6 +13,7 @@ import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.gdx.utils.Align;
+import com.protoevo.core.ApplicationManager;
 import com.protoevo.core.Simulation;
 import com.protoevo.env.Environment;
 import com.protoevo.env.WorldGeneration;

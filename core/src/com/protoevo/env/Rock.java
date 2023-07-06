@@ -2,6 +2,7 @@ package com.protoevo.env;
 
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector2;
+import com.protoevo.physics.Coloured;
 import com.protoevo.physics.Shape;
 import com.protoevo.utils.Colour;
 import com.protoevo.utils.Geometry;
@@ -9,7 +10,7 @@ import com.protoevo.utils.Geometry;
 import java.io.Serializable;
 
 
-public class Rock implements Serializable, Shape {
+public class Rock implements Serializable, Shape, Coloured {
     public static final long serialVersionUID = 1L;
 
     private Vector2[] points;
@@ -199,7 +200,6 @@ public class Rock implements Serializable, Shape {
         return edgesIntersect(e1[0], dir1, e2[0], dir2);
     }
 
-    @Override
     public Colour getColour() {
         return colour;
     }

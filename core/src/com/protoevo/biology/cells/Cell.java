@@ -9,12 +9,12 @@ import com.protoevo.biology.ConstructionProject;
 import com.protoevo.biology.Food;
 import com.protoevo.biology.nodes.SurfaceNode;
 import com.protoevo.biology.organelles.Organelle;
-import com.protoevo.env.Environment;
-import com.protoevo.physics.Particle;
 import com.protoevo.core.Statistics;
-import com.protoevo.physics.CollisionHandler;
-import com.protoevo.env.JointsManager;
-import com.protoevo.env.Rock;
+import com.protoevo.env.Environment;
+import com.protoevo.physics.Collision;
+import com.protoevo.physics.Coloured;
+import com.protoevo.physics.Joining;
+import com.protoevo.physics.Particle;
 import com.protoevo.utils.Colour;
 import com.protoevo.utils.Geometry;
 import com.protoevo.utils.Utils;
@@ -22,12 +22,15 @@ import com.protoevo.utils.Utils;
 import java.io.Serializable;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 import static com.protoevo.utils.Utils.lerp;
 
-public abstract class Cell extends Particle implements Serializable {
+public abstract class Cell implements Serializable, Coloured {
 	private static final long serialVersionUID = 1L;
 
+	private Particle particle;
+	private Environment environment;
 	private final Colour healthyColour = new Colour(Color.WHITE);
 	private final Colour fullyDegradedColour = new Colour(Color.WHITE);
 	private final Colour currentColour = new Colour();
@@ -38,9 +41,9 @@ public abstract class Cell extends Particle implements Serializable {
 	private float energyAvailable = Environment.settings.cell.startingAvailableCellEnergy.get();
 	private double constructionMassAvailable = Environment.settings.cell.startingAvailableConstructionMass.get();
 	private double massChangeForGrowth = 0f;
+	private double radius = Environment.settings.minParticleRadius.get() * (1 + 2 * Math.random());
 	private final Map<ComplexMolecule, Float> availableComplexMolecules = new ConcurrentHashMap<>(0);
-	private final Map<Long, Long> cellJoinings = new ConcurrentHashMap<>();  // maps cell id to joining id
-	private final Collection<Long> attachedCellIDs = new LinkedHashSet<>(0); // cells attached to this cell
+	private final Collection<Long> attachedCellIDs = new ConcurrentLinkedQueue<>(); // cells attached to this cell
 	private final Set<Long> cellIdsInMultiCellGroup = new HashSet<>(0); // cells in the same multi-cell group
 	private final Map<Food.Type, Float> foodDigestionRates = new HashMap<>(0);
 	private final Map<Food.Type, Food> foodToDigest = new HashMap<>(0);
@@ -60,7 +63,11 @@ public abstract class Cell extends Particle implements Serializable {
 	private float joiningCheckCounter = 0f;
 
 	public void update(float delta) {
-		if (health <= 0.05f && !super.isDead()) {
+		if (particle.isDead()) {
+			kill(particle.getCauseOfDeath());
+			return;
+		}
+		if (health <= 0.05f && !particle.isDead()) {
 			kill(CauseOfDeath.HEALTH_TOO_LOW);
 			return;
 		}
@@ -69,7 +76,8 @@ public abstract class Cell extends Particle implements Serializable {
 		lastActivity = activity;
 		activity = 0f;
 
-		super.update(delta);
+		particle.setRadius(radius);
+		particle.update(delta);
 		timeAlive += delta;
 
 		voidDamage(delta);
@@ -82,9 +90,9 @@ public abstract class Cell extends Particle implements Serializable {
 
 
 		if (joiningCheckCounter >= Environment.settings.misc.checkCellJoiningsInterval.get()) {
-			cellJoinings.entrySet().removeIf(this::detachCellCondition);
+			particle.getJoiningIds().entrySet().removeIf(this::detachCellCondition);
 			attachedCellIDs.clear();
-			attachedCellIDs.addAll(cellJoinings.keySet());
+			attachedCellIDs.addAll(particle.getJoiningIds().keySet());
 			joiningCheckCounter = 0;
 		}
 		joiningCheckCounter += delta;
@@ -93,17 +101,16 @@ public abstract class Cell extends Particle implements Serializable {
 	}
 
 	public void handleTemperature(float delta) {
-		if (getEnv() != null) {
-			float envTemp = getExternalTemperature();
-			temperature = Utils.lerp(
-					temperature, envTemp, membraneThermalConductance * delta);
-		}
+		float envTemp = getExternalTemperature();
+		temperature = Utils.lerp(
+				temperature, envTemp, membraneThermalConductance * delta);
 		for (Long otherId : getAttachedCellIDs()) {
-			Cell other = getCell(otherId);
-			if (other != null)
+			Optional<Cell> other = getCell(otherId);
+			other.ifPresent(cell -> {
+				float otherTemp = cell.getInternalTemperature();
 				temperature = Utils.lerp(
-						temperature, other.getInternalTemperature(), membraneThermalConductance * delta
-				);
+						temperature, otherTemp, membraneThermalConductance * delta);
+			});
 		}
 
 		temperature += delta * activity * Environment.settings.cell.activityHeatGeneration.get();
@@ -152,10 +159,22 @@ public abstract class Cell extends Particle implements Serializable {
 		}
 	}
 
+	public float getInteractionRange() {
+		return 0f;
+	}
+
+	public Collection<Object> getInteractionQueue() {
+		return particle.getInteractionQueue();
+	}
+
+	public Collection<Collision> getContacts() {
+		return particle.getContacts();
+	}
+
 	public float getExternalTemperature() {
-		if (getEnv() == null)
+		if (environment == null)
 			return 0f;
-		return getEnv().getTemperature(getPos());
+		return environment.getTemperature(particle.getPos());
 	}
 
 	public float getInternalTemperature() {
@@ -193,7 +212,7 @@ public abstract class Cell extends Particle implements Serializable {
 	}
 
 	public void voidDamage(float delta) {
-		if (getPos().len2() > getVoidStartDistance2())
+		if (particle.getPos().len2() > getVoidStartDistance2())
 			damage(delta * Environment.settings.env.voidDamagePerSecond.get(), CauseOfDeath.THE_VOID);
 	}
 
@@ -203,24 +222,57 @@ public abstract class Cell extends Particle implements Serializable {
 	}
 
 	public void requestJointRemoval(Long joiningId) {
-		JointsManager.Joining joining = getJoining(joiningId);
-		if (joining != null)
-			requestJointRemoval(joining);
+		particle.getJoining(joiningId).ifPresent(this::requestJointRemoval);
 	}
 
-	public void requestJointRemoval(JointsManager.Joining joining) {
-		getEnv().getJointsManager().requestJointRemoval(joining);
-		Particle other = joining.getOther(this);
-		if (other instanceof Cell) {
-			cellJoinings.remove(other.getId());
-			((Cell) other).cellJoinings.remove(getId());
+	public void requestJointRemoval(Joining joining) {
+		particle.requestJointRemoval(joining);
+		particle.getJoiningIds().remove(joining.getOtherId(getId()));
+		Optional<Cell> otherCell = joining.getOther(particle).map(particle -> particle.getUserData(Cell.class));
+		otherCell.ifPresent(cell -> cell.particle.getJoiningIds().remove(particle.getId()));
+	}
+
+	public Optional<Environment> getEnv() {
+		return Optional.ofNullable(environment);
+	}
+
+	public float getLightAt(Vector2 pos) {
+		return getEnv().map(env -> env.getLight(pos)).orElse(0f);
+	}
+
+	public float getLightAtCell() {
+		return getLightAt(getPos());
+	}
+
+	public boolean isRangedInteractionEnabled() {
+		return false;
+	}
+
+	public void setEnv(Environment env) {
+		this.environment = env;
+		particle = env.getPhysics().createNewParticle();
+		particle.setUserData(this);
+		if (isRangedInteractionEnabled())
+			particle.setCanInteractAtRange();
+		Vector2 pos = environment.getRandomPosition(this);
+		if (pos == null) {
+			kill(CauseOfDeath.FAILED_TO_CONSTRUCT);
+			return;
 		}
+		particle.setPos(pos);
+		environment.ensureAddedToEnvironment(this);
 	}
 
-	public Cell getCell(Long id) {
-		if (getEnv() == null)
-			return null;
-		return getEnv().getCell(id);
+	public Optional<Cell> getCell(Long id) {
+		return getEnv().flatMap(env -> env.getCell(id));
+	}
+
+	public long getId() {
+		return particle.getId();
+	}
+
+	public Particle getParticle() {
+		return particle;
 	}
 
 	public Collection<Long> getAttachedCellIDs() {
@@ -279,7 +331,7 @@ public abstract class Cell extends Particle implements Serializable {
 	}
 
 	public float getFoodToDigestMassCap() {
-		return getMass(getRadius()) * 0.25f;
+		return particle.getMass() * 0.25f;
 	}
 
 	public void eat(Cell engulfed, float extraction) {
@@ -361,30 +413,32 @@ public abstract class Cell extends Particle implements Serializable {
 		return Environment.settings.cell.repairRate.get() * repairRate;
 	}
 
-	public boolean detachCellCondition(Map.Entry<Long, Long> entry) {
-		Cell other = getCell(entry.getKey());
-		long joiningID = entry.getValue();
-		JointsManager.Joining joining = getJoining(entry.getValue());
-		if (joining == null || other == null) {
-			getEnv().getJointsManager().requestJointRemoval(joiningID);
+	private void requestJointRemoval(long joiningID) {
+		getEnv().map(Environment::getJointsManager)
+				.ifPresent(manager -> manager.requestJointRemoval(joiningID));
+	}
+
+	public boolean detachCellCondition(Map.Entry<Long, Long> joiningEntry) {
+		Optional<Cell> other = getCell(joiningEntry.getKey());
+		long joiningID = joiningEntry.getValue();
+		Optional<Joining> maybeJoining = particle.getJoining(joiningEntry.getValue());
+
+		if (!maybeJoining.isPresent() || !other.isPresent()) {
+			requestJointRemoval(joiningID);
 			return true;
 		}
 
-		boolean detach = other.isDead();
-
-		if (detach) {
-			requestJointRemoval(joining);
+		if (other.get().isDead()) {
+			requestJointRemoval(joiningID);
 			return true;
 		}
 
-		float dist2 = joining.getAnchorA().dst2(joining.getAnchorB());
-		float maxDist = joining.getMaxLength();
-		detach = dist2 > maxDist * maxDist;
+		if (maybeJoining.get().maxLengthExceeded()) {
+			requestJointRemoval(joiningID);
+			return true;
+		}
 
-		if (detach)
-			requestJointRemoval(joining);
-
-		return detach;
+		return false;
 	}
 
 	public void addConstructionProject(ConstructionProject project) {
@@ -405,18 +459,17 @@ public abstract class Cell extends Particle implements Serializable {
 
 		if (newR > getMaxRadius())
 			newR = getMaxRadius();
-		else if (newR < getMinRadius())
+		if (newR < getMinRadius())
 			newR = getMinRadius();
-
 		if (newR == currR)
 			return;
 
-		massChangeForGrowth = getMass(newR) - getMass(currR);
+		massChangeForGrowth = particle.getMassIfRadius(newR) - particle.getMassIfRadius(currR);
 		float energyForGrowth = (float) (massChangeForGrowth
 				* Environment.settings.cell.energyRequiredForGrowth.get());
 
 		if (massChangeForGrowth > constructionMassAvailable) {
-			double dr2 = constructionMassAvailable / (Math.PI * getMassDensity());
+			double dr2 = constructionMassAvailable / (Math.PI * particle.getMassDensity());
 			newR = Math.sqrt(currR * currR + dr2);
 			massChangeForGrowth = constructionMassAvailable;
 		}
@@ -451,34 +504,14 @@ public abstract class Cell extends Particle implements Serializable {
 		return growthRate;
 	}
 
-	public void registerJoining(JointsManager.Joining joining) {
-		Particle other = joining.getOther(this);
-		if (other == null)
-			return;
-		cellJoinings.put(other.getId(), joining.id);
+	public void registerJoining(Joining joining) {
+		Optional<Particle> other = joining.getOther(particle);
+		other.ifPresent(otherParticle -> particle.getJoiningIds().put(otherParticle.getId(), joining.id));
 	}
 
-	public void deregisterJoining(JointsManager.Joining joining) {
-		Particle other = joining.getOther(this);
-		if (other == null)
-			return;
-		cellJoinings.remove(other.getId());
-	}
-
-	@Override
-	public void onCollision(CollisionHandler.Collision contact, Rock rock) {
-		super.onCollision(contact, rock);
-		if (rock.pointInside(getPos())) {
-			kill(CauseOfDeath.SUFFOCATION);
-		}
-	}
-
-	@Override
-	public void onCollision(CollisionHandler.Collision contact, Particle other) {
-		super.onCollision(contact, other);
-		if (other.isPointInside(getPos())) {
-			kill(CauseOfDeath.SUFFOCATION);
-		}
+	public void deregisterJoining(Joining joining) {
+		Optional<Particle> other = joining.getOther(particle);
+		other.ifPresent(otherParticle -> particle.getJoiningIds().remove(otherParticle.getId()));
 	}
 
 	public boolean notBoundTo(Cell otherCell) {
@@ -511,6 +544,36 @@ public abstract class Cell extends Particle implements Serializable {
 		return timeAlive;
 	}
 
+	public float getSpeed() {
+		if (particle == null)
+			return 0;
+		return particle.getSpeed();
+	}
+
+	public Vector2 getPos() {
+		if (particle == null)
+			return Vector2.Zero;
+		return particle.getPos();
+	}
+
+	public Vector2 getVel() {
+		if (particle == null)
+			return Vector2.Zero;
+		return particle.getVel();
+	}
+
+	public void setRadius(double radius) {
+		this.radius = radius;
+	}
+
+	public float getRadius() {
+		return (float) radius;
+	}
+
+	public double getRadiusDouble() {
+		return radius;
+	}
+
 	public float getKineticEnergyRequiredForThrust(Vector2 thrustVector) {
 		float speed = getSpeed();
 		float mass = getMass();
@@ -529,8 +592,8 @@ public abstract class Cell extends Particle implements Serializable {
 		if (enoughEnergyAvailable(work)) {
 			activity += work * Environment.settings.cell.kineticEnergyActivity.get();
 			depleteEnergy(work);
-			applyImpulse(thrustVector);
-			applyTorque(torque);
+			particle.applyImpulse(thrustVector);
+			particle.applyTorque(torque);
 			return 1f;
 		} else {
 			// not accurate scaling of thrust and torque
@@ -538,34 +601,14 @@ public abstract class Cell extends Particle implements Serializable {
 			thrustVector.scl(p);
 			torque = torque * p;
 			setEnergyAvailable(0);
-			applyImpulse(thrustVector);
-			applyTorque(torque);
+			particle.applyImpulse(thrustVector);
+			particle.applyTorque(torque);
 			return p;
 		}
 	}
 
-	@Override
-	public float getDampeningFactor() {
-		if (getNumAttachedCells() == 0 || getVel().len2() < 1e-12f)
-			return super.getDampeningFactor();
-
-		float k = 0;
-		float speed = getSpeed();
-		for (long cellId : getAttachedCellIDs()) {
-			Cell otherCell = getCell(cellId);
-			if (otherCell != null) {
-				tmp.set(otherCell.getPos()).sub(getPos()).nor();
-				k += tmp.dot(getVel()) / speed;
-			}
-			if (k >= 1)
-				return 0;
-		}
-
-		return super.getDampeningFactor() * MathUtils.clamp(1 - k, 0, 1);
-	}
-
 	public Statistics getResourceStats() {
-		Statistics stats = super.getStats();
+		Statistics stats = particle.getStats();
 		stats.clear();
 
 		stats.putEnergy("Available Energy", energyAvailable);
@@ -592,7 +635,7 @@ public abstract class Cell extends Particle implements Serializable {
 	}
 
 	public Statistics getStats() {
-		Statistics stats = super.getStats();
+		Statistics stats = particle.getStats();
 		stats.put("Activity", lastActivity);
 		stats.putTime("Age", timeAlive);
 		stats.putPercentage("Health", 100 * getHealth());
@@ -605,13 +648,13 @@ public abstract class Cell extends Particle implements Serializable {
 				Statistics.ComplexUnit.PERCENTAGE_PER_TIME);
 
 		if (getNumAttachedCells() > 0) {
-			stats.putCount("Num Cell Bindings", cellJoinings.size());
+			stats.putCount("Num Cell Bindings", getNumAttachedCells());
 			stats.putCount("Multicell Structure Size", getNumCellsInMulticellularOrganism());
 		}
 
 		stats.putBoolean("Being Engulfed", engulfer != null);
 
-		stats.putPercentage("Light Level", 100f * getEnv().getLight(getPos()));
+		stats.putPercentage("Light Level", 100f * getLightAtCell());
 		stats.putTemperature("Temperature (Internal)", temperature);
 		stats.putTemperature("Temperature (External)", getExternalTemperature());
 		stats.put("Thermal Conductance", membraneThermalConductance);
@@ -629,22 +672,23 @@ public abstract class Cell extends Particle implements Serializable {
 
 	public int getNumCellsInMulticellularOrganism(Set<Long> visited) {
 		int numCells = 1;
-		for (Long cellId : cellJoinings.keySet()) {
+		for (Long cellId : particle.getJoiningIds().keySet()) {
 			if (!visited.contains(cellId)) {
 				visited.add(cellId);
-				Cell cell = getCell(cellId);
-				if (cell != null)
-					numCells += cell.getNumCellsInMulticellularOrganism(visited);
+				numCells += getCell(cellId)
+						.map(cell -> cell.getNumCellsInMulticellularOrganism(visited))
+						.orElse(0);
 			}
 		}
 		return numCells;
 	}
 
 	public Statistics getDebugStats() {
-		Statistics stats = super.getDebugStats();
-		stats.putCount("Num Attached Cells", cellJoinings.size());
+		Statistics stats = particle.getDebugStats();
+		stats.putCount("Local Count", environment.getLocalCount(this));
+		stats.putCount("Local Cap", environment.getLocalCapacity(this));
+		stats.putCount("Num Attached Cells", getNumAttachedCells());
 		stats.putMass("Mass To Grow", (float) massChangeForGrowth);
-		stats.put("Dampening Factor", getDampeningFactor());
 		return stats;
 	}
 
@@ -653,21 +697,18 @@ public abstract class Cell extends Particle implements Serializable {
 	}
 
 	public boolean isDead() {
-		return super.isDead();
+		return particle.isDead();
 	}
 
 	public void kill(CauseOfDeath causeOfDeath) {
-		for (Long otherId : getAttachedCellIDs()) {
-			Cell other = getCell(otherId);
-			if (other != null)
-				other.cellJoinings.remove(this.getId());
+		for (Long joiningId : particle.getJoiningIds().values()) {
+			requestJointRemoval(joiningId);
 		}
-		cellJoinings.clear();
+		particle.getJoiningIds().clear();
 		attachedCellIDs.clear();
-		super.kill(causeOfDeath);
+		particle.kill(causeOfDeath);
 	}
 
-	@Override
 	public Colour getColour() {
 		Colour healthyColour = getHealthyColour();
 		Colour degradedColour = getFullyDegradedColour();
@@ -771,7 +812,10 @@ public abstract class Cell extends Particle implements Serializable {
 	}
 
 	private float getComplexMoleculeMassCap() {
-		return getMass(getRadius() * 0.1f);
+		if (particle == null)
+			return 1f;
+
+		return (float) particle.getMassIfRadius(getRadius() * 0.1f);
 	}
 
 	public void setComplexMoleculeAvailable(ComplexMolecule molecule, float amount) {
@@ -779,7 +823,10 @@ public abstract class Cell extends Particle implements Serializable {
 	}
 
 	public float getConstructionMassCap() {
-		return 2 * getMassDensity() * Geometry.getCircleArea(getRadius() * 0.25f);
+		if (particle == null)
+			return 1f;
+
+		return 2 * particle.getMassDensity() * Geometry.getCircleArea(getRadius() * 0.25f);
 	}
 
 	public void setAvailableConstructionMass(float mass) {
@@ -814,22 +861,22 @@ public abstract class Cell extends Particle implements Serializable {
 		constructionMassAvailable = Math.max(0, constructionMassAvailable - mass);
 	}
 
-//	public void setCAMProductionRate(CellAdhesion.CAM cam, float rate) {
-//		camProductionRates.put(cam, rate);
-//	}
-
-	@Override
 	public float getMass() {
+		if (particle == null)
+			return 1f;
+
 		float extraMass = (float) constructionMassAvailable;
 		for (float mass : availableComplexMolecules.values())
 			extraMass += mass;
 		for (Food food : foodToDigest.values())
 			extraMass += food.getMass();
-		return getMass(getRadius(), extraMass);
+		return particle.getMass() + extraMass;
 	}
 
 	public float getBaseMass() {
-		return getMass(getRadius());
+		if (particle == null)
+			return 1f;
+		return particle.getMass();
 	}
 
 	/**
@@ -906,5 +953,9 @@ public abstract class Cell extends Particle implements Serializable {
 
 	public void addActivity(float a) {
 		activity += a;
+	}
+
+	public CauseOfDeath getCauseOfDeath() {
+		return particle.getCauseOfDeath();
 	}
 }

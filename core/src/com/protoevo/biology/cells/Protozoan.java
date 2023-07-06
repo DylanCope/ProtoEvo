@@ -8,7 +8,7 @@ import com.protoevo.biology.nodes.*;
 import com.protoevo.biology.organelles.Organelle;
 import com.protoevo.core.Statistics;
 import com.protoevo.env.Environment;
-import com.protoevo.physics.CollisionHandler;
+import com.protoevo.physics.Collision;
 import com.protoevo.utils.Colour;
 import com.protoevo.utils.Utils;
 
@@ -81,17 +81,19 @@ public class Protozoan extends EvolvableCell
 		engulfedCells.removeIf(this::removeEngulfedCondition);
 
 		if (shouldSplit() && hasNotBurst()) {
-			getEnv().requestBurst(this, Protozoan.class, this::createSplitChild);
+			getEnv().ifPresent(e -> e.requestBurst(this, Protozoan.class, this::createSplitChild));
 		}
 
 		generateThrust(delta);
 		handleMating(delta);
+
+		getParticle().setRangedInteractionRadius(getInteractionRange());
 	}
 
 	private void handleMating(float delta) {
 		if (Environment.settings.protozoa.matingEnabled.get() && mateDesire && matingCooldown <= 0) {
-			for (CollisionHandler.Collision contact : getContacts()) {
-				Object other = getOther(contact);
+			for (Collision contact : getParticle().getContacts()) {
+				Object other = contact.getOther(contact);
 				if (other instanceof Protozoan) {
 					Protozoan protozoan = (Protozoan) other;
 					if (protozoan.mateDesire) {
@@ -212,13 +214,13 @@ public class Protozoan extends EvolvableCell
 		Protozoan child;
 		if (crossOverGenome != null) {
 			child = Evolvable.createChild(this.getClass(), this.getGeneExpressionFunction(), crossOverGenome);
-			getEnv().incrementCrossOverCount();
+			getEnv().ifPresent(Environment::incrementCrossOverCount);
 		} else {
 			child = Evolvable.asexualClone(this);
 		}
 
+		getEnv().ifPresent(child::setEnv);
 		child.setRadius(r);
-		child.setEnv(getEnv());
 
 		child.tags.addAll(tags);
 
@@ -226,10 +228,14 @@ public class Protozoan extends EvolvableCell
 	}
 
 	public void tag(String tag) {
-		tags.add(new Tag(tag, getEnv().getElapsedTime(), getGeneration()));
+		tags.add(new Tag(tag, getEnv().map(Environment::getElapsedTime).orElse(0f), getGeneration()));
 	}
 
 	@Override
+	public boolean isRangedInteractionEnabled() {
+		return true;
+	}
+
 	public float getInteractionRange() {
 		if (surfaceNodes == null)
 			return 0;
@@ -241,23 +247,19 @@ public class Protozoan extends EvolvableCell
 	}
 
 	@Override
-	public boolean canPossiblyInteract() {
-		return true;
-	}
-
-	@Override
 	public void kill(CauseOfDeath causeOfDeath) {
-		if (!super.isDead() && hasNotBurst() && getEnv() != null)
-			getEnv().requestBurst(
+		if (!super.isDead() && hasNotBurst())
+			getEnv().ifPresent(e -> e.requestBurst(
 					this,
 					MeatCell.class,
 					this::createMeat,
-					true);
+					true));
 		super.kill(causeOfDeath);
 	}
 
 	private MeatCell createMeat(float r) {
-		return new MeatCell(r, getEnv());
+		return new MeatCell(
+				r, getEnv().orElseThrow(() -> new RuntimeException("Cannot create meat cell without environment")));
 	}
 
 	@Override

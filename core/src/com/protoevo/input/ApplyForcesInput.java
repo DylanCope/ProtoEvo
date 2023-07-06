@@ -8,15 +8,16 @@ import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector3;
 import com.protoevo.env.Environment;
 import com.protoevo.physics.Particle;
+import com.protoevo.physics.box2d.Box2DParticle;
 import com.protoevo.ui.SimulationScreen;
 import com.protoevo.ui.shaders.ShockWaveLayer;
-
-import java.util.Collection;
 
 public class ApplyForcesInput extends InputAdapter {
 
     private final SimulationScreen simulationScreen;
     private final OrthographicCamera camera;
+
+    Vector2 tmp = new Vector2();
 
     public ApplyForcesInput(SimulationScreen simulationScreen) {
         this.camera = simulationScreen.getCamera();
@@ -31,17 +32,19 @@ public class ApplyForcesInput extends InputAdapter {
 
         if (ShockWaveLayer.getInstance() != null)
             ShockWaveLayer.getInstance().start(explosionX, explosionY);
-        Vector2 tmp = new Vector2();
 
-        for (Particle particle : env.getParticles()) {
-            Vector2 bodyPos = particle.getPos();
-            tmp.set(bodyPos.x - explosionX, bodyPos.y - explosionY);
-            float dist2 = tmp.len2();
-            if (power / dist2 > 1) {
-                float explosionFallout = 10f;
-                tmp.setLength((float) (power * Math.exp(-explosionFallout * dist2)));
-                particle.applyImpulse(tmp);
-            }
+        Vector2 explosionPos = new Vector2(explosionX, explosionY);
+        env.getParticles().forEach(p -> applyForce(p, explosionPos, power));
+    }
+
+    private void applyForce(Particle particle, Vector2 explosionPos, float power) {
+        Vector2 bodyPos = particle.getPos();
+        tmp.set(bodyPos.x - explosionPos.x, bodyPos.y - explosionPos.y);
+        float dist2 = tmp.len2();
+        if (power / dist2 > 1) {
+            float explosionFallout = 10f;
+            tmp.setLength((float) (power * Math.exp(-explosionFallout * dist2)));
+            particle.applyImpulse(tmp);
         }
     }
 

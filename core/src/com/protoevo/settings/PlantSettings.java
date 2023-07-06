@@ -9,7 +9,7 @@ public class PlantSettings extends Settings {
     public final Settings.Parameter<Float> minBirthRadius = new Settings.Parameter<>(
             "Min Birth Radius",
             "The minimum radius of a plant at birth.",
-            2f / 100f);
+            Environment.settings.minParticleRadius.get());
     public final Settings.Parameter<Float> maxBirthRadius = new Settings.Parameter<>(
             "Max Birth Radius",
             "The maximum radius of a plant at birth.",

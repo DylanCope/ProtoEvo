@@ -59,7 +59,7 @@ public class SimulationSettings extends Settings {
     public final Settings.Parameter<Float> minParticleRadius = new Settings.Parameter<>(
             "Minimum Particle Radius",
             "Minimum radius of a particle.",
-            3f / 100f);
+            2f / 100f);
     public final Settings.Parameter<Float> maxParticleRadius = new Settings.Parameter<>(
             "Maximum Particle Radius",
             "Maximum radius of a particle.",

@@ -5,7 +5,6 @@ import com.protoevo.biology.cells.Cell;
 import com.protoevo.biology.cells.MeatCell;
 import com.protoevo.biology.cells.PlantCell;
 import com.protoevo.biology.cells.Protozoan;
-import com.protoevo.physics.Particle;
 import com.protoevo.physics.SpatialHash;
 
 import java.io.Serializable;
@@ -35,9 +34,10 @@ public class Chunks implements Serializable {
         int protozoaLocalCap = Environment.settings.misc.protozoaLocalCap.get();
         int plantLocalCap = Environment.settings.misc.plantLocalCap.get();
         int meatLocalCap = Environment.settings.misc.meatLocalCap.get();
-        cellHashes.put(Protozoan.class, new SpatialHash<>(resolution, protozoaLocalCap, Environment.settings.worldgen.radius.get()));
-        cellHashes.put(PlantCell.class, new SpatialHash<>(resolution, plantLocalCap, Environment.settings.worldgen.radius.get()));
-        cellHashes.put(MeatCell.class, new SpatialHash<>(resolution, meatLocalCap, Environment.settings.worldgen.radius.get()));
+        float hashRadius = 1.5f * Environment.settings.worldgen.radius.get();
+        cellHashes.put(Protozoan.class, new SpatialHash<>(resolution, protozoaLocalCap, hashRadius));
+        cellHashes.put(PlantCell.class, new SpatialHash<>(resolution, plantLocalCap, hashRadius));
+        cellHashes.put(MeatCell.class, new SpatialHash<>(resolution, meatLocalCap, hashRadius));
     }
 
     public void add(Cell cell) {
@@ -74,11 +74,11 @@ public class Chunks implements Serializable {
         cellHashes.get(cell.getClass()).add(cell, cell.getPos());
     }
 
-    public int getChunkCount(Class<? extends Particle> cellType, Vector2 pos) {
+    public int getChunkCount(Class<? extends Cell> cellType, Vector2 pos) {
         return cellHashes.get(cellType).getCount(pos);
     }
 
-    public int getChunkCapacity(Class<? extends Particle> cellType) {
+    public int getChunkCapacity(Class<? extends Cell> cellType) {
         return cellHashes.get(cellType).getChunkCapacity();
     }
 

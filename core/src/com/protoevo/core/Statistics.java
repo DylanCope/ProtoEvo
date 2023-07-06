@@ -423,14 +423,18 @@ public class Statistics implements Serializable, Iterable<Statistics.Stat> {
                 String unitStr = BaseUnit.getPrefix(exp);
                 unitStr += unit != null ? unit.toString() : "";
 
-                String valueStr = String.format("%.2f", (float) mantissa);
+                String valueStr = String.format("%.3f", (float) mantissa);
                 if (valueStr.endsWith(".00"))
                     valueStr = valueStr.substring(0, valueStr.length() - 3);
+                if (valueStr.endsWith(".000"))
+                    valueStr = valueStr.substring(0, valueStr.length() - 4);
 
                 if (error > 0) {
                     String errorStr = String.format("%.2f", error);
                     if (errorStr.endsWith(".00"))
                         errorStr = errorStr.substring(0, errorStr.length() - 3);
+                    if (errorStr.endsWith(".000"))
+                        errorStr = errorStr.substring(0, errorStr.length() - 4);
                     return valueStr + " ± " + errorStr + " " + unitStr;
                 }
 

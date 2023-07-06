@@ -1,17 +1,15 @@
 package com.protoevo.ui.rendering;
 
-import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.Vector2;
 import com.protoevo.biology.cells.Cell;
 import com.protoevo.biology.nodes.AdhesionReceptor;
-import com.protoevo.biology.nodes.Photoreceptor;
 import com.protoevo.biology.nodes.SurfaceNode;
-import com.protoevo.env.JointsManager;
-import com.protoevo.physics.Shape;
-import com.protoevo.utils.ImageUtils;
+import com.protoevo.physics.Joining;
+
+import java.util.Optional;
 
 public class AdhesionRenderer extends NodeRenderer {
 
@@ -45,15 +43,16 @@ public class AdhesionRenderer extends NodeRenderer {
     public void renderDebug(ShapeRenderer sr) {
         if (node.getAttachment() instanceof AdhesionReceptor) {
             AdhesionReceptor adhesionReceptor = (AdhesionReceptor) node.getAttachment();
-            JointsManager.Joining joining = node.getCell().getEnv()
-                    .getJointsManager().getJoining(adhesionReceptor.getJoiningID());
-            if (adhesionReceptor.isBound() && joining != null) {
-                Vector2 anchorA = joining.getAnchorA();
-                Vector2 anchorB = joining.getAnchorB();
+            Optional<Joining> joining = node.getCell().getEnv()
+                    .flatMap(e -> e.getJointsManager().getJoining(adhesionReceptor.getJoiningID()));
+            if (adhesionReceptor.isBound() && joining.isPresent()) {
+                Optional<Vector2> anchorA = joining.flatMap(Joining::getAnchorA);
+                Optional<Vector2> anchorB = joining.flatMap(Joining::getAnchorB);
                 sr.setColor(0, 1, 0, 1);
-                sr.circle(anchorA.x, anchorA.y, node.getCell().getRadius() / 10f);
-                sr.circle(anchorB.x, anchorB.y, node.getCell().getRadius() / 10f);
-                sr.line(anchorA, anchorB);
+                anchorA.ifPresent(anchor -> sr.circle(anchor.x, anchor.y, node.getCell().getRadius() / 10f));
+                anchorB.ifPresent(anchor -> sr.circle(anchor.x, anchor.y, node.getCell().getRadius() / 10f));
+                if (anchorA.isPresent() && anchorB.isPresent())
+                    sr.line(anchorA.get(), anchorB.get());
             }
         }
     }

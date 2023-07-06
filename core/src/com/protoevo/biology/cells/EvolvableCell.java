@@ -87,19 +87,19 @@ public abstract class EvolvableCell extends Cell implements Evolvable {
 
     @GeneRegulator(name="Contact Sensor")
     public float getContact() {
-        return getContacts().size() > 0 ? 1 : 0;
+        if (getParticle() == null)
+            return 0;
+        return getParticle().getContacts().size() > 0 ? 1 : 0;
     }
 
     @GeneRegulator(name="Light Level")
     public float getLightLevel() {
-        if (getEnv() == null)
-            return 0;
-        return getEnv().getLight(getPos());
+        return getLightAtCell();
     }
 
     @GeneRegulator(name="Temperature")
     public float getNormalisedTemperature() {
-        if (getEnv() == null)
+        if (!getEnv().isPresent())
             return 0;
         float t = getIdealTemperature();
         float dt = getTemperatureTolerance();

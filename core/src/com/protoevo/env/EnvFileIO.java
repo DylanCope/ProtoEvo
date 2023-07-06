@@ -13,10 +13,10 @@ import com.protoevo.biology.nn.*;
 import com.protoevo.biology.nodes.*;
 import com.protoevo.biology.organelles.MoleculeProductionOrganelle;
 import com.protoevo.biology.organelles.Organelle;
-import com.protoevo.physics.Particle;
-import com.protoevo.physics.SpatialHash;
+import com.protoevo.physics.*;
 import com.protoevo.core.Statistics;
-import com.protoevo.physics.CollisionHandler;
+import com.protoevo.physics.box2d.Box2DCollisionHandler;
+import com.protoevo.physics.box2d.Box2DParticle;
 import com.protoevo.utils.Colour;
 import org.nustaq.serialization.FSTConfiguration;
 import org.nustaq.serialization.FSTObjectInput;
@@ -24,12 +24,8 @@ import org.nustaq.serialization.FSTObjectOutput;
 
 import java.io.*;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 public class EnvFileIO {
 
@@ -37,14 +33,14 @@ public class EnvFileIO {
         FSTConfiguration fstConfig = FSTConfiguration.createDefaultConfiguration();
         fstConfig.registerClass(
                 Environment.class,
-                Particle.class,
+                Box2DParticle.class,
                 Cell.class,
                 Food.class,
                 CauseOfDeath.class,
                 ConstructionProject.class,
                 SpatialHash.class,
                 Rock.class,
-                CollisionHandler.class,
+                Box2DCollisionHandler.class,
                 Colour.class,
                 Protozoan.class,
                 SurfaceNode.class,
@@ -62,7 +58,7 @@ public class EnvFileIO {
                 Statistics.class,
                 Statistics.Stat.class,
                 JointsManager.class,
-                JointsManager.Joining.class,
+                Joining.class,
                 GeneExpressionFunction.class,
                 GeneExpressionFunction.ExpressionNode.class,
                 GeneExpressionFunction.RegulationNode.class,

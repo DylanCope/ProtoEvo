@@ -5,10 +5,14 @@ import com.protoevo.biology.cells.Cell;
 import com.protoevo.biology.cells.Protozoan;
 import com.protoevo.core.Statistics;
 import com.protoevo.env.Environment;
-import com.protoevo.env.JointsManager;
-import com.protoevo.physics.CollisionHandler;
+import com.protoevo.physics.Joining;
+import com.protoevo.physics.JointsManager;
 import com.protoevo.physics.Particle;
+import com.protoevo.physics.box2d.Box2DParticle;
+import com.protoevo.physics.Collision;
 import com.protoevo.utils.Geometry;
+
+import java.util.Optional;
 
 public class AdhesionReceptor extends NodeAttachment {
 
@@ -29,12 +33,13 @@ public class AdhesionReceptor extends NodeAttachment {
 
         if (isBound) {
             handleResourceExchange(delta);
-            AdhesionReceptor other = getOtherAdhesionReceptor();
-            if (other == null) {
+            Optional<AdhesionReceptor> maybeOther = getOtherAdhesionReceptor();
+            if (!maybeOther.isPresent()) {
                 unbind();
                 return;
             }
 
+            AdhesionReceptor other = maybeOther.get();
             for (int i = 0; i < SurfaceNode.ioDim; i++) {
                 outgoing[i] = input[i];
                 output[i] = other.outgoing[i];
@@ -42,11 +47,16 @@ public class AdhesionReceptor extends NodeAttachment {
             return;
         }
 
+        if (!isBound)
+            checkContactsForNewBindings();
+    }
+
+    private void checkContactsForNewBindings() {
         Cell cell = node.getCell();
-        for (CollisionHandler.Collision contact : cell.getContacts()) {
-            Object other = cell.getOther(contact);
-            if (other instanceof Protozoan && !isBound) {
-                tryBindTo((Protozoan) other);
+        for (Collision contact : cell.getParticle().getContacts()) {
+            Object other = contact.getOther(cell.getParticle());
+            if (other instanceof Particle && ((Particle) other).getUserData() instanceof Protozoan) {
+                tryBindTo(((Particle) other).getUserData(Protozoan.class));
                 if (isBound)
                     break;
             }
@@ -67,34 +77,27 @@ public class AdhesionReceptor extends NodeAttachment {
         constructionMassTransfer = 0;
     }
 
-    public Cell getOtherCell() {
+    public Optional<Cell> getOtherCell() {
         Cell cell = node.getCell();
-        JointsManager.Joining joining = cell.getJoining(joiningID);
-        if (joining == null)
-            return null;
-        Object other = joining.getOther(cell);
-        if (!(other instanceof Cell))
-            return null;
-        return (Cell) other;
+        return cell.getParticle().getJoining(joiningID)
+                .flatMap(j -> j.getOther(cell.getParticle()))
+                .map(p -> p.getUserData(Cell.class));
     }
 
-    public SurfaceNode getOtherNode() {
-        Cell other = getOtherCell();
-        if (other == null || otherNodeIdx < 0 || otherNodeIdx >= other.getSurfaceNodes().size())
-            return null;
-        return other.getSurfaceNodes().get(otherNodeIdx);
+    public Optional<SurfaceNode> getOtherNode() {
+        Optional<Cell> other = getOtherCell();
+        if (!other.isPresent() || otherNodeIdx < 0 || otherNodeIdx >= other.get().getSurfaceNodes().size())
+            return Optional.empty();
+        return other.map(cell -> cell.getSurfaceNodes().get(otherNodeIdx));
     }
 
     public void handleResourceExchange(float delta) {
         Cell cell = node.getCell();
-        JointsManager.Joining joining = cell.getJoining(joiningID);
-        if (joining == null)
-            return;
 
-        Particle particle = joining.getOther(cell);
-        if (!(particle instanceof Cell))
+        Optional<Cell> maybeOther = getOtherCell();
+        if (!maybeOther.isPresent())
             return;
-        Cell other = (Cell) particle;
+        Cell other = maybeOther.get();
 
         float transferRate = Environment.settings.cell.bindingResourceTransport.get();
 
@@ -137,22 +140,19 @@ public class AdhesionReceptor extends NodeAttachment {
     }
 
     private boolean isBindingStillValid() {
-        SurfaceNode otherNode = getOtherNode();
-        if (otherNode == null)
+        Optional<SurfaceNode> maybeOtherNode = getOtherNode();
+        if (!maybeOtherNode.isPresent())
             return false;
+        SurfaceNode otherNode = maybeOtherNode.get();
         return !otherNode.getCell().isDead()
                 && otherNode.exists()
                 && otherNode.getAttachment() instanceof AdhesionReceptor;
     }
 
-    public AdhesionReceptor getOtherAdhesionReceptor() {
-        SurfaceNode otherNode = getOtherNode();
-        if (otherNode == null)
-            return null;
-        NodeAttachment otherAttachment = otherNode.getAttachment();
-        if (!(otherAttachment instanceof AdhesionReceptor))
-            return null;
-        return (AdhesionReceptor) otherNode.getAttachment();
+    public Optional<AdhesionReceptor> getOtherAdhesionReceptor() {
+        return getOtherNode().map(SurfaceNode::getAttachment)
+                .filter(a -> a instanceof AdhesionReceptor)
+                .map(a -> (AdhesionReceptor) a);
     }
 
     private void tryBindTo(Protozoan otherCell) {
@@ -175,13 +175,14 @@ public class AdhesionReceptor extends NodeAttachment {
 //        float myAngle = node.getAngle();
 //        float otherAngle = otherNode.getAngle();
 
-        float myAngle = Geometry.angle(otherCell.getPos().cpy().sub(cell.getPos())) - cell.getAngle();
-        float otherAngle = Geometry.angle(cell.getPos().cpy().sub(otherCell.getPos())) - otherCell.getAngle();
+        float myAngle = Geometry.angle(otherCell.getPos().cpy().sub(cell.getPos())) - cell.getParticle().getAngle();
+        float otherAngle = Geometry.angle(cell.getPos().cpy().sub(otherCell.getPos())) - otherCell.getParticle().getAngle();
 
-        JointsManager.Joining joining = new JointsManager.Joining(
-                cell, otherCell, myAngle, otherAngle);
+        Joining joining = new Joining(cell.getParticle(), otherCell.getParticle(), myAngle, otherAngle);
 
-        JointsManager jointsManager = cell.getEnv().getJointsManager();
+        JointsManager jointsManager = cell.getEnv()
+                .orElseThrow(() -> new RuntimeException("Cell has no environment"))
+                .getJointsManager();
         jointsManager.createJoint(joining);
 
         cell.registerJoining(joining);
@@ -191,7 +192,7 @@ public class AdhesionReceptor extends NodeAttachment {
         otherReceptor.setOtherNode(node, joining);
     }
 
-    public void setOtherNode(SurfaceNode otherNode, JointsManager.Joining joining) {
+    public void setOtherNode(SurfaceNode otherNode, Joining joining) {
         this.otherNodeIdx = otherNode.getIndex();
         this.joiningID = joining.id;
         isBound = true;
@@ -213,7 +214,7 @@ public class AdhesionReceptor extends NodeAttachment {
     }
 
     private boolean isCloseEnough(SurfaceNode otherNode) {
-        float d = 1.25f * JointsManager.idealJointLength(otherNode.getCell(), node.getCell());
+        float d = 1.25f * JointsManager.idealJointLength(otherNode.getCell().getParticle(), node.getCell().getParticle());
         return node.getWorldPosition().dst2(otherNode.getWorldPosition()) <= d*d;
     }
 

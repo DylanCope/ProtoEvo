@@ -3,10 +3,8 @@ package com.protoevo.ui.rendering;
 import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
-import com.badlogic.gdx.math.Vector2;
 import com.protoevo.biology.cells.Cell;
 import com.protoevo.biology.nodes.*;
-import com.protoevo.env.JointsManager;
 import com.protoevo.utils.ImageUtils;
 
 import java.util.HashMap;
@@ -82,7 +80,7 @@ public class NodeRenderer {
         ImageUtils.drawOnCircumference(
                 batch, sprite, cell.getPos(),
                 0.98f * cell.getRadius(),
-                node.getAngle() + cell.getAngle(),
+                node.getAngle() + cell.getParticle().getAngle(),
                 scale * cell.getRadius());
     }
 

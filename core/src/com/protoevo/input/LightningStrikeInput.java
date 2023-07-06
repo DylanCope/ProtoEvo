@@ -8,6 +8,8 @@ import com.protoevo.biology.CauseOfDeath;
 import com.protoevo.physics.Particle;
 import com.protoevo.ui.SimulationScreen;
 
+import java.util.stream.Collectors;
+
 public class LightningStrikeInput extends InputAdapter {
     private final SimulationScreen simulationScreen;
     private final LightningButton lightningButton;
@@ -20,7 +22,7 @@ public class LightningStrikeInput extends InputAdapter {
 
     private boolean handleStrike(int screenX, int screenY) {
         Vector3 worldSpace = simulationScreen.getCamera().unproject(new Vector3(screenX, screenY, 0));
-        for (Particle particle : simulationScreen.getEnvironment().getParticles()) {
+        for (Particle particle : simulationScreen.getEnvironment().getParticles().collect(Collectors.toList())) {
             if (particle.getPos().dst(worldSpace.x, worldSpace.y) < particle.getRadius()) {
                 ParticleTracker particleTracker = simulationScreen.getInputManager().getParticleTracker();
                 if (particleTracker.isTracking() && particleTracker.getTrackedParticle() == particle) {

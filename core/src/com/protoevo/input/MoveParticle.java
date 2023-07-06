@@ -11,7 +11,7 @@ import com.protoevo.ui.SimulationInputManager;
 import com.protoevo.ui.SimulationScreen;
 import com.protoevo.utils.CursorUtils;
 
-import java.util.Collection;
+import java.util.Optional;
 
 public class MoveParticle extends InputAdapter {
     private final SimulationScreen simulationScreen;
@@ -66,20 +66,21 @@ public class MoveParticle extends InputAdapter {
             Vector3 worldSpace = camera.unproject(new Vector3(screenX, screenY, 0));
             mouseVel.set(0, 0);
             lastMousePos.set(worldSpace.x, worldSpace.y);
-            for (Particle particle : simulationScreen.getEnvironment().getParticles()) {
-                if (particle.getPos().dst(worldSpace.x, worldSpace.y) < particle.getRadius()) {
-                    grabbedParticle = particle;
-                    moveParticleButton.setState(MoveParticleButton.State.HOLDING);
-                    return true;
-                }
+            Optional<Particle> particle = simulationScreen.getEnvironment().getParticles()
+                    .filter(p -> p.getPos().dst(worldSpace.x, worldSpace.y) < p.getRadius())
+                    .findAny();
+            if (particle.isPresent()) {
+                grabbedParticle = particle.get();
+                moveParticleButton.setState(MoveParticleButton.State.HOLDING);
+                return true;
             }
         }
         return false;
     }
 
     @Override
-    public boolean touchDragged(int screenX, int screenY, int pointer) {
 
+    public boolean touchDragged(int screenX, int screenY, int pointer) {
         if (simulationScreen.hasSimulationNotLoaded())
             return false;
 
@@ -102,10 +103,8 @@ public class MoveParticle extends InputAdapter {
                 grabbedParticle.applyImpulse(impulse);
             } else {
                 grabbedParticle.setPos(lastMousePos);
-                if (grabbedParticle.getBody() != null) {
-                    grabbedParticle.getBody().setLinearVelocity(0, 0);
-                    grabbedParticle.getBody().setAngularVelocity(0);
-                }
+                grabbedParticle.setVel(0, 0);
+                grabbedParticle.setAngularVel(0);
             }
             return true;
 
@@ -125,7 +124,7 @@ public class MoveParticle extends InputAdapter {
                 if (mouseVel.len2() > 5000) {
                     // add a little velocity to the particle
                     Vector2 impulse = mouseVel.scl(.005f);
-                    grabbedParticle.getBody().applyLinearImpulse(impulse, grabbedParticle.getPos(), true);
+                    grabbedParticle.applyImpulse(impulse);
                 }
             }
             grabbedParticle = null;

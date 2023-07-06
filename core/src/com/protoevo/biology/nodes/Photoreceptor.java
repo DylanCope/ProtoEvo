@@ -4,8 +4,9 @@ import com.badlogic.gdx.math.Vector2;
 import com.protoevo.biology.cells.Cell;
 import com.protoevo.core.Statistics;
 import com.protoevo.env.Environment;
+import com.protoevo.physics.Coloured;
 import com.protoevo.physics.Shape;
-import com.protoevo.physics.Particle;
+import com.protoevo.physics.box2d.Box2DParticle;
 import com.protoevo.utils.Colour;
 import com.protoevo.utils.Utils;
 
@@ -69,8 +70,8 @@ public class Photoreceptor extends NodeAttachment implements Serializable {
 
         for (reset(); rayIdx < nRays; nextRay()) {
             Cell cell = node.getCell();
-            for (Object o : cell.getInteractionQueue())
-                if (o instanceof Shape)
+            for (Object o : cell.getParticle().getInteractionQueue())
+                if (o instanceof Shape && o instanceof Coloured)
                     computeIntersections((Shape) o);
         }
 
@@ -79,8 +80,8 @@ public class Photoreceptor extends NodeAttachment implements Serializable {
     }
 
 	public boolean cullFromRayCasting(Shape o) {
-		if (o instanceof Particle) {
-			Vector2 otherPos = ((Particle) o).getPos();
+		if (o instanceof Box2DParticle) {
+			Vector2 otherPos = ((Box2DParticle) o).getPos();
             Vector2 myPos = node.getCell().getPos();
 			Vector2 dx = tmp.set(otherPos).sub(myPos).nor();
             Vector2 dir = tmp2.set(attachmentRelPos).add(myPos).nor();
@@ -107,11 +108,12 @@ public class Photoreceptor extends NodeAttachment implements Serializable {
 
         if (sqLen < minSqLen && collisionIntersection != null) {
             minSqLen = sqLen;
-            float light = node.getCell().getEnv().getLight(collisionIntersection.point);
+            float light = node.getCell().getLightAt(collisionIntersection.point);
             float w = light * getConstructionProgress() * computeColourFalloffWeight();
-            r += o.getColor().r * w;
-            g += o.getColor().g * w;
-            b += o.getColor().b * w;
+            Coloured coloured = (Coloured) o;
+            r += coloured.getColour().r * w;
+            g += coloured.getColour().g * w;
+            b += coloured.getColour().b * w;
         }
 
         return intersections;

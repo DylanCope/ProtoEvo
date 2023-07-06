@@ -7,8 +7,11 @@ import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector3;
 import com.protoevo.physics.Particle;
+import com.protoevo.physics.box2d.Box2DParticle;
 import com.protoevo.ui.SimulationScreen;
 import com.protoevo.utils.Geometry;
+
+import java.util.Optional;
 
 public class ParticleTracker extends InputAdapter {
 
@@ -37,13 +40,15 @@ public class ParticleTracker extends InputAdapter {
         if (!canTrack)
             return false;
 
-        for (Particle particle : simulationScreen.getEnvironment().getParticles()) {
-            if (Geometry.isPointInsideCircle(particle.getPos(), particle.getRadius(), touchPos)) {
-                trackedParticle = particle;
+        Optional<Particle> particle = simulationScreen.getEnvironment().getParticles()
+                .filter(p -> Geometry.isPointInsideCircle(p.getPos(), p.getRadius(), touchPos))
+                .findFirst();
+
+        if (particle.isPresent()) {
+                trackedParticle = particle.get();
                 panZoomCameraInput.setPanningDisabled(true);
                 simulationScreen.pollStats();
                 return true;
-            }
         }
         return false;
     }

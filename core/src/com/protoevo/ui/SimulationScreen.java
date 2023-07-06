@@ -30,9 +30,9 @@ import com.protoevo.biology.cells.Protozoan;
 import com.protoevo.biology.organelles.Organelle;
 import com.protoevo.core.*;
 import com.protoevo.env.EnvFileIO;
-import com.protoevo.physics.Particle;
 import com.protoevo.env.Environment;
 import com.protoevo.input.ParticleTracker;
+import com.protoevo.physics.Particle;
 import com.protoevo.ui.nn.MouseOverNeuronHandler;
 import com.protoevo.ui.nn.NetworkRenderer;
 import com.protoevo.ui.rendering.*;
@@ -145,10 +145,10 @@ public class SimulationScreen extends ScreenAdapter {
         saveTrackedParticleButton = createImageButton(
                 "icons/save.png", topBar.getButtonSize(), topBar.getButtonSize(), event -> {
             if (event.toString().equals("touchDown")) {
-                if (trackedParticle != null && trackedParticle instanceof Protozoan) {
+                if (trackedParticle != null && trackedParticle.getUserData() instanceof Protozoan) {
                     String name = saveTrackedParticleTextField.getText();
-                    EnvFileIO.saveCell((Cell) trackedParticle,  name);
-                    inputManager.registerNewCloneableCell(name, (Protozoan) trackedParticle);
+                    EnvFileIO.saveCell(trackedParticle.getUserData(Cell.class),  name);
+                    inputManager.registerNewCloneableCell(name, trackedParticle.getUserData(Protozoan.class));
                 }
             }
             return true;
@@ -163,9 +163,9 @@ public class SimulationScreen extends ScreenAdapter {
         addTagButton = createImageButton(
                 "icons/add.png", topBar.getButtonSize(), topBar.getButtonSize(), event -> {
             if (event.toString().equals("touchDown")) {
-                if (trackedParticle != null && trackedParticle instanceof Protozoan) {
+                if (trackedParticle != null && trackedParticle.getUserData() instanceof Protozoan) {
                     String tag = addTagTextField.getText();
-                    ((Protozoan) trackedParticle).tag(tag);
+                    trackedParticle.getUserData(Protozoan.class).tag(tag);
                 }
             }
             return true;
@@ -322,6 +322,8 @@ public class SimulationScreen extends ScreenAdapter {
         debugStats.clear();
         if (tracker.isTracking()) {
             Particle trackedParticle = tracker.getTrackedParticle();
+            if (trackedParticle.getUserData() instanceof Cell)
+                debugStats.putAll(trackedParticle.getUserData(Cell.class).getDebugStats());
             debugStats.putAll(trackedParticle.getDebugStats());
         }
         else if (DebugMode.isDebugModePhysicsDebug())
@@ -479,11 +481,12 @@ public class SimulationScreen extends ScreenAdapter {
             Particle particle = particleTracker.getTrackedParticle();
 
             if ((trackedParticle != particle)) {
-                if (particle instanceof Protozoan) {
+                if (particle.getUserData() instanceof Protozoan) {
                     setParticleTopBarUI();
-                    setProtozoaStatOptions((Protozoan) particle);
-                } else if (particle instanceof Cell) {
-                    Cell cell = (Cell) particle;
+                    setProtozoaStatOptions(particle.getUserData(Protozoan.class));
+                }
+                else if (particle.getUserData() instanceof Cell) {
+                    Cell cell = particle.getUserData(Cell.class);
                     hideParticleTopBarUI();
                     statGetters.clear();
                     addStatOption(cell.getPrettyName() + " Stats", cell::getStats);
@@ -508,8 +511,8 @@ public class SimulationScreen extends ScreenAdapter {
         ParticleTracker particleTracker = inputManager.getParticleTracker();
         if (particleTracker.isTracking()) {
             Particle particle = particleTracker.getTrackedParticle();
-            if (particle instanceof EvolvableCell) {
-                EvolvableCell evolvableCell = (EvolvableCell) particle;
+            if (particle.getUserData() instanceof EvolvableCell) {
+                EvolvableCell evolvableCell = particle.getUserData(EvolvableCell.class);
                 GeneExpressionFunction gef = evolvableCell.getGeneExpressionFunction();
                 if (gef != null) {
                     NeuralNetwork grn = gef.getRegulatoryNetwork();

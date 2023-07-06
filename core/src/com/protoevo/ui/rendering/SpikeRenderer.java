@@ -8,6 +8,7 @@ import com.protoevo.biology.cells.Cell;
 import com.protoevo.biology.nodes.NodeAttachment;
 import com.protoevo.biology.nodes.Spike;
 import com.protoevo.biology.nodes.SurfaceNode;
+import com.protoevo.utils.Geometry;
 import com.protoevo.utils.ImageUtils;
 
 public class SpikeRenderer extends NodeRenderer {
@@ -51,7 +52,7 @@ public class SpikeRenderer extends NodeRenderer {
         ImageUtils.drawOnCircumference(
                 batch, sprite, cell.getPos(),
                 0.98f * cell.getRadius() - (1 - spike.getSpikeExtension()) * spikeLen,
-                node.getAngle() + cell.getAngle(),
+                node.getAngle() + cell.getParticle().getAngle(),
                 width);
     }
 
@@ -69,7 +70,7 @@ public class SpikeRenderer extends NodeRenderer {
         for (Object toInteract : cell.getInteractionQueue()) {
             if (toInteract instanceof Cell) {
                 Cell other = (Cell) toInteract;
-                if (other.isPointInside(spikePoint)) {
+                if (Geometry.isPointInsideCircle(other.getPos(), other.getRadius(), spikePoint)) {
                     sr.circle(other.getPos().x, other.getPos().y, 1.15f * other.getRadius());
                 }
             }

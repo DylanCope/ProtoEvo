@@ -76,7 +76,6 @@ public class PhotoreceptorRenderer extends NodeRenderer {
         Photoreceptor attachment = (Photoreceptor) node.getAttachment();
         sr.setColor(1, 0, 0, 1);
 
-        SurfaceNode node = attachment.getNode();
         attachment.reset();
         for (int rayIdx = 0; rayIdx < Photoreceptor.nRays; rayIdx++) {
             Vector2[] ray = attachment.nextRay();

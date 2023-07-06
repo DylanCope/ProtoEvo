@@ -5,6 +5,7 @@ import com.badlogic.gdx.math.Vector2;
 import com.protoevo.biology.cells.Cell;
 import com.protoevo.core.Simulation;
 import com.protoevo.env.Environment;
+import com.protoevo.physics.Particle;
 import com.protoevo.utils.Geometry;
 import com.protoevo.utils.SerializableFunction;
 
@@ -62,8 +63,9 @@ public class BurstRequest<T extends Cell> implements Serializable {
             float p = 0.3f + 0.7f * MathUtils.random() / nChildren;
 
             T child = createChild.apply(parent.getRadius() * p);
-            child.setPos(parent.getPos().cpy().add(dir.scl(2 * child.getRadius())));
-            child.applyImpulse(dir.scl(.005f));
+            Particle childParticle = child.getParticle();
+            childParticle.setPos(parent.getParticle().getPos().cpy().add(dir.scl(2 * childParticle.getRadius())));
+            childParticle.applyImpulse(dir.scl(.005f));
 
             child.setGeneration(parent.getGeneration() + 1);
             allocateChildResources(child, p);

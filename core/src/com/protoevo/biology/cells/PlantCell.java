@@ -5,9 +5,11 @@ import com.protoevo.biology.CauseOfDeath;
 import com.protoevo.biology.evolution.Evolvable;
 import com.protoevo.biology.evolution.EvolvableFloat;
 import com.protoevo.core.Statistics;
-import com.protoevo.physics.CollisionHandler;
 import com.protoevo.env.Environment;
-import com.protoevo.env.JointsManager;
+import com.protoevo.physics.Joining;
+import com.protoevo.physics.JointsManager;
+import com.protoevo.physics.Collision;
+import com.protoevo.physics.Particle;
 import com.protoevo.utils.Colour;
 import com.protoevo.utils.Geometry;
 import com.protoevo.utils.Utils;
@@ -23,7 +25,7 @@ public class PlantCell extends EvolvableCell {
     public PlantCell(float radius, Environment environment) {
         super();
         setRadius(Math.max(radius, Environment.settings.plant.minBirthRadius.get()));
-        addToEnv(environment);
+        setEnv(environment);
         setGrowthRate(MathUtils.random(minGrowthRate(), maxGrowthRate()));
 
         maxRadius = MathUtils.random(
@@ -35,10 +37,14 @@ public class PlantCell extends EvolvableCell {
 
     public PlantCell() {
         super();
+        setRadius(MathUtils.random(
+                Environment.settings.plant.minBirthRadius.get(),
+                Environment.settings.plant.maxBirthRadius.get()));
+        float minMaxR = getRadius() * 1.5f;
+        float maxMaxR = Environment.settings.maxParticleRadius.get() / 2f;
+        maxRadius = minMaxR < maxMaxR ? MathUtils.random(minMaxR, maxMaxR) : maxMaxR;
+        setGrowthRate(MathUtils.random(minGrowthRate(), maxGrowthRate()));
         setRandomPlantColour();
-        maxRadius = MathUtils.random(
-                1.5f * Environment.settings.minParticleRadius.get(),
-                Environment.settings.maxParticleRadius.get() / 2f);
     }
 
     public void setRandomPlantColour() {
@@ -103,18 +109,18 @@ public class PlantCell extends EvolvableCell {
         if (isDead())
             return;
 
-        float light = getEnv().getLight(getPos());
+        float light = getLightAtCell();
         float maxArea = Geometry.getCircleArea(Environment.settings.maxParticleRadius.get());
-        float photoRate = light * getArea() / maxArea;
+        float photoRate = light * getParticle().getArea() / maxArea;
         photosynthesisRate = photoRate * Environment.settings.plant.photosynthesizeEnergyRate.get();
 
         addConstructionMass(delta * Environment.settings.plant.constructionRate.get());
         addAvailableEnergy(delta * photosynthesisRate);
 
         int nProtozoaContacts = 0;
-        for (CollisionHandler.Collision collision : getContacts()) {
-            Object o = getOther(collision);
-            if (o instanceof Protozoan)
+        for (Collision collision : getParticle().getContacts()) {
+            Object o = collision.getOther(getParticle());
+            if (o instanceof Particle && ((Particle) o).getUserData() instanceof Protozoan)
                 nProtozoaContacts++;
         }
         if (nProtozoaContacts >= 1) {
@@ -125,9 +131,9 @@ public class PlantCell extends EvolvableCell {
         handleAttachments();
 
         if (shouldSplit()) {
-            getEnv().requestBurst(
+            getEnv().ifPresent(env -> env.requestBurst(
                 this, PlantCell.class, this::createChild
-            );
+            ));
         }
     }
 
@@ -146,28 +152,34 @@ public class PlantCell extends EvolvableCell {
         if (Environment.settings.plant.evolutionEnabled.get()) {
             child = Evolvable.asexualClone(this);
             child.setRadius(r);
-            child.setEnv(getEnv());
+            getEnv().ifPresent(child::setEnv);
         } else
-            child = new PlantCell(r, getEnv());
+            child = new PlantCell(
+                    r, getEnv().orElseThrow(() -> new RuntimeException("Cannot create cell without environment")));
         return child;
     }
 
     public void attach(Cell otherCell) {
-        JointsManager.Joining joining = new JointsManager.Joining(this, otherCell);
-        JointsManager jointsManager = getEnv().getJointsManager();
-        jointsManager.createJoint(joining);
-        registerJoining(joining);
-        otherCell.registerJoining(joining);
+        Joining joining = new Joining(this.getParticle(), otherCell.getParticle());
+        getEnv().ifPresent(env -> {
+            JointsManager jointsManager = env.getJointsManager();
+            jointsManager.createJoint(joining);
+            registerJoining(joining);
+            otherCell.registerJoining(joining);
+        });
     }
 
     public void handleAttachments() {
         if (getNumAttachedCells() < 2) {
-            for (CollisionHandler.Collision collision : getContacts()) {
-                Object o = getOther(collision);
-                if (o instanceof PlantCell
-                        && ((PlantCell) o).getNumAttachedCells() < 2
-                        && !isAttachedTo((PlantCell) o)) {
-                    attach((PlantCell) o);
+            for (Collision collision : getParticle().getContacts()) {
+                Object o = collision.getOther(getParticle());
+                if (!(o instanceof Particle && ((Particle) o).getUserData() instanceof PlantCell))
+                    continue;
+
+                PlantCell otherPlant = (PlantCell) ((Particle) o).getUserData();
+
+                if (otherPlant.getNumAttachedCells() < 2 && !isAttachedTo(otherPlant)) {
+                    attach(otherPlant);
                     if (getNumAttachedCells() >= 2)
                         break;
                 }
