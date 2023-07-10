@@ -15,16 +15,21 @@ import java.io.Serializable;
 public class BurstRequest<T extends Cell> implements Serializable {
     public static final long serialVersionUID = 1L;
 
-    private final SerializableFunction<Float, T> createChild;
+    private SerializableFunction<Float, T> createChild;
     private final Cell parent;
-    private final Class<T> cellType;
-    private final boolean overrideMinRadius;
+    private Class<T> cellType;
+    private boolean overrideMinRadius, ready = false;
+
+    public BurstRequest(Cell cell) {
+        this.parent = cell;
+    }
 
     public BurstRequest(Cell parent, Class<T> cellType, SerializableFunction<Float, T> createChild) {
         this.createChild = createChild;
         this.parent = parent;
         this.cellType = cellType;
         this.overrideMinRadius = false;
+        ready = true;
     }
 
     public BurstRequest(Cell parent,
@@ -35,6 +40,16 @@ public class BurstRequest<T extends Cell> implements Serializable {
         this.parent = parent;
         this.cellType = cellType;
         this.overrideMinRadius = overrideMinRadius;
+        ready = true;
+    }
+
+    public void set(Class<T> cellType,
+                    SerializableFunction<Float, T> createChild,
+                    boolean overrideMinRadius) {
+        this.createChild = createChild;
+        this.cellType = cellType;
+        this.overrideMinRadius = overrideMinRadius;
+        ready = true;
     }
 
     public boolean canBurst() {
@@ -42,6 +57,9 @@ public class BurstRequest<T extends Cell> implements Serializable {
     }
 
     public void burst() {
+        if (!ready)
+            return;
+
         parent.kill(CauseOfDeath.CYTOKINESIS);
         parent.setHasBurst(true);
 

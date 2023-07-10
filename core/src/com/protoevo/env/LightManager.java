@@ -143,6 +143,11 @@ public class LightManager implements Serializable {
         if (timeManager == null)
             return;
 
+        if (!Environment.settings.env.dayNightCycleEnabled.get()) {
+            environmentLight = 1f;
+            return;
+        }
+
         float t = timeManager.getTimeOfDayPercentage();
 
         float transition = Environment.settings.env.dayNightTransition.get();

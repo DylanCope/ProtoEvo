@@ -1,7 +1,6 @@
 package com.protoevo.physics;
 
 import com.protoevo.biology.cells.Cell;
-import com.protoevo.physics.box2d.Box2DParticle;
 
 import java.io.Serializable;
 import java.util.Collection;
@@ -12,7 +11,6 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 
 public abstract class JointsManager implements Serializable {
     public static long serialVersionUID = 1L;
-    protected static JointsManager instance;
 
     protected Physics physics;
     protected final Collection<Joining> jointsToAdd = new ConcurrentLinkedQueue<>();
@@ -21,7 +19,6 @@ public abstract class JointsManager implements Serializable {
 
     public JointsManager(Physics physics) {
         this.physics = physics;
-        instance = this;
     }
 
     public Collection<Joining> getJoinings() {

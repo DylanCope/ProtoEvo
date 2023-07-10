@@ -17,6 +17,11 @@ public class EnvironmentSettings extends Settings {
             "Void Damage Per Second",
             "",
             1f);
+
+    public final Settings.Parameter<Boolean> dayNightCycleEnabled = new Settings.Parameter<>(
+            "Day/Night Cycle Enabled",
+            "Whether the light level varies cyclically.",
+            false);
     public final Settings.Parameter<Float> dayNightCycleLength = new Settings.Parameter<>(
             "Day/Night Cycle Length",
             "The amount of time to cycle a day.",

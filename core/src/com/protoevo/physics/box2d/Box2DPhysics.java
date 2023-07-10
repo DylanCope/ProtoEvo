@@ -2,7 +2,6 @@ package com.protoevo.physics.box2d;
 
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.*;
-import com.protoevo.biology.cells.Cell;
 import com.protoevo.core.Statistics;
 import com.protoevo.env.Environment;
 import com.protoevo.env.Rock;
@@ -11,19 +10,23 @@ import com.protoevo.physics.JointsManager;
 import com.protoevo.physics.Particle;
 import com.protoevo.physics.Physics;
 
-import java.util.concurrent.TimeUnit;
+import java.util.Collection;
 
 public class Box2DPhysics extends Physics {
 
-    private final World world;
+    private transient World world;
     private final JointsManager jointsManager;
 
     public Box2DPhysics() {
+        createWorld();
+        jointsManager = new Box2DJointsManager(this);
+    }
+
+    private void createWorld() {
         world = new World(new Vector2(0, 0), true);
         world.setContinuousPhysics(false);
         world.setAutoClearForces(true);
         world.setContactListener(new Box2DCollisionHandler());
-        jointsManager = new Box2DJointsManager(this);
     }
 
     public void createRockFixtures(Environment environment) {
@@ -47,6 +50,15 @@ public class Box2DPhysics extends Physics {
     @Override
     public void registerStaticBodies(Environment environment) {
         createRockFixtures(environment);
+    }
+
+    @Override
+    public void rebuildTransientFields(Environment environment) {
+        createWorld();
+        registerStaticBodies(environment);
+        for (Particle particle : getParticles())
+            particle.rebuildTransientFields();
+        super.rebuildTransientFields(environment);
     }
 
     @Override
@@ -82,12 +94,17 @@ public class Box2DPhysics extends Physics {
         debugStats.putCount("Fixtures", world.getFixtureCount());
         debugStats.putCount("Proxies", world.getProxyCount());
 
-//        int sleepCount = 0;
-//        for (Cell cell : getCells())
-//            if (cell.getBody() != null && !cell.getBody().isAwake())
-//                sleepCount++;
-//
-//        debugStats.putPercentage("Sleeping",  100f * sleepCount / totalCells);
+        int sleepCount = 0;
+        Collection<Particle> particles = getParticles();
+        int totalCells = particles.size();
+        for (Particle particle : particles) {
+            Box2DParticle box2DParticle = (Box2DParticle) particle;
+            Body body = box2DParticle.getBody();
+            if (body != null && !body.isAwake())
+                sleepCount++;
+        }
+
+        debugStats.putPercentage("Sleeping",  100f * sleepCount / totalCells);
 
         return debugStats;
     }

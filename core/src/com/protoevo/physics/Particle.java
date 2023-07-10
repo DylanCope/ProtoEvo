@@ -1,17 +1,18 @@
 package com.protoevo.physics;
 
-import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.math.Vector2;
 import com.protoevo.biology.CauseOfDeath;
 import com.protoevo.core.Statistics;
 import com.protoevo.utils.Colour;
 import com.protoevo.utils.Geometry;
 
+import java.io.Serializable;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Optional;
 
-public abstract class Particle implements Shape, Coloured {
+public abstract class Particle implements Serializable, Shape, Coloured {
+    private static final long serialVersionUID = 1L;
 
     protected final Physics physics;
     protected boolean rangedInteractionsEnabled = false;
@@ -75,6 +76,12 @@ public abstract class Particle implements Shape, Coloured {
     public void setCanInteractAtRange() {
         rangedInteractionsEnabled = true;
     }
+
+    public boolean canInteractAtRange() {
+        return rangedInteractionsEnabled;
+    }
+
+    public abstract void rebuildTransientFields();
 
     @Override
     public Colour getColour() {

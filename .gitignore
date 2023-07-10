@@ -137,12 +137,6 @@ tmp
 sync
 .Trash*
 
-# TODO: add version control for these
-outputs/runs
-outputs/debug
-wandb
-stockfish
-
 # IDE
 .vscode
 

@@ -31,7 +31,7 @@ public class Environment implements Serializable
 	public static SimulationSettings settings = SimulationSettings.createDefault();
 
 	private final SimulationSettings mySettings;
-	private Physics physics;
+	private final Physics physics;
 	private String loadingStatus;
 	private final Statistics stats = new Statistics();
 	private final Statistics debugStats = new Statistics();
@@ -108,10 +108,7 @@ public class Environment implements Serializable
 
 	public void rebuildWorld() {
 		settings = mySettings;
-		physics = new Box2DPhysics();
-		physics.registerStaticBodies(this);
-		for (Cell cell : getCells())
-			cell.setEnv(this);
+		physics.rebuildTransientFields(this);
 		updateChunkAllocations();
 	}
 
@@ -231,12 +228,7 @@ public class Environment implements Serializable
 			else
 				cell = new PlantCell();
 			cell.setEnv(this);
-			if (cell.isDead()) {
-				System.out.println(
-					"Failed to find position for plant pellet. " +
-					"Try increasing the number of population clusters or reduce the number of initial plants.");
-				break;
-			}
+			findRandomPositionOrKillCell(cell);
 		}
 
 		int nProtozoa = Environment.settings.worldgen.numInitialProtozoa.get();
@@ -245,16 +237,20 @@ public class Environment implements Serializable
 		for (int i = 0; i < nProtozoa; i++) {
 			Protozoan p = Evolvable.createNew(Protozoan.class);
 			p.setEnv(this);
-			if (p.isDead()) {
-				System.out.println(
-					"Failed to find position for protozoan. " +
-					"Try increasing the number of population clusters or reduce the number of initial protozoa.");
-				break;
-			}
+			findRandomPositionOrKillCell(p);
 		}
 
 		for (Cell cell : cellsToAdd)
 			cell.getParticle().applyImpulse(Geometry.randomVector(.01f));
+	}
+
+	public void findRandomPositionOrKillCell(Cell cell) {
+		Vector2 pos = getRandomPosition(cell);
+		if (pos == null) {
+			cell.kill(CauseOfDeath.FAILED_TO_CONSTRUCT);
+			return;
+		}
+		cell.getParticle().setPos(pos);
 	}
 
 	public Vector2 randomPosition(float entityRadius, Vector2[] clusterCentres) {
@@ -388,6 +384,7 @@ public class Environment implements Serializable
 		Statistics stats = new Statistics();
 		stats.putTime("Time Elapsed", timeManager.getTimeElapsed());
 		stats.putTime("Time of Day", timeManager.getTimeOfDay());
+		stats.put("Days Elapsed", timeManager.getDay());
 		stats.putCount("Protozoa", numberOfProtozoa());
 		stats.putCount("Plants", getCount(PlantCell.class));
 		stats.putCount("Meat Pellets", getCount(MeatCell.class));
@@ -511,15 +508,11 @@ public class Environment implements Serializable
 											  SerializableFunction<Float, T> createChild,
 											  boolean overrideMinParticleSize) {
 
-		if (getLocalCount(cellType, parent.getPos()) >= getLocalCapacity(cellType))
+		if (getLocalCount(cellType, parent.getPos()) >= getLocalCapacity(cellType)
+				|| burstRequests.stream().anyMatch(request -> request.parentEquals(parent)))
 			return;
 
-		if (burstRequests.stream().anyMatch(request -> request.parentEquals(parent)))
-			return;
-
-		BurstRequest<T> request = new BurstRequest<>(
-				parent, cellType, createChild, overrideMinParticleSize);
-		burstRequests.add(request);
+		burstRequests.add(new BurstRequest<>(parent, cellType, createChild, overrideMinParticleSize));
 	}
 
 	public <T extends Cell> void requestBurst(Cell parent,

@@ -22,7 +22,6 @@ public class Box2DJointsManager extends JointsManager {
 
     public void rebuild(Physics physics) {
         this.physics = physics;
-        JointsManager.instance = this;
         joinings.entrySet().removeIf(
                 entry -> !entry.getValue().getParticleA().isPresent()
                         || !entry.getValue().getParticleB().isPresent()

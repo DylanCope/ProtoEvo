@@ -3,12 +3,15 @@ package com.protoevo.physics;
 import com.protoevo.core.Statistics;
 import com.protoevo.env.Environment;
 
+import java.io.Serializable;
+import java.util.Collection;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
-public abstract class Physics {
+public abstract class Physics implements Serializable {
+    private static final long serialVersionUID = 1L;
     private final Statistics debugStats = new Statistics();
     protected float physicsStepTime;
     private final Map<Long, Particle> particles = new ConcurrentHashMap<>();
@@ -35,6 +38,10 @@ public abstract class Physics {
 
     public abstract JointsManager getJointsManager();
 
+    public Collection<Particle> getParticles() {
+        return particles.values();
+    }
+
     public Particle createNewParticle() {
         Particle particle = newParticle();
         particles.put(particle.getId(), particle);
@@ -51,5 +58,9 @@ public abstract class Physics {
         debugStats.clear();
         debugStats.put("Physics Step Time", physicsStepTime, Statistics.ComplexUnit.TIME);
         return debugStats;
+    }
+
+    public void rebuildTransientFields(Environment environment) {
+        getJointsManager().rebuild(this);
     }
 }

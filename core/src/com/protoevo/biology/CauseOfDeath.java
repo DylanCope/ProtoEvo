@@ -11,7 +11,7 @@ public enum CauseOfDeath {
     THE_VOID("the void"),
     SUFFOCATION("suffocation", true),
     GREW_TOO_LARGE("growing too large", true),
-    GREW_TOO_SMALL("growing too small", true),
+    SHRUNK_TOO_MUCH("shrinking too much", true),
     DISPOSED("being disposed of", true),
     ENV_CAPACITY_EXCEEDED("exceeding environment capacity", true),
     HEALED_TO_DEATH("being healed to death?...", true),  // should never happen

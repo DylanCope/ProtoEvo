@@ -15,10 +15,12 @@ public class Joining implements Serializable {
     public boolean anchoredA, anchoredB;
     private final Vector2 anchorA = new Vector2();
     private final Vector2 anchorB = new Vector2();
+    private final Physics physics;
 
     public Joining(Particle particleA, Particle particleB) {
         particleAId = particleA.getId();
         particleBId = particleB.getId();
+        physics = particleA.getPhysics();
         id = particleAId ^ particleBId;
         anchoredB = anchoredA = false;
     }
@@ -33,11 +35,11 @@ public class Joining implements Serializable {
     }
 
     public Optional<Particle> getParticleA() {
-        return JointsManager.instance.physics.getParticle(particleAId);
+        return physics.getParticle(particleAId);
     }
 
     public Optional<Particle> getParticleB() {
-        return JointsManager.instance.physics.getParticle(particleBId);
+        return physics.getParticle(particleBId);
     }
 
     public boolean anyDied() {

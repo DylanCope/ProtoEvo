@@ -70,7 +70,7 @@ public class MiscSettings extends Settings {
     public final Settings.Parameter<Integer> spatialHashResolution = new Settings.Parameter<>(
             "Spatial Hash Resolution",
             "The resolution of the spatial hash used for local population caps.",
-            15);
+            20);
     public final Settings.Parameter<Float> checkCellJoiningsInterval = new Settings.Parameter<>(
             "Check Cell Joinings Interval",
             "The amount of time between checking for cell joinings.",

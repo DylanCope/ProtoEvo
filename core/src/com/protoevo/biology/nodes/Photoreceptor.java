@@ -1,5 +1,6 @@
 package com.protoevo.biology.nodes;
 
+import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector2;
 import com.protoevo.biology.cells.Cell;
 import com.protoevo.core.Statistics;
@@ -26,8 +27,10 @@ public class Photoreceptor extends NodeAttachment implements Serializable {
     private float r, g, b;
     private int rayIdx;
     private float minSqLen;
-    public static final int nRays = 8;
-    public static final float fov = (float) (Math.PI / 2.);
+    private static final float maxFoV = (float) (Math.PI / 2.);
+    private static final float radiansPerRay = maxFoV / 8f; // max of 8 rays
+    public int nRays = 8;
+    public float fov = maxFoV;
 
     public Photoreceptor(SurfaceNode node) {
         super(node);
@@ -35,6 +38,9 @@ public class Photoreceptor extends NodeAttachment implements Serializable {
 
     @Override
     public void update(float delta, float[] input, float[] output) {
+        fov = Utils.clampedLinearRemap(input[0], -1f, 1f, 0.1f * maxFoV, maxFoV);
+        nRays = Math.max(1, Math.round(fov / radiansPerRay));
+
         interactionRange = getInteractionRange();
         attachmentRelPos.set(node.getRelativePos());
         castRays();
@@ -154,7 +160,9 @@ public class Photoreceptor extends NodeAttachment implements Serializable {
 
     @Override
     public String getInputMeaning(int index) {
-        return null;  // no inputs
+        if (index == 0)
+            return "Focus";
+        return null;
     }
 
     @Override
@@ -175,5 +183,9 @@ public class Photoreceptor extends NodeAttachment implements Serializable {
         stats.putPercentage("Input: Blue Light", colour.b);
         stats.putDistance("Interaction Range", getInteractionRange());
         stats.put("FoV", fov, Statistics.ComplexUnit.ANGLE);
+    }
+
+    public int getNRays() {
+        return nRays;
     }
 }

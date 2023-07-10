@@ -3,10 +3,7 @@ package com.protoevo.biology.cells;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector2;
-import com.protoevo.biology.CauseOfDeath;
-import com.protoevo.biology.ComplexMolecule;
-import com.protoevo.biology.ConstructionProject;
-import com.protoevo.biology.Food;
+import com.protoevo.biology.*;
 import com.protoevo.biology.nodes.SurfaceNode;
 import com.protoevo.biology.organelles.Organelle;
 import com.protoevo.core.Statistics;
@@ -254,12 +251,6 @@ public abstract class Cell implements Serializable, Coloured {
 		particle.setUserData(this);
 		if (isRangedInteractionEnabled())
 			particle.setCanInteractAtRange();
-		Vector2 pos = environment.getRandomPosition(this);
-		if (pos == null) {
-			kill(CauseOfDeath.FAILED_TO_CONSTRUCT);
-			return;
-		}
-		particle.setPos(pos);
 		environment.ensureAddedToEnvironment(this);
 	}
 
@@ -445,8 +436,7 @@ public abstract class Cell implements Serializable, Coloured {
 		constructionProjects.add(project);
 	}
 
-	public void handleInteractions(float delta) {
-	}
+	public void handleInteractions(float delta) {}
 
 	public void grow(float delta) {
 		if (constructionMassAvailable <= 0)
@@ -474,8 +464,7 @@ public abstract class Cell implements Serializable, Coloured {
 			massChangeForGrowth = constructionMassAvailable;
 		}
 
-		if (newR > Environment.settings.minParticleRadius.get()
-				&& massChangeForGrowth <= constructionMassAvailable
+		if (massChangeForGrowth <= constructionMassAvailable
 				&& energyForGrowth <= energyAvailable) {
 			setRadius(newR);
 			if (massChangeForGrowth > 0) {
@@ -484,8 +473,9 @@ public abstract class Cell implements Serializable, Coloured {
 			}
 			activity += Environment.settings.cell.growthActivity.get() * newR / currR;
 		}
+
 		if (newR < getMinRadius())
-			kill(CauseOfDeath.GREW_TOO_SMALL);
+			kill(CauseOfDeath.SHRUNK_TOO_MUCH);
 	}
 
 	public float getMaxRadius() {

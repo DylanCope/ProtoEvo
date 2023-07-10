@@ -88,9 +88,10 @@ public class NodeRenderer {
         if (node.getAttachment() == null)
             return true;
 
+        Class<?> currAttachmentClass = node.getAttachment().getClass();
         return node.getCell().isDead() || attachmentClass
-                .map(cls -> !cls.equals(node.getAttachment().getClass()))
-                .orElse(false);
+                .map(cls -> !cls.equals(currAttachmentClass))
+                .orElse(currAttachmentClass != null);
     }
 
     public void renderDebug(ShapeRenderer sr) {}

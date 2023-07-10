@@ -13,16 +13,19 @@ import com.protoevo.biology.nn.*;
 import com.protoevo.biology.nodes.*;
 import com.protoevo.biology.organelles.MoleculeProductionOrganelle;
 import com.protoevo.biology.organelles.Organelle;
-import com.protoevo.physics.*;
 import com.protoevo.core.Statistics;
+import com.protoevo.physics.Joining;
+import com.protoevo.physics.JointsManager;
+import com.protoevo.physics.SpatialHash;
 import com.protoevo.physics.box2d.Box2DCollisionHandler;
-import com.protoevo.physics.box2d.Box2DParticle;
 import com.protoevo.utils.Colour;
 import org.nustaq.serialization.FSTConfiguration;
 import org.nustaq.serialization.FSTObjectInput;
 import org.nustaq.serialization.FSTObjectOutput;
 
-import java.io.*;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.List;
@@ -33,7 +36,6 @@ public class EnvFileIO {
         FSTConfiguration fstConfig = FSTConfiguration.createDefaultConfiguration();
         fstConfig.registerClass(
                 Environment.class,
-                Box2DParticle.class,
                 Cell.class,
                 Food.class,
                 CauseOfDeath.class,
@@ -79,7 +81,6 @@ public class EnvFileIO {
                 Vector2.class
         );
 //        fstConfig.setShareReferences(false);
-//        fstConfig.set
         return fstConfig;
     }
 

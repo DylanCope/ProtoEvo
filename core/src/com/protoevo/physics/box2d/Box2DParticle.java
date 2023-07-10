@@ -1,6 +1,5 @@
 package com.protoevo.physics.box2d;
 
-import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.*;
@@ -14,7 +13,6 @@ import com.protoevo.physics.Collision;
 import com.protoevo.physics.FixtureCategories;
 import com.protoevo.physics.Joining;
 import com.protoevo.physics.Particle;
-import com.protoevo.utils.Colour;
 import com.protoevo.utils.Geometry;
 
 import java.io.Serializable;
@@ -148,7 +146,10 @@ public class Box2DParticle extends Particle implements Serializable {
     @Override
     public void setCanInteractAtRange() {
         super.setCanInteractAtRange();
+        createInteractionFixture();
+    }
 
+    private void createInteractionFixture() {
         // Create the sensor fixture and attach it to the body
         CircleShape interactionCircle = new CircleShape();
         interactionCircle.setRadius((float) radius / 2f);
@@ -164,6 +165,13 @@ public class Box2DParticle extends Particle implements Serializable {
         sensorFixture.setSensor(true);
 
         interactionCircle.dispose();
+    }
+
+    @Override
+    public void rebuildTransientFields() {
+        createBody();
+        if (canInteractAtRange())
+            createInteractionFixture();
     }
 
     /**

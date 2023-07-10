@@ -28,9 +28,7 @@ public class PlantCell extends EvolvableCell {
         setEnv(environment);
         setGrowthRate(MathUtils.random(minGrowthRate(), maxGrowthRate()));
 
-        maxRadius = MathUtils.random(
-                1.5f * Environment.settings.minParticleRadius.get(),
-                Environment.settings.maxParticleRadius.get() / 2f);
+        maxRadius = randomMaxRadius();
 
         setRandomPlantColour();
     }
@@ -40,11 +38,15 @@ public class PlantCell extends EvolvableCell {
         setRadius(MathUtils.random(
                 Environment.settings.plant.minBirthRadius.get(),
                 Environment.settings.plant.maxBirthRadius.get()));
-        float minMaxR = getRadius() * 1.5f;
-        float maxMaxR = Environment.settings.maxParticleRadius.get() / 2f;
-        maxRadius = minMaxR < maxMaxR ? MathUtils.random(minMaxR, maxMaxR) : maxMaxR;
+        maxRadius = randomMaxRadius();
         setGrowthRate(MathUtils.random(minGrowthRate(), maxGrowthRate()));
         setRandomPlantColour();
+    }
+
+    private float randomMaxRadius() {
+        float minMaxR = 5f * Environment.settings.minParticleRadius.get();
+        float maxMaxR = Environment.settings.maxParticleRadius.get() / 2f;
+        return minMaxR < maxMaxR ? MathUtils.random(minMaxR, maxMaxR) : maxMaxR;
     }
 
     public void setRandomPlantColour() {

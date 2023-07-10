@@ -70,7 +70,7 @@ public class ProtozoaSettings extends Settings {
     public final Settings.Parameter<Float> maxLightRange = new Settings.Parameter<>(
             "Light Range",
             "The maximum range of light.",
-            Environment.settings.maxParticleRadius.get() * 5f);
+            Environment.settings.maxParticleRadius.get() * 8f);
 //    public final Settings.Parameter<Float> eatingConversionRatio = new Settings.Parameter<>(
 //            "Eating Conversion Ratio",
 //            "",
