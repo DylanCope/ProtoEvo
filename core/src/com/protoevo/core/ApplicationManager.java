@@ -3,6 +3,7 @@ package com.protoevo.core;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.backends.lwjgl3.Lwjgl3Application;
 import com.badlogic.gdx.backends.lwjgl3.Lwjgl3ApplicationConfiguration;
+import com.protoevo.networking.Client;
 import com.protoevo.ui.GraphicsAdapter;
 import com.protoevo.utils.DebugMode;
 
@@ -19,6 +20,7 @@ public class ApplicationManager {
     private GraphicsAdapter graphics;
 
     public static void main(String[] args) {
+        Client.main(args);
         System.out.println("Current JVM version: " + System.getProperty("java.version"));
         Map<String, String> argsMap = parseArgs(args);
         System.out.println("Parsed arguments: " + argsMap);
