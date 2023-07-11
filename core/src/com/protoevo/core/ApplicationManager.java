@@ -3,7 +3,7 @@ package com.protoevo.core;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.backends.lwjgl3.Lwjgl3Application;
 import com.badlogic.gdx.backends.lwjgl3.Lwjgl3ApplicationConfiguration;
-import com.protoevo.networking.Client;
+import com.protoevo.networking.RemoteGraphics;
 import com.protoevo.ui.GraphicsAdapter;
 import com.protoevo.utils.DebugMode;
 
@@ -18,9 +18,9 @@ public class ApplicationManager {
     private boolean onlyHeadless = false;
     private Simulation simulation;
     private GraphicsAdapter graphics;
+    private RemoteGraphics remoteGraphics;
 
     public static void main(String[] args) {
-        Client.main(args);
         System.out.println("Current JVM version: " + System.getProperty("java.version"));
         Map<String, String> argsMap = parseArgs(args);
         System.out.println("Parsed arguments: " + argsMap);
@@ -59,6 +59,29 @@ public class ApplicationManager {
         disposeSimulationIfPresent();
 
         System.exit(0);
+    }
+
+    public void setRemoteGraphics(RemoteGraphics remoteGraphics) {
+        if (this.remoteGraphics != null) {
+            this.remoteGraphics.close();
+        }
+        this.remoteGraphics = remoteGraphics;
+    }
+
+    public RemoteGraphics getRemoteGraphics() {
+        return remoteGraphics;
+    }
+
+    public boolean hasRemoteGraphics() {
+        return remoteGraphics != null;
+    }
+
+    public boolean sendRemoteGraphics() {
+        if (hasRemoteGraphics()) {
+            remoteGraphics.send();
+            return true;
+        }
+        return false;
     }
 
     public void setSimulation(Simulation simulation) {

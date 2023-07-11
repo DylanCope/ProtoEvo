@@ -27,15 +27,16 @@ import java.util.stream.Stream;
 
 public class Simulation implements Runnable
 {
-	private Environment environment;
-	private ApplicationManager manager;
+	protected Environment environment;
+	protected ApplicationManager manager;
 	private volatile boolean simulate, saveRequested = false, busyOnOtherThread = false;
 	private static boolean paused = false;
 	private float timeDilation = 1, timeSinceSave = 0, timeSinceSnapshot = 0, timeSinceAutoSave = 0;
 	private TimedEventsManager timedEventsManager;
 	
 	public static Random RANDOM = new Random(Environment.settings.simulationSeed.get());
-	private boolean debug = false, initialised = false;
+	private boolean debug = false;
+	protected boolean initialised = false;
 
 	private final Supplier<Environment> environmentLoader;
 	private final String name;

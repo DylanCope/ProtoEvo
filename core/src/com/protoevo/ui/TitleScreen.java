@@ -8,6 +8,7 @@ import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.gdx.scenes.scene2d.ui.VerticalGroup;
 import com.badlogic.gdx.utils.ScreenUtils;
 import com.protoevo.core.Simulation;
+import com.protoevo.networking.RemoteSimulation;
 import com.protoevo.ui.rendering.EnvironmentRenderer;
 import com.protoevo.utils.CursorUtils;
 import com.protoevo.utils.DebugMode;
@@ -48,13 +49,23 @@ public class TitleScreen extends ScreenAdapter {
 
         buttons.clear();
 
-        TextButton newSimulationButton = new TextButton("New Simulation", graphics.getSkin());
-        newSimulationButton.addListener(e -> {
-            if (e.toString().equals("touchDown"))
-                graphics.setScreen(new CreateSimulationScreen(graphics));
-            return true;
-        });
-        buttons.add(newSimulationButton);
+//        TextButton newSimulationButton = new TextButton("New Simulation", graphics.getSkin());
+//        newSimulationButton.addListener(e -> {
+//            if (e.toString().equals("touchDown"))
+//                graphics.setScreen(new CreateSimulationScreen(graphics));
+//            return true;
+//        });
+//        buttons.add(newSimulationButton);
+        addButton("New Simulation", () -> graphics.setScreen(new CreateSimulationScreen(graphics)));
+
+//        TextButton remoteSimulationButton = new TextButton("Open To Remote Simulation", graphics.getSkin());
+//        remoteSimulationButton.addListener(e -> {
+//            if (e.toString().equals("touchDown"))
+//                graphics.loadSimulation(new RemoteSimulation());
+//            return true;
+//        });
+//        buttons.add(remoteSimulationButton);
+        addButton("Open To Remote Simulation", () -> graphics.loadSimulation(new RemoteSimulation()));
 
 //        if (DebugMode.isDebugMode()) {
 //            TextButton sandboxButton = new TextButton("Start Debug Sandbox", graphics.getSkin());
@@ -71,25 +82,37 @@ public class TitleScreen extends ScreenAdapter {
                     .sorted(Comparator.comparingLong(s -> -getMostRecentSaveModifiedTime(s)))
                     .limit(5)
                     .forEach(saveName -> {
-                        TextButton button = new TextButton("Load " + saveName, graphics.getSkin());
-                        button.addListener(e -> {
-                            if (e.toString().equals("touchDown"))
-                                graphics.moveToLoadSaveScreen(saveName);
-                            return true;
-                        });
-                        buttons.add(button);
+                        addButton("Load " + saveName, () -> graphics.moveToLoadSaveScreen(saveName));
+//                        TextButton button = new TextButton("Load " + saveName, graphics.getSkin());
+//                        button.addListener(e -> {
+//                            if (e.toString().equals("touchDown"))
+//                                graphics.moveToLoadSaveScreen(saveName);
+//                            return true;
+//                        });
+//                        buttons.add(button);
                     });
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
 
-        TextButton exitButton = new TextButton("Exit", graphics.getSkin());
-        exitButton.addListener(e -> {
+//        TextButton exitButton = new TextButton("Exit", graphics.getSkin());
+//        exitButton.addListener(e -> {
+//            if (e.toString().equals("touchDown"))
+//                graphics.exitApplication();
+//            return true;
+//        });
+//        buttons.add(exitButton);
+        addButton("Exit", graphics::exitApplication);
+    }
+
+    private void addButton(String text, Runnable onClick) {
+        TextButton button = new TextButton(text, graphics.getSkin());
+        button.addListener(e -> {
             if (e.toString().equals("touchDown"))
-                graphics.exitApplication();
+                onClick.run();
             return true;
         });
-        buttons.add(exitButton);
+        buttons.add(button);
     }
 
     public Long getMostRecentSaveModifiedTime(String saveName) {

@@ -1,6 +1,7 @@
 package com.protoevo.core;
 
 import com.protoevo.env.Environment;
+import com.protoevo.networking.RemoteGraphics;
 import com.protoevo.settings.Settings;
 import com.protoevo.utils.EnvironmentImageRenderer;
 
@@ -42,6 +43,11 @@ public class REPL implements Runnable
         commands.put("getparam", this::getParam);
         commands.put("get", this::getParam);
         commands.put("screenshot", this::screenshot);
+        commands.put("s", this::screenshot);
+        commands.put("setremotegraphics", this::setRemoteGraphics);
+        commands.put("setrg", this::setRemoteGraphics);
+        commands.put("sendremotegraphics", this::sendGraphics);
+        commands.put("sendrg", this::sendGraphics);
     }
 
     public Boolean help(String[] args) {
@@ -56,6 +62,7 @@ public class REPL implements Runnable
         System.out.println("setparam <param> <value> - Set a parameter.");
         System.out.println("setparam -help - Get help on setting parameters.");
         System.out.println("getparam <param> - Get a parameter.");
+        System.out.println("screenshot - Take a screenshot.");
         return true;
     }
 
@@ -72,6 +79,35 @@ public class REPL implements Runnable
             return false;
         }
         return true;
+    }
+
+    public Boolean setRemoteGraphics(String[] args) {
+        if (args.length < 1 || args.length > 2) {
+            System.out.println("This command takes 1 or 2 arguments.");
+            return false;
+        }
+        if (args[1] != null && !args[1].equals("")) {
+            manager.setRemoteGraphics(new RemoteGraphics(args[1], simulation));
+            System.out.println("Remote graphics set to " + args[1]);
+        } else {
+            System.out.println("Invalid argument: " + args[1]);
+            return false;
+        }
+        return true;
+    }
+
+    public Boolean sendGraphics(String[] args) {
+        if (args.length != 1) {
+            System.out.println("This command takes no arguments.");
+            return false;
+        }
+
+        boolean success = manager.sendRemoteGraphics();
+
+        if (!success)
+            System.out.println("Remote graphics not set. Use setremotegraphics <address> to set.");
+
+        return success;
     }
 
     public Boolean setParam(String[] args) {

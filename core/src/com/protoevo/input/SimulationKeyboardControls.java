@@ -5,25 +5,32 @@ import com.badlogic.gdx.InputAdapter;
 import com.protoevo.core.Simulation;
 import com.protoevo.ui.SimulationScreen;
 
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.Callable;
+
 public class SimulationKeyboardControls extends InputAdapter {
 
     private final Simulation simulation;
     private final SimulationScreen screen;
+    private final Map<Integer, Runnable> keyFunctions = new HashMap<>();
 
     public SimulationKeyboardControls(SimulationScreen simulationScreen) {
         this.simulation = simulationScreen.getSimulation();
         this.screen = simulationScreen;
+
+        keyFunctions.put(Input.Keys.SPACE, simulation::togglePause);
+        keyFunctions.put(Input.Keys.F12, screen::toggleUI);
+        keyFunctions.put(Input.Keys.ESCAPE, screen::moveToPauseScreen);
     }
 
     @Override
     public boolean keyDown(int keycode) {
-        if (keycode == Input.Keys.SPACE) {
-            simulation.togglePause();
+        Runnable function = keyFunctions.get(keycode);
+        if (function != null) {
+            function.run();
+            return true;
         }
-        if (keycode == Input.Keys.F12) {
-            screen.toggleUI();
-        }
-
         return false;
     }
 }

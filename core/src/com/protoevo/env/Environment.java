@@ -100,6 +100,7 @@ public class Environment implements Serializable
 		cellsToAdd = new HashSet<>();
 		chunks = new Chunks();
 		chunks.initialise();
+		updateChunkAllocations();
 	}
 
 	public boolean hasStarted() {

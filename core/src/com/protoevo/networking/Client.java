@@ -9,48 +9,89 @@ import java.net.UnknownHostException;
 
 public class Client {
 
-    public static class Student implements Serializable {
-        private int studentAvg;
-        private String studentName;
-        public Student(int studentAvg, String studentName) {
-            this.studentAvg = studentAvg;
-            this.studentName = studentName;
+    public enum Status {
+        CLOSED("Client not opened"),
+        OPEN("Client open"),
+        SENDING("Sending to server"),
+        FAILED("Failed to send to server");
+
+        private String message;
+
+        Status(String message) {
+            this.message = message;
         }
 
-        public int getStudentAvg() {
-            return studentAvg;
+        public String getMessage() {
+            return message;
         }
 
-        public String getStudentName() {
-            return studentName;
+        public Status setMessage(String message) {
+            this.message = message;
+            return this;
+        }
+
+        public String toString() {
+            return message;
         }
     }
 
-    public static void main(String[] args) {
-        Socket client = null;
-        ObjectOutputStream out = null;
-        ObjectInputStream in = null;
+    private final String address;
+    private final int port;
+    private Socket client;
+    private ObjectOutputStream out;
+    private ObjectInputStream in;
+    private boolean opened = false;
+    private Status status;
 
+    public Client(String address, int port) {
+        this.address = address;
+        this.port = port;
+        status = Status.CLOSED;
+    }
+
+    public void open() {
         try {
-            client = new Socket("saintsaviourslodge.ddns.net", 8888);
+            client = new Socket(address, port);
             out = new ObjectOutputStream(client.getOutputStream());
             in = new ObjectInputStream(client.getInputStream());
-            Student student = new Student(50, "Dylan");
-            out.writeObject(student);
+            opened = true;
+            status = Status.OPEN;
+        } catch (UnknownHostException e) {
+            System.err.println("Don't know about host " + address);
+            System.exit(1);
+        } catch (IOException e) {
+            System.err.println("Couldn't get I/O for the connection to " + address);
+            System.exit(1);
+        }
+    }
+
+    public Status getStatus() {
+        return status;
+    }
+
+    public void send(Serializable obj) {
+        if (!opened) open();
+
+        try {
+            out.writeObject(obj);
             out.flush();
 
-//close resources
-
-            out.close();
-            in.close();
-            client.close();
-
-        } catch (UnknownHostException e) {
-            e.printStackTrace();
-            System.exit(1);
         } catch (IOException e) {
             e.printStackTrace();
             System.exit(1);
         }
     }
+
+    public void close() {
+        try {
+            out.close();
+            in.close();
+            client.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public static void main(String[] args) {}
+
 }

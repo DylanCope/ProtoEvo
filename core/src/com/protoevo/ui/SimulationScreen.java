@@ -205,9 +205,6 @@ public class SimulationScreen extends ScreenAdapter {
     @Override
     public void render(float delta) {
 
-        if (Gdx.input.isButtonJustPressed(Input.Keys.ESCAPE))
-            moveToPauseScreen();
-
         conditionalTasks.forEach((condition, task) -> {
             if (condition.get())
                 task.run();

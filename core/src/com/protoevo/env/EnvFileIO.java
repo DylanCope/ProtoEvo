@@ -116,7 +116,6 @@ public class EnvFileIO {
 
     public static void saveEnvironment(Environment env, String filename)
     {
-        Chunks chunks = env.getChunks();
         try {
             Files.createDirectories(Paths.get(filename));
             Files.createDirectories(Paths.get(filename + "/chunks"));
@@ -126,6 +125,7 @@ public class EnvFileIO {
 
         serialize(env, Environment.class, filename + "/environment.dat");
 
+//        Chunks chunks = env.getChunks();
 //        env.updateChunkAllocations();
 //        env.getChunks().getChunkIndices().forEach(i -> {
 //            List<Cell> cells = chunks.getChunkStream(i).collect(Collectors.toList());
