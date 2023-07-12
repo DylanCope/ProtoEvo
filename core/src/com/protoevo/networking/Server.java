@@ -1,7 +1,9 @@
 package com.protoevo.networking;
 
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
+import com.protoevo.env.EnvFileIO;
+import com.protoevo.env.Environment;
+import org.nustaq.serialization.FSTObjectInput;
+
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.Optional;
@@ -37,8 +39,7 @@ public class Server {
 
     private final int port;
     private Socket client;
-    private ObjectOutputStream out;
-    private ObjectInputStream in;
+    private FSTObjectInput in;
     private ServerSocket server;
     private boolean opened = false;
     private Status status;
@@ -54,8 +55,8 @@ public class Server {
             status = Status.WAITING.setMessage("Server waiting for connection on port " + port);
             client = server.accept(); // this method is a blocking I/O call, it will not be called unless
             // a connection is established.
-            out = new ObjectOutputStream(client.getOutputStream()); // get the output stream of client.
-            in = new ObjectInputStream(client.getInputStream());    // get the input stream of client.
+            in = new FSTObjectInput(client.getInputStream(), EnvFileIO.getFSTConfig());
+//            in = new ObjectInputStream(client.getInputStream());    // get the input stream of client.
             status = Status.CONNECTED;
             opened = true;
         } catch (Exception e) {
@@ -63,13 +64,13 @@ public class Server {
         }
     }
 
-    public Optional<Object> get() {
+    public <T> Optional<T> get(Class<T> clazz) {
         if (!opened) open();
 
         try {
             status = Status.WAITING.setMessage("Connection Established. Waiting to receive from client");
             System.out.println(status);
-            Object obj = in.readObject();
+            T obj = (T) in.readObject(clazz);
             return Optional.of(obj);
 
         } catch (Exception e) {
@@ -81,7 +82,6 @@ public class Server {
 
     public void close() {
         try {
-            out.close();
             in.close();
             client.close();
             server.close();
@@ -98,8 +98,12 @@ public class Server {
     }
 
     public static void main(String[] args) {
-        Server server = new Server(8888);
-        Optional<Object> obj = server.get();
+        Server server = new Server(1212);
+        Optional<Environment> obj = server.get(Environment.class);
         System.out.println("Received:" + obj);
+        obj.ifPresent(env -> {
+            env.createTransientObjects();
+            System.out.println(env.getStats());
+        });
     }
 }

@@ -1,9 +1,8 @@
 package com.protoevo.networking;
 
+import org.nustaq.serialization.FSTObjectOutput;
+
 import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.io.Serializable;
 import java.net.Socket;
 import java.net.UnknownHostException;
 
@@ -13,6 +12,7 @@ public class Client {
         CLOSED("Client not opened"),
         OPEN("Client open"),
         SENDING("Sending to server"),
+        SENT_SUCCESSFUL("Sent to server"),
         FAILED("Failed to send to server");
 
         private String message;
@@ -38,8 +38,7 @@ public class Client {
     private final String address;
     private final int port;
     private Socket client;
-    private ObjectOutputStream out;
-    private ObjectInputStream in;
+    private FSTObjectOutput out;
     private boolean opened = false;
     private Status status;
 
@@ -52,8 +51,7 @@ public class Client {
     public void open() {
         try {
             client = new Socket(address, port);
-            out = new ObjectOutputStream(client.getOutputStream());
-            in = new ObjectInputStream(client.getInputStream());
+            out = new FSTObjectOutput(client.getOutputStream());
             opened = true;
             status = Status.OPEN;
         } catch (UnknownHostException e) {
@@ -69,13 +67,19 @@ public class Client {
         return status;
     }
 
-    public void send(Serializable obj) {
+    public void send(Object obj, Class<?> clazz) {
         if (!opened) open();
 
         try {
-            out.writeUnshared(obj);
+//            out.writeUnshared(obj);
+//            out.flush();
+//            out.reset();
+
+            status = Status.SENDING;
+            out.writeObject(obj, clazz);
             out.flush();
-            out.reset();
+            out.resetForReUse();
+            status = Status.SENT_SUCCESSFUL;
 
         } catch (IOException e) {
             e.printStackTrace();
@@ -86,7 +90,6 @@ public class Client {
     public void close() {
         try {
             out.close();
-            in.close();
             client.close();
         } catch (IOException e) {
             e.printStackTrace();

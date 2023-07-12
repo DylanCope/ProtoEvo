@@ -52,7 +52,7 @@ public class RemoteSimulation extends Simulation {
     }
 
     private Environment getEnvironmentFromServer() {
-        Environment env = environmentServer.get()
+        Environment env = environmentServer.get(Environment.class)
                 .filter(o -> o instanceof Environment)
                 .map(o -> (Environment) o)
                 .orElseThrow(() -> new RuntimeException("Could not get environment from server"));

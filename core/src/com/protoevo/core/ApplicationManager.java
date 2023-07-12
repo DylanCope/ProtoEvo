@@ -19,6 +19,7 @@ public class ApplicationManager {
     private Simulation simulation;
     private GraphicsAdapter graphics;
     private RemoteGraphics remoteGraphics;
+    private volatile boolean sendRemoteGraphicsRequested = false;
 
     public static void main(String[] args) {
         System.out.println("Current JVM version: " + System.getProperty("java.version"));
@@ -79,12 +80,10 @@ public class ApplicationManager {
         return remoteGraphics != null;
     }
 
-    public boolean sendRemoteGraphics() {
+    public void sendRemoteGraphics() {
         if (hasRemoteGraphics()) {
-            remoteGraphics.send();
-            return true;
+            sendRemoteGraphicsRequested = true;
         }
-        return false;
     }
 
     public void setSimulation(Simulation simulation) {
@@ -134,6 +133,12 @@ public class ApplicationManager {
 
     public void update() {
         if (hasSimulation() && simulation.isReady()) {
+
+            if (hasRemoteGraphics() && sendRemoteGraphicsRequested) {
+                remoteGraphics.send();
+                sendRemoteGraphicsRequested = false;
+            }
+
             simulation.update();
         }
         if (simulation.isFinished()) {
