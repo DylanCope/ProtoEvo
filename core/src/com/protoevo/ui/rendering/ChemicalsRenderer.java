@@ -11,7 +11,7 @@ import com.protoevo.env.Environment;
 import com.protoevo.utils.DebugMode;
 
 public class ChemicalsRenderer implements Renderer {
-    private final Environment environment;
+    private Environment environment;
     private final ChemicalSolution chemicalSolution;
     private final SpriteBatch batch;
     private final ShaderProgram shader;
@@ -80,5 +80,9 @@ public class ChemicalsRenderer implements Renderer {
         batch.dispose();
         chemicalPixmap.dispose();
         shader.dispose();
+    }
+
+    public void setEnvironment(Environment environment) {
+        this.environment = environment;
     }
 }

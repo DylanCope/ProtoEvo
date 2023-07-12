@@ -68,6 +68,7 @@ public class Server {
 
         try {
             status = Status.WAITING.setMessage("Connection Established. Waiting to receive from client");
+            System.out.println(status);
             Object obj = in.readObject();
             return Optional.of(obj);
 

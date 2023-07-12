@@ -11,6 +11,7 @@ import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.physics.box2d.Box2DDebugRenderer;
+import com.badlogic.gdx.physics.box2d.World;
 import com.badlogic.gdx.utils.ScreenUtils;
 import com.protoevo.biology.cells.Cell;
 import com.protoevo.biology.cells.Protozoan;
@@ -40,7 +41,7 @@ public class EnvironmentRenderer implements Renderer {
     private final Sprite jointSprite;
     private final ShapeRenderer debugRenderer;
     private final ShapeDrawer shapeDrawer;
-    private final Environment environment;
+    private Environment environment;
     private final OrthographicCamera camera;
     private final SimulationInputManager inputManager;
     private final ChemicalsRenderer chemicalsRenderer;
@@ -76,6 +77,13 @@ public class EnvironmentRenderer implements Renderer {
             chemicalsRenderer = null;
 
         lightRenderer = new LightRenderer(camera, environment);
+    }
+
+    public void setEnvironment(Environment environment) {
+        this.environment = environment;
+        if (chemicalsRenderer != null)
+            chemicalsRenderer.setEnvironment(environment);
+        lightRenderer.setEnvironment(environment);
     }
 
     public void renderJoinedParticles(Joining joining) {
@@ -173,7 +181,9 @@ public class EnvironmentRenderer implements Renderer {
     public void renderPhysicsDebug() {
         Physics physics = environment.getPhysics();
         if (physics instanceof Box2DPhysics) {
-            physicsDebugRenderer.render(((Box2DPhysics) physics).getWorld(), camera.combined);
+            World world = ((Box2DPhysics) physics).getWorld();
+            if (world != null)
+                physicsDebugRenderer.render(world, camera.combined);
         }
         debugRenderer.begin();
         debugRenderer.setProjectionMatrix(camera.combined);
