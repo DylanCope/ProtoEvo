@@ -627,6 +627,15 @@ public class Statistics implements Serializable, Iterable<Statistics.Stat> {
             put(new Stat(prefix + stat.name, stat));
     }
 
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        for (Stat stat : this) {
+            sb.append(stat.toString()).append("\n");
+        }
+        return sb.toString();
+    }
+
     public static Statistics computeSummaryStatistics(Iterator<Statistics> iterator) {
         return computeSummaryStatistics(iterator, false);
     }

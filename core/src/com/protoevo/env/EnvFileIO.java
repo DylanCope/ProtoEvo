@@ -84,6 +84,16 @@ public class EnvFileIO {
         return fstConfig;
     }
 
+    public static byte[] toBytes(Object object, Class<?> clazz) {
+        try (FSTObjectOutput out = new FSTObjectOutput(getFSTConfig())) {
+            out.writeObject(object, clazz);
+            return out.getCopyOfWrittenBuffer();
+        } catch(IOException i) {
+            i.printStackTrace();
+            return null;
+        }
+    }
+
     public static void serialize(Object object, Class<?> clazz, String filename) {
         try (FileOutputStream fileOut = new FileOutputStream(filename);
              FSTObjectOutput out = new FSTObjectOutput(fileOut, getFSTConfig())) {

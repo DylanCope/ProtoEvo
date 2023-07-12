@@ -102,12 +102,14 @@ public class REPL implements Runnable
             return false;
         }
 
-        boolean success = manager.sendRemoteGraphics();
-
-        if (!success)
+        if (!manager.hasRemoteGraphics()) {
             System.out.println("Remote graphics not set. Use setremotegraphics <address> to set.");
+            return false;
+        }
 
-        return success;
+        System.out.println("Sending remote graphics...");
+        manager.sendRemoteGraphics();
+        return true;
     }
 
     public Boolean setParam(String[] args) {
