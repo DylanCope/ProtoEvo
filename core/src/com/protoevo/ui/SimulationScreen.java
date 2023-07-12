@@ -50,9 +50,9 @@ public class SimulationScreen extends ScreenAdapter {
 
     private final GraphicsAdapter graphics;
     private final Simulation simulation;
-    private final Environment environment;
+    private Environment environment;
     private final SimulationInputManager inputManager;
-    private final Renderer environmentRenderer;
+    private final ShaderLayers environmentRenderer;
     private final SpriteBatch uiBatch;
     private final Stage stage;
     private final GlyphLayout layout = new GlyphLayout();
@@ -191,6 +191,13 @@ public class SimulationScreen extends ScreenAdapter {
     public void moveToPauseScreen() {
         simulation.setPaused(true);
         graphics.setScreen(new PauseScreen(graphics, this));
+    }
+
+    public void updateEnvironment() {
+        this.environment = simulation.getEnv();
+        ((EnvironmentRenderer) environmentRenderer.getBaseRenderer()).setEnvironment(environment);
+        getStats = environment::getStats;
+        setEnvStatOptions();
     }
 
     public void renderEnvironment(float delta) {

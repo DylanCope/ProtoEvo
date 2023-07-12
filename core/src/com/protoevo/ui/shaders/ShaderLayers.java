@@ -40,6 +40,14 @@ public class ShaderLayers implements Renderer {
         }
     }
 
+    public Renderer getBaseRenderer() {
+        return baseRenderer;
+    }
+
+    public ShaderLayer getLayer(int index) {
+        return layers.get(index);
+    }
+
     private Sprite getFBOSprite() {
         Sprite sprite = new Sprite(fbo.getColorBufferTexture());
         sprite.flip(false, true);

@@ -36,7 +36,10 @@ public class ApplicationManager {
         
         if (headless) {
             app.setOnlyHeadless();
-            app.setSimulation(new Simulation());
+            if (argsMap.containsKey("simulation"))
+                app.setSimulation(new Simulation(argsMap.get("simulation")));
+            else
+                app.setSimulation(new Simulation());
         }
 
         app.launch();
@@ -165,6 +168,10 @@ public class ApplicationManager {
 
     public boolean isGraphicsActive() {
         return graphics != null;
+    }
+
+    public GraphicsAdapter getGraphics() {
+        return graphics;
     }
 
     public void toggleGraphics() {

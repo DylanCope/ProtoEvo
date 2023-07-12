@@ -44,11 +44,10 @@ public class RemoteSimulation extends Simulation {
         if (manager != null) {
             manager.notifySimulationReady();
         }
-    }
-
-    public void listenForEnvironment() {
         while (!isFinished()) {
             environment = getEnvironmentFromServer();
+            if (manager.isGraphicsActive())
+                manager.getGraphics().getSimulationScreen().updateEnvironment();
         }
     }
 

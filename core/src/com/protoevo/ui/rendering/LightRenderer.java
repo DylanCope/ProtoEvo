@@ -12,7 +12,7 @@ import com.protoevo.env.LightManager;
 import com.protoevo.utils.DebugMode;
 
 public class LightRenderer implements Renderer {
-    private final Environment environment;
+    private Environment environment;
     private final LightManager lightManager;
     private final SpriteBatch batch;
     private final ShaderProgram shader;
@@ -74,5 +74,9 @@ public class LightRenderer implements Renderer {
         lightTexture.dispose();
         batch.dispose();
         shader.dispose();
+    }
+
+    public void setEnvironment(Environment environment) {
+        this.environment = environment;
     }
 }

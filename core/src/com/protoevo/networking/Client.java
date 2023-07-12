@@ -73,8 +73,9 @@ public class Client {
         if (!opened) open();
 
         try {
-            out.writeObject(obj);
+            out.writeUnshared(obj);
             out.flush();
+            out.reset();
 
         } catch (IOException e) {
             e.printStackTrace();
