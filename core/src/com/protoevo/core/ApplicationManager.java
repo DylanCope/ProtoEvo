@@ -33,10 +33,10 @@ public class ApplicationManager {
 
         boolean headless = argsMap.containsKey("headless") 
                             && Boolean.parseBoolean(argsMap.get("headless"));
-        
+
         if (headless) {
             app.setOnlyHeadless();
-            if (argsMap.containsKey("simulation"))
+            if (argsMap.containsKey("simulation") && !argsMap.get("simulation").equals(""))
                 app.setSimulation(new Simulation(argsMap.get("simulation")));
             else
                 app.setSimulation(new Simulation());
