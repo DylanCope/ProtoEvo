@@ -51,6 +51,7 @@ public class Client {
     public void open() {
         try {
             client = new Socket(address, port);
+            client.setTcpNoDelay(true);
             out = new FSTObjectOutput(client.getOutputStream());
             opened = true;
             status = Status.OPEN;
@@ -78,7 +79,7 @@ public class Client {
             status = Status.SENDING;
             out.writeObject(obj, clazz);
             out.flush();
-            out.resetForReUse();
+
             status = Status.SENT_SUCCESSFUL;
 
         } catch (IOException e) {

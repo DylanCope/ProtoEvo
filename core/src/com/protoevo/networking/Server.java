@@ -2,6 +2,7 @@ package com.protoevo.networking;
 
 import com.protoevo.env.EnvFileIO;
 import com.protoevo.env.Environment;
+import org.nustaq.net.TCPObjectServer;
 import org.nustaq.serialization.FSTObjectInput;
 
 import java.net.ServerSocket;
@@ -51,10 +52,13 @@ public class Server {
 
     private void open() {
         try {
-            server = new ServerSocket(port); // start listening on port
+            TCPObjectServer server = new TCPObjectServer(port);
+//            server = new ServerSocket(port); // start listening on port
             status = Status.WAITING.setMessage("Server waiting for connection on port " + port);
-            client = server.accept(); // this method is a blocking I/O call, it will not be called unless
+//            client = server.accept(); // this method is a blocking I/O call, it will not be called unless
             // a connection is established.
+
+            client.setTcpNoDelay(true);
             in = new FSTObjectInput(client.getInputStream(), EnvFileIO.getFSTConfig());
 //            in = new ObjectInputStream(client.getInputStream());    // get the input stream of client.
             status = Status.CONNECTED;
@@ -100,6 +104,13 @@ public class Server {
     public static void main(String[] args) {
         Server server = new Server(1212);
         Optional<Environment> obj = server.get(Environment.class);
+        System.out.println("Received:" + obj);
+        obj.ifPresent(env -> {
+            env.createTransientObjects();
+            System.out.println(env.getStats());
+        });
+
+        obj = server.get(Environment.class);
         System.out.println("Received:" + obj);
         obj.ifPresent(env -> {
             env.createTransientObjects();
