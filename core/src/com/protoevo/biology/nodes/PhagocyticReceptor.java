@@ -29,6 +29,26 @@ public class PhagocyticReceptor extends NodeAttachment implements Serializable {
             return;
         }
 
+        if (input.length == 3)
+            handleDim3IO(input, output);
+        else if (input.length == 1)
+            handleDim1IO(input, output);
+
+        for (Collision contact : cell.getParticle().getContacts()) {
+            Object collided = contact.getOther(cell.getParticle());
+            if (!(collided instanceof Particle
+                    && ((Particle) collided).getUserData() instanceof Cell))
+                continue;
+
+            Cell collidingCell = ((Particle) collided).getUserData(Cell.class);
+            if (engulfCondition(collidingCell)) {
+                engulf(collidingCell);
+            }
+        }
+    }
+
+    private void handleDim3IO(float[] input, float[] output) {
+        Cell cell = node.getCell();
         engulfPlant = input[0] > 0f;
         engulfMeat = input[1] > 0f;
 
@@ -41,17 +61,17 @@ public class PhagocyticReceptor extends NodeAttachment implements Serializable {
             else if (lastEngulfed instanceof MeatCell)
                 output[2] = 1f;
         }
+    }
 
-        for (Collision contact : cell.getParticle().getContacts()) {
-            Object collided = contact.getOther(cell.getParticle());
-            if (!(collided instanceof Particle
-                    && ((Particle) collided).getUserData() instanceof Cell))
-                continue;
+    private void handleDim1IO(float[] input, float[] output) {
+        Cell cell = node.getCell();
+        engulfPlant = input[0] > 0f;
+        engulfMeat = engulfPlant;
 
-            Cell collidingCell = ((Particle) collided).getUserData(Cell.class);
-            if (engulfCondition(collidingCell)) {
-                engulf(collidingCell);
-            }
+        if (!((Protozoan) cell).getEngulfedCells().contains(lastEngulfed))
+            lastEngulfed = null;
+        if (lastEngulfed != null) {
+            output[0] = lastEngulfed.getHealth();
         }
     }
 
@@ -108,21 +128,29 @@ public class PhagocyticReceptor extends NodeAttachment implements Serializable {
 
     @Override
     public String getInputMeaning(int index) {
-        if (index == 0)
-            return "Should Engulf Plant";
-        if (index == 1)
-            return "Should Engulf Meat";
+        if (node.getIODimension() == 1) {
+            if (index == 0)
+                return "Should Engulf";
+        }
+        else {
+            if (index == 0)
+                return "Should Engulf Plant";
+            if (index == 1)
+                return "Should Engulf Meat";
+        }
         return null;
     }
 
     @Override
     public String getOutputMeaning(int index) {
-        if (index == 0)
-            return "Last Engulfed Health";
-        if (index == 1)
-            return "Is Last Engulfed Plant";
-        if (index == 2)
-            return "Is Last Engulfed Meat";
+            if (index == 0)
+                return "Last Engulfed Health";
+        if (node.getIODimension() == 3) {
+            if (index == 1)
+                return "Is Last Engulfed Plant";
+            if (index == 2)
+                return "Is Last Engulfed Meat";
+        }
         return null;
     }
 

@@ -18,14 +18,12 @@ import java.util.Map;
 
 public class SurfaceNode implements Evolvable.Element, Serializable {
 
-
-    
     private static final long serialVersionUID = 1L;
 
     public static final String activationPrefix = "Activation/";
     public static final String inputActivationPrefix = "Input" + activationPrefix;
     public static final String outputActivationPrefix = "Output" + activationPrefix;
-    public static final int ioDim = 3;
+    public static final int ioDim = 1;
 
     private Cell cell;
     private float angle, constructionSignature, deltaTime;
@@ -223,25 +221,25 @@ public class SurfaceNode implements Evolvable.Element, Serializable {
         return outputActivation[0];
     }
 
-    @ControlVariable(name=inputActivationPrefix + "1", min=-1, max=1)
-    public void setActivation1(float value) {
-        inputActivation[1] = value;
-    }
-
-    @GeneRegulator(name=outputActivationPrefix + "1", min=-1, max=1)
-    public float getActivation1() {
-        return outputActivation[1];
-    }
-
-    @ControlVariable(name=inputActivationPrefix + "2", min=-1, max=1)
-    public void setActivation2(float value) {
-        inputActivation[2] = value;
-    }
-
-    @GeneRegulator(name=outputActivationPrefix + "2", min=-1, max=1)
-    public float getActivation2() {
-        return outputActivation[2];
-    }
+//    @ControlVariable(name=inputActivationPrefix + "1", min=-1, max=1)
+//    public void setActivation1(float value) {
+//        inputActivation[1] = value;
+//    }
+//
+//    @GeneRegulator(name=outputActivationPrefix + "1", min=-1, max=1)
+//    public float getActivation1() {
+//        return outputActivation[1];
+//    }
+//
+//    @ControlVariable(name=inputActivationPrefix + "2", min=-1, max=1)
+//    public void setActivation2(float value) {
+//        inputActivation[2] = value;
+//    }
+//
+//    @GeneRegulator(name=outputActivationPrefix + "2", min=-1, max=1)
+//    public float getActivation2() {
+//        return outputActivation[2];
+//    }
 
     public float getAngle() {
         return angle;
@@ -320,5 +318,9 @@ public class SurfaceNode implements Evolvable.Element, Serializable {
 
     public float getAttachmentConstructionProgress() {
         return attachment == null ? 0f : attachment.getConstructionProgress();
+    }
+
+    public int getIODimension() {
+        return ioDim;
     }
 }

@@ -1,6 +1,5 @@
 package com.protoevo.biology.nodes;
 
-import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector2;
 import com.protoevo.biology.cells.Cell;
 import com.protoevo.core.Statistics;
@@ -14,7 +13,13 @@ import com.protoevo.utils.Utils;
 
 import java.io.Serializable;
 
+import static com.protoevo.biology.nodes.Photoreceptor.ColourSensitivity.*;
+
 public class Photoreceptor extends NodeAttachment implements Serializable {
+
+    public enum ColourSensitivity {
+        RGB, R, G, B, GrayLevel
+    }
 
     private static final long serialVersionUID = 1L;
     private final Vector2[] ray = new Vector2[]{new Vector2(), new Vector2()};
@@ -25,6 +30,7 @@ public class Photoreceptor extends NodeAttachment implements Serializable {
     private float interactionRange = 0;
     private final Colour colour = new Colour();
     private float r, g, b;
+    private ColourSensitivity colourSensitivity = RGB;
     private int rayIdx;
     private float minSqLen;
     private static final float maxFoV = (float) (Math.PI / 2.);
@@ -44,9 +50,30 @@ public class Photoreceptor extends NodeAttachment implements Serializable {
         interactionRange = getInteractionRange();
         attachmentRelPos.set(node.getRelativePos());
         castRays();
-        output[0] = colour.r;
-        output[1] = colour.g;
-        output[2] = colour.b;
+
+        if (output.length == 3) {
+            output[0] = colour.r;
+            output[1] = colour.g;
+            output[2] = colour.b;
+        }
+        else if (output.length == 1) {
+            if (colourSensitivity == RGB)
+                colourSensitivity = GrayLevel;
+
+            switch (colourSensitivity) {
+                case R:
+                    output[0] = colour.r;
+                    break;
+                case G:
+                    output[0] = colour.g;
+                    break;
+                case B:
+                    output[0] = colour.b;
+            }
+        }
+        else {
+            throw new RuntimeException("Do not know how to deal with requested output of dim: " + output.length);
+        }
     }
 
     public Vector2[] nextRay() {
@@ -79,6 +106,22 @@ public class Photoreceptor extends NodeAttachment implements Serializable {
             for (Object o : cell.getParticle().getInteractionQueue())
                 if (o instanceof Shape && o instanceof Coloured)
                     computeIntersections((Shape) o);
+        }
+
+
+        switch (colourSensitivity) {
+            case R:
+                g = 0; b = 0;
+                break;
+            case G:
+                b = 0; r = 0;
+                break;
+            case B:
+                r = 0; g = 0;
+                break;
+            case GrayLevel:
+                float meanRGB = (r + g + b) / 3f;
+                r = meanRGB; g = meanRGB; b = meanRGB;
         }
 
         colour.set(r / (nRays + 1), g / (nRays + 1), b / (nRays + 1), 1);
@@ -167,12 +210,17 @@ public class Photoreceptor extends NodeAttachment implements Serializable {
 
     @Override
     public String getOutputMeaning(int index) {
-        if (index == 0)
-            return "R";
-        else if (index == 1)
-            return "G";
-        else if (index == 2)
-            return "B";
+        if (colourSensitivity == RGB) {
+            if (index == 0)
+                return "R";
+            else if (index == 1)
+                return "G";
+            else if (index == 2)
+                return "B";
+        }
+        else if (index == 0) {
+            return colourSensitivity.name();
+        }
         return null;
     }
 

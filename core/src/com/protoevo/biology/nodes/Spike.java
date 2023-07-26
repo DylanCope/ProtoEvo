@@ -78,8 +78,10 @@ public class Spike extends NodeAttachment implements Serializable {
                         lastDPS = dps;
                     }
 
-                    output[1] = other.getHealth();
-                    output[2] = myAttack - theirDefense;
+                    if (output.length > 2) {
+                        output[1] = other.getHealth();
+                        output[2] = myAttack - theirDefense;
+                    }
                 }
             }
         }
@@ -106,10 +108,12 @@ public class Spike extends NodeAttachment implements Serializable {
     public String getOutputMeaning(int index) {
         if (index == 0)
             return "Did Hit?";
-        if (index == 1)
-            return "Attacked Health";
-        if (index == 2)
-            return "Attack Amount";
+        if (node.getIODimension() == 3) {
+            if (index == 1)
+                return "Attacked Health";
+            if (index == 2)
+                return "Attack Amount";
+        }
         return null;
     }
 
