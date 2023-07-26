@@ -4,6 +4,10 @@ import com.protoevo.core.Simulation;
 import com.protoevo.env.EnvFileIO;
 import com.protoevo.env.Environment;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+
 public class RemoteGraphics {
 
     private final Client client;
@@ -30,14 +34,22 @@ public class RemoteGraphics {
         return client.getStatus();
     }
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws IOException {
         Simulation simulation = new Simulation("test");
         RemoteGraphics remoteGraphics = new RemoteGraphics("127.0.0.1", simulation, 1212);
         simulation.prepare();
+        simulation.update();
         System.out.println(simulation.getEnv().getStats());
         remoteGraphics.send();
         System.out.println(remoteGraphics.getStatus());
+
+        System.out.println("Attempting second send\n");
+        simulation.update();
+        System.out.println(simulation.getEnv().getStats());
+        remoteGraphics.send();
+        System.out.println(remoteGraphics.getStatus());
+
         remoteGraphics.close();
-        simulation.close();
+        System.exit(0);
     }
 }

@@ -19,16 +19,11 @@ public class Chunks implements Serializable {
     public static final long serialVersionUID = 1L;
 
     private ConcurrentHashMap<Class<? extends Cell>, SpatialHash<Cell>> cellHashes;
-    private ConcurrentHashMap<Class<? extends Cell>, Integer> globalCellCounts, globalCaps;
+    private ConcurrentHashMap<Class<? extends Cell>, Integer> globalCellCounts;
 
     public void initialise() {
         cellHashes = new ConcurrentHashMap<>(3, 1);
         globalCellCounts = new ConcurrentHashMap<>(3, 1);
-        globalCaps = new ConcurrentHashMap<>(3, 1);
-
-        globalCaps.put(Protozoan.class, Environment.settings.misc.maxProtozoa.get());
-        globalCaps.put(PlantCell.class, Environment.settings.misc.maxPlants.get());
-        globalCaps.put(MeatCell.class, Environment.settings.misc.maxMeat.get());
 
         int resolution = Environment.settings.misc.spatialHashResolution.get();
         int protozoaLocalCap = Environment.settings.misc.protozoaLocalCap.get();
@@ -60,9 +55,13 @@ public class Chunks implements Serializable {
     }
 
     public int getGlobalCapacity(Cell cell) {
-        if (!globalCaps.containsKey(cell.getClass()))
-            return 0;
-        return globalCaps.get(cell.getClass());
+        if (cell instanceof Protozoan)
+            return Environment.settings.misc.maxProtozoa.get();
+        else if (cell instanceof PlantCell)
+            return Environment.settings.misc.maxPlants.get();
+        else if (cell instanceof MeatCell)
+            return Environment.settings.misc.maxMeat.get();
+        return 0;
     }
 
     public void clear() {

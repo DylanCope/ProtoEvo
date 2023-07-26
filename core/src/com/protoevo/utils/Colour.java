@@ -99,8 +99,8 @@ public class Colour implements Serializable {
         return color.set(r, g, b, a);
     }
 
-    public float get(int axis) {
-        switch (axis) {
+    public float get(int index) {
+        switch (index) {
             case 0:
                 return r;
             case 1:
@@ -110,7 +110,7 @@ public class Colour implements Serializable {
             case 3:
                 return a;
             default:
-                throw new RuntimeException("Invalid axis " + axis);
+                throw new RuntimeException("Invalid axis " + index);
         }
     }
 
