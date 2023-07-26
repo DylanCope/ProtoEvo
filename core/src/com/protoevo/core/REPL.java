@@ -31,6 +31,7 @@ public class REPL implements Runnable
         commands.put("h", this::help);
         commands.put("exit", this::exit);
         commands.put("quit", this::exit);
+        commands.put("q", this::exit);
         commands.put("settime", this::setTimeDilation);
         commands.put("gettime", this::getTimeDilation);
         commands.put("stats", this::printStats);
@@ -68,14 +69,22 @@ public class REPL implements Runnable
 
     public Boolean screenshot(String[] args) {
         try {
+            int size = 1024;
+            if (args.length > 1) {
+                size = Integer.parseInt(args[1]);
+            }
+
+            System.out.println("Creating screenshot of size " + size + "x" + size + "...");
             EnvironmentImageRenderer renderer = new EnvironmentImageRenderer(
-                    1024, 1024, simulation.getEnv()
+                size, size, simulation.getEnv()
             );
             String outputDir = simulation.getSaveFolder() + "/screenshots";
             renderer.render(outputDir);
             System.out.println("Created images in directory: " + outputDir);
-        } catch (Exception e) {
+        }
+        catch (Exception e) {
             System.out.println("Failed to create screenshot: " + e);
+            e.printStackTrace();
             return false;
         }
         return true;

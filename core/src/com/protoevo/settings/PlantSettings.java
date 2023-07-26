@@ -21,7 +21,7 @@ public class PlantSettings extends Settings {
     public final Settings.Parameter<Float> maxPlantGrowth = new Settings.Parameter<>(
             "Max Plant Growth",
             "The maximum growth factor a plant can have.",
-            1f);
+            1.25f);
     public final Settings.Parameter<Float> collisionDestructionRate = new Settings.Parameter<>(
             "Contact Death Rate",
             "The rate at which a plant's health is reduced when it collides with another non-plant object.",

@@ -17,13 +17,15 @@ public class Utils {
     public static Map<String, String> parseArgs(String[] args) {
         Map<String, String> argsMap = new HashMap<>();
         for (String arg : args) {
-            String[] split = arg.split("=");
-            if (split.length == 2) {
-                if (!split[1].equals(""))
-                    argsMap.put(split[0].replace("--", ""), split[1]);
+            if (arg.startsWith("--"))
+                argsMap.put(arg.replace("--", ""), "true");
+            else if (arg.startsWith("-")) {
+                String[] split = arg.split("=");
+                if (split.length == 2 && !split[1].equals(""))
+                    argsMap.put(split[0].replace("-", ""), split[1]);
+                else
+                    System.out.println("Ignoring invalid argument: " + arg);
             }
-            if (arg.startsWith("--") && split.length == 1)
-                argsMap.put(split[0].replace("--", ""), "true");
         }
         return argsMap;
     }

@@ -42,7 +42,7 @@ public class MiscSettings extends Settings {
     public final Settings.Parameter<Integer> maxProtozoa = new Settings.Parameter<>(
             "Max Protozoa",
             "The maximum number of protozoa that can exist in the simulation.",
-            2000);
+            1000);
     public final Settings.Parameter<Integer> maxMeat = new Settings.Parameter<>(
             "Max Meat",
             "The maximum number of meat that can exist in the simulation.",
@@ -50,11 +50,11 @@ public class MiscSettings extends Settings {
     public final Settings.Parameter<Integer> protozoaLocalCap = new Settings.Parameter<>(
             "Local Protozoa Cap",
             "The maximum number of protozoa that can exist in a local region (defined by the spatial hash resolution).",
-            300);
+            250);
     public final Settings.Parameter<Integer> plantLocalCap = new Settings.Parameter<>(
             "Local Plant Cap",
             "The maximum number of plants that can exist in a local region (defined by the spatial hash resolution).",
-            75);
+            100);
     public final Settings.Parameter<Integer> meatLocalCap = new Settings.Parameter<>(
             "Local Meat Cap",
             "The maximum number of meat that can exist in a local region (defined by the spatial hash resolution).",

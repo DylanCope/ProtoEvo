@@ -26,7 +26,7 @@ public class ProtozoaSettings extends Settings {
     public final Settings.Parameter<Float> starvationFactor = new Settings.Parameter<>(
             "Starvation Factor",
             "The rate at which a protozoan's health is reduced when it is not eating.",
-            .8f);
+            .85f);
     public final Settings.Parameter<Float> initialGenomeConnectivity = new Settings.Parameter<>(
             "Initial Genome Connectivity",
             "The initial connectivity of a protozoan's genome.",
@@ -42,7 +42,7 @@ public class ProtozoaSettings extends Settings {
     public final Settings.Parameter<Float> engulfEatingRateMultiplier = new Settings.Parameter<>(
             "Engulf Eating Rate Multiplier",
             "The speed at which a protozoan eats and engulfed cell.",
-            3.5f);
+            3.25f);
 //    public final Settings.Parameter<Float> maxProtozoanSplitRadius = new Settings.Parameter<>(
 //            "Max Split Radius",
 //            "The maximum radius of a protozoan after splitting.",
@@ -62,7 +62,7 @@ public class ProtozoaSettings extends Settings {
     public final Settings.Parameter<Float> spikeDamage = new Settings.Parameter<>(
             "Spike Damage",
             "The amount of damage a spike does to a protozoan.",
-            4f);
+            5f);
 //    public final Settings.Parameter<Float> matingTime = new Settings.Parameter<>(
 //            "",
 //            "",
@@ -70,7 +70,7 @@ public class ProtozoaSettings extends Settings {
     public final Settings.Parameter<Float> maxLightRange = new Settings.Parameter<>(
             "Light Range",
             "The maximum range of light.",
-            Environment.settings.maxParticleRadius.get() * 8f);
+            Environment.settings.maxParticleRadius.get() * 10f);
 //    public final Settings.Parameter<Float> eatingConversionRatio = new Settings.Parameter<>(
 //            "Eating Conversion Ratio",
 //            "",
@@ -78,19 +78,19 @@ public class ProtozoaSettings extends Settings {
     public final Settings.Parameter<Float> maxFlagellumThrust = new Settings.Parameter<>(
             "Max Flagellum Thrust",
             "The maximum thrust of a flagellum.",
-            .005f);
+            .006f);
     public final Settings.Parameter<Float> maxCiliaThrust = new Settings.Parameter<>(
             "Max Cilia Thrust",
             "The maximum thrust of a cilia.",
-            maxFlagellumThrust.get() / 10f);
+            .0005f);
     public final Settings.Parameter<Float> maxFlagellumTorque = new Settings.Parameter<>(
             "Max Flagellum Torque",
             "The maximum torque of a flagellum.",
-            .01f);
+            .005f);
     public final Settings.Parameter<Float> maxCiliaTurn = new Settings.Parameter<>(
             "Max Cilia Turn",
             "Maximum turn produced by a cilia in radians per second",
-            MathUtils.PI
+            MathUtils.PI * .75f
     );
 
     public ProtozoaSettings() {
