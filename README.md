@@ -108,8 +108,9 @@ cells, and they present the potential to skip producing any stored complex molec
 
 ## Running the Simulation
 
-**Note:** This project is still in development, and is not yet ready for public consumption. It also requires a
-quite powerful computer to run.
+**Note:** This project is still in development, and is not yet easy to executable.
+Getting it set-up currently requires a fair deal of technical knowledge.
+It also requires a quite powerful computer to run.
 
 The simulation is written in Java and uses the libGDX for the UIX, which is a cross-platform game development library.
 I developed this project using the [IntelliJ IDEA](https://www.jetbrains.com/idea/) IDE,
