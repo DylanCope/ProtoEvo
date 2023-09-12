@@ -46,8 +46,10 @@ public class ProtozoaSettings extends Settings {
     public final Settings.Parameter<Float> engulfRangeFactor = new Settings.Parameter<>(
             "Engulf Range Factor",
             "The fraction of the cell radius away that a victim cell needs to be from the " +
-                    "phagocytosis node in order to be engulfed.",
-            1f);
+                    "phagocytosis node in order to be engulfed. When this value is set to 1 it means that " +
+                    "a minimum of 3 nodes are be required to cover the entire circumference " +
+                    "of the cell.",
+            1.25f);
 //    public final Settings.Parameter<Float> maxProtozoanSplitRadius = new Settings.Parameter<>(
 //            "Max Split Radius",
 //            "The maximum radius of a protozoan after splitting.",

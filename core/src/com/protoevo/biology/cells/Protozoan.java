@@ -121,7 +121,7 @@ public class Protozoan extends EvolvableCell
 			name = "Surface Nodes",
 			elementClassPath = "com.protoevo.biology.nodes.SurfaceNode",
 			minSize = 1,
-			initialSize = 3
+			initialSize = 5
 	)
 	public void setSurfaceNodes(ArrayList<SurfaceNode> surfaceNodes) {
 		this.surfaceNodes = surfaceNodes;
