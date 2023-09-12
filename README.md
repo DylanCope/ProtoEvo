@@ -111,9 +111,12 @@ cells, and they present the potential to skip producing any stored complex molec
 * Remove dependency on CUDA.
 * Optimise the physics engine.
 * Lineage tracking UI tools.
+* More detailed cell stats.
+* An environment editor.
+* More variation and environmental features.
+* Running the simulation distributed across multiple machines.
 
-
-## Running the Simulation
+## Setting up the Project
 
 **Note:** This project is still in development, and is not yet easy to executable.
 Getting it set-up currently requires a fair deal of technical knowledge.
@@ -144,6 +147,66 @@ For a general guide to running LibGDX projects, see [this article](https://libgd
 - Run the Gradle task `desktop:run` to run the simulation. In IntelliJ, this can be done by opening the Gradle
   tool window and navigating to `ProtoEvo > desktop > other > run`, or by clicking the green play button on the
   `main` method of the `com.protoevo.core.ApplicationManager` class (found in the `core/src` module).
+
+## Running the Program
+
+### Loading and Creating Simulations
+
+If you have set up your installation correctly, when you launch the simulation you should see the following screen:
+
+![png](/screenshots/home-screen.png "Home Screen")
+
+You can load existing saves or create a new simulation. When creating a simulation you can customise many of the
+parameters of the simulation. The following screenshot shows the simulation settings screen.
+
+![png](/screenshots/settings-screen.png "Simulation Settings")
+
+_Note: The "Use CUDA" option does not currently work_
+
+The default settings can only be modified by editing the `Settings` classes in the `com.protoevo.settings` module.
+
+### Simulation Controls
+
+After creating the simulation, you will be taken to a screen in which you can watch and interact with the simulation.
+You can move the camera around, pick up cells and move them, kill cells with the lightning tool, and spawn new cells
+with the cell by clicking with the middle-mouse button. If you left-click anywhere in the environment it will
+create a "shockwave" that will push cells away from the point of impact. This is useful for moving around lots of cells.
+
+If you right-click on a cell the camera will track it and the UI will display 
+information about the cell, given you the option to save the cell or add a tag. Tags are a useful way to keep track
+of lineages as they are attached to all future descendants of the cell. When cells are saved they are stored as `.cell`
+files and can be loaded into other simulations. The following screenshot shows the simulation UI.
+
+![png](/screenshots/ui-screenshot.png "Simulation UI Screen")
+
+You can also find more information about a cell by clicking on the region in the above screenshot with
+the "Protozoan Stats" text. This will open a drop-down menu where you can access different kinds of information,
+such as information about each of the surface nodes on the cell.
+
+You can also pause and resume the simulation with the space bar, or the icon in the top left of the screen.
+The folder icon will open the simulation save folder. The terminal icon will disable the UI and show the 
+REPL terminal. This is useful for running the simulation headless, and therefore faster. To return to the
+UI, type `ui` into the terminal. If you want to run other commands, type `help` to see a list of available commands.
+The next icon will make the camera pan and zoom smoothly around the environment, jumping randomly to see different
+cells and parts of the environment. The hand icon activates the cell picking tool, which allows you to pick up
+cells and move them around. The lightning icon activates the lightning tool, which allows you to kill cells.
+
+**Hotkeys**
+- `Space` - Stop/Resume Simulating the Environment
+- `Esc` Open Pause Screen
+- `F12` - Toggle UI. This is useful for taking screenshots.
+- `F3` - Toggle basic debug on and off.
+- `Shift + F3` - Cycle through advanced debug modes. The basic mode will show stats, the next mode will remove 
+  shader effects, and the final mode will show the physics debug.
+
+**Editing Settings**
+
+The simulation parameters can be changed as the simulation runs in the pause screen (accessed by pressing `Esc` or
+by clicking the cog icon).
+
+![png](/screenshots/pause-screen.png "Pause Screen")
+
+You will need to click the "Apply" button on each of the sub-screens of the settings menu.
 
 [//]: # (**Options for Improving Performance**)
 

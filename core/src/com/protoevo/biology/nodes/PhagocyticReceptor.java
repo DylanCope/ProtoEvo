@@ -111,7 +111,7 @@ public class PhagocyticReceptor extends NodeAttachment implements Serializable {
     }
 
     public float engulfRange() {
-        return node.getCell().getRadius() / 2f; // * Environment.settings.engulfRangeFactor.get();
+        return node.getCell().getRadius() * Environment.settings.protozoa.engulfRangeFactor.get();
     }
 
     public void engulf(Cell cell) {

@@ -43,6 +43,11 @@ public class ProtozoaSettings extends Settings {
             "Engulf Eating Rate Multiplier",
             "The speed at which a protozoan eats and engulfed cell.",
             3.25f);
+    public final Settings.Parameter<Float> engulfRangeFactor = new Settings.Parameter<>(
+            "Engulf Range Factor",
+            "The fraction of the cell radius away that a victim cell needs to be from the " +
+                    "phagocytosis node in order to be engulfed.",
+            1f);
 //    public final Settings.Parameter<Float> maxProtozoanSplitRadius = new Settings.Parameter<>(
 //            "Max Split Radius",
 //            "The maximum radius of a protozoan after splitting.",
