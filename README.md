@@ -23,6 +23,13 @@ Proceedings of the 2023 Artificial Life Conference (ALIFE 23), pp. 77-86, MIT Pr
 }
 ```
 
+For the previous version of the simulation I created a YouTube video that explains the project in more detail.
+Many of the mechanics have changed since then, but the video still provides a good overview of the project.
+You can also come and discuss the project on [discord](https://discord.com/invite/GY5UJxbBnq)!
+
+
+[![IMAGE ALT TEXT HERE](https://img.youtube.com/vi/fEDqdvKO5Y0/0.jpg)](https://www.youtube.com/watch?v=fEDqdvKO5Y0)
+
 ## Overview
 
 ### Feeding and the Environment
