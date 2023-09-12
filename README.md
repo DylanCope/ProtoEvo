@@ -15,8 +15,8 @@ Proceedings of the 2023 Artificial Life Conference (ALIFE 23), pp. 77-86, MIT Pr
 ```bibtex
 @proceedings{cope2023multicellularity,
     author = {Cope, Dylan},
-    title = "{Real-time Evolution of Multicellularity with Artificial Gene Regulation}",
-    booktitle = {Proceedings of the 2023 Artificial Life Conference (ALIFE 23)},
+    title = {{Real-time Evolution of Multicellularity with Artificial Gene Regulation}},
+    booktitle = {{Proceedings of the 2023 Artificial Life Conference (ALIFE 23)}},
     pages = {77-86},
     year = {2023},
     doi = {10.1162/isal_a_00690}
