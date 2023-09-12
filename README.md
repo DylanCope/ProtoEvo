@@ -1,58 +1,108 @@
 # ProtoEvo 2.0
 
+## Introduction
+
+The aim of this project is to create an environment where protozoa-like entities evolve their behaviours
+and morphologies in order to survive and reproduce.
+The simulation takes place in a 2D environment physically simulated environment. The project was the subject of a
+paper that I presented at the [ALIFE 2023](https://2023.alife.org/) conference, and which you can find
+[published in the ALIFE proceedings](https://direct.mit.edu/isal/proceedings/isal/35/77/116930).
+If you wish to cite this work, please use the following citation:
+
+Dylan Cope, 2023, "Real-time Evolution of Multicellularity with Artificial Gene Regulation", in the
+Proceedings of the 2023 Artificial Life Conference (ALIFE 23), pp. 77-86, MIT Press.
+
+```bibtex
+@proceedings{cope2023multicellularity,
+    author = {Cope, Dylan},
+    title = "{Real-time Evolution of Multicellularity with Artificial Gene Regulation}",
+    booktitle = {Proceedings of the 2023 Artificial Life Conference (ALIFE 23)},
+    pages = {77-86},
+    year = {2023},
+    doi = {10.1162/isal_a_00690}
+}
+```
+
 ## Overview
 
-The aim of this project is to create an environment where protozoa-like entities can evolve their behaviours
-and morphologies in order to survive and reproduce.
-The simulation takes place in a 2D environment with Newtonian physics implemented with Verlet integration.
-The following screenshot shows a zoomed-out view of the entire environment.
-In the screenshot below, can see procedurally generated rocks shown as brown-grey triangles that form rigid
-boundaries for cells moving around the tank fluids. The bright green cells are plants that serve as a sources
-of energy and mass for protozoa.
-These plants emit chemical pheromones that spread through the environment,
-and gradients of which can be detected by the protozoa.
-These pheromones are visualised in the screenshot and can be seen as the glowing green trails dispersed
-around and behind plant cells.
+### Feeding and the Environment
+
+In the following screenshot we can
+see the protozoa as white circles, and the plants as green circles. The plants emit chemical pheromones that
+spread through the environment, which provide nutrients and can be detected by the protozoa. The red cells are 
+dead cells that emit nutrients and are rich in resources for the protozoa to feed on. The protozoa can all feed 
+on cells by engulfing them, a process in real cellular biology call _phagocytosis_.
+
+![png](/screenshots/feeding-close.png "Close up feeding")
+
+In the above screenshot we also see a brown triangle. This is a "rock"; a rigid body that forms a
+procedurally generate boundaries in the environment. The next screenshot below shows a more zoomed-out view
+of the environment, where we can see the rocks forming a boundary around the environment. Outside the outer
+ring of rocks is a "void" in which there are no resources, and the cold, dark environment is inhospitable to life.
+
+![png](/screenshots/zoomed-out-screenshot.png "Zoomed out view of the environment")
+
+### Evolving Multicellularity
 
 The primary research objective of this project is to investigate the emergence of multicellular structures,
 i.e. the development of coordinated groups of attached cells that incur a survival benefit by being attached.
-So far, by implementing cell-adhesion and allowing protozoa to share resources I have seen the
-emergence of some quite cool multi-cell behaviour. However, the next step is to achieve cell differentiation
-via the evolution of trait-regulatory networks.
+Further, we are interested in the emergence of cell differentiation, i.e. the development of cells that
+specialise in different functions. For example, some cells may specialise in feeding, while others may specialise
+in being light-sensitive, or in reproduction. The following screenshot shows a multicellular structure that
+has evolved in the simulation. The two cells are bound together and are able to transmit signals to one another.
+These signals are used to coordinate the feeding behaviour of the two cells, but they also regulate the development
+of functions. For example, the cell on the right has developed a light-sensitive functions, whereas the cell on the
+left has only developed feeding function (called phagocytosis nodes).
 
-![png](/screenshots/full_env_view.png "Full view of the environment")
+![png](/screenshots/binding-regulates-photo-construction.png "Evolved multicellular structure")
 
-In the next screenshot we see a close-up of tracking a protozoa in the environment.
-The tracked cell is fixed at the centre of the screen as it moves around, and the neural network that controls
-its actions is illustrated on the right-hand side of the screen.
-This network evolved using a variation of the NEAT algorithm.
-The protozoa have a variety of other evolvable traits, including (but not limited to) their size, growth rate, colour,
-speed, herbivore factor, and the growth of offensive spikes for harming and killing other protozoa.
+The cell functions are implemented using a "surface node" system and a "fuzzy lock-and-key" mechanism to
+incorporate signals from a gene regulatory network (GRN) with requirements needed to create the functions.
+The following diagram illustrates the surface node system with the kinds of nodes that can be constructed by a cell.
 
-![png](/screenshots/tank.png)
+![png](/screenshots/surface-node-system.png "Surface node diagram")
 
-Zooming in more on a protozoan, we can see one of their key evolvable traits: vision by light-sensitive "retinas".
-These retinas can have variable fields-of-view and acuity, mediated by a ray-casting procedure that feeds into their
-control circuits. However, developing such capabilities' comes with a cost. Retinas require a complex molecule call
-_retinal_ that is sensitive to light, which itself requires mass and energy to produce from raw material extracted
-from feeding on plants. The introduction a prerequisite material for developing such a useful trait that has a cost
-to produce opens up the interesting possibility for predation as an alternative strategy for meeting the requirement.
+The diagram also shows part of the motivation for the surface node system in terms of the kinds of evolutionary 
+dynamics that we hope to observe. This is inspired by what the Evolutionary Biologist Neil Shubin calls 
+["Revolutionary Repurposing"](https://www.the-scientist.com/reading-frames/revolutionary-repurposing-67552)
+in his book "Some Assembly Required". The basic idea is that the evolution of new functions is not necessarily
+a process of creating new genes, but rather can be a process of repurposing existing genes. Putting them into 
+new contexts and combining them in new ways. The surface node system is designed to facilitate this kind of
+evolutionary process by providing common I/O interfaces for the cell functions. A cell could evolve mechanisms to 
+interpret information from a photoreceptor node, for example, and use that information to regulate the behaviour
+of a flagellum node. Then, by mutation of the flagellum into a cell adhesion node, the information that was previously
+used to control movement could be sent to another cell. This could be used to coordinate the behaviour of a group
+of cells, or to send a signal to another cell to trigger a response.
 
-![png](/screenshots/retina_example.png)
+### Resource Flows
 
-This final screenshot shots an example of the kinds of multi-cell structures that can evolve in this simulator.
-This is facilitated as the cells have the ability to evolve _Cell-adhesion molecules (CAMs)_
-that allow them to bind to other cells and transmit mass, energy, signals, and complex molecules.
+The following diagram shows the resource flows in the simulation. It highlights the importance of something in the
+simulation called _complex molecules_. These serve as prerequisites for constructing various traits.
+They are represented by a number in the unit interval called the molecule’s signature. The simulation only permits
+a finite number of possible molecules, represented at evenly spaced intervals between 0 and 1. Complex molecules
+are produced using mass and energy according to a ‘production cost‘ in terms of energy expended per unit of mass produced.
+The term ‘complex molecules’ is inspired by the _Central Dogma of Molecular Biology_, that states: “DNA codes for
+RNA, and RNA codes for proteins”. Complex molecules in the simulation are designed to be analogous to proteins in the
+following ways; firstly, they are what ultimately implement functions in a cell. Secondly, they are involved in ‘lock-and-
+key’ mechanisms that act as conditional switches. Thirdly, the choice of which complex molecules are produced is made
+by the gene regulatory network.
 
-![png](/screenshots/evolved_multicells2.png)
+![png](/screenshots/resource-flow-protozoa-diagram.png "Resource flows")
 
-## Next Steps
+The primary sources of mass and energy in simulation are the plant cells. Plants
+are ingested by protozoan cells and converted into the stores of available energy and construction mass. Next there are
+a number of different directions these resources can flow; energy can be converted into action (e.g. in the form of
+movement). Mass and energy can be used to increase the cell’s supply of complex molecules to be used for later 
+construction projects. Such projects themselves will also require further construction mass and energy on top of the
+initial investment into the complex molecules. As mentioned before, upon a protozoan’s death its supply of resources is
+distributed to meat cells spawned in its wake. This includes energy storage, construction mass, and complex molecules.
+The resources can then be reclaimed by other protozoans that ingest the meat. Meat is denser in energy than plant
+cells, and they present the potential to skip producing any stored complex molecules.
 
-* Evolvable trait regulation to promote cell differentiation.
-* Temporal control of trait expression ([regulation of transcription](https://en.wikipedia.org/wiki/Transcriptional_regulation)).
-* Environmental and internal temperature to add ecological variety and new cell interaction dynamics.
-* Signal relaying channels for cells bound together.
-* Improved visualisations of protozoa expressionNodes.
+## Next Steps in Development
+
+* Remove dependency on CUDA.
+* Optimise the physics engine.
 * Lineage tracking UI tools.
 
 
@@ -61,18 +111,20 @@ that allow them to bind to other cells and transmit mass, energy, signals, and c
 **Note:** This project is still in development, and is not yet ready for public consumption. It also requires a
 quite powerful computer to run.
 
-The simulation is written in Java and uses the built-in Java Swing library for the UI.
+The simulation is written in Java and uses the libGDX for the UIX, which is a cross-platform game development library.
 I developed this project using the [IntelliJ IDEA](https://www.jetbrains.com/idea/) IDE,
 and I recommend using this to run the simulation.
-The project is built using LibGDX, which is a cross-platform game development library.
 It relies on OpenGL for rendering, and so you will need to have the appropriate drivers installed,
 as well as CUDA for GPU acceleration. For the time being I have not 
 implemented a CPU-only version of the simulation, so you will need a CUDA-capable GPU to run the simulation.
-However, currently the only aspect of the simulation that is accelerated by the GPU is the chemical solution
-that can be disabled in the simulation settings (see the section below).
-Finally, the project is only tested on Windows 11, but it should work on Linux and Mac OS X as well.
 
-**Steps**
+Finally, the project was developed on Windows and Linux, but it should work on Mac OS X as well.
+There are two main ways of running the simulation. The first is to install the CUDA toolkit and run the simulation
+from the IDE. The second is to run the simulation from the command line using Docker. The latter is the preferred
+method for running the simulation on a server.
+
+**Steps for IDE Installation**
+
 - Clone the repository, open the project in IntelliJ.
 For a general guide to running LibGDX projects, see [this article](https://libgdx.com/wiki/start/import-and-running).
 - Download and install the CUDA toolkit for your GPU. 
@@ -82,19 +134,31 @@ For a general guide to running LibGDX projects, see [this article](https://libgd
   For example, `nvcc -m64 -ptx diffusion.cu`. You should see a `diffusion.ptx` file generated in the same directory.
   The project will automatically compile the CUDA kernels when it is run, but it is useful to test this beforehand.
 - Run the Gradle task `desktop:run` to run the simulation. In IntelliJ, this can be done by opening the Gradle
-  tool window and navigating to `ProtoEvo > desktop > other > run`.
+  tool window and navigating to `ProtoEvo > desktop > other > run`, or by clicking the green play button on the
+  `main` method of the `com.protoevo.core.ApplicationManager` class (found in the `core/src` module).
 
-**Options for Improving Performance**
+[//]: # (**Options for Improving Performance**)
 
-There are a number of parameters that can be changed for improving the performance of the simulation.
-The most taxing part of the simulation is the physics engine, which slows down according to the number of intersections
-that it needs to handle. Therefore, the most important parameter to change is the number of cells in the simulation.
-You can change the `maxProtozoa`, `maxPlants`, and `maxMeat` parameters in the `protoevo.core.settings.SimulationsSettings` file.
-However, you will likely want to change other parameters as well because having fewer cells will likely result in
-a less interesting simulation. If the protozoa are constantly up against the environment capacity then it will
-be difficult for them to evolve as whether an individual dies is more up to chance. 
-In other words, there is less selection pressure on the protozoa to evolve.
+[//]: # ()
+[//]: # (There are a number of parameters that can be changed for improving the performance of the simulation.)
 
-The next most important change to make is to turn off the "chemical solution" or at least reduce the resolution
-of the solution cell grid. These parameters can also be found in the `SimulationSettings` as 
-`enableChemicalField` and `chemicalFieldResolution`.
+[//]: # (The most taxing part of the simulation is the physics engine, which slows down according to the number of intersections)
+
+[//]: # (that it needs to handle. Therefore, the most important parameter to change is the number of cells in the simulation.)
+
+[//]: # (You can change the `maxProtozoa`, `maxPlants`, and `maxMeat` parameters in the simulation settings file.)
+
+[//]: # (However, you will likely want to change other parameters as well because having fewer cells will likely result in)
+
+[//]: # (a less interesting simulation. If the protozoa are constantly up against the environment capacity then it will)
+
+[//]: # (be difficult for them to evolve as whether an individual dies is more up to chance. )
+
+[//]: # (In other words, there is less selection pressure on the protozoa to evolve.)
+
+[//]: # ()
+[//]: # (The next most important change to make is to turn off the "chemical solution" or at least reduce the resolution)
+
+[//]: # (of the solution cell grid. These parameters can also be found in the `SimulationSettings` as )
+
+[//]: # (`enableChemicalField` and `chemicalFieldResolution`.)
