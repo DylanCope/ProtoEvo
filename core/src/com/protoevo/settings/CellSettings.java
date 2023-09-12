@@ -1,5 +1,7 @@
 package com.protoevo.settings;
 
+import com.protoevo.networking.Server;
+
 public class CellSettings extends Settings {
     public Settings.Parameter<Float> complexMoleculeDecayRate = new Settings.Parameter<>(
             "Complex Molecule Decay Rate",
@@ -126,6 +128,12 @@ public class CellSettings extends Settings {
             "Amount of cell activity generated per GRN node activation.",
             .1f
     );
+//    public Settings.Parameter<Integer> surfaceNodeDim = new Settings.Parameter<>(
+//            "Surface Node Dimension",
+//            "Dimension of the surface node I/O channel. Should be 1 or 3.",
+//            1,
+//            false
+//    );
 
     public CellSettings() {
         super("Cell");

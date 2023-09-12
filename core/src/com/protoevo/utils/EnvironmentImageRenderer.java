@@ -43,31 +43,38 @@ public class EnvironmentImageRenderer {
         graphics.setColor(backgroundColour);
 
         graphics.fillRect(0, 0, width, height);
+
         ChemicalSolution chemicalSolution = environment.getChemicalSolution();
-        for (float x = chemicalSolution.getMinX(); x < chemicalSolution.getMaxX(); x += chemicalSolution.getCellSize()) {
-            int imageX = toImageSpaceX(x);
-            int nextImageX =  toImageSpaceX(x + chemicalSolution.getCellSize());
-            int cellWidth =  Math.max(1, Math.abs(nextImageX - imageX));
-            for (float y = chemicalSolution.getMinY(); y < chemicalSolution.getMaxY(); y+= chemicalSolution.getCellSize()) {
-                int imageY = toImageSpaceY(-y);
-                int nextImageY =  toImageSpaceY(-y - chemicalSolution.getCellSize());
-                Colour colour = chemicalSolution.getColour(x, y);
-                int cellHeight =  Math.max(1, Math.abs(nextImageY - imageY));
-                graphics.setColor(new Color(colour.r, colour.g, colour.b, 0.5f * colour.a));
-                graphics.fillRect(imageX, imageY, cellWidth, cellHeight);
+        int chemWidth = chemicalSolution.getNXCells();
+        int chemHeight = chemicalSolution.getNYCells();
+        BufferedImage image = new BufferedImage(chemWidth, chemHeight, BufferedImage.TYPE_INT_ARGB);
+        Graphics2D g = image.createGraphics();
+
+        for (int i = 0; i < chemWidth; i++) {
+            for (int j = 0; j < chemHeight; j++) {
+                Colour colour = chemicalSolution.getColour(i, j);
+                g.setColor(new Color(colour.r, colour.g, colour.b, 0.5f * colour.a));
+                g.fillRect(i, chemHeight - j, 1, 1);
             }
         }
+
+        int chemImgX = Math.round(toImageSpaceX(chemicalSolution.getMinX()));
+        int chemImgY = Math.round(toImageSpaceY(chemicalSolution.getMinY()));
+        int chemImgWidth = Math.round(toImageDistance(chemicalSolution.getMaxX() - chemicalSolution.getMinX()));
+        int chemImgHeight = Math.round(toImageDistance(chemicalSolution.getMaxY() - chemicalSolution.getMinY()));
+        
+        graphics.drawImage(image, chemImgX, chemImgY, chemImgWidth, chemImgHeight, null);
     }
 
-    public int toImageSpaceX(float worldX) {
-        return Math.round((worldX - worldMinX) / (worldMaxX - worldMinX) * width);
+    public float toImageSpaceX(float worldX) {
+        return (worldX - worldMinX) / (worldMaxX - worldMinX) * width;
     }
 
-    public int toImageSpaceY(float worldY) {
-        return Math.round((worldY - worldMinY) / (worldMaxY - worldMinY) * height);
+    public float toImageSpaceY(float worldY) {
+        return (worldY - worldMinY) / (worldMaxY - worldMinY) * height;
     }
 
-    public int toImageDistance(float dist) {
+    public float toImageDistance(float dist) {
         return toImageSpaceX(dist) - toImageSpaceX(0);
     }
 
@@ -76,8 +83,8 @@ public class EnvironmentImageRenderer {
             int[] xPoints = new int[3];
             int[] yPoints = new int[3];
             for (int i = 0; i < 3; i++) {
-                xPoints[i] = toImageSpaceX(rock.getPoints()[i].x);
-                yPoints[i] = toImageSpaceY(rock.getPoints()[i].y);
+                xPoints[i] = Math.round(toImageSpaceX(rock.getPoints()[i].x));
+                yPoints[i] = Math.round(toImageSpaceY(rock.getPoints()[i].y));
             }
             Colour colour = rock.getColour();
             Color color = new Color(colour.r, colour.g, colour.b, colour.a);
@@ -89,16 +96,16 @@ public class EnvironmentImageRenderer {
             g.setColor(color.darker());
             Stroke s = g.getStroke();
             float strokeR = 0.02f * Environment.settings.worldgen.maxRockSize.get();
-            g.setStroke(new BasicStroke(Math.max(1, toImageDistance(strokeR))));
+            g.setStroke(new BasicStroke(Math.max(1, Math.round(toImageDistance(strokeR)))));
 //            g.setStroke(new BasicStroke(1));
             for (int i = 0; i < rock.getEdges().length; i++) {
                 if (rock.isEdgeAttached(i))
                     continue;
                 Vector2[] edge = rock.getEdge(i);
-                int startX = toImageSpaceX(edge[0].x);
-                int startY = toImageSpaceY(edge[0].y);
-                int endX = toImageSpaceX(edge[1].x);
-                int endY = toImageSpaceY(edge[1].y);
+                int startX = Math.round(toImageSpaceX(edge[0].x));
+                int startY = Math.round(toImageSpaceY(edge[0].y));
+                int endX = Math.round(toImageSpaceX(edge[1].x));
+                int endY = Math.round(toImageSpaceY(edge[1].y));
 
                 g.drawLine(startX, startY, endX, endY);
             }
@@ -111,9 +118,9 @@ public class EnvironmentImageRenderer {
             graphics.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
             Color cellColor = new Color(cell.getColor().r, cell.getColor().g, cell.getColor().b);
             graphics.setColor(cellColor);
-            int imageX = toImageSpaceX(cell.getPos().x);
-            int imageY = toImageSpaceY(cell.getPos().y);
-            int imageR = toImageDistance(cell.getRadius());
+            int imageX = Math.round(toImageSpaceX(cell.getPos().x));
+            int imageY = Math.round(toImageSpaceY(cell.getPos().y));
+            int imageR = Math.round(toImageDistance(cell.getRadius()));
             graphics.fillOval(imageX - imageR, imageY - imageR, 2*imageR, 2*imageR);
             graphics.setStroke(new BasicStroke(1));
             graphics.setColor(cellColor.darker());
@@ -124,7 +131,7 @@ public class EnvironmentImageRenderer {
 
     public void renderImage(String outputDir) {
         // Create a new BufferedImage with white background
-        BufferedImage image = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
+        BufferedImage image = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
         Graphics2D g = image.createGraphics();
         g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
         g.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);

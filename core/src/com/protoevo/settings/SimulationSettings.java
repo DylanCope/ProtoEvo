@@ -75,7 +75,7 @@ public class SimulationSettings extends Settings {
     public Settings.Parameter<Integer> possibleMolecules = new Settings.Parameter<>(
             "Number of Possible Molecules",
             "The number of possible molecules that can be produced in the simulation.",
-            128
+            32
     );
     public final Settings.Parameter<Float> plantDecayRate = new Settings.Parameter<>(
             "Plant Decay Rate",

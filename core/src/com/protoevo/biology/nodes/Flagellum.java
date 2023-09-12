@@ -52,12 +52,15 @@ public class Flagellum extends NodeAttachment implements Serializable {
         float sizePenalty = getConstructionProgress() * cell.getRadius() / Environment.settings.maxParticleRadius.get();
 
         float thrust = MathUtils.clamp(input[0], -1f, 1f);
-        torque = getConstructionProgress() * MathUtils.clamp(input[1], -1f, 1f);
 
         thrustVector.set(node.getRelativePos()).scl(-1).nor();
         thrustVector.setLength(sizePenalty * thrust * Environment.settings.protozoa.maxFlagellumThrust.get());
 
-        torque *= sizePenalty * Environment.settings.protozoa.maxFlagellumTorque.get();
+        if (input.length > 1) {
+            torque = getConstructionProgress() * MathUtils.clamp(input[1], -1f, 1f);
+            torque *= sizePenalty * Environment.settings.protozoa.maxFlagellumTorque.get();
+        }
+        else torque = 0;
 
         float p = cell.generateMovement(thrustVector, torque);
         output[0] = Utils.clampedLinearRemap(p, 0, 1, -1, 1);
@@ -65,13 +68,17 @@ public class Flagellum extends NodeAttachment implements Serializable {
         Vector2 currentCellPos = cell.getPos();
         if (lastCellPos.isZero() || cell.getRadius() == 0) {
             lastCellPos.set(currentCellPos);
-            output[1] = 0;
-            output[2] = 0;
+            if (output.length > 1) {
+                output[1] = 0;
+                output[2] = 0;
+            }
             return;
         }
 
-        output[1] = (currentCellPos.x - lastCellPos.x) / (20f * cell.getRadius());
-        output[2] = (currentCellPos.y - lastCellPos.y) / (20f * cell.getRadius());
+        if (output.length > 1) {
+            output[1] = (currentCellPos.x - lastCellPos.x) / (20f * cell.getRadius());
+            output[2] = (currentCellPos.y - lastCellPos.y) / (20f * cell.getRadius());
+        }
         lastCellPos.set(currentCellPos);
 
 //        float dx = delta * (currentCellPos.x - lastCellPos.x) / cell.getRadius();

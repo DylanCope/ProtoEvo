@@ -476,4 +476,7 @@ public class ChemicalSolution implements Serializable {
         return colours[gridX][gridY];
     }
 
+    public Colour getColour(int i, int j) {
+        return colours[i][j];
+    }
 }

@@ -19,7 +19,7 @@ public class AdhesionReceptor extends NodeAttachment {
     private volatile boolean isBound = false;
     private volatile int otherNodeIdx;
     private volatile long joiningID;
-    private volatile float[] outgoing = new float[SurfaceNode.ioDim];
+    private float[] outgoing;
     private float constructionMassTransfer, molecularMassTransfer, energyTransfer;
 
     public AdhesionReceptor(SurfaceNode node) {
@@ -28,27 +28,37 @@ public class AdhesionReceptor extends NodeAttachment {
 
     @Override
     public void update(float delta, float[] input, float[] output) {
-        if (isBound && !isBindingStillValid())
+        if (isBound)
+            updateExistingBinding(delta, input, output);
+        else
+            checkContactsForNewBindings();
+    }
+
+    private void updateExistingBinding(float delta, float[] input, float[] output) {
+
+        Optional<AdhesionReceptor> maybeOtherReceptor = getOtherAdhesionReceptor();
+
+        if (!maybeOtherReceptor.isPresent() || !isBindingStillValid()) {
             unbind();
-
-        if (isBound) {
-            handleResourceExchange(delta);
-            Optional<AdhesionReceptor> maybeOther = getOtherAdhesionReceptor();
-            if (!maybeOther.isPresent()) {
-                unbind();
-                return;
-            }
-
-            AdhesionReceptor other = maybeOther.get();
-            for (int i = 0; i < SurfaceNode.ioDim; i++) {
-                outgoing[i] = input[i];
-                output[i] = other.outgoing[i];
-            }
             return;
         }
 
-        if (!isBound)
-            checkContactsForNewBindings();
+        handleResourceExchange(delta);
+
+        AdhesionReceptor otherReceptor = maybeOtherReceptor.get();
+
+        ensureOutgoingCorrect(input);
+        otherReceptor.ensureOutgoingCorrect(output);
+
+        for (int i = 0; i < output.length; i++) {
+            outgoing[i] = input[i];
+            output[i] = otherReceptor.outgoing[i];
+        }
+    }
+
+    private void ensureOutgoingCorrect(float[] values) {
+        if (outgoing == null || outgoing.length != values.length)
+            outgoing = new float[values.length];
     }
 
     private void checkContactsForNewBindings() {
