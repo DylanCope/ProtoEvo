@@ -78,6 +78,11 @@ public class InputLayers implements InputProcessor {
     }
 
     @Override
+    public boolean touchCancelled(int screenX, int screenY, int pointer, int button) {
+        return touchUp(screenX, screenY, pointer, button);
+    }
+
+    @Override
     public boolean touchDragged(int screenX, int screenY, int pointer) {
         mousePosition.set(screenX, screenY);
         for (InputProcessor layer : layers) {

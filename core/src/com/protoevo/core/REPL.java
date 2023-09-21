@@ -1,6 +1,5 @@
 package com.protoevo.core;
 
-import com.protoevo.env.Environment;
 import com.protoevo.networking.RemoteGraphics;
 import com.protoevo.settings.Settings;
 import com.protoevo.utils.EnvironmentImageRenderer;
@@ -129,7 +128,7 @@ public class REPL implements Runnable
             System.out.println("Possible subsetting categories: world, protozoa, plant, misc");
             System.out.println("Use setparam <subcategory> -help to get more information about a parameter.");
             System.out.println("Available base parameters:");
-            for (Settings.Parameter<?> param : Environment.settings.getParameters())
+            for (Settings.Parameter<?> param : simulation.getEnv().getSettings().getParameters())
                 System.out.println("\t- " + param.getFieldName() + ": "
                         + param.getName() + "; " + param.getDescription());
             return true;
@@ -150,7 +149,7 @@ public class REPL implements Runnable
                 paramName = split[1];
             }
 
-            Settings settings = Environment.settings.getSettings(subcategory);
+            Settings settings = simulation.getEnv().getSettings().getSettings(subcategory);
 
             if (args[2].equals("-help")) {
                 System.out.println("Available parameters in " + subcategory + " category:");
@@ -195,7 +194,7 @@ public class REPL implements Runnable
                 paramName = split[1];
             }
 
-            Settings settings = Environment.settings.getSettings(subcategory);
+            Settings settings = simulation.getEnv().getSettings().getSettings(subcategory);
 
             for (Settings.Parameter<?> param : settings.getParameters()) {
                 if (param.getFieldName().equals(paramName)) {

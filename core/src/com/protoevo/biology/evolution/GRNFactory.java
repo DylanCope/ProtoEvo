@@ -2,6 +2,7 @@ package com.protoevo.biology.evolution;
 
 import com.badlogic.gdx.math.MathUtils;
 import com.protoevo.biology.nn.*;
+import com.protoevo.biology.nn.meta.GRNTag;
 import com.protoevo.env.Environment;
 
 import java.util.function.Supplier;

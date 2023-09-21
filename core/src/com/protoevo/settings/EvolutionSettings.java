@@ -9,6 +9,10 @@ public class EvolutionSettings extends Settings {
             "Initial GRN Mutations",
             "The number of mutations to apply to the initial gene regulatory network (GRN).",
             10);
+    public final Settings.Parameter<Integer> maxGRNSize = new Settings.Parameter<>(
+            "Max GRN Size",
+            "The maximum number of hidden nodes in a GRN.",
+            16);
     public final Settings.Parameter<Float> structuralMutationChance = new Settings.Parameter<>(
             "Global Mutation Chance",
             "The fallback mutation chance for all mutations when there is no local choice.",

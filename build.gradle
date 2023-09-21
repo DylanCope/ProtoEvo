@@ -75,7 +75,7 @@ allprojects {
     version = '1.0'
     ext {
         appName = "ProtoEvo"
-        gdxVersion = '1.11.0'
+        gdxVersion = '1.12.0'
         roboVMVersion = '2.3.16'
         box2DLightsVersion = '1.5'
         ashleyVersion = '1.7.4'
@@ -227,5 +227,7 @@ project(":core") {
 
 //        api 'de.ruedigermoeller:fst:3.0.3'
         api 'de.ruedigermoeller:fst:2.56'
+
+        api "org.joml:joml:1.10.5"
     }
 }

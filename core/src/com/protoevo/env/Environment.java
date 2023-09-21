@@ -116,6 +116,7 @@ public class Environment implements Serializable
 	public void update(float delta)
 	{
 		hasStarted = true;
+		settings = mySettings;
 		getCells().forEach(cell -> cell.getParticle().physicsUpdate());
 
 		timeManager.update(delta);
@@ -556,5 +557,9 @@ public class Environment implements Serializable
 
 	public String getLoadingStatus() {
 		return loadingStatus;
+	}
+
+	public SimulationSettings getSettings() {
+		return mySettings;
 	}
 }

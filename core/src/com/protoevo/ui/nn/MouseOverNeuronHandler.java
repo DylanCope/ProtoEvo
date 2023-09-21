@@ -5,7 +5,7 @@ import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.GlyphLayout;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.protoevo.biology.evolution.GeneExpressionFunction;
-import com.protoevo.biology.nn.GRNTag;
+import com.protoevo.biology.nn.meta.GRNTag;
 import com.protoevo.biology.nn.Neuron;
 import com.protoevo.biology.nodes.SurfaceNode;
 import com.protoevo.biology.organelles.Organelle;

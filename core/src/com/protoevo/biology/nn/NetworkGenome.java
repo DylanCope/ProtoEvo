@@ -168,6 +168,9 @@ public class NetworkGenome implements Serializable
 
 	private void createHiddenBetween(SynapseGene g) {
 
+		if (hiddenNeuronGenes.length >= Environment.settings.evo.maxGRNSize.get())
+			return;
+
 		NeuronGene n = new NeuronGene(
 			nNeuronGenes++, Neuron.Type.HIDDEN, ActivationFn.LINEAR
 		);

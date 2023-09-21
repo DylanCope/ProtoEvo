@@ -1,4 +1,4 @@
-package com.protoevo.biology.nn;
+package com.protoevo.biology.nn.meta;
 
 import com.protoevo.biology.evolution.GeneExpressionFunction;
 
