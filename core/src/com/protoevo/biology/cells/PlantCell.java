@@ -44,8 +44,11 @@ public class PlantCell extends EvolvableCell {
     }
 
     private float randomMaxRadius() {
-        float minMaxR = 5f * Environment.settings.minParticleRadius.get();
+        // 10% larger than the max plant birth radius
+        float minMaxR = 1.1f * Environment.settings.plant.maxBirthRadius.get();
+        // 50% of the max particle radius
         float maxMaxR = Environment.settings.maxParticleRadius.get() / 2f;
+
         return minMaxR < maxMaxR ? MathUtils.random(minMaxR, maxMaxR) : maxMaxR;
     }
 
@@ -189,6 +192,7 @@ public class PlantCell extends EvolvableCell {
         }
     }
 
+    @Override
     public Statistics getStats() {
         Statistics stats = super.getStats();
         stats.putDistance("Split Radius", maxRadius);
