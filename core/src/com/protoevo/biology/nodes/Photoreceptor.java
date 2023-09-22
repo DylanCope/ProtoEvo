@@ -36,7 +36,7 @@ public class Photoreceptor extends NodeAttachment implements Serializable {
     private static final float maxFoV = (float) (Math.PI / 2.);
     private static final float radiansPerRay = maxFoV / 8f; // max of 8 rays
     public int nRays = 8;
-    public float fov = maxFoV;
+    public float fov = maxFoV / 2f;
 
     public Photoreceptor(SurfaceNode node) {
         super(node);
@@ -44,21 +44,28 @@ public class Photoreceptor extends NodeAttachment implements Serializable {
 
     @Override
     public void update(float delta, float[] input, float[] output) {
-        fov = Utils.clampedLinearRemap(input[0], -1f, 1f, 0.1f * maxFoV, maxFoV);
+//        fov = Utils.clampedLinearRemap(input[0], -1f, 1f, 0.1f * maxFoV, maxFoV);
         nRays = Math.max(1, Math.round(fov / radiansPerRay));
 
         interactionRange = getInteractionRange();
         attachmentRelPos.set(node.getRelativePos());
-        castRays();
 
         if (output.length == 3) {
+            castRays();
             output[0] = colour.r;
             output[1] = colour.g;
             output[2] = colour.b;
         }
         else if (output.length == 1) {
-            if (colourSensitivity == RGB)
-                colourSensitivity = GrayLevel;
+            float inp = input[0] % 1f;
+            if (inp < 1 / 3f)
+                colourSensitivity = R;
+            else if (inp < 2 / 3f)
+                colourSensitivity = G;
+            else
+                colourSensitivity = B;
+
+            castRays();
 
             switch (colourSensitivity) {
                 case R:
@@ -69,6 +76,9 @@ public class Photoreceptor extends NodeAttachment implements Serializable {
                     break;
                 case B:
                     output[0] = colour.b;
+                    break;
+                case GrayLevel:
+                    output[0] = (colour.r + colour.g + colour.b) / 3f;
             }
         }
         else {
@@ -107,7 +117,6 @@ public class Photoreceptor extends NodeAttachment implements Serializable {
                 if (o instanceof Shape && o instanceof Coloured)
                     computeIntersections((Shape) o);
         }
-
 
         switch (colourSensitivity) {
             case R:

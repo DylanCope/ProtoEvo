@@ -62,7 +62,8 @@ public class Environment implements Serializable
 	private boolean hasInitialised, hasStarted;
 	private Vector2[] populationStartCentres;
 	@JsonIgnore
-	private final ConcurrentLinkedQueue<BurstRequest<? extends Cell>> burstRequests = new ConcurrentLinkedQueue<>();
+	private final ConcurrentHashMap<Cell, BurstRequest<? extends Cell>> burstRequests = new ConcurrentHashMap<>();
+	private final Collection<Cell> handledBurstRequests = new ConcurrentLinkedQueue<>();
 
 	public Environment()
 	{
@@ -145,10 +146,17 @@ public class Environment implements Serializable
 	}
 
 	private void handleBirthsAndDeaths() {
-		for (BurstRequest<? extends Cell> burstRequest : burstRequests)
-			if (burstRequest.canBurst())
+		handledBurstRequests.clear();
+		for (Cell parent : burstRequests.keySet()) {
+			BurstRequest<? extends Cell> burstRequest = burstRequests.get(parent);
+			if (hasBurstCapacity(parent, burstRequest.getCellType()) && burstRequest.canBurst()) {
 				burstRequest.burst();
-		burstRequests.clear();
+				handledBurstRequests.add(parent);
+			}
+		}
+		for (Cell parent : handledBurstRequests)
+			burstRequests.remove(parent);
+		handledBurstRequests.clear();
 
 		flushEntitiesToAdd();
 
@@ -221,6 +229,7 @@ public class Environment implements Serializable
 		buildSpawners();
 
 		int nPlants = Environment.settings.worldgen.numInitialPlantPellets.get();
+		nPlants = Math.min(nPlants, chunks.getGlobalCapacity(PlantCell.class));
 		System.out.println("Creating population of " + nPlants + " plants..." );
 		loadingStatus = "Seeding Plants";
 		for (int i = 0; i < nPlants; i++) {
@@ -234,6 +243,7 @@ public class Environment implements Serializable
 		}
 
 		int nProtozoa = Environment.settings.worldgen.numInitialProtozoa.get();
+		nProtozoa = Math.min(nProtozoa, chunks.getGlobalCapacity(Protozoan.class));
 		System.out.println("Creating population of " + nProtozoa + " protozoa...");
 		loadingStatus = "Spawning Protozoa";
 		for (int i = 0; i < nProtozoa; i++) {
@@ -299,19 +309,12 @@ public class Environment implements Serializable
 	}
 
 	public void tryAdd(Cell cell) {
-		if (getLocalCount(cell) < getLocalCapacity(cell)
-				&& chunks.getGlobalCount(cell) < chunks.getGlobalCapacity(cell)) {
-			add(cell);
-			bornCounts.put(cell.getClass(),
-					bornCounts.getOrDefault(cell.getClass(), 0L) + 1);
-			generationCounts.put(cell.getClass(),
-					Math.max(generationCounts.getOrDefault(cell.getClass(), 0L),
-							 cell.getGeneration()));
-		}
-		else {
-			cell.kill(CauseOfDeath.ENV_CAPACITY_EXCEEDED);
-			dispose(cell);
-		}
+		add(cell);
+		bornCounts.put(cell.getClass(),
+				bornCounts.getOrDefault(cell.getClass(), 0L) + 1);
+		generationCounts.put(cell.getClass(),
+				Math.max(generationCounts.getOrDefault(cell.getClass(), 0L),
+						 cell.getGeneration()));
 	}
 
 	public void add(Cell cell) {
@@ -357,12 +360,47 @@ public class Environment implements Serializable
 		}
 	}
 
+
+	public boolean hasCapacity(Class<? extends Cell> cellType, Vector2 pos) {
+		return getLocalCount(cellType, pos) < getLocalCapacity(cellType)
+				&& getGlobalCount(cellType) < getGlobalCapacity(cellType);
+	}
+
+	public boolean hasCapacity(Cell cell) {
+		return hasCapacity(cell.getClass(), cell.getPos());
+	}
+
+	public int getGlobalCount(Class<? extends Cell> cellType) {
+		int toAdd = (int) cellsToAdd.stream()
+				.filter(cell -> cell.getClass().equals(cellType))
+				.count();
+		return chunks.getGlobalCount(cellType) + toAdd;
+	}
+
+	public int getGlobalCapacity(Cell cell) {
+		return chunks.getGlobalCapacity(cell);
+	}
+
+	public int getGlobalCapacity(Class<? extends Cell> cellType) {
+		return chunks.getGlobalCapacity(cellType);
+	}
+
 	public int getLocalCount(Cell cell) {
 		return getLocalCount(cell.getClass(), cell.getPos());
 	}
 
 	public int getLocalCount(Class<? extends Cell> cellType, Vector2 pos) {
-		return chunks.getChunkCount(cellType, pos);
+		int existingCount = chunks.getChunkCount(cellType, pos);
+		SpatialHash<? extends Cell> cellHash = chunks.getCellHash(cellType, pos);
+		int chunkX = cellHash.getChunkX(pos.x);
+		int chunkY = cellHash.getChunkY(pos.y);
+		for (Cell cell : cellsToAdd) {
+			int thisChunkX = cellHash.getChunkX(cell.getPos().x);
+			int thisChunkY = cellHash.getChunkY(cell.getPos().y);
+			if (thisChunkY == chunkY && thisChunkX == chunkX)
+				existingCount++;
+		}
+		return existingCount;
 	}
 
 	public int getLocalCapacity(Cell cell) {
@@ -374,11 +412,6 @@ public class Environment implements Serializable
 	}
 
 	public void registerToAdd(Cell e) {
-		if (getLocalCount(e) >= getLocalCapacity(e)) {
-			e.kill(CauseOfDeath.ENV_CAPACITY_EXCEEDED);
-			dispose(e);
-		}
-
 		cellsToAdd.add(e);
 	}
 
@@ -461,7 +494,6 @@ public class Environment implements Serializable
 		return getCount(Protozoan.class);
 	}
 
-
 	public long getGeneration() {
 		return generationCounts.getOrDefault(Protozoan.class, 0L);
 	}
@@ -505,16 +537,24 @@ public class Environment implements Serializable
 		return physics.getJointsManager();
 	}
 
+	public <T extends Cell> boolean hasBurstRequest(Cell parent, Class<T> cellType) {
+		return burstRequests.containsKey(parent) &&
+				burstRequests.get(parent).getCellType().equals(cellType);
+	}
+
+	public boolean hasBurstCapacity(Cell parent, Class<? extends Cell> cellType) {
+		return hasCapacity(cellType, parent.getPos());
+	}
+
 	public <T extends Cell> void requestBurst(Cell parent,
 											  Class<T> cellType,
 											  SerializableFunction<Float, T> createChild,
 											  boolean overrideMinParticleSize) {
 
-		if (getLocalCount(cellType, parent.getPos()) >= getLocalCapacity(cellType)
-				|| burstRequests.stream().anyMatch(request -> request.parentEquals(parent)))
+		if (hasBurstRequest(parent, cellType) || !hasBurstCapacity(parent, cellType))
 			return;
 
-		burstRequests.add(new BurstRequest<>(parent, cellType, createChild, overrideMinParticleSize));
+		burstRequests.put(parent, new BurstRequest<>(parent, cellType, createChild, overrideMinParticleSize));
 	}
 
 	public <T extends Cell> void requestBurst(Cell parent,

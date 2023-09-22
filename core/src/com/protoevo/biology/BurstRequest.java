@@ -3,6 +3,7 @@ package com.protoevo.biology;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector2;
 import com.protoevo.biology.cells.Cell;
+import com.protoevo.biology.cells.Protozoan;
 import com.protoevo.core.Simulation;
 import com.protoevo.env.Environment;
 import com.protoevo.physics.Particle;
@@ -60,7 +61,13 @@ public class BurstRequest<T extends Cell> implements Serializable {
         if (!ready)
             return;
 
-        parent.kill(CauseOfDeath.CYTOKINESIS);
+        if (!parent.isDead()) {
+            if (parent instanceof Protozoan)
+                ((Protozoan) parent).kill(CauseOfDeath.CYTOKINESIS, false);
+            else
+                parent.kill(CauseOfDeath.CYTOKINESIS);
+        }
+
         parent.setHasBurst(true);
 
         float angle = (float) (2 * Math.PI * Simulation.RANDOM.nextDouble());
@@ -118,5 +125,9 @@ public class BurstRequest<T extends Cell> implements Serializable {
 
     public boolean parentEquals(Cell parent) {
         return this.parent.equals(parent);
+    }
+
+    public Class<T> getCellType() {
+        return cellType;
     }
 }

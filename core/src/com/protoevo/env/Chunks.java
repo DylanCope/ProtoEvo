@@ -44,7 +44,10 @@ public class Chunks implements Serializable {
     }
 
     public int getGlobalCount(Cell cell) {
-        Class<? extends Cell> cellClass = cell.getClass();
+        return getGlobalCount(cell.getClass());
+    }
+
+    public int getGlobalCount(Class<? extends Cell> cellClass) {
         if (!globalCellCounts.containsKey(cellClass)) {
             int count = getSpatialHash(cellClass).getChunkIndices().stream()
                     .mapToInt(i -> getSpatialHash(cellClass).getCount(i))
@@ -55,11 +58,15 @@ public class Chunks implements Serializable {
     }
 
     public int getGlobalCapacity(Cell cell) {
-        if (cell instanceof Protozoan)
+        return getGlobalCapacity(cell.getClass());
+    }
+
+    public int getGlobalCapacity(Class<? extends Cell> cellClass) {
+        if (cellClass.equals(Protozoan.class))
             return Environment.settings.misc.maxProtozoa.get();
-        else if (cell instanceof PlantCell)
+        else if (cellClass.equals(PlantCell.class))
             return Environment.settings.misc.maxPlants.get();
-        else if (cell instanceof MeatCell)
+        else if (cellClass.equals(MeatCell.class))
             return Environment.settings.misc.maxMeat.get();
         return 0;
     }
@@ -71,6 +78,10 @@ public class Chunks implements Serializable {
 
     public void allocate(Cell cell) {
         cellHashes.get(cell.getClass()).add(cell, cell.getPos());
+    }
+
+    public SpatialHash<? extends Cell> getCellHash(Class<? extends Cell> cellType, Vector2 pos) {
+        return cellHashes.get(cellType);
     }
 
     public int getChunkCount(Class<? extends Cell> cellType, Vector2 pos) {
