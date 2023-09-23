@@ -138,7 +138,7 @@ public class GRNFactory {
                     (GRNTag) fn -> fn.getExpressionNode(node.getName())
             );
             for (String regulator : regulators.keySet()) {
-                if (MathUtils.randomBoolean(Environment.settings.protozoa.initialGenomeConnectivity.get()))
+                if (MathUtils.randomBoolean(Environment.settings.evo.initialGenomeConnectivity.get()))
                     continue;
 
                 SynapseGene synapseGene = networkGenome.addSynapse(

@@ -436,7 +436,9 @@ public class Environment implements Serializable
 			stats.putCount(cellClassNames.get(cellClass) + " Created",
 					bornCounts.get(cellClass).intValue());
 
-		stats.putCount("Crossover Events", (int) crossoverEvents);
+		if (Environment.settings.protozoa.matingEnabled.get())
+			stats.putCount("Crossover Events", (int) crossoverEvents);
+
 		for (CauseOfDeath cod : CauseOfDeath.values()) {
 			if (cod.isDebugDeath())
 				continue;

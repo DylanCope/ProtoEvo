@@ -27,10 +27,6 @@ public class ProtozoaSettings extends Settings {
             "Starvation Factor",
             "The rate at which a protozoan's health is reduced when it is not eating.",
             .85f);
-    public final Settings.Parameter<Float> initialGenomeConnectivity = new Settings.Parameter<>(
-            "Initial Genome Connectivity",
-            "The initial connectivity of a protozoan's genome.",
-            0.5f);
     public final Settings.Parameter<Float> minHealthToSplit = new Settings.Parameter<>(
             "Min Health to Split",
             "The minimum health required to produce children.",

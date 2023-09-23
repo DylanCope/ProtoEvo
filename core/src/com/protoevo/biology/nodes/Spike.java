@@ -20,6 +20,7 @@ public class Spike extends NodeAttachment implements Serializable {
     private final float attackFactor = 10f;
     private float lastDPS = 0;
     private float extension = 1;
+    private float myLastAttack = 0, theirLastDefense = 0;
 
     public Spike(SurfaceNode node) {
         super(node);
@@ -61,26 +62,29 @@ public class Spike extends NodeAttachment implements Serializable {
                             Math.max(ts[0], ts[1]) - Math.min(ts[0], ts[1]),
                             0, 1);
 
-                    float myAttack = (
+                    myLastAttack = (
                             2* cell.getHealth() +
                             Environment.settings.protozoa.spikeDamage.get() *
                                     woundDepth * getSpikeLength() / other.getRadius() +
                             2* MathUtils.random()
                     );
-                    float theirDefense = other.getShieldFactor() * (
+                    theirLastDefense = other.getShieldFactor() * (
                             2*other.getHealth() +
                             2*MathUtils.random()
                     );
 
-                    if (myAttack > theirDefense) {
-                        float dps = attackFactor * (myAttack - theirDefense);
+                    if (myLastAttack > theirLastDefense) {
+                        float dps = attackFactor * (myLastAttack - theirLastDefense);
                         other.damage(dps * delta, CauseOfDeath.SPIKE_DAMAGE);
                         lastDPS = dps;
+                    }
+                    else {
+                        lastDPS = 0;
                     }
 
                     if (output.length > 2) {
                         output[1] = other.getHealth();
-                        output[2] = myAttack - theirDefense;
+                        output[2] = myLastAttack - theirLastDefense;
                     }
                 }
             }
@@ -122,5 +126,7 @@ public class Spike extends NodeAttachment implements Serializable {
         stats.put("Last DPS", lastDPS, Statistics.ComplexUnit.PERCENTAGE_PER_TIME);
         stats.put("Spike Length", getSpikeLength(), Statistics.ComplexUnit.DISTANCE);
         stats.put("Spike Extension", getSpikeExtension(), Statistics.ComplexUnit.PERCENTAGE);
+        stats.put("My Last Attack", myLastAttack);
+        stats.put("Their Last Defense", theirLastDefense);
     }
 }

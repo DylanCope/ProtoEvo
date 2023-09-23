@@ -18,6 +18,7 @@ public class Flagellum extends NodeAttachment implements Serializable {
     private final Vector2 thrustVector = new Vector2(), lastCellPos = new Vector2();
     private float torque;
     private final Statistics stats = new Statistics();
+    private boolean io3D = false;
 
     public Flagellum(SurfaceNode node) {
         super(node);
@@ -54,30 +55,40 @@ public class Flagellum extends NodeAttachment implements Serializable {
         float thrust = MathUtils.clamp(input[0], -1f, 1f);
 
         thrustVector.set(node.getRelativePos()).scl(-1).nor();
-        thrustVector.setLength(sizePenalty * thrust * Environment.settings.protozoa.maxFlagellumThrust.get());
+        thrustVector
+                .setLength(sizePenalty * thrust * Environment.settings.protozoa.maxFlagellumThrust.get())
+                .scl(thrust < 0 ? -0.5f : 1f);
 
         if (input.length > 1) {
+            io3D = true;
             torque = getConstructionProgress() * MathUtils.clamp(input[1], -1f, 1f);
             torque *= sizePenalty * Environment.settings.protozoa.maxFlagellumTorque.get();
         }
         else torque = 0;
 
         float p = cell.generateMovement(thrustVector, torque);
-        output[0] = Utils.clampedLinearRemap(p, 0, 1, -1, 1);
 
         Vector2 currentCellPos = cell.getPos();
+
         if (lastCellPos.isZero() || cell.getRadius() == 0) {
             lastCellPos.set(currentCellPos);
-            if (output.length > 1) {
+            if (io3D) {
                 output[1] = 0;
                 output[2] = 0;
             }
             return;
         }
 
-        if (output.length > 1) {
-            output[1] = (currentCellPos.x - lastCellPos.x) / (20f * cell.getRadius());
-            output[2] = (currentCellPos.y - lastCellPos.y) / (20f * cell.getRadius());
+        float speedX =  (currentCellPos.x - lastCellPos.x) / (20f * cell.getRadius());
+        float speedY =  (currentCellPos.y - lastCellPos.y) / (20f * cell.getRadius());
+
+        if (io3D) {
+            output[0] = speedX;
+            output[1] = speedY;
+            output[2] = Utils.clampedLinearRemap(p, 0, 1, -1, 1);
+        }
+        else {
+            output[0] = (float) Math.sqrt(speedX*speedX + speedY*speedY);
         }
         lastCellPos.set(currentCellPos);
 
@@ -103,12 +114,17 @@ public class Flagellum extends NodeAttachment implements Serializable {
 
     @Override
     public String getOutputMeaning(int index) {
+        if (io3D) {
+            if (index == 0)
+                return "Speed X";
+            if (index == 1)
+                return "Speed Y";
+            if (index == 2)
+                return "Propulsion";
+        }
+        else
         if (index == 0)
-            return "Propulsion Success";
-        if (index == 1)
-            return "Speed X";
-        if (index == 2)
-            return "Speed Y";
+            return "Speed";
         return null;  // no attachment output
     }
 

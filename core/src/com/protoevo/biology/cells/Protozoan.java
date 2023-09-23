@@ -22,7 +22,7 @@ public class Protozoan extends EvolvableCell
 
 	private GeneExpressionFunction crossOverGenome;
 	private float matingCooldown = 0;
-	private boolean mateDesire;
+	private boolean mateDesire, splitDesire = false;
 	private List<SurfaceNode> surfaceNodes;
 
 	private float damageRate = 0;
@@ -194,6 +194,11 @@ public class Protozoan extends EvolvableCell
 		this.mateDesire = mate > 0.5f;
 	}
 
+	@ControlVariable(name="Split Desire", min=0, max=1)
+	public void setSplitDesire(float split) {
+		this.splitDesire = split > 0.5f;
+	}
+
 	public void generateThrust(float delta) {
 		if (thrustMag <= 1e-12)
 			return;
@@ -205,8 +210,13 @@ public class Protozoan extends EvolvableCell
 		generateMovement(thrust);
 	}
 
+	@Override
+	public float getMaxRadius() {
+		return 1.05f * splitRadius;
+	}
+
 	private boolean shouldSplit() {
-		return getRadius() >= splitRadius
+		return splitDesire && getRadius() >= splitRadius
 				&& getHealth() >= Environment.settings.protozoa.minHealthToSplit.get();
 	}
 
