@@ -66,6 +66,8 @@ public class BurstRequest<T extends Cell> implements Serializable {
                 ((Protozoan) parent).kill(CauseOfDeath.CYTOKINESIS, false);
             else
                 parent.kill(CauseOfDeath.CYTOKINESIS);
+        } else {
+            return;
         }
 
         parent.setHasBurst(true);

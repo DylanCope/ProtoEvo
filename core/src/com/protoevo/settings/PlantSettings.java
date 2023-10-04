@@ -13,7 +13,7 @@ public class PlantSettings extends Settings {
     public final Settings.Parameter<Float> maxBirthRadius = new Settings.Parameter<>(
             "Max Birth Radius",
             "The maximum radius of a plant at birth.",
-            7f / 100f);
+            6f / 100f);
     public final Settings.Parameter<Float> minPlantGrowth = new Settings.Parameter<>(
             "Min Plant Growth",
             "The minimum growth factor a plant can have.",

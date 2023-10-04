@@ -371,9 +371,11 @@ public class Environment implements Serializable
 	}
 
 	public int getGlobalCount(Class<? extends Cell> cellType) {
-		int toAdd = (int) cellsToAdd.stream()
-				.filter(cell -> cell.getClass().equals(cellType))
-				.count();
+		int toAdd = 0;
+		for (Cell cell : cellsToAdd)
+			if (cell.getClass().equals(cellType))
+				toAdd++;
+
 		return chunks.getGlobalCount(cellType) + toAdd;
 	}
 
@@ -418,7 +420,7 @@ public class Environment implements Serializable
 	public Statistics getStats() {
 		Statistics stats = new Statistics();
 		stats.putTime("Time Elapsed", timeManager.getTimeElapsed());
-		stats.putTime("Time of Day", timeManager.getTimeOfDay());
+		stats.putPercentage("Time of Day", timeManager.getTimeOfDayPercentage());
 		stats.put("Days Elapsed", timeManager.getDay());
 		stats.putCount("Protozoa", numberOfProtozoa());
 		stats.putCount("Plants", getCount(PlantCell.class));

@@ -45,7 +45,7 @@ public class PlantCell extends EvolvableCell {
 
     private float randomMaxRadius() {
         // 10% larger than the max plant birth radius
-        float minMaxR = 1.1f * Environment.settings.plant.maxBirthRadius.get();
+        float minMaxR = 2f * Environment.settings.plant.minBirthRadius.get();
         // 50% of the max particle radius
         float maxMaxR = Environment.settings.maxParticleRadius.get() / 2f;
 
