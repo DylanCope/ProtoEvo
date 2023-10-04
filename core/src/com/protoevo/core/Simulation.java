@@ -96,6 +96,7 @@ public class Simulation implements Runnable
 	private void newSaveDir() {
 		try {
 			System.out.println("Created new simulation named: " + name);
+			Files.createDirectories(Paths.get("saves/"));
 			Files.createDirectories(Paths.get("saves/" + name));
 			Files.createDirectories(Paths.get("saves/" + name + "/env"));
 			Files.createDirectories(Paths.get("saves/" + name + "/stats"));
