@@ -8,6 +8,7 @@ import java.util.Optional;
 
 public class RemoteSimulation extends Simulation {
     private final Server environmentServer;
+    private String loadingStatus;
 
     public RemoteSimulation() {
         environmentServer = new Server(8888);
@@ -44,17 +45,22 @@ public class RemoteSimulation extends Simulation {
         if (manager != null) {
             manager.notifySimulationReady();
         }
-        while (!isFinished()) {
-            environment = getEnvironmentFromServer();
-            if (manager.isGraphicsActive())
-                manager.getGraphics().getSimulationScreen().updateEnvironment();
-        }
+//        while (!isFinished()) {
+//            environment = getEnvironmentFromServer();
+//            if (manager.isGraphicsActive())
+//                manager.getGraphics().getSimulationScreen().updateEnvironment();
+//        }
     }
 
     private Environment getEnvironmentFromServer() {
         Environment env = environmentServer.get(Environment.class)
                 .orElseThrow(() -> new RuntimeException("Could not get environment from server"));
+        loadingStatus = environmentServer.getStatus().getMessage();
         env.createTransientObjects();
+        setName(environment.getSimulationName());
+        newSaveDir(getName());
+        loadingStatus = "Saving local copy of the environment";
+        save();
         return env;
     }
 
@@ -63,13 +69,16 @@ public class RemoteSimulation extends Simulation {
 
     }
 
+    public boolean hasLoadedEnv() {
+        return environment != null;
+    }
+
     @Override
     public String getLoadingStatus() {
-        if (getEnv() == null)
+        if (getEnv() == null) {
             return environmentServer.getStatus().getMessage();
-        if (initialised)
-            return "Received environment from server";
-        return "Environment received, preparing simulation";
+        }
+        return loadingStatus;
     }
 
     @Override
@@ -84,48 +93,52 @@ public class RemoteSimulation extends Simulation {
 
     @Override
     public Environment loadEnv(String filename) {
-        throw new UnsupportedOperationException("Cannot load environment on remote simulation");
+        if (!hasLoadedEnv())
+            throw new UnsupportedOperationException("Have not yet forked environment from remote");
+        return super.loadEnv(filename);
     }
 
     @Override
     public Environment loadMostRecentEnv() {
-        throw new UnsupportedOperationException("Cannot load environment on remote simulation");
+        if (!hasLoadedEnv())
+            throw new UnsupportedOperationException("Have not yet forked environment from remote");
+        return super.loadMostRecentEnv();
     }
 
     @Override
     public boolean isFinished() {
-        return environment != null && super.isFinished();
+        return hasLoadedEnv() && super.isFinished();
     }
 
-    @Override
-    public void requestSave() {
-
-    }
-
-    @Override
-    public void printStats() {
-        super.printStats();
-    }
-
-    @Override
-    public void handleCrash(Exception e) {
-
-    }
-
-    @Override
-    public void saveOnOtherThread() {
-
-    }
-
-    @Override
-    public void interruptSimulationLoop() {
-        super.interruptSimulationLoop();
-    }
-
-    @Override
-    public void close() {
-
-    }
+//    @Override
+//    public void requestSave() {
+//
+//    }
+//
+//    @Override
+//    public void printStats() {
+//        super.printStats();
+//    }
+//
+//    @Override
+//    public void handleCrash(Exception e) {
+//
+//    }
+//
+//    @Override
+//    public void saveOnOtherThread() {
+//
+//    }
+//
+//    @Override
+//    public void interruptSimulationLoop() {
+//        super.interruptSimulationLoop();
+//    }
+//
+//    @Override
+//    public void close() {
+//
+//    }
 
     @Override
     public void dispose() {
@@ -133,49 +146,44 @@ public class RemoteSimulation extends Simulation {
         environmentServer.close();
     }
 
-    @Override
-    public String save() {
-        return null;
-    }
-
-    @Override
-    public void makeStatisticsSnapshot() {
-
-    }
-
-    @Override
-    public void togglePause() {
-
-    }
-
-    @Override
-    public void setPaused(boolean paused) {
-
-    }
-
-    @Override
-    public void setTimeDilation(float td) {
-
-    }
-
-
-    @Override
-    public String getSaveFolder() {
-        return null;
-    }
-
-    @Override
-    public void openSaveFolderOnDesktop() {
-
-    }
-
-    @Override
-    public String getName() {
-        return null;
-    }
-
-    @Override
-    public void toggleTimeDilation() {
-
-    }
+//    @Override
+//    public String save() {
+//        return null;
+//    }
+//
+//    @Override
+//    public void makeStatisticsSnapshot() {
+//
+//    }
+//
+//    @Override
+//    public void togglePause() {
+//
+//    }
+//
+//    @Override
+//    public void setPaused(boolean paused) {
+//
+//    }
+//
+//    @Override
+//    public void setTimeDilation(float td) {
+//
+//    }
+//
+//
+//    @Override
+//    public String getSaveFolder() {
+//        return null;
+//    }
+//
+//    @Override
+//    public void openSaveFolderOnDesktop() {
+//
+//    }
+//
+//    @Override
+//    public void toggleTimeDilation() {
+//
+//    }
 }

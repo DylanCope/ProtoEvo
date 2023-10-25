@@ -31,6 +31,7 @@ public class Environment implements Serializable
 	public static SimulationSettings settings = SimulationSettings.createDefault();
 
 	private final SimulationSettings mySettings;
+	private String simulationName;
 	private final Physics physics;
 	private String loadingStatus;
 	private final Statistics stats = new Statistics();
@@ -605,5 +606,13 @@ public class Environment implements Serializable
 
 	public SimulationSettings getSettings() {
 		return mySettings;
+	}
+
+	public void setSimulationName(String simulationName) {
+		this.simulationName = simulationName;
+	}
+
+	public String getSimulationName() {
+		return simulationName;
 	}
 }

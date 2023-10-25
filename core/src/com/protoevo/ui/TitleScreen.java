@@ -49,33 +49,8 @@ public class TitleScreen extends ScreenAdapter {
 
         buttons.clear();
 
-//        TextButton newSimulationButton = new TextButton("New Simulation", graphics.getSkin());
-//        newSimulationButton.addListener(e -> {
-//            if (e.toString().equals("touchDown"))
-//                graphics.setScreen(new CreateSimulationScreen(graphics));
-//            return true;
-//        });
-//        buttons.add(newSimulationButton);
         addButton("New Simulation", () -> graphics.setScreen(new CreateSimulationScreen(graphics)));
-
-//        TextButton remoteSimulationButton = new TextButton("Open To Remote Simulation", graphics.getSkin());
-//        remoteSimulationButton.addListener(e -> {
-//            if (e.toString().equals("touchDown"))
-//                graphics.loadSimulation(new RemoteSimulation());
-//            return true;
-//        });
-//        buttons.add(remoteSimulationButton);
-        addButton("Open To Remote Simulation", () -> graphics.loadSimulation(new RemoteSimulation()));
-
-//        if (DebugMode.isDebugMode()) {
-//            TextButton sandboxButton = new TextButton("Start Debug Sandbox", graphics.getSkin());
-//            sandboxButton.addListener(e -> {
-//                if (e.toString().equals("touchDown"))
-//                    graphics.moveToSandbox();
-//                return true;
-//            });
-//            buttons.add(sandboxButton);
-//        }
+        addButton("Fork Remote Simulation", () -> graphics.loadSimulation(new RemoteSimulation()));
 
         try (Stream<Path> paths = Files.list(Paths.get("saves"))) {
             paths.map(dir -> dir.getName(dir.getNameCount() - 1).toString())
@@ -83,25 +58,11 @@ public class TitleScreen extends ScreenAdapter {
                     .limit(5)
                     .forEach(saveName -> {
                         addButton("Load " + saveName, () -> graphics.moveToLoadSaveScreen(saveName));
-//                        TextButton button = new TextButton("Load " + saveName, graphics.getSkin());
-//                        button.addListener(e -> {
-//                            if (e.toString().equals("touchDown"))
-//                                graphics.moveToLoadSaveScreen(saveName);
-//                            return true;
-//                        });
-//                        buttons.add(button);
                     });
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
 
-//        TextButton exitButton = new TextButton("Exit", graphics.getSkin());
-//        exitButton.addListener(e -> {
-//            if (e.toString().equals("touchDown"))
-//                graphics.exitApplication();
-//            return true;
-//        });
-//        buttons.add(exitButton);
         addButton("Exit", graphics::exitApplication);
     }
 

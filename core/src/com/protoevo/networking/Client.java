@@ -3,6 +3,8 @@ package com.protoevo.networking;
 import org.nustaq.serialization.FSTObjectOutput;
 
 import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.net.Socket;
 import java.net.UnknownHostException;
 
@@ -38,7 +40,9 @@ public class Client {
     private final String address;
     private final int port;
     private Socket client;
-    private FSTObjectOutput out;
+//    private FSTObjectOutput out;
+    private ObjectOutputStream out;
+//    private ObjectInputStream in;
     private boolean opened = false;
     private Status status;
 
@@ -50,11 +54,17 @@ public class Client {
 
     public void open() {
         try {
+            System.out.println("Attempting to connect to " + address + ":" + port);
             client = new Socket(address, port);
-            client.setTcpNoDelay(true);
-            out = new FSTObjectOutput(client.getOutputStream());
+//            client.setTcpNoDelay(true);
+//            out = new FSTObjectOutput(client.getOutputStream());
+            System.out.println("Creating output stream");
+            out = new ObjectOutputStream(client.getOutputStream());
+//            System.out.println("Creating input stream");
+//            in = new ObjectInputStream(client.getInputStream());
             opened = true;
             status = Status.OPEN;
+            System.out.println(status + " " + address + ":" + port);
         } catch (UnknownHostException e) {
             System.err.println("Don't know about host " + address);
             System.exit(1);
@@ -72,13 +82,13 @@ public class Client {
         if (!opened) open();
 
         try {
-//            out.writeUnshared(obj);
-//            out.flush();
-//            out.reset();
-
             status = Status.SENDING;
-            out.writeObject(obj, clazz);
+            System.out.println(status);
+            out.writeUnshared(obj);
             out.flush();
+            out.reset();
+//            out.writeObject(obj, clazz);
+//            out.flush();
 
             status = Status.SENT_SUCCESSFUL;
 
@@ -91,12 +101,11 @@ public class Client {
     public void close() {
         try {
             out.close();
+//            in.close();
             client.close();
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
-
-    public static void main(String[] args) {}
 
 }

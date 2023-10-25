@@ -5,6 +5,7 @@ import com.protoevo.env.Environment;
 import org.nustaq.net.TCPObjectServer;
 import org.nustaq.serialization.FSTObjectInput;
 
+import java.io.ObjectInputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.Optional;
@@ -40,7 +41,7 @@ public class Server {
 
     private final int port;
     private Socket client;
-    private FSTObjectInput in;
+    private ObjectInputStream in;
     private ServerSocket server;
     private boolean opened = false;
     private Status status;
@@ -52,15 +53,15 @@ public class Server {
 
     private void open() {
         try {
-            TCPObjectServer server = new TCPObjectServer(port);
-//            server = new ServerSocket(port); // start listening on port
+//            TCPObjectServer server = new TCPObjectServer(port);
+            server = new ServerSocket(port); // start listening on port
             status = Status.WAITING.setMessage("Server waiting for connection on port " + port);
-//            client = server.accept(); // this method is a blocking I/O call, it will not be called unless
+            client = server.accept(); // this method is a blocking I/O call, it will not be called unless
             // a connection is established.
 
             client.setTcpNoDelay(true);
-            in = new FSTObjectInput(client.getInputStream(), EnvFileIO.getFSTConfig());
-//            in = new ObjectInputStream(client.getInputStream());    // get the input stream of client.
+//            in = new FSTObjectInput(client.getInputStream(), EnvFileIO.getFSTConfig());
+            in = new ObjectInputStream(client.getInputStream());    // get the input stream of client.
             status = Status.CONNECTED;
             opened = true;
         } catch (Exception e) {
@@ -74,9 +75,11 @@ public class Server {
         try {
             status = Status.WAITING.setMessage("Connection Established. Waiting to receive from client");
             System.out.println(status);
-            T obj = (T) in.readObject(clazz);
-            return Optional.of(obj);
-
+//            T obj = (T) in.readObject(clazz);
+            Object obj = in.readObject();
+            if (clazz.isInstance(obj))
+                return Optional.of(clazz.cast(obj));
+            status = Status.FAILED.setMessage("Received object is not of type " + clazz.getSimpleName());
         } catch (Exception e) {
             e.printStackTrace();
             status = Status.FAILED.setMessage("Failed to receive from client: " + e.getMessage());

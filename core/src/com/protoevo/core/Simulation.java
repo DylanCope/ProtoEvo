@@ -39,7 +39,7 @@ public class Simulation implements Runnable
 	protected boolean initialised = false;
 
 	private final Supplier<Environment> environmentLoader;
-	private final String name;
+	private String name;
 	private List<String> statsNames;
 	private final REPL repl = new REPL(this);
 
@@ -93,15 +93,15 @@ public class Simulation implements Runnable
 
 	private void loadSettings() {}
 
-	private void newSaveDir() {
+	public static void newSaveDir(String simulationName) {
 		try {
-			System.out.println("Created new simulation named: " + name);
+			System.out.println("Created new simulation named: " + simulationName);
 			Files.createDirectories(Paths.get("saves/"));
-			Files.createDirectories(Paths.get("saves/" + name));
-			Files.createDirectories(Paths.get("saves/" + name + "/env"));
-			Files.createDirectories(Paths.get("saves/" + name + "/stats"));
-			Files.createDirectories(Paths.get("saves/" + name + "/stats/summaries"));
-			Files.createDirectories(Paths.get("saves/" + name + "/stats/protozoa-genomes"));
+			Files.createDirectories(Paths.get("saves/" + simulationName));
+			Files.createDirectories(Paths.get("saves/" + simulationName + "/env"));
+			Files.createDirectories(Paths.get("saves/" + simulationName + "/stats"));
+			Files.createDirectories(Paths.get("saves/" + simulationName + "/stats/summaries"));
+			Files.createDirectories(Paths.get("saves/" + simulationName + "/stats/protozoa-genomes"));
 		} catch (IOException e) {
 			throw new RuntimeException(e);
 		}
@@ -117,13 +117,13 @@ public class Simulation implements Runnable
 
 	public Environment newDefaultEnv()
 	{
-		newSaveDir();
+		newSaveDir(name);
 		return new Environment();
 	}
 
 	public Environment newEnvironment(SimulationSettings settings)
 	{
-		newSaveDir();
+		newSaveDir(name);
 		return new Environment(settings);
 	}
 
@@ -203,6 +203,7 @@ public class Simulation implements Runnable
 	{
 		paused = false;
 		environment = environmentLoader.get();
+		environment.setSimulationName(name);
 		if (!initialised) {
 			environment.initialise();
 			makeStatisticsSnapshot();
@@ -430,6 +431,10 @@ public class Simulation implements Runnable
 
 	public String getName() {
 		return name;
+	}
+
+	public void setName(String name) {
+		this.name = name;
 	}
 
 	public void toggleTimeDilation() {
