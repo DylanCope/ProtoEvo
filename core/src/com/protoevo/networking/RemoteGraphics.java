@@ -10,7 +10,7 @@ import java.nio.file.Paths;
 
 public class RemoteGraphics {
 
-    private final Client client;
+    private Client client;
     private final Simulation simulation;
 
     public RemoteGraphics(String remoteAddress, Simulation simulation, int port) {
@@ -20,6 +20,11 @@ public class RemoteGraphics {
 
     public RemoteGraphics(String remoteAddress, Simulation simulation) {
         this(remoteAddress, simulation, 8888);
+    }
+
+    public void rebuildClient() {
+        client.close();
+        client = new Client(client.getAddress(), client.getPort());
     }
 
     public void send() {

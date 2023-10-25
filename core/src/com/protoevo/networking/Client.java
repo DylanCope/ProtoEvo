@@ -52,13 +52,20 @@ public class Client {
         status = Status.CLOSED;
     }
 
+    public int getPort() {
+        return port;
+    }
+
+    public String getAddress() {
+        return address;
+    }
+
     public void open() {
         try {
             System.out.println("Attempting to connect to " + address + ":" + port);
             client = new Socket(address, port);
 //            client.setTcpNoDelay(true);
 //            out = new FSTObjectOutput(client.getOutputStream());
-            System.out.println("Creating output stream");
             out = new ObjectOutputStream(client.getOutputStream());
 //            System.out.println("Creating input stream");
 //            in = new ObjectInputStream(client.getInputStream());

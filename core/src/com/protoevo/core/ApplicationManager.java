@@ -134,12 +134,24 @@ public class ApplicationManager {
         }
     }
 
+    public void handleRemoteGraphicsSendRequest() {
+        try {
+            remoteGraphics.send();
+            sendRemoteGraphicsRequested = false;
+            return;
+        } catch (Exception e) {
+            System.out.println("Failed to send remote graphics: " + e.getMessage());
+        }
+        System.out.println("Trying to rebuild remote graphics and send again...");
+        remoteGraphics.rebuildClient();
+        remoteGraphics.send();
+    }
+
     public void update() {
         if (hasSimulation() && simulation.isReady()) {
 
             if (hasRemoteGraphics() && sendRemoteGraphicsRequested) {
-                remoteGraphics.send();
-                sendRemoteGraphicsRequested = false;
+                handleRemoteGraphicsSendRequest();
             }
 
             simulation.update();
