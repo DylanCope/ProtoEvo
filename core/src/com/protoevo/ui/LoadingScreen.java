@@ -4,10 +4,8 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.ScreenAdapter;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
-import com.badlogic.gdx.utils.ScreenUtils;
 import com.protoevo.core.ApplicationManager;
 import com.protoevo.core.Simulation;
-import com.protoevo.ui.rendering.EnvironmentRenderer;
 import com.protoevo.utils.CursorUtils;
 
 public class LoadingScreen extends ScreenAdapter {
@@ -18,7 +16,7 @@ public class LoadingScreen extends ScreenAdapter {
     private float elapsedTime = 0;
     private BitmapFont font;
     private volatile boolean simulationReady = false;
-    private int updateCounts;
+    private int updatesCompleted;
     private int updatesBeforeRendering = 50;
 
     public LoadingScreen(GraphicsAdapter graphicsAdapter,
@@ -36,7 +34,7 @@ public class LoadingScreen extends ScreenAdapter {
     public void show() {
         CursorUtils.setDefaultCursor();
         simulationReady = false;
-        updateCounts = 0;
+        updatesCompleted = 0;
     }
 
     @Override
@@ -66,11 +64,12 @@ public class LoadingScreen extends ScreenAdapter {
     @Override
     public void render(float delta) {
         if (simulationReady) {
-            applicationManager.update();
-            updateCounts++;
-        }
-        if (updateCounts > updatesBeforeRendering) {
-            graphicsAdapter.setSimulationScreen();
+            if (updatesCompleted >= updatesBeforeRendering) {
+                graphicsAdapter.setSimulationScreen();
+            } else {
+                applicationManager.update();
+                updatesCompleted++;
+            }
         }
         renderBackground();
         Simulation simulation = applicationManager.getSimulation();

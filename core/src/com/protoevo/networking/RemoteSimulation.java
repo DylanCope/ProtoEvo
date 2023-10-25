@@ -63,6 +63,14 @@ public class RemoteSimulation extends Simulation {
         return downloadedEnv;
     }
 
+    public void clearLoadedEnvironment() {
+        if (environment != null)
+            environment.dispose();
+        environment = null;
+        loadingStatus = "Waiting to load environment";
+        initialised = false;
+    }
+
     @Override
     public void update() {
         if (hasLoadedEnv()) {
