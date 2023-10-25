@@ -12,6 +12,7 @@ public class RemoteSimulation extends Simulation {
 
     public RemoteSimulation() {
         environmentServer = new Server(8888);
+        environmentLoader = this::getEnvironmentFromServer;
     }
 
     public RemoteSimulation(long seed) {
@@ -38,35 +39,35 @@ public class RemoteSimulation extends Simulation {
         throw new UnsupportedOperationException("Cannot create new environment on remote simulation");
     }
 
-    @Override
-    public void prepare() {
-        environment = getEnvironmentFromServer();
-        initialised = true;
-        if (manager != null) {
-            manager.notifySimulationReady();
-        }
-//        while (!isFinished()) {
-//            environment = getEnvironmentFromServer();
-//            if (manager.isGraphicsActive())
-//                manager.getGraphics().getSimulationScreen().updateEnvironment();
+//    @Override
+//    public void prepare() {
+//        getEnvironmentFromServer();
+//        initialised = true;
+//        if (manager != null) {
+//            manager.notifySimulationReady();
 //        }
-    }
+//    }
 
     private Environment getEnvironmentFromServer() {
-        Environment env = environmentServer.get(Environment.class)
+        Environment downloadedEnv = environmentServer.get(Environment.class)
                 .orElseThrow(() -> new RuntimeException("Could not get environment from server"));
         loadingStatus = environmentServer.getStatus().getMessage();
-        env.createTransientObjects();
-        setName(environment.getSimulationName());
+        downloadedEnv.createTransientObjects();
+        downloadedEnv.rebuildWorld();
+//        environment = downloadedEnv;
+        setName(downloadedEnv.getSimulationName());
         newSaveDir(getName());
         loadingStatus = "Saving local copy of the environment";
         save();
-        return env;
+        loadingStatus = "Ready to simulate";
+        return downloadedEnv;
     }
 
     @Override
     public void update() {
-
+        if (hasLoadedEnv()) {
+            super.update();
+        }
     }
 
     public boolean hasLoadedEnv() {

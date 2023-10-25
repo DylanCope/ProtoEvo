@@ -38,7 +38,7 @@ public class Simulation implements Runnable
 	private boolean debug = false;
 	protected boolean initialised = false;
 
-	private final Supplier<Environment> environmentLoader;
+	protected Supplier<Environment> environmentLoader;
 	private String name;
 	private List<String> statsNames;
 	private final REPL repl = new REPL(this);
