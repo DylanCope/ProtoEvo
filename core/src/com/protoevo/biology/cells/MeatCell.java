@@ -13,7 +13,7 @@ public class MeatCell extends Cell {
     public MeatCell(float radius, Environment environment) {
         super();
         setRadius(radius);
-        setEnv(environment);
+        setEnvironmentAndBuildPhysics(environment);
 
         float r = (150 + MathUtils.random(105)) / 255f;
         float g = (25  + MathUtils.random(100)) / 255f;

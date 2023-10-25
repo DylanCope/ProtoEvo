@@ -112,6 +112,13 @@ public class GraphicsAdapter extends Game {
 	}
 
 	public void loadSimulation(Simulation simulation) {
+		loadingScreen.setUpdatesBeforeRendering(50);
+		setScreen(loadingScreen);
+		applicationManager.setSimulation(simulation);
+	}
+
+	public void loadPreexistingSimulation(Simulation simulation) {
+		loadingScreen.setUpdatesBeforeRendering(0);
 		setScreen(loadingScreen);
 		applicationManager.setSimulation(simulation);
 	}

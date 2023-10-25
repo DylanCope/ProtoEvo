@@ -245,13 +245,17 @@ public abstract class Cell implements Serializable, Coloured {
 		return false;
 	}
 
-	public void setEnv(Environment env) {
-		this.environment = env;
+	public void setEnvironmentAndBuildPhysics(Environment env) {
+		setEnvironment(env);
 		particle = env.getPhysics().createNewParticle();
 		particle.setUserData(this);
 		if (isRangedInteractionEnabled())
 			particle.setCanInteractAtRange();
 		environment.ensureAddedToEnvironment(this);
+	}
+
+	public void setEnvironment(Environment env) {
+		this.environment = env;
 	}
 
 	public Optional<Cell> getCell(Long id) {

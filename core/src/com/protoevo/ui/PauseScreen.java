@@ -17,6 +17,7 @@ import com.protoevo.core.ApplicationManager;
 import com.protoevo.core.Simulation;
 import com.protoevo.env.Environment;
 import com.protoevo.env.WorldGeneration;
+import com.protoevo.networking.RemoteSimulation;
 import com.protoevo.settings.SimulationSettings;
 import com.protoevo.settings.Settings;
 import com.protoevo.settings.WorldGenerationSettings;
@@ -71,6 +72,9 @@ public class PauseScreen extends ScreenAdapter {
             simulationScreen.getSimulation().saveOnOtherThread();
         }, scrollTable);
         addButton(graphics, "Load Save", this::toLoadSaveScreen, scrollTable);
+
+        if (simulationScreen.getSimulation() instanceof RemoteSimulation)
+            addButton(graphics, "Sync with Remote", this::syncWithRemote, scrollTable);
 
         addButton(graphics, "Edit Settings", () -> {
             List<Settings> settingsOptions = settings.getSettings();
@@ -239,4 +243,9 @@ public class PauseScreen extends ScreenAdapter {
         conditionalTasks.put(trigger, action);
     }
 
+    public void syncWithRemote() {
+        RemoteSimulation remoteSimulation = (RemoteSimulation) simulationScreen.getSimulation();
+        remoteSimulation.clearLoadedEnvironment();
+        graphics.loadPreexistingSimulation(remoteSimulation);
+    }
 }

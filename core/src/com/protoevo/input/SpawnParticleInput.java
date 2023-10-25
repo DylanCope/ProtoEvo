@@ -7,7 +7,6 @@ import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector3;
 import com.protoevo.biology.cells.Cell;
-import com.protoevo.physics.box2d.Box2DParticle;
 import com.protoevo.env.Environment;
 import com.protoevo.ui.SimulationScreen;
 import com.protoevo.utils.Geometry;
@@ -32,7 +31,7 @@ public class SpawnParticleInput extends InputAdapter {
     public void addParticle(float x, float y) {
         synchronized (environment) {
             Cell cell = simulationScreen.getInputManager().createNewCell();
-            cell.setEnv(environment);
+            cell.setEnvironmentAndBuildPhysics(environment);
             cell.getParticle().setPos(new Vector2(x, y));
             Vector2 impulse = Geometry.fromAngle((float) (Math.random() * Math.PI * 2)).scl(.01f);
             cell.getParticle().applyImpulse(impulse);

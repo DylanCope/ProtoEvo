@@ -54,13 +54,21 @@ public class RemoteSimulation extends Simulation {
         loadingStatus = environmentServer.getStatus().getMessage();
         downloadedEnv.createTransientObjects();
         downloadedEnv.rebuildWorld();
-//        environment = downloadedEnv;
+        initialised = true;
         setName(downloadedEnv.getSimulationName());
         newSaveDir(getName());
         loadingStatus = "Saving local copy of the environment";
         save();
         loadingStatus = "Ready to simulate";
         return downloadedEnv;
+    }
+
+    public void clearLoadedEnvironment() {
+        if (environment != null)
+            environment.dispose();
+        environment = null;
+        loadingStatus = "Waiting to load environment";
+        initialised = false;
     }
 
     @Override

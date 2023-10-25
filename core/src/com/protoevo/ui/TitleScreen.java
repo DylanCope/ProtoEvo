@@ -50,7 +50,7 @@ public class TitleScreen extends ScreenAdapter {
         buttons.clear();
 
         addButton("New Simulation", () -> graphics.setScreen(new CreateSimulationScreen(graphics)));
-        addButton("Fork Remote Simulation", () -> graphics.loadSimulation(new RemoteSimulation()));
+        addButton("Fork Remote Simulation", () -> graphics.loadPreexistingSimulation(new RemoteSimulation()));
 
         try (Stream<Path> paths = Files.list(Paths.get("saves"))) {
             paths.map(dir -> dir.getName(dir.getNameCount() - 1).toString())
