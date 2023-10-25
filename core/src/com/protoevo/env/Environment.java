@@ -112,6 +112,7 @@ public class Environment implements Serializable
 	public void rebuildWorld() {
 		settings = mySettings;
 		physics.rebuildTransientFields(this);
+		getCells().forEach(cell -> cell.setEnvironment(this));
 		updateChunkAllocations();
 	}
 
@@ -239,7 +240,7 @@ public class Environment implements Serializable
 				cell = Evolvable.createNew(PlantCell.class);
 			else
 				cell = new PlantCell();
-			cell.setEnv(this);
+			cell.setEnvironmentAndBuildPhysics(this);
 			findRandomPositionOrKillCell(cell);
 		}
 
@@ -249,7 +250,7 @@ public class Environment implements Serializable
 		loadingStatus = "Spawning Protozoa";
 		for (int i = 0; i < nProtozoa; i++) {
 			Protozoan p = Evolvable.createNew(Protozoan.class);
-			p.setEnv(this);
+			p.setEnvironmentAndBuildPhysics(this);
 			findRandomPositionOrKillCell(p);
 		}
 

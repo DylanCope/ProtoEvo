@@ -229,7 +229,7 @@ public class Protozoan extends EvolvableCell
 			child = Evolvable.asexualClone(this);
 		}
 
-		getEnv().ifPresent(child::setEnv);
+		getEnv().ifPresent(child::setEnvironmentAndBuildPhysics);
 		child.setRadius(r);
 
 		child.tags.addAll(tags);

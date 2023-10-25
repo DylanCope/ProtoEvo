@@ -19,13 +19,17 @@ public class LoadingScreen extends ScreenAdapter {
     private BitmapFont font;
     private volatile boolean simulationReady = false;
     private int updateCounts;
-    private static final int updatesBeforeRendering = 50;
+    private int updatesBeforeRendering = 50;
 
     public LoadingScreen(GraphicsAdapter graphicsAdapter,
                          ApplicationManager applicationManager) {
         this.graphicsAdapter = graphicsAdapter;
         this.applicationManager = applicationManager;
         batch = graphicsAdapter.getSpriteBatch();
+    }
+
+    public void setUpdatesBeforeRendering(int updatesBeforeRendering) {
+        this.updatesBeforeRendering = updatesBeforeRendering;
     }
 
     @Override

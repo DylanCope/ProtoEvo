@@ -140,7 +140,7 @@ public class LoadSaveScreen extends ScreenAdapter {
         loadButton.addListener(new ClickListener() {
             @Override
             public void clicked(InputEvent event, float x, float y) {
-                graphics.loadSimulation(new Simulation(simulationName, saveTimeStamp));
+                graphics.loadPreexistingSimulation(new Simulation(simulationName, saveTimeStamp));
             }
         });
 

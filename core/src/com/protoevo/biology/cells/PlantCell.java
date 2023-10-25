@@ -25,7 +25,7 @@ public class PlantCell extends EvolvableCell {
     public PlantCell(float radius, Environment environment) {
         super();
         setRadius(Math.max(radius, Environment.settings.plant.minBirthRadius.get()));
-        setEnv(environment);
+        setEnvironmentAndBuildPhysics(environment);
         setGrowthRate(MathUtils.random(minGrowthRate(), maxGrowthRate()));
 
         maxRadius = randomMaxRadius();
@@ -157,7 +157,7 @@ public class PlantCell extends EvolvableCell {
         if (Environment.settings.plant.evolutionEnabled.get()) {
             child = Evolvable.asexualClone(this);
             child.setRadius(r);
-            getEnv().ifPresent(child::setEnv);
+            getEnv().ifPresent(child::setEnvironmentAndBuildPhysics);
         } else
             child = new PlantCell(
                     r, getEnv().orElseThrow(() -> new RuntimeException("Cannot create cell without environment")));

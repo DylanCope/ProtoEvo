@@ -150,6 +150,8 @@ public class Box2DParticle extends Particle implements Serializable {
     }
 
     private void createInteractionFixture() {
+        if (body == null)
+            return;
         // Create the sensor fixture and attach it to the body
         CircleShape interactionCircle = new CircleShape();
         interactionCircle.setRadius((float) radius / 2f);
