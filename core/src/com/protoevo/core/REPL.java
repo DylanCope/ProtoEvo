@@ -116,14 +116,7 @@ public class REPL implements Runnable
         }
 
         System.out.println("Sending remote graphics...");
-        try {
-            manager.sendRemoteGraphics();
-        } catch (Exception e) {
-            System.out.println("Failed to send remote graphics: " + e);
-            e.printStackTrace();
-            System.out.println("Continuing simulation..." + e);
-            return false;
-        }
+        manager.sendRemoteGraphics();
         return true;
     }
 

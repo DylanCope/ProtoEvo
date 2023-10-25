@@ -74,10 +74,8 @@ public class Client {
             System.out.println(status + " " + address + ":" + port);
         } catch (UnknownHostException e) {
             System.err.println("Don't know about host " + address);
-            System.exit(1);
         } catch (IOException e) {
             System.err.println("Couldn't get I/O for the connection to " + address);
-            System.exit(1);
         }
     }
 
@@ -100,8 +98,7 @@ public class Client {
             status = Status.SENT_SUCCESSFUL;
 
         } catch (IOException e) {
-            e.printStackTrace();
-            System.exit(1);
+            throw new RuntimeException("Failed to send object to server: " + e.getMessage());
         }
     }
 
@@ -111,7 +108,7 @@ public class Client {
 //            in.close();
             client.close();
         } catch (IOException e) {
-            e.printStackTrace();
+            System.out.println("Failed to close client: " + e.getMessage());
         }
     }
 

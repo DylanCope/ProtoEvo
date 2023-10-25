@@ -144,7 +144,11 @@ public class ApplicationManager {
         }
         System.out.println("Trying to rebuild remote graphics and send again...");
         remoteGraphics.rebuildClient();
-        remoteGraphics.send();
+        try {
+            remoteGraphics.send();
+        } catch (Exception e) {
+            System.out.println("Failed again to send remote graphics: " + e.getMessage());
+        }
     }
 
     public void update() {
