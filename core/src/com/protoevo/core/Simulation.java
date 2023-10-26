@@ -215,8 +215,19 @@ public class Simulation implements Runnable
 			manager.notifySimulationReady();
 		}
 
-//		timedEventsManager = new TimedEventsManager();
-//		timedEventsManager.add();
+		timedEventsManager = new TimedEventsManager();
+		timedEventsManager.add(
+			t -> t >= Environment.settings.misc.timeBetweenHistoricalSaves.get() || saveRequested,
+			this::save
+		);
+		timedEventsManager.add(
+			Environment.settings.misc.statisticsSnapshotTime::get,
+			this::makeStatisticsSnapshot
+		);
+		timedEventsManager.add(
+			Environment.settings.misc.timeBetweenAutoSaves::get,
+			this::createAutoSave
+		);
 	}
 
 	public void run() {
@@ -268,22 +279,24 @@ public class Simulation implements Runnable
 				throw e;
 			}
 
-			timeSinceSave += delta;
-			timeSinceSnapshot += delta;
+			timedEventsManager.update(delta);
+			// timeSinceSave += delta;
+			// timeSinceSnapshot += delta;
+			// timeSinceAutoSave += delta;
 
-			if (timeSinceSave >= Environment.settings.misc.timeBetweenHistoricalSaves.get() || saveRequested) {
-				timeSinceSave = 0;
-				if (saveRequested) {
-					saveRequested = false;
-					System.out.println("\nSaving environment.");
-				}
-				save();
-			}
+			// if (timeSinceSave >= Environment.settings.misc.timeBetweenHistoricalSaves.get() || saveRequested) {
+			// 	timeSinceSave = 0;
+			// 	if (saveRequested) {
+			// 		saveRequested = false;
+			// 		System.out.println("\nSaving environment.");
+			// 	}
+			// 	save();
+			// }
 
-			if (timeSinceSnapshot >= Environment.settings.misc.statisticsSnapshotTime.get()) {
-				timeSinceSnapshot = 0;
-				onOtherThread(this::makeStatisticsSnapshot);
-			}
+			// if (timeSinceSnapshot >= Environment.settings.misc.statisticsSnapshotTime.get()) {
+			// 	timeSinceSnapshot = 0;
+			// 	onOtherThread(this::makeStatisticsSnapshot);
+			// }
 		} catch (Exception e) {
 			handleCrash(e);
 		}
@@ -362,6 +375,18 @@ public class Simulation implements Runnable
 
 		EnvFileIO.saveEnvironment(environment, fileName);
 		return fileName;
+	}
+
+	public void createAutoSave() {
+		if (environment == null)
+			return;
+		String fileName = "saves/" + name + "/env/autosave";
+
+		EnvironmentImageRenderer renderer = new EnvironmentImageRenderer(1024, 1024, environment);
+		renderer.render(fileName);
+		System.out.println("Created screenshot in directory: " + fileName);
+
+		EnvFileIO.saveEnvironment(environment, fileName);
 	}
 
 	public void makeStatisticsSnapshot() {

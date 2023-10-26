@@ -48,10 +48,11 @@ def create_generation_plot(sim_files: SimulationFiles):
         }
         for time_stamp in cleaned_stats
     ])
-    generation_df_cleaned['Wall Time'] = generation_df_cleaned['Time'] - generation_df_cleaned['Time'].min()
+    # wall_times = generation_df_cleaned['Time'] - generation_df_cleaned['Time'].min()
+    # generation_df_cleaned['Wall Time'] = np.array(wall_times, dtype='timedelta64[s]')
 
     plt.title('Cleaned Statistics Generation Plot')
-    sns.lineplot(data=generation_df_cleaned, x='Wall Time', y='Generation')
+    sns.lineplot(data=generation_df_cleaned, x='Time', y='Generation')
     plt.savefig(sim_files.save_dir / 'plots' / 'generation_plot.png')
     plt.close()
 
