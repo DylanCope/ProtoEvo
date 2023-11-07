@@ -128,7 +128,7 @@ public class EnvFileIO {
     {
         try {
             Files.createDirectories(Paths.get(filename));
-            Files.createDirectories(Paths.get(filename + "/chunks"));
+            // Files.createDirectories(Paths.get(filename + "/chunks"));
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
