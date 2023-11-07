@@ -23,9 +23,7 @@ import org.nustaq.serialization.FSTConfiguration;
 import org.nustaq.serialization.FSTObjectInput;
 import org.nustaq.serialization.FSTObjectOutput;
 
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
+import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.List;
@@ -85,12 +83,21 @@ public class EnvFileIO {
     }
 
     public static byte[] toBytes(Object object, Class<?> clazz) {
-        try (FSTObjectOutput out = new FSTObjectOutput(getFSTConfig())) {
+        FSTConfiguration config = getFSTConfig();
+        try (FSTObjectOutput out = config.getObjectOutput()) {
             out.writeObject(object, clazz);
             return out.getCopyOfWrittenBuffer();
-        } catch(IOException i) {
-            i.printStackTrace();
-            return null;
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static <T> T fromBytes(byte[] bytes, Class<T> clazz) {
+        FSTConfiguration config = getFSTConfig();
+        try {
+            return (T) config.getObjectInput(bytes).readObject(clazz);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
     }
 
@@ -106,18 +113,7 @@ public class EnvFileIO {
     public static <T> T deserialize(String filename, Class<T> clazz) {
         try (FileInputStream fileIn = new FileInputStream(filename);
              FSTObjectInput in = new FSTObjectInput(fileIn, getFSTConfig())) {
-
-//            // Suppress FST's error messages
-//            PrintStream errBackup = System.err;
-//            System.setErr(new PrintStream(new OutputStream() {
-//                public void write(int b) {}
-//            }));
-
             T object = (T) in.readObject(clazz);
-
-//            // Restore error print stream
-//            System.setErr(errBackup);
-
             return object;
         } catch (Exception e) {
             throw new RuntimeException(e);

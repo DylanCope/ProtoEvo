@@ -28,7 +28,8 @@ public class RemoteGraphics {
     }
 
     public void send() {
-        client.send(simulation.getEnv(), Environment.class);
+        byte[] envBytes = EnvFileIO.toBytes(simulation.getEnv(), Environment.class);
+        client.send(envBytes);
     }
 
     public void close() {
@@ -43,12 +44,6 @@ public class RemoteGraphics {
         Simulation simulation = new Simulation("test");
         RemoteGraphics remoteGraphics = new RemoteGraphics("127.0.0.1", simulation, 1212);
         simulation.prepare();
-        simulation.update();
-        System.out.println(simulation.getEnv().getStats());
-        remoteGraphics.send();
-        System.out.println(remoteGraphics.getStatus());
-
-        System.out.println("Attempting second send\n");
         simulation.update();
         System.out.println(simulation.getEnv().getStats());
         remoteGraphics.send();

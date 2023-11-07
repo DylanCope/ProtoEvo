@@ -83,7 +83,7 @@ public class Client {
         return status;
     }
 
-    public void send(Object obj, Class<?> clazz) {
+    public void send(Object obj) {
         if (!opened) open();
 
         try {
