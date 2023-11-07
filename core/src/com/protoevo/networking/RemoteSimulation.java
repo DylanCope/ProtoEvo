@@ -1,6 +1,7 @@
 package com.protoevo.networking;
 
 import com.protoevo.core.Simulation;
+import com.protoevo.env.EnvFileIO;
 import com.protoevo.env.Environment;
 import com.protoevo.settings.SimulationSettings;
 
@@ -11,7 +12,11 @@ public class RemoteSimulation extends Simulation {
     private String loadingStatus;
 
     public RemoteSimulation() {
-        environmentServer = new Server(8888);
+        this(8888);
+    }
+
+    public RemoteSimulation(int port) {
+        environmentServer = new Server(port);
         environmentLoader = this::getEnvironmentFromServer;
     }
 
@@ -39,26 +44,20 @@ public class RemoteSimulation extends Simulation {
         throw new UnsupportedOperationException("Cannot create new environment on remote simulation");
     }
 
-//    @Override
-//    public void prepare() {
-//        getEnvironmentFromServer();
-//        initialised = true;
-//        if (manager != null) {
-//            manager.notifySimulationReady();
-//        }
-//    }
-
     private Environment getEnvironmentFromServer() {
-        Environment downloadedEnv = environmentServer.get(Environment.class)
+        byte[] downloadedEnvBytes = environmentServer.get(byte[].class)
                 .orElseThrow(() -> new RuntimeException("Could not get environment from server"));
+        Environment downloadedEnv = EnvFileIO.fromBytes(downloadedEnvBytes, Environment.class);
         loadingStatus = environmentServer.getStatus().getMessage();
         downloadedEnv.createTransientObjects();
         downloadedEnv.rebuildWorld();
         initialised = true;
         setName(downloadedEnv.getSimulationName());
-        newSaveDir(getName());
-        loadingStatus = "Saving local copy of the environment";
-        save();
+        if (getName() != null) {
+            newSaveDir(getName());
+            loadingStatus = "Saving local copy of the environment";
+            save();
+        }
         loadingStatus = "Ready to simulate";
         return downloadedEnv;
     }
@@ -69,13 +68,6 @@ public class RemoteSimulation extends Simulation {
         environment = null;
         loadingStatus = "Waiting to load environment";
         initialised = false;
-    }
-
-    @Override
-    public void update() {
-        if (hasLoadedEnv()) {
-            super.update();
-        }
     }
 
     public boolean hasLoadedEnv() {
@@ -119,80 +111,15 @@ public class RemoteSimulation extends Simulation {
         return hasLoadedEnv() && super.isFinished();
     }
 
-//    @Override
-//    public void requestSave() {
-//
-//    }
-//
-//    @Override
-//    public void printStats() {
-//        super.printStats();
-//    }
-//
-//    @Override
-//    public void handleCrash(Exception e) {
-//
-//    }
-//
-//    @Override
-//    public void saveOnOtherThread() {
-//
-//    }
-//
-//    @Override
-//    public void interruptSimulationLoop() {
-//        super.interruptSimulationLoop();
-//    }
-//
-//    @Override
-//    public void close() {
-//
-//    }
-
     @Override
     public void dispose() {
         super.dispose();
         environmentServer.close();
     }
 
-//    @Override
-//    public String save() {
-//        return null;
-//    }
-//
-//    @Override
-//    public void makeStatisticsSnapshot() {
-//
-//    }
-//
-//    @Override
-//    public void togglePause() {
-//
-//    }
-//
-//    @Override
-//    public void setPaused(boolean paused) {
-//
-//    }
-//
-//    @Override
-//    public void setTimeDilation(float td) {
-//
-//    }
-//
-//
-//    @Override
-//    public String getSaveFolder() {
-//        return null;
-//    }
-//
-//    @Override
-//    public void openSaveFolderOnDesktop() {
-//
-//    }
-//
-//    @Override
-//    public void toggleTimeDilation() {
-//
-//    }
+    public static void main(String[] args) {
+        RemoteSimulation remoteSimulation = new RemoteSimulation(1212);
+        Environment env = remoteSimulation.getEnvironmentFromServer();
+        System.out.println(env.getStats());
+    }
 }
