@@ -24,6 +24,7 @@ public class ChemicalSolution implements Serializable {
     private Colour[][] colours;
     private float timeSinceUpdate = 0;
     private transient JCudaKernelRunner diffusionKernel;
+    private transient GLComputeShaderRunner diffusionShader;
 
     public interface ChemicalUpdatedCallback {
         void onChemicalUpdated(int i, int j, Colour colour);
@@ -69,10 +70,12 @@ public class ChemicalSolution implements Serializable {
                     colours[i][j] = new Colour();
                 }
             }
+            diffusionShader = new GLComputeShaderRunner("diffusion");
 
             initialised = true;
         }
 
+        /*
         if (!JCudaKernelRunner.cudaAvailable())
             Environment.settings.misc.useCUDA.set(false);
 
@@ -80,8 +83,9 @@ public class ChemicalSolution implements Serializable {
             // has to be called on the same thread running the simulation
             if (DebugMode.isDebugMode())
                 System.out.println("Initialising chemical diffusion CUDA kernel...");
-            diffusionKernel = new JCudaKernelRunner("diffusion");
+            //diffusionKernel = new JCudaKernelRunner("diffusion");
         }
+        */
     }
 
     public float getFieldWidth() {
@@ -255,10 +259,10 @@ public class ChemicalSolution implements Serializable {
         loadIntoByteBuffer();
 
         try {
-            if (diffusionKernel == null)
+            if (diffusionShader == null)
                 initialise();
 
-            diffusionKernel.processImage(
+            diffusionShader.processImage(
                     byteBuffer, chemicalTextureWidth, chemicalTextureHeight);
         }
         catch (Exception e) {
