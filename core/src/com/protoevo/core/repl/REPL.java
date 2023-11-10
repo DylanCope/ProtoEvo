@@ -65,7 +65,7 @@ public class REPL implements Runnable
                 String cmd = args[0];
                 if (commands.containsKey(cmd)) {
                     Command command = commands.get(cmd);
-                    if (args.length > 1 && args[1].equals("-help") || args[1].equals("-h")) {
+                    if (args.length > 1 && (args[1].equals("-help") || args[1].equals("-h"))) {
                         command.printDetailedHelp();
                         continue;
                     }
@@ -77,7 +77,7 @@ public class REPL implements Runnable
                 }
             }
             catch (Exception e) {
-                System.out.println(e.getMessage());
+                System.out.println("Failed with message: " + e.getMessage());
             }
         }
     }
