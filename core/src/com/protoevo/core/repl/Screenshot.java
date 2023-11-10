@@ -37,11 +37,11 @@ public class Screenshot extends Command {
 
     @Override
     public String[] getAliases() {
-        return new String[0];
+        return new String[]{"screenshot", "ss"};
     }
 
     @Override
     public String getDescription() {
-        return null;
+        return "Save a screenshot of the environment.";
     }
 }
