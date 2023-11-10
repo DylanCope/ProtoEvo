@@ -37,9 +37,13 @@ public class ApplicationManager {
 
         if (headless) {
             app.setOnlyHeadless();
-            if (argsMap.containsKey("simulation") && !argsMap.get("simulation").equals("")) {
+            if (argsMap.containsKey("simulation")) {
                 System.out.println("Loading simulation: " + argsMap.get("simulation"));   
-                app.setSimulation(new Simulation(argsMap.get("simulation")));
+                if (argsMap.containsKey("save"))
+                    app.setSimulation(new Simulation(argsMap.get("simulation"),
+                                                     argsMap.get("save")));
+                else
+                    app.setSimulation(new Simulation(argsMap.get("simulation")));
             }
             else {
                 app.setSimulation(new Simulation());
