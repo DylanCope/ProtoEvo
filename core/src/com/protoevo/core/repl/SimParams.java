@@ -52,14 +52,13 @@ public class SimParams extends Command {
             for (Settings.Parameter<?> param : settings.getParameters())
                 System.out.println("\t- " + param.getFieldName() + ": "
                         + param.getName() + "; " + param.getDescription());
-            return true;
         }
         return true;
     }
 
     public boolean setParam(String[] args) {
         if (args.length != 4) {
-            System.out.println("This command takes 2 arguments.");
+            System.out.println("This command takes 3 arguments.");
             return false;
         }
         try {
@@ -68,7 +67,7 @@ public class SimParams extends Command {
             String subcategory = "base";
 
             if (paramName.contains(".")) {
-                String[] split = args[1].split("\\.");
+                String[] split = paramName.split("\\.");
                 subcategory = split[0];
                 paramName = split[1];
             }
@@ -97,8 +96,8 @@ public class SimParams extends Command {
     }
 
     public boolean getParam(String[] args) {
-        if (args.length > 2) {
-            System.out.println("This command takes 1 argument.");
+        if (args.length > 3) {
+            System.out.println("This command takes 2 arguments.");
             return false;
         }
         try {
