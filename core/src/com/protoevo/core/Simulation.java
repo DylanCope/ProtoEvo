@@ -3,6 +3,7 @@ package com.protoevo.core;
 import com.github.javafaker.Faker;
 import com.protoevo.biology.cells.Protozoan;
 import com.protoevo.biology.nn.NetworkGenome;
+import com.protoevo.core.repl.REPL;
 import com.protoevo.env.EnvFileIO;
 import com.protoevo.env.Environment;
 import com.protoevo.settings.SimulationSettings;
@@ -366,13 +367,13 @@ public class Simulation implements Runnable
 	public String save() {
 		if (environment == null)
 			return null;
-		String timeStamp = getTimeStampString();
-		String fileName = "saves/" + name + "/env/" + timeStamp;
 
 		EnvironmentImageRenderer renderer = new EnvironmentImageRenderer(1024, 1024, environment);
-		renderer.render(fileName);
-		System.out.println("Created screenshot in directory: " + fileName);
+		renderer.render(getSaveFolder() + "/screenshots");
+		System.out.println("Created screenshot in directory: " + getSaveFolder() + "/screenshots");
 
+		String timeStamp = getTimeStampString();
+		String fileName = getSaveFolder() + "/env/" + timeStamp;
 		EnvFileIO.saveEnvironment(environment, fileName);
 		return fileName;
 	}
@@ -380,12 +381,12 @@ public class Simulation implements Runnable
 	public void createAutoSave() {
 		if (environment == null)
 			return;
-		String fileName = "saves/" + name + "/env/autosave";
 
 		EnvironmentImageRenderer renderer = new EnvironmentImageRenderer(1024, 1024, environment);
-		renderer.render(fileName);
-		System.out.println("Created screenshot in directory: " + fileName);
+		renderer.render(getSaveFolder() + "/screenshots");
+		System.out.println("Created screenshot in directory: " + getSaveFolder() + "/screenshots");
 
+		String fileName = getSaveFolder() + "/env/autosave";
 		EnvFileIO.saveEnvironment(environment, fileName);
 	}
 
@@ -397,14 +398,14 @@ public class Simulation implements Runnable
 
 		String timeStamp = getTimeStampString();
 
-		FileIO.writeJson(stats, "saves/" + name + "/stats/summaries/" + timeStamp);
+		FileIO.writeJson(stats, getSaveFolder() + "/stats/summaries/" + timeStamp);
 
 		if (Environment.settings.misc.writeGenomes.get()) {
 			List<NetworkGenome> protozoaGenomes = environment.getCells().stream()
 					.filter(cell -> cell instanceof Protozoan)
 					.map(cell -> ((Protozoan) cell).getGeneExpressionFunction().getGRNGenome())
 					.collect(Collectors.toList());
-			FileIO.writeJson(protozoaGenomes, "saves/" + name + "/stats/protozoa-genomes/" + timeStamp);
+			FileIO.writeJson(protozoaGenomes, getSaveFolder() + "/stats/protozoa-genomes/" + timeStamp);
 		}
 
 //		PythonRunner.runPython("pyprotoevo.create_plots", "--quiet --simulation " + name);
