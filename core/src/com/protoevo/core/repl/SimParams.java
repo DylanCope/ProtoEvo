@@ -101,11 +101,11 @@ public class SimParams extends Command {
             return false;
         }
         try {
-            String paramName = args[1];
+            String paramName = args[2];
             String subcategory = "base";
 
-            if (args[1].contains(".")) {
-                String[] split = args[1].split("\\.");
+            if (paramName.contains(".")) {
+                String[] split = paramName.split("\\.");
                 subcategory = split[0];
                 paramName = split[1];
             }
