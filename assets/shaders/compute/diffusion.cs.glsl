@@ -90,7 +90,6 @@ void main() {
 
         outp[c] = uint(int(final_value));
     }
-    outp[3] = 255;
     
     imageStore(outPixels, ivec2(x, y), outp);
 }
