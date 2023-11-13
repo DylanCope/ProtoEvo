@@ -75,6 +75,12 @@ public class LoadSaveScreen extends ScreenAdapter {
         // want to reformat to day/month/year hour:minute:second
 
         String[] splitTimeStamp = timeStamp.split("-");
+
+        if(splitTimeStamp.length != 6){
+            // if the time stamp is not of the correct format, return the original string
+            return timeStamp;
+        }
+
         int year = Integer.parseInt(splitTimeStamp[0]);
         int month = Integer.parseInt(splitTimeStamp[1]);
         int day = Integer.parseInt(splitTimeStamp[2]);
