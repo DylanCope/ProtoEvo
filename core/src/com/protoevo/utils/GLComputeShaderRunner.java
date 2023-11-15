@@ -19,13 +19,13 @@ public class GLComputeShaderRunner {
 
     private final int blockSizeX, blockSizeY;
     private final String kernelName;
-    private int program, computeShader;
     private long window;
     private boolean initialized = false;
     private ByteBuffer inputBuffer = BufferUtils.createByteBuffer(1024*1024*4);
     private ByteBuffer outputBuffer = BufferUtils.createByteBuffer(1024*1024*4);
 
     /* OpenGL resources */
+    private int program, computeShader;
     private int[] textures = new int[2];
 
     public GLComputeShaderRunner(String kernelName) {

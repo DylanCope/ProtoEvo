@@ -249,7 +249,6 @@ public class ApplicationManager {
         graphics = new GraphicsAdapter(this);
         // Creates graphics and runs updates from rendering loop
         new Lwjgl3Application(graphics, config);
-
     }
 
     public void disposeSimulationIfPresent() {
