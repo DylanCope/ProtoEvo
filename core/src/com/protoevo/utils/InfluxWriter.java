@@ -32,11 +32,9 @@ public class InfluxWriter {
         Point point = Point
                 .measurement("environment")
                 .addTag("simulation", simulationName);
-        for(Map.Entry<String, Stat> entry : stats.getStatsMap().entrySet()){
+        for (Map.Entry<String, Stat> entry : stats.getStatsMap().entrySet()) {
             Stat val = entry.getValue();
-            if(val.isNumeric()){
-                point.addField(entry.getKey(), val.getDouble());
-            }
+            point.addField(entry.getKey(), val.getDouble());
         }
 
         WriteApiBlocking writeApi = client.getWriteApiBlocking();
