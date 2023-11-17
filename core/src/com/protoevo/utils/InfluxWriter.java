@@ -28,12 +28,10 @@ public class InfluxWriter {
         client = InfluxDBClientFactory.create("http://localhost:8086", token.toCharArray());
     }
 
-    public void write(Statistics stats) {
-
-        // Loop through stats map
+    public void write(String simulationName, Statistics stats) {
         Point point = Point
                 .measurement("environment")
-                .addTag("host", "host1");
+                .addTag("simulation", simulationName);
         for(Map.Entry<String, Stat> entry : stats.getStatsMap().entrySet()){
             Stat val = entry.getValue();
             if(val.isNumeric()){

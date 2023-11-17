@@ -392,14 +392,12 @@ public class Simulation implements Runnable
 	public void makeStatisticsSnapshot() {
 		Statistics stats = new Statistics(environment.getStats());
 
-		influxWriter.write(stats);
 		stats.putAll(environment.getDebugStats());
 		stats.putAll(environment.getPhysicsDebugStats());
 		stats.putAll(environment.getProtozoaSummaryStats(true, false, true));
 
 		String timeStamp = Utils.getTimeStampString();
-
-
+		influxWriter.write(name, stats);
 
 		//FileIO.writeJson(stats, getSaveFolder() + "/stats/summaries/" + timeStamp);
 
