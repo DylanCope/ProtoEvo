@@ -23,7 +23,8 @@ public class ChemicalSolution implements Serializable {
     private byte[] byteBuffer;
     private Colour[][] colours;
     private float timeSinceUpdate = 0;
-    private transient JCudaKernelRunner diffusionKernel;
+    private transient JCudaKernelRunner cudaDiffusionKernel;
+    private transient GLComputeShaderRunner openGLDiffusionShader;
 
     public interface ChemicalUpdatedCallback {
         void onChemicalUpdated(int i, int j, Colour colour);
@@ -80,7 +81,11 @@ public class ChemicalSolution implements Serializable {
             // has to be called on the same thread running the simulation
             if (DebugMode.isDebugMode())
                 System.out.println("Initialising chemical diffusion CUDA kernel...");
-            diffusionKernel = new JCudaKernelRunner("diffusion");
+            cudaDiffusionKernel = new JCudaKernelRunner("diffusion");
+        } else {
+            if (Environment.settings.misc.useOpenGL.get()){
+                openGLDiffusionShader = new GLComputeShaderRunner("diffusion");
+            }
         }
     }
 
@@ -255,10 +260,35 @@ public class ChemicalSolution implements Serializable {
         loadIntoByteBuffer();
 
         try {
-            if (diffusionKernel == null)
+            if (cudaDiffusionKernel == null)
                 initialise();
 
-            diffusionKernel.processImage(
+            cudaDiffusionKernel.processImage(
+                    byteBuffer, chemicalTextureWidth, chemicalTextureHeight);
+        }
+        catch (Exception e) {
+            if (e.getMessage().contains("CUDA_ERROR_INVALID_CONTEXT") ||
+                    e.getMessage().contains("CUDA_ERROR_INVALID_HANDLE")) {
+                if (DebugMode.isDebugMode())
+                    System.out.println("CUDA context lost, reinitialising...");
+                initialise();
+            } else {
+                throw e;
+            }
+        }
+
+        unloadFromByteBuffer();
+    }
+
+    private void openGLDiffuse() {
+
+        loadIntoByteBuffer();
+
+        try {
+            if (openGLDiffusionShader == null)
+                initialise();
+
+            openGLDiffusionShader.processImage(
                     byteBuffer, chemicalTextureWidth, chemicalTextureHeight);
         }
         catch (Exception e) {
@@ -359,6 +389,8 @@ public class ChemicalSolution implements Serializable {
     public void diffuse() {
         if (Environment.settings.misc.useCUDA.get())
             cudaDiffuse();
+        else if (Environment.settings.misc.useOpenGL.get())
+            openGLDiffuse();
         else
             cpuDiffuse();
     }

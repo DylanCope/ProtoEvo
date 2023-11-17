@@ -63,6 +63,10 @@ public class MiscSettings extends Settings {
             "Use CUDA",
             "Whether or not to use the CUDA for accelerating calculations on the GPU.",
             true);
+    public final Settings.Parameter<Boolean> useOpenGL = new Settings.Parameter<>(
+            "Use OpenGL",
+            "Whether or not to use OpenGL compute shaders for accelerating calculations on the GPU.",
+            true);
     public final Settings.Parameter<Integer> chemicalCPUIterations = new Settings.Parameter<>(
             "CPU Chemical Diffusion Iterations",
             "Number of chemical diffusion iterations to perform when running on the CPU.",

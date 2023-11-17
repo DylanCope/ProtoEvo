@@ -7,6 +7,7 @@ import com.protoevo.biology.nn.NeuralNetwork;
 import com.protoevo.biology.nodes.*;
 import com.protoevo.biology.organelles.Organelle;
 import com.protoevo.core.Statistics;
+import com.protoevo.env.ChemicalSolution;
 import com.protoevo.env.Environment;
 import com.protoevo.physics.Collision;
 import com.protoevo.utils.Colour;
@@ -29,7 +30,7 @@ public class Protozoan extends EvolvableCell
 	private float herbivoreFactor, splitRadius;
 	private final Vector2 tmp = new Vector2();
 	private final Collection<Cell> engulfedCells = new ArrayList<>(0);
-	private final Vector2 thrust = new Vector2();
+	private final Vector2 thrust = new Vector2(), dir = new Vector2();
 	private float thrustAngle = (float) (2 * Math.PI * Math.random());
 	private float thrustTurn = 0, thrustMag;
 
@@ -178,6 +179,23 @@ public class Protozoan extends EvolvableCell
 		return getFoodToDigest().get(Food.Type.Meat).getSimpleMass() / getFoodToDigestMassCap();
 	}
 
+	@GeneRegulator(name="Plant Gradient", min=-1, max=1)
+	public float getPlantGradient() {
+		Optional<Environment> env = getEnv();
+		if (!env.isPresent())
+			return 0;
+		ChemicalSolution solution = env.get().getChemicalSolution();
+		if (solution == null)
+			return 0;
+
+		Vector2 pos = getPos();
+		tmp.set(pos).add(dir.setLength(1.1f * getRadius()));
+		float plantGradientAhead = solution.getPlantDensity(tmp);
+		tmp.set(pos).sub(dir.setLength(1.1f * getRadius()));
+		float plantGradientBehind = solution.getPlantDensity(tmp);
+		return plantGradientAhead - plantGradientBehind;
+	}
+
 	@ControlVariable(name="Cilia Thrust", min=0, max=1)
 	public void setCiliaThrust(float thrust) {
 		float sizePenalty = getRadius() / Environment.settings.maxParticleRadius.get();
@@ -204,6 +222,8 @@ public class Protozoan extends EvolvableCell
 			return;
 
 		thrustAngle += delta * thrustTurn;
+		dir.set((float) Math.cos(thrustAngle),
+				(float) Math.sin(thrustAngle));
 		thrust.set(thrustMag * (float) Math.cos(thrustAngle),
 				   thrustMag * (float) Math.sin(thrustAngle));
 

@@ -15,8 +15,8 @@ public class EnvironmentSettings extends Settings {
             10f);
     public final Settings.Parameter<Float> voidDamagePerSecond = new Settings.Parameter<>(
             "Void Damage Per Second",
-            "",
-            1f);
+            "Factor controlling how much damage being outside the environment does.",
+            10f);
 
     public final Settings.Parameter<Boolean> dayNightCycleEnabled = new Settings.Parameter<>(
             "Day/Night Cycle Enabled",
