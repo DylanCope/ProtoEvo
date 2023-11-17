@@ -82,10 +82,9 @@ public class ChemicalSolution implements Serializable {
             if (DebugMode.isDebugMode())
                 System.out.println("Initialising chemical diffusion CUDA kernel...");
             cudaDiffusionKernel = new JCudaKernelRunner("diffusion");
-        } else {
-            if (Environment.settings.misc.useOpenGL.get()){
-                openGLDiffusionShader = new GLComputeShaderRunner("diffusion");
-            }
+        }
+        else if (Environment.settings.misc.useOpenGLComputeShader.get()){
+            openGLDiffusionShader = new GLComputeShaderRunner("diffusion");
         }
     }
 
@@ -281,27 +280,12 @@ public class ChemicalSolution implements Serializable {
     }
 
     private void openGLDiffuse() {
-
         loadIntoByteBuffer();
+        if (openGLDiffusionShader == null)
+            initialise();
 
-        try {
-            if (openGLDiffusionShader == null)
-                initialise();
-
-            openGLDiffusionShader.processImage(
-                    byteBuffer, chemicalTextureWidth, chemicalTextureHeight);
-        }
-        catch (Exception e) {
-            if (e.getMessage().contains("CUDA_ERROR_INVALID_CONTEXT") ||
-                    e.getMessage().contains("CUDA_ERROR_INVALID_HANDLE")) {
-                if (DebugMode.isDebugMode())
-                    System.out.println("CUDA context lost, reinitialising...");
-                initialise();
-            } else {
-                throw e;
-            }
-        }
-
+        openGLDiffusionShader.processImage(
+                byteBuffer, chemicalTextureWidth, chemicalTextureHeight);
         unloadFromByteBuffer();
     }
 
@@ -389,7 +373,7 @@ public class ChemicalSolution implements Serializable {
     public void diffuse() {
         if (Environment.settings.misc.useCUDA.get())
             cudaDiffuse();
-        else if (Environment.settings.misc.useOpenGL.get())
+        else if (Environment.settings.misc.useOpenGLComputeShader.get())
             openGLDiffuse();
         else
             cpuDiffuse();
