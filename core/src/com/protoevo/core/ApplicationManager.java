@@ -1,5 +1,6 @@
 package com.protoevo.core;
 
+import com.badlogic.gdx.Files;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.backends.lwjgl3.Lwjgl3Application;
 import com.badlogic.gdx.backends.lwjgl3.Lwjgl3ApplicationConfiguration;
@@ -243,6 +244,8 @@ public class ApplicationManager {
         config.setBackBufferConfig(
                 8, 8, 8, 8, 16, 0,
                 GraphicsAdapter.settings.msaaSamples.get()); // 8, 8, 8, 8, 16, 0 are default values
+
+        config.setWindowIcon(Files.FileType.Internal, "app-icon.png");
 
         config.useVsync(true);
         config.setTitle("ProtoEvo");

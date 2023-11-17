@@ -1,5 +1,7 @@
 package com.protoevo.utils;
 
+import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.files.FileHandle;
 import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Sprite;
@@ -143,7 +145,7 @@ public class ImageUtils {
         List<Sprite> frames = Lists.newArrayList();
         while (true) {
             String framePath = framesFolder + "/" + frame + ".png";
-            File frameFile = new File(framePath);
+            FileHandle frameFile = Gdx.files.internal(framePath);
             if (!frameFile.exists()) {
                 break;
             }

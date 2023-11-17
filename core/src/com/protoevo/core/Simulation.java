@@ -10,6 +10,7 @@ import com.protoevo.settings.SimulationSettings;
 import com.protoevo.utils.EnvironmentImageRenderer;
 import com.protoevo.utils.FileIO;
 import com.protoevo.utils.TimedEventsManager;
+import com.protoevo.utils.Utils;
 
 import java.awt.*;
 import java.io.File;
@@ -360,10 +361,6 @@ public class Simulation implements Runnable
 		}
 	}
 
-	public String getTimeStampString() {
-		return new SimpleDateFormat("yyyy-MM-dd-HH-mm-ss").format(new Date());
-	}
-
 	public String save() {
 		if (environment == null)
 			return null;
@@ -372,7 +369,7 @@ public class Simulation implements Runnable
 		renderer.render(getSaveFolder() + "/screenshots");
 		System.out.println("Created screenshot in directory: " + getSaveFolder() + "/screenshots");
 
-		String timeStamp = getTimeStampString();
+		String timeStamp = Utils.getTimeStampString();
 		String fileName = getSaveFolder() + "/env/" + timeStamp;
 		EnvFileIO.saveEnvironment(environment, fileName);
 		return fileName;
@@ -396,7 +393,7 @@ public class Simulation implements Runnable
 		stats.putAll(environment.getPhysicsDebugStats());
 		stats.putAll(environment.getProtozoaSummaryStats(true, false, true));
 
-		String timeStamp = getTimeStampString();
+		String timeStamp = Utils.getTimeStampString();
 
 		FileIO.writeJson(stats, getSaveFolder() + "/stats/summaries/" + timeStamp);
 

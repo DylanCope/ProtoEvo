@@ -18,6 +18,8 @@ task runGame(dependsOn: classes, type: JavaExec) {
     workingDir = project.assetsDir
     ignoreExitValue = true
 
+    jvmArgs += "-Xmx16G --add-modules jdk.incubator.foreign --illegal-access=permit "
+
     if (OperatingSystem.current() == OperatingSystem.MAC_OS) {
         // Required to run on macOS
         jvmArgs += "-XstartOnFirstThread"

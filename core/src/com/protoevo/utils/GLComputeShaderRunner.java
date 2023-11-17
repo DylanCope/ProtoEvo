@@ -1,17 +1,15 @@
 package com.protoevo.utils;
 
-import java.nio.ByteBuffer;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-
-import static org.lwjgl.glfw.GLFW.*;
-import static org.lwjgl.system.MemoryUtil.*;
-import static org.lwjgl.opengl.GL43C.*;
-
+import com.badlogic.gdx.Gdx;
+import com.protoevo.core.ApplicationManager;
 import org.lwjgl.BufferUtils;
 
-import com.protoevo.core.ApplicationManager;
+import java.nio.ByteBuffer;
+
+import static org.lwjgl.glfw.GLFW.glfwInit;
+import static org.lwjgl.glfw.GLFW.glfwMakeContextCurrent;
+import static org.lwjgl.opengl.GL43C.*;
+import static org.lwjgl.system.MemoryUtil.NULL;
 
 
 public class GLComputeShaderRunner {
@@ -56,9 +54,10 @@ public class GLComputeShaderRunner {
         computeShader = glCreateShader(GL_COMPUTE_SHADER);
 
         // Load the shader source code
-        String shaderSource = null;
+        String shaderSource;
         try {
-            shaderSource = new String(Files.readAllBytes(Paths.get("shaders/compute/" + kernelName + ".cs.glsl")), StandardCharsets.UTF_8);
+            shaderSource = Gdx.files.internal("shaders/compute/" + kernelName + ".cs.glsl").readString();
+//            shaderSource = new String(Files.readAllBytes(Paths.get("shaders/compute/" + kernelName + ".cs.glsl")), StandardCharsets.UTF_8);
         } catch (Exception e) {
             throw new RuntimeException("Was unable to load " + kernelName + ":\n" + e);
         }
@@ -146,9 +145,9 @@ public class GLComputeShaderRunner {
         glUniform1i(glGetUniformLocation(program, "channels"), c);
 
         // Copy the input to the input buffer and then to shader
-        inputBuffer.position(0);
+        ((java.nio.Buffer) inputBuffer).rewind();
         inputBuffer.put(pixels);
-        inputBuffer.position(0);
+        ((java.nio.Buffer) inputBuffer).rewind();
 
         glBindTexture(GL_TEXTURE_2D, textures[1]);
         glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, w, h, GL_RGBA_INTEGER, GL_BYTE, inputBuffer);
@@ -169,7 +168,7 @@ public class GLComputeShaderRunner {
         glBindImageTexture(0, textures[0], 0, false, 0, GL_READ_ONLY, GL_RGBA8UI);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-        outputBuffer.position(0);
+        ((java.nio.Buffer) outputBuffer).rewind();
         glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA_INTEGER, GL_UNSIGNED_BYTE, outputBuffer);
         glBindTexture(GL_TEXTURE_2D, 0);
         outputBuffer.get(result);

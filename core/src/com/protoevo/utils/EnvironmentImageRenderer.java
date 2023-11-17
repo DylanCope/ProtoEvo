@@ -145,7 +145,7 @@ public class EnvironmentImageRenderer {
 
         // Save the image as a PNG
         try {
-            File file = new File(outputDir + "/world.png");
+            File file = new File(outputDir + "/world " + Utils.getTimeStampString() + ".png");
             ImageIO.write(image, "png", file);
         } catch (IOException e) {
             e.printStackTrace();

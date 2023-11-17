@@ -4,6 +4,8 @@ import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector2;
 
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -28,6 +30,11 @@ public class Utils {
             }
         }
         return argsMap;
+    }
+
+
+    public static String getTimeStampString() {
+        return new SimpleDateFormat("yyyy-MM-dd-HH-mm-ss").format(new Date());
     }
 
     public static String numberToString(float d, int dp) {
