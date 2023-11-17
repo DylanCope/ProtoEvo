@@ -10,10 +10,12 @@ import com.protoevo.utils.DebugMode;
 import java.util.Map;
 
 import static com.protoevo.utils.Utils.parseArgs;
+import static org.lwjgl.glfw.GLFW.glfwGetCurrentContext;
 
 public class ApplicationManager {
 
     public final static boolean windowed = false, borderlessWindowed = true;
+    public static long window = 0;
     private volatile boolean headless = false, applicationRunning = true, saveOnExit = true;
     private boolean onlyHeadless = false;
     private Simulation simulation;
@@ -156,6 +158,9 @@ public class ApplicationManager {
     }
 
     public void update() {
+        if(ApplicationManager.window == 0)
+            ApplicationManager.window = glfwGetCurrentContext();
+
         if (hasSimulation() && simulation.isReady()) {
 
             if (hasRemoteGraphics() && sendRemoteGraphicsRequested) {
