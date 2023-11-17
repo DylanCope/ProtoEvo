@@ -14,18 +14,7 @@ services:
       - DOCKER_INFLUXDB_INIT_ORG=protoevo
       - DOCKER_INFLUXDB_INIT_BUCKET=my-bucket
       - DOCKER_INFLUXDB_INIT_ADMIN_TOKEN=my-super-secret-auth-token
-  chronograf:
-    image: chronograf:latest
-    ports:
-      - '127.0.0.1:8888:8888'
-    volumes:
-      - chronograf-storage:/var/lib/chronograf
-    depends_on:
-      - influxdb
-    environment:
-      - INFLUXDB_URL=http://influxdb:8086
-      - INFLUXDB_USERNAME=influx_admin
-      - INFLUXDB_PASSWORD=protoevo_influx
+
   grafana:
     image: grafana/grafana:latest
     ports:
