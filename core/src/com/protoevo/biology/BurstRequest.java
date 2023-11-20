@@ -3,6 +3,7 @@ package com.protoevo.biology;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector2;
 import com.protoevo.biology.cells.Cell;
+import com.protoevo.biology.cells.MeatCell;
 import com.protoevo.biology.cells.Protozoan;
 import com.protoevo.core.Simulation;
 import com.protoevo.env.Environment;
@@ -66,7 +67,7 @@ public class BurstRequest<T extends Cell> implements Serializable {
                 ((Protozoan) parent).kill(CauseOfDeath.CYTOKINESIS, false);
             else
                 parent.kill(CauseOfDeath.CYTOKINESIS);
-        } else {
+        } else if (!cellType.equals(MeatCell.class)) {
             return;
         }
 

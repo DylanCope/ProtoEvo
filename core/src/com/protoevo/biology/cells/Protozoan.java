@@ -282,7 +282,7 @@ public class Protozoan extends EvolvableCell
 	}
 
 	public void kill(CauseOfDeath causeOfDeath, boolean burstMeat) {
-		if (burstMeat && !super.isDead() && hasNotBurst())
+		if (burstMeat && hasNotBurst())
 			getEnv().ifPresent(e -> e.requestBurst(
 					this,
 					MeatCell.class,

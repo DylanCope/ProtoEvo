@@ -158,9 +158,13 @@ public class ApplicationManager {
         }
     }
 
-    public void update() {
-        if(ApplicationManager.window == 0)
+    public static void ensureWindowUpToDate() {
+        if (ApplicationManager.window == 0)
             ApplicationManager.window = glfwGetCurrentContext();
+    }
+
+    public void update() {
+        ensureWindowUpToDate();
 
         if (hasSimulation() && simulation.isReady()) {
 

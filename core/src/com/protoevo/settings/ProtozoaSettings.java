@@ -95,6 +95,10 @@ public class ProtozoaSettings extends Settings {
             "Maximum turn produced by a cilia in radians per second",
             MathUtils.PI * .75f
     );
+    public final Settings.Parameter<Boolean> separatePhagoNodes = new Settings.Parameter<>(
+            "Separate Phagocytosis Nodes",
+            "Different nodes for engulfing meat and plants?",
+            true);
 
     public ProtozoaSettings() {
         super("Protozoa");

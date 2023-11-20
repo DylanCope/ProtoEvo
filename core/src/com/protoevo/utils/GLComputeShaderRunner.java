@@ -126,8 +126,9 @@ public class GLComputeShaderRunner {
 
     public byte[] processImage(byte[] pixels, byte[] result, int w, int h, int c) {
         if (!initialized) {
+            ApplicationManager.ensureWindowUpToDate();
             if (ApplicationManager.window == NULL) {
-                System.out.println("Window is null");
+                System.out.println("GLComputeShader cannot run because window is null");
                 return result;
             } else {
                 initialise();

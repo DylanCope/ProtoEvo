@@ -11,6 +11,7 @@ import com.protoevo.biology.cells.MeatCell;
 import com.protoevo.biology.cells.PlantCell;
 import com.protoevo.biology.cells.Protozoan;
 import com.protoevo.biology.evolution.Evolvable;
+import com.protoevo.biology.nodes.NodeAttachment;
 import com.protoevo.core.Statistics;
 import com.protoevo.physics.*;
 import com.protoevo.physics.box2d.Box2DPhysics;
@@ -96,6 +97,7 @@ public class Environment implements Serializable
 		light.setTimeManager(timeManager);
 
 		hasInitialised = false;
+		NodeAttachment.setupPossibleAttachments();
 	}
 
 	public void createTransientObjects() {
@@ -111,6 +113,7 @@ public class Environment implements Serializable
 
 	public void rebuildWorld() {
 		settings = mySettings;
+		NodeAttachment.setupPossibleAttachments();
 		physics.rebuildTransientFields(this);
 		getCells().forEach(cell -> cell.setEnvironment(this));
 		updateChunkAllocations();

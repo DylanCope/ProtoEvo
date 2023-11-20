@@ -35,7 +35,7 @@ public class SurfaceNode implements Evolvable.Element, Serializable {
     private final Statistics stats = new Statistics();
     private final ArrayList<NodeAttachment> candidateAttachments = new ArrayList<>();
     private GeneExpressionFunction geneExpressionFunction;
-    private boolean nodeExists = false;
+    private boolean nodeExists = false, constructionBlockedByIncompatibleAttachment = false;
 
     private final Map<MoleculeFunctionalContext.MoleculeFunction, Float> nodeFunctionSignatures =
             new HashMap<>(NodeAttachment.possibleAttachments.length, 1);
@@ -43,7 +43,11 @@ public class SurfaceNode implements Evolvable.Element, Serializable {
     private static final float criticalCandidateConstructionProgress = 0.1f;
 
     public SurfaceNode() {
-        for (Class<NodeAttachment> attachmentClass : NodeAttachment.possibleAttachments) {
+        if (NodeAttachment.possibleAttachments == null) {
+            throw new RuntimeException("Node attachments not initialized");
+        }
+
+        for (Class<? extends NodeAttachment> attachmentClass : NodeAttachment.possibleAttachments) {
             try {
                 NodeAttachment attachment = attachmentClass.getConstructor(SurfaceNode.class)
                         .newInstance(this);
@@ -69,6 +73,22 @@ public class SurfaceNode implements Evolvable.Element, Serializable {
     private void constructCandidate(NodeAttachment candidate, ComplexMolecule molecule, float potency) {
         if (cell == null)
             return;
+
+        if (NodeAttachment.attachmentIncompatibilities.containsKey(candidate.getClass().getSimpleName())) {
+            Class<? extends NodeAttachment> incompatibleClass =
+                    NodeAttachment.attachmentIncompatibilities.get(candidate.getClass().getSimpleName());
+            for (SurfaceNode otherNode : cell.getSurfaceNodes()) {
+                if (otherNode == this || !otherNode.exists())
+                    continue;
+                if (otherNode.hasAttachment()
+                        && otherNode.getAttachment().getClass() == incompatibleClass) {
+                    candidate.getConstructionProject().reset();
+                    constructionBlockedByIncompatibleAttachment = true;
+                    return;
+                }
+            }
+        }
+        constructionBlockedByIncompatibleAttachment = false;
 
         float matching = moleculeFunctionalContext.getMatching(molecule, constructionSignature);
         if (matching > 0 && attachment != null && candidate != attachment) {
@@ -282,6 +302,9 @@ public class SurfaceNode implements Evolvable.Element, Serializable {
         stats.put("Construction Signature", constructionSignature);
         stats.put("Node Exists", nodeExists);
         stats.put("Function", attachment == null ? "None" : attachment.getName());
+        if (constructionBlockedByIncompatibleAttachment)
+            stats.put("Construction Blocked", "Incompatible Attachment");
+
         if (attachment != null) {
             stats.putPercentage(
                     "Construction Progress",

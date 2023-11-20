@@ -15,7 +15,7 @@ public class PhagocyticReceptor extends NodeAttachment implements Serializable {
     
     private static final long serialVersionUID = 1L;
     private final Vector2 tmp = new Vector2();
-    private Cell lastEngulfed;
+    protected Cell lastEngulfed;
     private boolean engulfPlant, engulfMeat;
 
     public PhagocyticReceptor(SurfaceNode node) {
@@ -34,6 +34,11 @@ public class PhagocyticReceptor extends NodeAttachment implements Serializable {
         else if (input.length == 1)
             handleDim1IO(input, output);
 
+        tryEngulfContacts();
+    }
+
+    protected void tryEngulfContacts() {
+        Cell cell = node.getCell();
         for (Collision contact : cell.getParticle().getContacts()) {
             Object collided = contact.getOther(cell.getParticle());
             if (!(collided instanceof Particle
@@ -45,6 +50,27 @@ public class PhagocyticReceptor extends NodeAttachment implements Serializable {
                 engulf(collidingCell);
             }
         }
+    }
+
+    public void setShouldEngulf(boolean shouldEngulf) {
+        this.engulfPlant = shouldEngulf;
+        this.engulfMeat = shouldEngulf;
+    }
+
+    public void setShouldEngulfPlant(boolean shouldEngulf) {
+        this.engulfPlant = shouldEngulf;
+    }
+
+    public void setShouldEngulfMeat(boolean shouldEngulf) {
+        this.engulfMeat = shouldEngulf;
+    }
+
+    public boolean getShouldEngulfPlant() {
+        return engulfPlant;
+    }
+
+    public boolean getShouldEngulfMeat() {
+        return engulfMeat;
     }
 
     private void handleDim3IO(float[] input, float[] output) {
@@ -75,7 +101,7 @@ public class PhagocyticReceptor extends NodeAttachment implements Serializable {
         }
     }
 
-    private boolean engulfCondition(Cell other) {
+    public boolean engulfCondition(Cell other) {
         if (other instanceof PlantCell && !engulfPlant)
             return false;
         if (other instanceof MeatCell && !engulfMeat)

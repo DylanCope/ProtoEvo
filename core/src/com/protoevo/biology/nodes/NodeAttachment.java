@@ -16,13 +16,38 @@ public abstract class NodeAttachment implements Serializable, Constructable {
 
     private static final long serialVersionUID = 1L;
 
-    public static Class<NodeAttachment>[] possibleAttachments = new Class[]{
-            Flagellum.class,
-            Spike.class,
-            PhagocyticReceptor.class,
-            Photoreceptor.class,
-            AdhesionReceptor.class,
-    };
+    public static Class<? extends NodeAttachment>[] possibleAttachments = null;
+
+    public static void setupPossibleAttachments() {
+        if (Environment.settings.protozoa.separatePhagoNodes.get()) {
+            possibleAttachments = new Class[]{
+                    Flagellum.class,
+                    Spike.class,
+                    PlantOnlyPhagocyticReceptor.class,
+                    MeatOnlyPhagocyticReceptor.class,
+                    Photoreceptor.class,
+                    AdhesionReceptor.class,
+            };
+        } else {
+            possibleAttachments = new Class[]{
+                    Flagellum.class,
+                    Spike.class,
+                    PhagocyticReceptor.class,
+                    Photoreceptor.class,
+                    AdhesionReceptor.class,
+            };
+        }
+    }
+
+    public static Map<String, Class<? extends NodeAttachment>> attachmentIncompatibilities = new HashMap<>();
+    static {
+        attachmentIncompatibilities.put(
+                PlantOnlyPhagocyticReceptor.class.getSimpleName(),
+                MeatOnlyPhagocyticReceptor.class);
+        attachmentIncompatibilities.put(
+                MeatOnlyPhagocyticReceptor.class.getSimpleName(),
+                PlantOnlyPhagocyticReceptor.class);
+    }
 
     protected SurfaceNode node;
     private final ConstructionProject constructionProject;

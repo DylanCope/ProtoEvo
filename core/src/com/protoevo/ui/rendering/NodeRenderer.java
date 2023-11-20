@@ -29,6 +29,8 @@ public class NodeRenderer {
                     put(Photoreceptor.class, ImageUtils.loadSprite("cell/nodes/photoreceptor/base.png"));
 //                    put(AdhesionReceptor.class, ImageUtils.loadSprite("cell/nodes/binding_node.png"));
                     put(PhagocyticReceptor.class, ImageUtils.loadSprite("cell/nodes/phagoreceptor.png"));
+                    put(PlantOnlyPhagocyticReceptor.class, ImageUtils.loadSprite("cell/nodes/phagoreceptor.png"));
+                    put(MeatOnlyPhagocyticReceptor.class, ImageUtils.loadSprite("cell/nodes/meat_phagoreceptor.png"));
                 }
             };
         return attachmentSprites;
