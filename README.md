@@ -106,9 +106,8 @@ distributed to meat cells spawned in its wake. This includes energy storage, con
 The resources can then be reclaimed by other protozoans that ingest the meat. Meat is denser in energy than plant
 cells, and they present the potential to skip producing any stored complex molecules.
 
-## Next Steps in Development
+## Features in Development
 
-* Remove dependency on CUDA.
 * Optimise the physics engine.
 * Lineage tracking UI tools.
 * More detailed cell stats.
@@ -116,39 +115,9 @@ cells, and they present the potential to skip producing any stored complex molec
 * More variation and environmental features.
 * Running the simulation distributed across multiple machines.
 
-## Setting up the Project
+## User Installation
 
-**Note:** This project is still in development, and is not yet easy to executable.
-Getting it set-up currently requires a fair deal of technical knowledge.
-It also requires a quite powerful computer to run.
-
-The simulation is written in Java and uses the libGDX for the UIX, which is a cross-platform game development library.
-I developed this project using the [IntelliJ IDEA](https://www.jetbrains.com/idea/) IDE,
-and I recommend using this to run the simulation.
-It relies on OpenGL for rendering, and so you will need to have the appropriate drivers installed,
-as well as CUDA for GPU acceleration. For the time being I have not 
-implemented a CPU-only version of the simulation, so you will need a CUDA-capable GPU to run the simulation.
-
-Finally, the project was developed on Windows and Linux, but it should work on Mac OS X as well.
-There are two main ways of running the simulation. The first is to install the CUDA toolkit and run the simulation
-from the IDE. The second is to run the simulation from the command line using Docker. The latter is the preferred
-method for running the simulation on a server.
-
-**Steps for IDE Installation**
-
-- Clone the repository, open the project in IntelliJ.
-For a general guide to running LibGDX projects, see [this article](https://libgdx.com/wiki/start/import-and-running).
-- Download and install the CUDA toolkit for your GPU. 
-  You can find the latest version [here](https://developer.nvidia.com/cuda-downloads).
-  The current version of the project is tested with CUDA 12.0.
-- To test your installation try to compile the CUDA kernels in the `assets/kernels` directory using the `nvcc` compiler. 
-  For example, `nvcc -m64 -ptx diffusion.cu`. You should see a `diffusion.ptx` file generated in the same directory.
-  The project will automatically compile the CUDA kernels when it is run, but it is useful to test this beforehand.
-- Run the Gradle task `desktop:run` to run the simulation. In IntelliJ, this can be done by opening the Gradle
-  tool window and navigating to `ProtoEvo > desktop > other > run`, or by clicking the green play button on the
-  `main` method of the `com.protoevo.core.ApplicationManager` class (found in the `core/src` module).
-
-## Running the Program
+## Creating a Simulation
 
 ### Loading and Creating Simulations
 
@@ -233,3 +202,93 @@ You will need to click the "Apply" button on each of the sub-screens of the sett
 [//]: # (of the solution cell grid. These parameters can also be found in the `SimulationSettings` as )
 
 [//]: # (`enableChemicalField` and `chemicalFieldResolution`.)
+
+
+## Developer Installation
+
+The simulation is written in Java and uses the [libGDX](https://libgdx.com/) for the UI, which is a cross-platform game development library.
+I developed this project using the [IntelliJ IDEA](https://www.jetbrains.com/idea/) IDE,
+and I recommend using this to run the simulation.
+It relies on OpenGL for rendering, and so you will need to have the appropriate drivers installed.
+If running headlessly on a server CUDA is recommended for GPU acceleration.
+For the time being there is not
+a CPU-only version of the simulation, so you will need a GPU compatible with CUDA and/or OpenGL
+to run the simulation.
+
+Finally, the project was developed on Windows and Linux, but it should work on Mac OS X as well.
+There are two main ways of running the simulation. The first is to install the CUDA toolkit and run the simulation
+from the IDE. The second is to run the simulation from the command line using Docker. The latter is the preferred
+method for running the simulation on a server.
+
+**Steps for IntelliJ IDE Installation**
+
+1. Clone the repository, open the project in IntelliJ.
+  For a general guide to running LibGDX projects, see [this article](https://libgdx.com/wiki/start/import-and-running).
+2. [Optional] Download and install the CUDA toolkit for your GPU.
+  You can find the latest version [here](https://developer.nvidia.com/cuda-downloads).
+  The current version of the project is tested with CUDA 12.0.
+   - To test your installation try to compile the CUDA kernels in the `assets/kernels` directory using the `nvcc` compiler.
+      For example, `nvcc -m64 -ptx diffusion.cu`. You should see a `diffusion.ptx` file generated in the same directory.
+      The project will automatically compile the CUDA kernels when it is run, but it is useful to check this beforehand.
+3. Run the Gradle task `desktop:run` to run the simulation. In IntelliJ, this can be done by opening the Gradle
+    tool window and navigating to `ProtoEvo > desktop > other > run`, or by clicking the green play button on the
+    `main` method of the `com.protoevo.core.ApplicationManager` class (found in the `core/src` module).
+
+
+**Steps for Docker Installation**
+
+1. Clone the repository to your server where Docker is installed.
+2. Build the Docker image using the command `sh docker_build.sh` from the root directory of the project.
+   You may need to modify this script to use the correct commands to start the docker service.
+3. Open the Docker image using the command `sh docker_open.sh` from the root directory of the project.
+   You may need to modify this script to use the correct commands to start the docker service.
+   This launches the container and opens an interactive shell.
+4. Run `sh run_headless.sh` to run the simulation headless. This will run the simulation in the background.
+   You can then close the shell and the simulation will continue to run. It is recommended that you use a tool
+   such as `tmux` or `screen` to run the simulation in the background.
+
+
+## Forking a Remote Simulation to a Local Instance
+
+Running the simulation on a remote server is a great way to do long runs of the simulation using more resources,
+but it can be difficult to monitor the simulation and to observe interesting behaviours. To solve this problem,
+the simulation can be synchronised to a local instance of the simulation running on your computer. This allows
+you to monitor the simulation and to interact with it using the UI. The following steps explain how to do this.
+
+1. Start a simulation running on your remote server.
+2. Before running on your local machine, you will need to forward the port 8888 on your local network to 
+   your local machine ([a friendly guide on port forwarding](https://nordvpn.com/blog/open-ports-on-router/)). 
+   This will allow the remote server to send data to your local machine. This port is not currently
+   configurable, so if you want to use a different port you will need to change the code in a developer build.
+3. Run the simulation on your local machine with the UI enabled.
+4. From the main screen, click the "Fork Remote Simulation" button. 
+   You should see the loading message saying "Server waiting for connection on port 8888".
+5. Now we need to tell the remote simulation where it will send the simulation to. In the REPL for the remote simulation,
+   type `remote set <addr>`, replacing `<addr>` with the public IP address of your local network.
+6. Now to send the simulation to your local machine, type `remote send` on the remote REPL. After a moment you should see the message
+   on your local UI notifying you that a connection has been established. Then once data starts to stream from the
+   remote server, the message will change again. Once the data has been recieved, your local simulation will be
+   start running the simulation. You can now interact with the simulation as normal. However, this is a _fork_ of the
+   remote simulation because any changes you make to the simulation will not be sent back to the remote server.
+
+The end result will be that you have two simulations running in parallel. One on your local machine, and one on the
+remote server. As changes are not synchronised between the two simulations, operations such as tagging cells will not
+be preserved if you re-fork the simulation again later. However, you can save cells from the remote simulation and
+load them into other local simulations.
+
+Forking the remote simulation creates a local save of the environment just as if you had run the save normally.
+If you fork the simulation again later, it will create new save checkpoints with real-time timestamps. This means
+that chronological timestamps in the saves list will not necessarily be chronological in terms of simulation time. 
+
+
+## Building a Windows Portable Executable
+
+To compile the simulation into a portable executable for Windows, we use the `jpackage` tool
+and [Launch4j](https://launch4j.sourceforge.net/).
+
+1. Run the Gradle task `desktop/build:jpackageImage`.
+2. Check that the `desktop-1.0.jar` has been created in the `desktop/build/jpackage/app` directory. JPackage will
+    also produce an exe file, but this will probably not work.
+3. Run Launch4j and load the configuration file `desktop/launch4j-config.xml`.
+    You will probably need to change the paths to the JAR file and the icon file.
+4. Choose an output directory and run the build in Launch4j (the gear icon) to produce the final exe.
