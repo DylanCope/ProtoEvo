@@ -1,8 +1,8 @@
 package com.protoevo.utils;
 
 import com.badlogic.gdx.Gdx;
-import com.protoevo.core.ApplicationManager;
 import org.lwjgl.BufferUtils;
+import org.lwjgl.opengl.GL;
 
 import java.nio.ByteBuffer;
 
@@ -10,9 +10,40 @@ import static org.lwjgl.glfw.GLFW.glfwInit;
 import static org.lwjgl.glfw.GLFW.glfwMakeContextCurrent;
 import static org.lwjgl.opengl.GL43C.*;
 import static org.lwjgl.system.MemoryUtil.NULL;
+import static org.lwjgl.glfw.GLFW.*;
+
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.FutureTask;
 
 
 public class GLComputeShaderRunner {
+    /**
+     * A simple thread pool for executing tasks on a separate thread.
+     * Once simulation runs on a different thread than the main/LibGDX thread, this should be
+     * removed and run directly on the simulation thread.
+     */
+    private class GLThread {
+        private final ExecutorService executor = Executors.newSingleThreadExecutor();
+
+        public void execute(Runnable task) {
+            FutureTask<?> futureTask = new FutureTask<>(task, null);
+            executor.execute(futureTask);
+            try {
+                futureTask.get();
+            } catch (InterruptedException e) {
+                System.out.println("Error executing task: " + e);
+            } catch (ExecutionException e){
+                System.out.println("Error executing task: " + e);
+            }
+        }
+
+        public void shutdown() {
+            executor.shutdown();
+        }
+    }
+
     static final int FILTER_SIZE = 3;
 
     private final int blockSizeX, blockSizeY;
@@ -21,6 +52,7 @@ public class GLComputeShaderRunner {
     private boolean initialized = false;
     private ByteBuffer inputBuffer = BufferUtils.createByteBuffer(1024*1024*4);
     private ByteBuffer outputBuffer = BufferUtils.createByteBuffer(1024*1024*4);
+    private GLThread glThread = new GLThread();
 
     /* OpenGL resources */
     private int program, computeShader;
@@ -35,21 +67,37 @@ public class GLComputeShaderRunner {
         this.blockSizeX = blockSizeX;
         this.blockSizeY = blockSizeY;
         this.kernelName = kernelName;
+
+        glThread.execute(() -> {
+            initialise();
+        });
     }
 
     private void initialise() {
         if (initialized)
             return;
 
-        int error = 0;
-        // Create the compute shader
         if (!glfwInit())
             throw new AssertionError("Failed to initialize GLFW");
 
-        window = ApplicationManager.window;
+
+        int error = 0;
+
+        // Create opengl context
+        glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+        glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+        glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+        glfwWindowHint(GLFW_MAXIMIZED, GLFW_TRUE);
+        glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GLFW_TRUE);
+        glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
+        window = glfwCreateWindow(1, 1, "hidden_window", NULL, NULL);
+
+        System.out.println("Window: " + window);
+
         if (window == NULL)
             throw new AssertionError("Failed to create GLFW window");
         glfwMakeContextCurrent(window);
+        GL.createCapabilities();
 
         computeShader = glCreateShader(GL_COMPUTE_SHADER);
 
@@ -124,16 +172,16 @@ public class GLComputeShaderRunner {
         return processImage(pixels, result, w, h, 4);
     }
 
+
     public byte[] processImage(byte[] pixels, byte[] result, int w, int h, int c) {
-        if (!initialized) {
-            ApplicationManager.ensureWindowUpToDate();
-            if (ApplicationManager.window == NULL) {
-                System.out.println("GLComputeShader cannot run because window is null");
-                return result;
-            } else {
-                initialise();
-            }
-        }
+        glThread.execute(() -> {
+            processImageJob(pixels, result, w, h, c);
+        });
+
+        return result;
+    }
+
+    public byte[] processImageJob(byte[] pixels, byte[] result, int w, int h, int c) {
         glBindImageTexture(0, textures[0], 0, false, 0, GL_READ_WRITE, GL_RGBA8UI);
         glBindImageTexture(1, textures[1], 0, false, 0, GL_READ_WRITE, GL_RGBA8UI);
 
