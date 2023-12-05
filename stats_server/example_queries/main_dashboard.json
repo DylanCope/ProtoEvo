@@ -25,7 +25,7 @@
     {
       "datasource": {
         "type": "influxdb",
-        "uid": "a86aceea-54ca-44a5-b95e-de8d21ecedcb"
+        "uid": "REPLACE_ME_WITH_CORRECT_ID"
       },
       "fieldConfig": {
         "defaults": {
@@ -104,7 +104,7 @@
         {
           "datasource": {
             "type": "influxdb",
-            "uid": "a86aceea-54ca-44a5-b95e-de8d21ecedcb"
+            "uid": "REPLACE_ME_WITH_CORRECT_ID"
           },
           "query": "from(bucket: \"my-bucket\")\r\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"environment\")\r\n  |> filter(fn: (r) => r[\"simulation\"] == \"${simulation}\")\r\n  |> filter(fn: (r) => r[\"_field\"] == \"Time of Day\")\r\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\r\n  |> yield(name: \"mean\")",
           "refId": "A"
@@ -116,7 +116,7 @@
     {
       "datasource": {
         "type": "influxdb",
-        "uid": "a86aceea-54ca-44a5-b95e-de8d21ecedcb"
+        "uid": "REPLACE_ME_WITH_CORRECT_ID"
       },
       "fieldConfig": {
         "defaults": {
@@ -195,7 +195,7 @@
         {
           "datasource": {
             "type": "influxdb",
-            "uid": "a86aceea-54ca-44a5-b95e-de8d21ecedcb"
+            "uid": "REPLACE_ME_WITH_CORRECT_ID"
           },
           "query": "from(bucket: \"my-bucket\")\r\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"environment\")\r\n  |> filter(fn: (r) => r[\"simulation\"] == \"${simulation}\")\r\n  |> filter(fn: (r) => r[\"_field\"] == \"Generation Max\" or r[\"_field\"] == \"Generation Mean\" or r[\"_field\"] == \"Generation Min\")\r\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\r\n  |> yield(name: \"mean\")",
           "refId": "A"
@@ -207,7 +207,7 @@
     {
       "datasource": {
         "type": "influxdb",
-        "uid": "a86aceea-54ca-44a5-b95e-de8d21ecedcb"
+        "uid": "REPLACE_ME_WITH_CORRECT_ID"
       },
       "fieldConfig": {
         "defaults": {
@@ -286,7 +286,7 @@
         {
           "datasource": {
             "type": "influxdb",
-            "uid": "a86aceea-54ca-44a5-b95e-de8d21ecedcb"
+            "uid": "REPLACE_ME_WITH_CORRECT_ID"
           },
           "query": "from(bucket: \"my-bucket\")\r\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"environment\")\r\n  |> filter(fn: (r) => r[\"simulation\"] == \"${simulation}\")\r\n  |> filter(fn: (r) => r[\"_field\"] == \"Speed Max\" or r[\"_field\"] == \"Speed Mean\" or r[\"_field\"] == \"Speed Min\")\r\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\r\n  |> yield(name: \"mean\")",
           "refId": "A"
@@ -298,7 +298,7 @@
     {
       "datasource": {
         "type": "influxdb",
-        "uid": "a86aceea-54ca-44a5-b95e-de8d21ecedcb"
+        "uid": "REPLACE_ME_WITH_CORRECT_ID"
       },
       "fieldConfig": {
         "defaults": {
@@ -377,7 +377,7 @@
         {
           "datasource": {
             "type": "influxdb",
-            "uid": "a86aceea-54ca-44a5-b95e-de8d21ecedcb"
+            "uid": "REPLACE_ME_WITH_CORRECT_ID"
           },
           "query": "from(bucket: \"my-bucket\")\r\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"environment\")\r\n  |> filter(fn: (r) => r[\"simulation\"] == \"${simulation}\")\r\n  |> filter(fn: (r) => r[\"_field\"] == \"Bodies\" or r[\"_field\"] == \"Protozoa\" or r[\"_field\"] == \"Plants\")\r\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\r\n  |> yield(name: \"mean\")",
           "refId": "A"
@@ -389,7 +389,7 @@
     {
       "datasource": {
         "type": "influxdb",
-        "uid": "a86aceea-54ca-44a5-b95e-de8d21ecedcb"
+        "uid": "REPLACE_ME_WITH_CORRECT_ID"
       },
       "fieldConfig": {
         "defaults": {
@@ -468,7 +468,7 @@
         {
           "datasource": {
             "type": "influxdb",
-            "uid": "a86aceea-54ca-44a5-b95e-de8d21ecedcb"
+            "uid": "REPLACE_ME_WITH_CORRECT_ID"
           },
           "key": "Q-8770bf4c-5205-497e-9d43-8816daea463c-0",
           "query": "from(bucket: \"my-bucket\")\r\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"environment\")\r\n  |> filter(fn: (r) => r[\"simulation\"] == \"${simulation}\")\r\n  |> filter(fn: (r) => r[\"_field\"] == \"Health Mean\" or r[\"_field\"] == \"Health Min\" or r[\"_field\"] == \"Health Max\")\r\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\r\n  |> yield(name: \"mean\")",
@@ -481,7 +481,7 @@
     {
       "datasource": {
         "type": "influxdb",
-        "uid": "a86aceea-54ca-44a5-b95e-de8d21ecedcb"
+        "uid": "REPLACE_ME_WITH_CORRECT_ID"
       },
       "fieldConfig": {
         "defaults": {
@@ -560,7 +560,7 @@
         {
           "datasource": {
             "type": "influxdb",
-            "uid": "a86aceea-54ca-44a5-b95e-de8d21ecedcb"
+            "uid": "REPLACE_ME_WITH_CORRECT_ID"
           },
           "query": "import \"strings\"\r\n\r\nfrom(bucket: \"my-bucket\")\r\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"environment\")\r\n  |> filter(fn: (r) => r[\"simulation\"] == \"${simulation}\")\r\n  |> filter(fn: (r) => strings.hasPrefix(v: r[\"_field\"], prefix: \"Node 1: Construction\"))\r\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\r\n  |> yield(name: \"mean\")",
           "refId": "A"
@@ -572,7 +572,7 @@
     {
       "datasource": {
         "type": "influxdb",
-        "uid": "a86aceea-54ca-44a5-b95e-de8d21ecedcb"
+        "uid": "REPLACE_ME_WITH_CORRECT_ID"
       },
       "fieldConfig": {
         "defaults": {
@@ -651,7 +651,7 @@
         {
           "datasource": {
             "type": "influxdb",
-            "uid": "a86aceea-54ca-44a5-b95e-de8d21ecedcb"
+            "uid": "REPLACE_ME_WITH_CORRECT_ID"
           },
           "query": "import \"strings\"\r\n\r\nfrom(bucket: \"my-bucket\")\r\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"environment\")\r\n  |> filter(fn: (r) => r[\"simulation\"] == \"${simulation}\")\r\n  |> filter(fn: (r) => strings.hasPrefix(v: r[\"_field\"], prefix: \"Node 2: Construction\"))\r\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\r\n  |> yield(name: \"mean\")",
           "refId": "A"
@@ -663,7 +663,7 @@
     {
       "datasource": {
         "type": "influxdb",
-        "uid": "a86aceea-54ca-44a5-b95e-de8d21ecedcb"
+        "uid": "REPLACE_ME_WITH_CORRECT_ID"
       },
       "fieldConfig": {
         "defaults": {
@@ -741,7 +741,7 @@
         {
           "datasource": {
             "type": "influxdb",
-            "uid": "a86aceea-54ca-44a5-b95e-de8d21ecedcb"
+            "uid": "REPLACE_ME_WITH_CORRECT_ID"
           },
           "query": "from(bucket: \"my-bucket\")\r\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"environment\")\r\n  |> filter(fn: (r) => r[\"simulation\"] == \"${simulation}\")\r\n  |> filter(fn: (r) => r[\"_field\"] == \"Herbivore Factor Mean\" or r[\"_field\"] == \"Herbivore Factor Min\" or r[\"_field\"] == \"Herbivore Factor Max\")\r\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\r\n  |> yield(name: \"mean\")",
           "refId": "A"
@@ -753,7 +753,7 @@
     {
       "datasource": {
         "type": "influxdb",
-        "uid": "a86aceea-54ca-44a5-b95e-de8d21ecedcb"
+        "uid": "REPLACE_ME_WITH_CORRECT_ID"
       },
       "fieldConfig": {
         "defaults": {
@@ -831,7 +831,7 @@
         {
           "datasource": {
             "type": "influxdb",
-            "uid": "a86aceea-54ca-44a5-b95e-de8d21ecedcb"
+            "uid": "REPLACE_ME_WITH_CORRECT_ID"
           },
           "query": "from(bucket: \"my-bucket\")\r\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"environment\")\r\n  |> filter(fn: (r) => r[\"simulation\"] == \"${simulation}\")\r\n  |> filter(fn: (r) => r[\"_field\"] == \"Growth Rate Min\" or r[\"_field\"] == \"Growth Rate Mean\" or r[\"_field\"] == \"Growth Rate Max\")\r\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\r\n  |> yield(name: \"mean\")",
           "refId": "A"
@@ -843,7 +843,7 @@
     {
       "datasource": {
         "type": "influxdb",
-        "uid": "a86aceea-54ca-44a5-b95e-de8d21ecedcb"
+        "uid": "REPLACE_ME_WITH_CORRECT_ID"
       },
       "fieldConfig": {
         "defaults": {
@@ -921,7 +921,7 @@
         {
           "datasource": {
             "type": "influxdb",
-            "uid": "a86aceea-54ca-44a5-b95e-de8d21ecedcb"
+            "uid": "REPLACE_ME_WITH_CORRECT_ID"
           },
           "query": "from(bucket: \"my-bucket\")\r\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"environment\")\r\n  |> filter(fn: (r) => r[\"simulation\"] == \"${simulation}\")\r\n  |> filter(fn: (r) => r[\"_field\"] == \"GRN Size Mean\" or r[\"_field\"] == \"GRN Size Min\" or r[\"_field\"] == \"GRN Size Max\")\r\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\r\n  |> yield(name: \"mean\")",
           "refId": "A"
@@ -933,7 +933,7 @@
     {
       "datasource": {
         "type": "influxdb",
-        "uid": "a86aceea-54ca-44a5-b95e-de8d21ecedcb"
+        "uid": "REPLACE_ME_WITH_CORRECT_ID"
       },
       "fieldConfig": {
         "defaults": {
@@ -1011,7 +1011,7 @@
         {
           "datasource": {
             "type": "influxdb",
-            "uid": "a86aceea-54ca-44a5-b95e-de8d21ecedcb"
+            "uid": "REPLACE_ME_WITH_CORRECT_ID"
           },
           "query": "from(bucket: \"my-bucket\")\r\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"environment\")\r\n  |> filter(fn: (r) => r[\"simulation\"] == \"${simulation}\")\r\n  |> filter(fn: (r) => r[\"_field\"] == \"GRN Depth Mean\" or r[\"_field\"] == \"GRN Depth Min\" or r[\"_field\"] == \"GRN Depth Max\")\r\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\r\n  |> yield(name: \"mean\")",
           "refId": "A"
@@ -1034,7 +1034,7 @@
         },
         "datasource": {
           "type": "influxdb",
-          "uid": "a86aceea-54ca-44a5-b95e-de8d21ecedcb"
+          "uid": "REPLACE_ME_WITH_CORRECT_ID"
         },
         "definition": "from(bucket: \"my-bucket\")\r\n|> range(start: v.timeRangeStart)\r\n|> filter(fn: (r) => r._measurement == \"environment\")\r\n|> distinct(column: \"simulation\")\r\n|> keep(columns: [\"simulation\"])\r\n",
         "hide": 0,
