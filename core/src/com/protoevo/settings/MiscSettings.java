@@ -22,7 +22,7 @@ public class MiscSettings extends Settings {
     public final Settings.Parameter<Float> statisticsSnapshotTime = new Settings.Parameter<>(
             "Save Statistics Time",
             "Amount of in-simulation time between making a new snapshot of the summary statistics.",
-            20.0f, Statistics.ComplexUnit.TIME);
+            2.0f, Statistics.ComplexUnit.TIME);
     public final Settings.Parameter<Boolean> writeGenomes = new Settings.Parameter<>(
             "Write Genomes",
             "Whether or not to write genome information (warning: generates lots of data).",
