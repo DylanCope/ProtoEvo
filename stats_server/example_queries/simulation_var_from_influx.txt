@@ -1,0 +1,5 @@
+from(bucket: "my-bucket")
+|> range(start: v.timeRangeStart)
+|> filter(fn: (r) => r._measurement == "environment")
+|> distinct(column: "simulation")
+|> keep(columns: ["simulation"])
