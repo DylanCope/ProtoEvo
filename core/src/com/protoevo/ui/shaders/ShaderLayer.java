@@ -25,7 +25,7 @@ public class ShaderLayer {
                 Gdx.files.internal("shaders/" + shaderName + "/fragment.glsl").readString());
 
         if (!shaderProgram.isCompiled()) {
-            throw new RuntimeException("Shader compilation failed: " + shaderProgram.getLog());
+            throw new RuntimeException("Shader " + shaderName + " compilation failed: " + shaderProgram.getLog());
         }
         ShaderProgram.pedantic = false;
     }
