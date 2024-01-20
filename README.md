@@ -1,4 +1,29 @@
-# ProtoEvo 2.0
+<br />
+<p align="center">
+  <img src="./icons/icon.png" alt="Logo" width="128" height="128">
+
+  <h2 align="center">ProtoEvo Project V2</h2>
+
+  <p align="center">
+    <i>An interactive real-time simulation for evolving multicellular organisms.</i>
+    <br />
+    <a href="../../issues">Report Issue</a>
+      &nbsp&nbsp•&nbsp&nbsp 
+    <a href="../../issues">Request Feature</a>
+      &nbsp&nbsp•&nbsp&nbsp  
+    <a href="https://discord.com/invite/GY5UJxbBnq">Discuss on Discord</a>
+  </p>
+</p>
+
+## Table of Contents
+
+- [Introduction](#introduction)
+- [Simulation Overview](#simulation-overview)
+- [User Installation](#user-installation): _See for running a released EXE on Windows._
+- [Installation FaQ](#installation-faq): _Having an issue running the EXE?_
+- [Creating a Simulation](#creating-a-simulation)
+- [Simulation Controls](#simulation-controls)
+- [Developer Installation](#developer-installation)
 
 ## Introduction
 
@@ -30,7 +55,7 @@ You can also come and discuss the project on [discord](https://discord.com/invit
 
 [![IMAGE ALT TEXT HERE](https://img.youtube.com/vi/fEDqdvKO5Y0/0.jpg)](https://www.youtube.com/watch?v=fEDqdvKO5Y0)
 
-## Overview
+## Simulation Overview
 
 ### Feeding and the Environment
 
@@ -116,6 +141,21 @@ cells, and they present the potential to skip producing any stored complex molec
 * Running the simulation distributed across multiple machines.
 
 ## User Installation
+
+_Note:_ Currently a packaged user-friendly version of the simulation is only available for **Windows**.
+
+1. Download the [latest release](https://github.com/DylanCope/ProtoEvo/releases) from the GitHub repository.
+2. Unzip the downloaded file and place the folder somewhere you will remember.
+3. Ensure that you have [Java 8](https://www.java.com/en/download/help/windows_manual_download.html) (or later) installed.
+4. Run the `ProtoEvo.exe` file. You should see the program launch.
+
+## Installation FaQ
+
+**Java Issues:** The most common issue with running the simulation is not having an available correct Java runtime installed.
+For a step-by-step tutorial for installing Java on Windows 11, see [this video](https://www.youtube.com/watch?v=8knD-PZ_PuA&ab_channel=TechOnTech).
+
+If you have specific questions, join the [project discord](https://discord.com/invite/GY5UJxbBnq) and post your 
+problem in the `#help` channel.
 
 ## Creating a Simulation
 
