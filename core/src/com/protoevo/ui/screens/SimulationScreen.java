@@ -1,7 +1,6 @@
-package com.protoevo.ui;
+package com.protoevo.ui.screens;
 
 import com.badlogic.gdx.Gdx;
-import com.badlogic.gdx.Input;
 import com.badlogic.gdx.ScreenAdapter;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Texture;
@@ -23,16 +22,21 @@ import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 import com.badlogic.gdx.utils.ScreenUtils;
 import com.protoevo.biology.cells.Cell;
 import com.protoevo.biology.cells.EvolvableCell;
+import com.protoevo.biology.cells.MultiCellStructure;
 import com.protoevo.biology.evolution.GeneExpressionFunction;
 import com.protoevo.biology.nn.NeuralNetwork;
 import com.protoevo.biology.nodes.SurfaceNode;
 import com.protoevo.biology.cells.Protozoan;
 import com.protoevo.biology.organelles.Organelle;
 import com.protoevo.core.*;
-import com.protoevo.env.EnvFileIO;
+import com.protoevo.env.Serialization;
 import com.protoevo.env.Environment;
-import com.protoevo.input.ParticleTracker;
+import com.protoevo.ui.input.ParticleTracker;
 import com.protoevo.physics.Particle;
+import com.protoevo.ui.GraphicsAdapter;
+import com.protoevo.ui.SimulationInputManager;
+import com.protoevo.ui.TopBar;
+import com.protoevo.ui.UIStyle;
 import com.protoevo.ui.nn.MouseOverNeuronHandler;
 import com.protoevo.ui.nn.NetworkRenderer;
 import com.protoevo.ui.rendering.*;
@@ -53,6 +57,7 @@ public class SimulationScreen extends ScreenAdapter {
     private Environment environment;
     private final SimulationInputManager inputManager;
     private final ShaderLayers environmentRenderer;
+    private final VignetteLayer vignetteLayer;
     private final SpriteBatch uiBatch;
     private final Stage stage;
     private final GlyphLayout layout = new GlyphLayout();
@@ -70,7 +75,7 @@ public class SimulationScreen extends ScreenAdapter {
     private final Map<String, Callable<Statistics>> statGetters = new HashMap<>();
     private final Statistics debugStats = new Statistics();
     private Particle trackedParticle;
-    private final ImageButton saveTrackedParticleButton, addTagButton;
+    private final ImageButton saveTrackedParticleButton, addTagButton, multiCellViewerTrackedParticleButton;
     private final TextField saveTrackedParticleTextField, addTagTextField;
     private final Set<ImageButton> buttons = new java.util.HashSet<>();
     private final Map<Supplier<Boolean>, Runnable> conditionalTasks = new HashMap<>();
@@ -130,10 +135,11 @@ public class SimulationScreen extends ScreenAdapter {
 
         inputManager = new SimulationInputManager(this);
         brightnessLayer = new BrightnessLayer(camera);
+        vignetteLayer = new VignetteLayer(camera, inputManager.getParticleTracker());
         environmentRenderer = new ShaderLayers(
                 new EnvironmentRenderer(camera, simulation.getEnv(), inputManager),
                 new ShockWaveLayer(camera),
-                new VignetteLayer(camera, inputManager.getParticleTracker()),
+                vignetteLayer,
                 brightnessLayer
         );
 
@@ -147,13 +153,28 @@ public class SimulationScreen extends ScreenAdapter {
             if (event.toString().equals("touchDown")) {
                 if (trackedParticle != null && trackedParticle.getUserData() instanceof Protozoan) {
                     String name = saveTrackedParticleTextField.getText();
-                    EnvFileIO.saveCell(trackedParticle.getUserData(Cell.class),  name);
+                    Serialization.saveCell(trackedParticle.getUserData(Cell.class),  name);
                     inputManager.registerNewCloneableCell(name, trackedParticle.getUserData(Protozoan.class));
                 }
             }
             return true;
         });
         saveTrackedParticleButton.setVisible(false);
+
+        multiCellViewerTrackedParticleButton = createImageButton(
+                "icons/multicell-icon.png", topBar.getButtonSize(), topBar.getButtonSize(), event -> {
+                    if (event.toString().equals("touchDown")) {
+                        Object particleData = trackedParticle.getUserData();
+                        if (particleData instanceof Cell) {
+                            Cell cell = (Cell) particleData;
+                            MultiCellStructure multiCellStructure = cell.getMulticellularStructure();
+                            graphics.setScreen(new MultiCellViewerScreen(graphics, multiCellStructure));
+                        }
+                    }
+                    return true;
+                });
+        stage.addActor(multiCellViewerTrackedParticleButton);
+        multiCellViewerTrackedParticleButton.setVisible(false);
 
         addTagTextField = new TextField("", skin);
         stage.addActor(addTagTextField);
@@ -385,10 +406,17 @@ public class SimulationScreen extends ScreenAdapter {
         float fieldWidthMul = 8f;
 
         Vector2 pos = topBar.nextLeftPosition();
-        saveTrackedParticleButton.setPosition(pos.x, pos.y);
+
+        multiCellViewerTrackedParticleButton.setVisible(true);
+        multiCellViewerTrackedParticleButton.setPosition(pos.x, pos.y);
+
+        float pad = 1.5f * topBar.getTopBarPadding();
+        float x = multiCellViewerTrackedParticleButton.getX()
+                  + multiCellViewerTrackedParticleButton.getWidth() + pad;
+        saveTrackedParticleButton.setPosition(x, pos.y);
         saveTrackedParticleTextField.setVisible(true);
         saveTrackedParticleTextField.setBounds(
-                saveTrackedParticleButton.getX() + saveTrackedParticleButton.getWidth() * 1.3f,
+                saveTrackedParticleButton.getX() + saveTrackedParticleButton.getWidth() + pad,
                 saveTrackedParticleButton.getY(),
                 fieldWidthMul * saveTrackedParticleButton.getWidth(),
                 saveTrackedParticleButton.getHeight()
@@ -396,12 +424,13 @@ public class SimulationScreen extends ScreenAdapter {
 
         addTagButton.setVisible(true);
         addTagButton.setPosition(
-                saveTrackedParticleTextField.getX() + saveTrackedParticleTextField.getWidth() + 10,
+                saveTrackedParticleTextField.getX() + saveTrackedParticleTextField.getWidth() + pad,
                 saveTrackedParticleTextField.getY()
         );
+
         addTagTextField.setVisible(true);
         addTagTextField.setBounds(
-                addTagButton.getX() + addTagButton.getWidth() * 1.3f,
+                addTagButton.getX() + addTagButton.getWidth() + pad,
                 addTagButton.getY(),
                 fieldWidthMul * addTagButton.getWidth(),
                 addTagButton.getHeight()
@@ -413,6 +442,7 @@ public class SimulationScreen extends ScreenAdapter {
         saveTrackedParticleTextField.setVisible(false);
         addTagButton.setVisible(false);
         addTagTextField.setVisible(false);
+        multiCellViewerTrackedParticleButton.setVisible(false);
     }
 
     public void setProtozoaStatOptions(Protozoan protozoan) {
@@ -581,6 +611,7 @@ public class SimulationScreen extends ScreenAdapter {
 
     public void toggleUI() {
         uiHidden = !uiHidden;
+        vignetteLayer.setUiHidden(uiHidden);
     }
 
     public boolean hasSimulationNotLoaded() {

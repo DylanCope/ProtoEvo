@@ -108,23 +108,34 @@ public class MouseOverNeuronHandler {
                 + Utils.numberToString(neuron.getLastState(), 2);
     }
 
-    public void apply(SpriteBatch batch, Neuron neuron, float graphicsRadius, float neuronSpacing) {
+    public void apply(SpriteBatch batch,
+                      Neuron neuron,
+                      float graphicsRadius,
+                      float neuronSpacing) {
         float x = neuron.getGraphicsX();
         float y = neuron.getGraphicsY();
+        apply(batch, neuron, x, y, graphicsRadius, neuronSpacing);
+    }
 
+    public void apply(SpriteBatch batch,
+                      Neuron neuron,
+                      float neuronScreenX,
+                      float neuronScreenY,
+                      float graphicsRadius,
+                      float neuronSpacing) {
         String labelStr = getNeuronLabel(neuron);
         layout.setText(font, labelStr);
-        float labelX = x - layout.width / 2;
+        float labelX = neuronScreenX - layout.width / 2;
         float pad = layout.height * 0.3f;
         float infoWidth = layout.width + 2*pad;
         if (labelX + infoWidth >= Gdx.graphics.getWidth())
             labelX = (int) (Gdx.graphics.getWidth() - 1.1 * infoWidth);
 
-        float labelY = (y + 1.1f * graphicsRadius) + layout.height;
+        float labelY = (neuronScreenY + 1.1f * graphicsRadius) + layout.height;
         font.draw(batch, labelStr, labelX, labelY);
 
-        if (neuronSpacing < font.getLineHeight())
-            return;
+//        if (neuronSpacing < font.getLineHeight())
+//            return;
 
         for (Neuron input : neuron.getInputs()) {
             String inputLabelStr = getNeuronLabel(input);

@@ -1,11 +1,9 @@
 package com.protoevo.networking;
 
 import com.protoevo.core.Simulation;
-import com.protoevo.env.EnvFileIO;
+import com.protoevo.env.Serialization;
 import com.protoevo.env.Environment;
 import com.protoevo.settings.SimulationSettings;
-
-import java.util.Optional;
 
 public class RemoteSimulation extends Simulation {
     private final Server environmentServer;
@@ -47,7 +45,7 @@ public class RemoteSimulation extends Simulation {
     private Environment getEnvironmentFromServer() {
         byte[] downloadedEnvBytes = environmentServer.get(byte[].class)
                 .orElseThrow(() -> new RuntimeException("Could not get environment from server"));
-        Environment downloadedEnv = EnvFileIO.fromBytes(downloadedEnvBytes, Environment.class);
+        Environment downloadedEnv = Serialization.fromBytes(downloadedEnvBytes, Environment.class);
         loadingStatus = environmentServer.getStatus().getMessage();
         downloadedEnv.createTransientObjects();
         downloadedEnv.rebuildWorld();

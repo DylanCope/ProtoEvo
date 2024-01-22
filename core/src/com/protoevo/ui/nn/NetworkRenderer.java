@@ -11,7 +11,7 @@ import com.protoevo.biology.nn.NeuralNetwork;
 import com.protoevo.biology.nn.Neuron;
 import com.protoevo.core.Simulation;
 import com.protoevo.ui.SimulationInputManager;
-import com.protoevo.ui.SimulationScreen;
+import com.protoevo.ui.screens.SimulationScreen;
 import com.protoevo.ui.UIStyle;
 import com.protoevo.ui.rendering.Renderer;
 import com.protoevo.utils.Colour;
@@ -31,6 +31,7 @@ public class NetworkRenderer extends InputAdapter implements Renderer {
     private final SpriteBatch batch;
     private final BitmapFont font;
     private MouseOverNeuronHandler mouseOverNeuronHandler;
+    private Neuron mouseOverNeuron = null;
     private final Colour.Gradient weightGradient =
             new Colour.Gradient(-1, 1,
                     Colour.RED, new Colour(1, 1, 1, 0), Colour.GREEN);
@@ -39,7 +40,6 @@ public class NetworkRenderer extends InputAdapter implements Renderer {
                     Colour.RED, Colour.BLACK, Colour.GREEN);
 
     private float boxXStart, boxYStart, boxWidth, boxHeight, infoTextSize, nodeSpacing;
-    private Neuron mouseOverNeuron = null;
 
     public NetworkRenderer(Simulation simulation, SimulationScreen simulationScreen,
                            SpriteBatch batch,
@@ -93,8 +93,8 @@ public class NetworkRenderer extends InputAdapter implements Renderer {
 
         int networkDepth = nn.getDepth();
 
-        if (!nn.hasComputedGraphicsPositions())
-            precomputeGraphicsPositions(nn, boxXStart, boxYStart, boxWidth, boxHeight);
+//        if (!nn.hasComputedGraphicsPositions())
+        precomputeGraphicsPositions(nn, boxXStart, boxYStart, boxWidth, boxHeight);
 
         shapeRenderer.update();
         float r = nn.getGraphicsNodeSpacing() / 6;
@@ -163,7 +163,8 @@ public class NetworkRenderer extends InputAdapter implements Renderer {
 
             if (mouseOverNeuron != null &&
                     !(neuron.equals(mouseOverNeuron)
-                            || neuron.isInput(mouseOverNeuron) || mouseOverNeuron.isInput(neuron))) {
+                            || neuron.isInput(mouseOverNeuron)
+                            || mouseOverNeuron.isInput(neuron))) {
                 float t = 0.75f;
                 stateColor.lerp(Color.BLACK, t);
                 ringColor.lerp(Color.BLACK, t);

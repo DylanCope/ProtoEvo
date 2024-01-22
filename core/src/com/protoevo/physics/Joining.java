@@ -68,6 +68,15 @@ public class Joining implements Serializable {
         return getParticleB().map(particle -> getAnchor(anchorB, particle, anchorAngleB, anchoredB));
     }
 
+    public Optional<Vector2> getParticleAnchor(Particle particle) {
+        if (particle.getId() == particleAId)
+            return getAnchorA();
+        else if (particle.getId() == particleBId)
+            return getAnchorB();
+
+        throw new IllegalArgumentException("Particle is not part of this binding");
+    }
+
     public Optional<Float> getAnchorDist2() {
         Optional<Vector2> anchorA = getAnchorA();
         Optional<Vector2> anchorB = getAnchorB();

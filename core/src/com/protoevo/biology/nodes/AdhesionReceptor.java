@@ -1,5 +1,6 @@
 package com.protoevo.biology.nodes;
 
+import com.badlogic.gdx.math.Vector2;
 import com.protoevo.biology.ComplexMolecule;
 import com.protoevo.biology.cells.Cell;
 import com.protoevo.biology.cells.Protozoan;
@@ -21,6 +22,7 @@ public class AdhesionReceptor extends NodeAttachment {
     private volatile long joiningID;
     private float[] outgoing;
     private float constructionMassTransfer, molecularMassTransfer, energyTransfer;
+    private Vector2 bindingAnchor = null;
 
     public AdhesionReceptor(SurfaceNode node) {
         super(node);
@@ -189,6 +191,7 @@ public class AdhesionReceptor extends NodeAttachment {
         float otherAngle = Geometry.angle(cell.getPos().cpy().sub(otherCell.getPos())) - otherCell.getParticle().getAngle();
 
         Joining joining = new Joining(cell.getParticle(), otherCell.getParticle(), myAngle, otherAngle);
+        bindingAnchor = joining.getParticleAnchor(cell.getParticle()).orElse(null);
 
         JointsManager jointsManager = cell.getEnv()
                 .orElseThrow(() -> new RuntimeException("Cell has no environment"))
@@ -200,6 +203,12 @@ public class AdhesionReceptor extends NodeAttachment {
 
         setOtherNode(otherNode, joining);
         otherReceptor.setOtherNode(node, joining);
+    }
+
+    public Optional<Vector2> getBindingAnchor() {
+        if (bindingAnchor == null)
+            return Optional.empty();
+        return Optional.of(bindingAnchor);
     }
 
     public void setOtherNode(SurfaceNode otherNode, Joining joining) {

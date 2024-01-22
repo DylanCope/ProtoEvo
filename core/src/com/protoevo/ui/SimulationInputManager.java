@@ -6,18 +6,22 @@ import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.ui.SelectBox;
 import com.badlogic.gdx.utils.Align;
-import com.protoevo.biology.cells.Cell;
+import com.protoevo.biology.cells.MultiCellStructure;
 import com.protoevo.biology.cells.PlantCell;
 import com.protoevo.biology.cells.Protozoan;
 import com.protoevo.biology.evolution.Evolvable;
 import com.protoevo.core.Simulation;
-import com.protoevo.env.EnvFileIO;
-import com.protoevo.input.*;
+import com.protoevo.env.Serialization;
+import com.protoevo.env.Spawnable;
+import com.protoevo.ui.input.*;
+import com.protoevo.ui.screens.SimulationScreen;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.*;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
@@ -29,8 +33,8 @@ public class SimulationInputManager {
     private final LightningButton lightningButton;
     private final InputLayers inputLayers;
 
-    private final SelectBox<String> cellToAddSelectBox;
-    private final Map<String, Supplier<Cell>> possibleCellsToAdd = new HashMap<>();
+    private final SelectBox<String> spawnableToSpawnSelectBox;
+    private final Map<String, Supplier<Spawnable>> possibleSpawnables = new HashMap<>();
 
 
     public SimulationInputManager(SimulationScreen simulationScreen)  {
@@ -60,17 +64,17 @@ public class SimulationInputManager {
         topBar.createRightBarImageButton("icons/gear.png", simulationScreen::moveToPauseScreen);
         topBar.createRightBarImageButton("icons/save.png", simulation::saveOnOtherThread);
 
-        possibleCellsToAdd.put("Plant Cell", () -> Evolvable.createNew(PlantCell.class));
-        possibleCellsToAdd.put("Random Protozoan", () -> Evolvable.createNew(Protozoan.class));
+        possibleSpawnables.put("Plant Cell", () -> Evolvable.createNew(PlantCell.class));
+        possibleSpawnables.put("Random Protozoan", () -> Evolvable.createNew(Protozoan.class));
         tryLoadSavedProtozoans();
 
-        cellToAddSelectBox = new SelectBox<>(graphics.getSkin());
-        cellToAddSelectBox.setAlignment(Align.left);
-        cellToAddSelectBox.setHeight(topBar.getButtonSize());
-        simulationScreen.getLayout().setText(cellToAddSelectBox.getStyle().font, "Random Protozoa");
-        cellToAddSelectBox.setWidth(simulationScreen.getLayout().width * 1.1f);
+        spawnableToSpawnSelectBox = new SelectBox<>(graphics.getSkin());
+        spawnableToSpawnSelectBox.setAlignment(Align.left);
+        spawnableToSpawnSelectBox.setHeight(topBar.getButtonSize());
+        simulationScreen.getLayout().setText(spawnableToSpawnSelectBox.getStyle().font, "Random Protozoa");
+        spawnableToSpawnSelectBox.setWidth(simulationScreen.getLayout().width * 1.1f);
         refreshCellToAddSelectBox();
-        topBar.addRight(cellToAddSelectBox);
+        topBar.addRight(spawnableToSpawnSelectBox);
         Label label = new Label("Add Cell: ", graphics.getSkin());
         label.setHeight(topBar.getButtonSize());
         label.setAlignment(Align.right);
@@ -99,51 +103,75 @@ public class SimulationInputManager {
         Vector2 pos = topBar.nextLeftPosition();
         moveParticleButton.setPosition(pos.x, pos.y);
 
-        SpawnParticleInput spawnParticleInput = new SpawnParticleInput(simulationScreen);
+        UserSpawnInput userSpawnInput = new UserSpawnInput(simulationScreen);
         MoveParticle moveParticle = new MoveParticle(simulationScreen, this, particleTracker);
         CursorUpdater cursorUpdater = new CursorUpdater(simulationScreen, this);
 
-        inputLayers.addLayers(cursorUpdater, spawnParticleInput, moveParticle, particleTracker);
+        inputLayers.addLayers(cursorUpdater, userSpawnInput, moveParticle, particleTracker);
         inputLayers.addLayer(panZoomCameraInput);
 
         topBar.addLeft(moveParticleButton);
         topBar.addLeft(lightningButton);
     }
 
-    private Cell tryLoad(Path save) {
+    private Optional<Protozoan> tryLoadProtozoa(Path save) {
         try {
-            return EnvFileIO.deserialize(save.toString(), Protozoan.class);
+            return Optional.of(Serialization.deserialize(save.toString(), Protozoan.class));
         }
         catch (Exception ignored) {
-            return null;
+            return Optional.empty();
+        }
+    }
+
+    private Optional<MultiCellStructure> tryLoadMulticell(Path save) {
+        try {
+            return Optional.of(Serialization.deserialize(save.toString(),
+                                                     MultiCellStructure.class));
+        }
+        catch (Exception ignored) {
+            return Optional.empty();
         }
     }
 
     private void tryLoadSavedProtozoans() {
         try (Stream<Path> saved = Files.list(Paths.get("saved-cells"))) {
             saved.forEach(save -> {
-                String name = save.getFileName().toString().replace(".cell", "");
-                Cell cell = tryLoad(save);
-                if (cell instanceof Protozoan)
-                    registerNewCloneableCell(name, (Protozoan) cell);
+                String filename = save.getFileName().toString();
+                if (filename.endsWith(".cell")) {
+                    String cellName = filename.replace(".cell", "");
+                    tryLoadProtozoa(save).ifPresent(cell -> {
+                        registerNewCloneableCell(cellName, cell);
+                    });
+                }
+                else if (filename.endsWith(".multicell")) {
+                    String cellName = filename.replace(".multicell", "");
+                    tryLoadMulticell(save).ifPresent(multiCell -> {
+                        registerNewSpawnable(
+                                cellName,
+                                () -> Serialization.clone(multiCell, MultiCellStructure.class));
+                    });
+                }
             });
         }
         catch (Exception ignored) {}
     }
 
     public void refreshCellToAddSelectBox() {
-        cellToAddSelectBox.setItems(possibleCellsToAdd.keySet().toArray(new String[0]));
+        spawnableToSpawnSelectBox.setItems(possibleSpawnables.keySet().toArray(new String[0]));
     }
 
-    public void registerNewCloneableCell(String name, final Protozoan protozoan) {
-        possibleCellsToAdd.put(
-                name,
-                () -> Evolvable.asexualClone(protozoan));
+    public void registerNewCloneableCell(String name, final Protozoan cell) {
+        possibleSpawnables.put(name, () -> Evolvable.asexualClone(cell));
         refreshCellToAddSelectBox();
     }
 
-    public Cell createNewCell() {
-        return possibleCellsToAdd.get(cellToAddSelectBox.getSelected()).get();
+    public void registerNewSpawnable(String name, Supplier<Spawnable> spawnable) {
+        possibleSpawnables.put(name, spawnable);
+        refreshCellToAddSelectBox();
+    }
+
+    public Spawnable createSelectedSpawnable() {
+        return possibleSpawnables.get(spawnableToSpawnSelectBox.getSelected()).get();
     }
 
     public void registerAsInputProcessor() {

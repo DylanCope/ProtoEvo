@@ -1,4 +1,4 @@
-package com.protoevo.input;
+package com.protoevo.ui.input;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
@@ -8,8 +8,7 @@ import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector3;
 import com.protoevo.env.Environment;
 import com.protoevo.physics.Particle;
-import com.protoevo.physics.box2d.Box2DParticle;
-import com.protoevo.ui.SimulationScreen;
+import com.protoevo.ui.screens.SimulationScreen;
 import com.protoevo.ui.shaders.ShockWaveLayer;
 
 public class ApplyForcesInput extends InputAdapter {

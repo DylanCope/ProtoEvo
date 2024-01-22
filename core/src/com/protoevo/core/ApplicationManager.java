@@ -41,19 +41,29 @@ public class ApplicationManager {
         if (headless) {
             app.setOnlyHeadless();
             if (argsMap.containsKey("simulation")) {
-                System.out.println("Loading simulation: " + argsMap.get("simulation"));   
-                if (argsMap.containsKey("save"))
-                    app.setSimulation(new Simulation(argsMap.get("simulation"),
-                                                     argsMap.get("save")));
-                else
-                    app.setSimulation(new Simulation(argsMap.get("simulation")));
+                System.out.println("Loading simulation: " + argsMap.get("simulation"));
+                handleSimulationArgs(argsMap, app);
             }
             else {
                 app.setSimulation(new Simulation());
             }
         }
+        else {
+            if (argsMap.containsKey("simulation")) {
+                handleSimulationArgs(argsMap, app);
+            }
+        }
 
         app.launch();
+    }
+
+    public static void handleSimulationArgs(Map<String, String> argsMap, ApplicationManager app) {
+        System.out.println("Loading simulation: " + argsMap.get("simulation"));
+        if (argsMap.containsKey("save"))
+            app.setSimulation(new Simulation(argsMap.get("simulation"),
+                                             argsMap.get("save")));
+        else
+            app.setSimulation(new Simulation(argsMap.get("simulation")));
     }
 
     public void launch() {

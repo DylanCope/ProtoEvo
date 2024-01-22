@@ -8,6 +8,7 @@ import com.protoevo.biology.nodes.SurfaceNode;
 import com.protoevo.biology.organelles.Organelle;
 import com.protoevo.core.Statistics;
 import com.protoevo.env.Environment;
+import com.protoevo.env.Spawnable;
 import com.protoevo.physics.Collision;
 import com.protoevo.physics.Coloured;
 import com.protoevo.physics.Joining;
@@ -23,7 +24,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 
 import static com.protoevo.utils.Utils.lerp;
 
-public abstract class Cell implements Serializable, Coloured {
+public abstract class Cell implements Serializable, Coloured, Spawnable {
 	private static final long serialVersionUID = 1L;
 
 	private Particle particle;
@@ -677,6 +678,13 @@ public abstract class Cell implements Serializable, Coloured {
 		return numCells;
 	}
 
+	public MultiCellStructure getMulticellularStructure() {
+		getNumCellsInMulticellularOrganism();
+		return new MultiCellStructure(
+				cellIdsInMultiCellGroup,
+				getEnv().orElseThrow(() -> new RuntimeException("Cell has no environment")));
+	}
+
 	public Statistics getDebugStats() {
 		Statistics stats = particle.getDebugStats();
 		stats.putCount("Local Count", environment.getLocalCount(this));
@@ -951,5 +959,16 @@ public abstract class Cell implements Serializable, Coloured {
 
 	public CauseOfDeath getCauseOfDeath() {
 		return particle.getCauseOfDeath();
+	}
+
+	@Override
+	public void spawn(Environment environment, float x, float y) {
+		setEnvironmentAndBuildPhysics(environment);
+		Particle particle = getParticle();
+		particle.setPos(new Vector2(x, y));
+		Vector2 impulse = Geometry
+				.fromAngle((float) (Math.random() * Math.PI * 2))
+				.scl(.01f);
+		particle.applyImpulse(impulse);
 	}
 }

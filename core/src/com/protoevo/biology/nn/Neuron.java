@@ -1,5 +1,7 @@
 package com.protoevo.biology.nn;
 
+import com.badlogic.gdx.math.Vector2;
+
 import java.io.Serializable;
 import java.util.Comparator;
 
@@ -33,8 +35,7 @@ public class Neuron implements Comparable<Neuron>, Serializable {
     private float learningRate = 0;
     private ActivationFn activation;
     private int depth = -1;
-    private float graphicsX = -1;
-    private float graphicsY = -1;
+    private Vector2 graphicsPos;
     private boolean connectedToOutput = true;
     private final String label;
     private Object[] tags;
@@ -180,16 +181,27 @@ public class Neuron implements Comparable<Neuron>, Serializable {
     }
 
     public void setGraphicsPosition(float x, float y) {
-        graphicsX = x;
-        graphicsY = y;
+        graphicsPos = new Vector2(x, y);
+    }
+
+    public void setGraphicsPosition(Vector2 pos) {
+        graphicsPos = pos.cpy();
+    }
+
+    public boolean hasGraphicsPosition() {
+        return graphicsPos == null;
     }
 
     public float getGraphicsX() {
-        return graphicsX;
+        return graphicsPos.x;
     }
 
     public float getGraphicsY() {
-        return graphicsY;
+        return graphicsPos.y;
+    }
+
+    public Vector2 getGraphicsPos() {
+        return graphicsPos;
     }
 
     public String getLabel() {

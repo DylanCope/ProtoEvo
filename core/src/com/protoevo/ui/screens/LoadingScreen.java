@@ -1,4 +1,4 @@
-package com.protoevo.ui;
+package com.protoevo.ui.screens;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.ScreenAdapter;
@@ -6,6 +6,8 @@ import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.protoevo.core.ApplicationManager;
 import com.protoevo.core.Simulation;
+import com.protoevo.ui.DefaultBackgroundRenderer;
+import com.protoevo.ui.GraphicsAdapter;
 import com.protoevo.utils.CursorUtils;
 
 public class LoadingScreen extends ScreenAdapter {
@@ -33,7 +35,7 @@ public class LoadingScreen extends ScreenAdapter {
     @Override
     public void show() {
         CursorUtils.setDefaultCursor();
-        simulationReady = false;
+        simulationReady = applicationManager.hasSimulation() && applicationManager.getSimulation().isReady();
         updatesCompleted = 0;
     }
 

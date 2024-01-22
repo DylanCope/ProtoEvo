@@ -1,4 +1,4 @@
-package com.protoevo.ui;
+package com.protoevo.ui.screens;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.ScreenAdapter;
@@ -13,14 +13,14 @@ import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.gdx.utils.Align;
-import com.protoevo.core.ApplicationManager;
 import com.protoevo.core.Simulation;
 import com.protoevo.env.Environment;
-import com.protoevo.env.WorldGeneration;
 import com.protoevo.networking.RemoteSimulation;
 import com.protoevo.settings.SimulationSettings;
 import com.protoevo.settings.Settings;
 import com.protoevo.settings.WorldGenerationSettings;
+import com.protoevo.ui.FrameBufferManager;
+import com.protoevo.ui.GraphicsAdapter;
 import com.protoevo.utils.CursorUtils;
 import com.protoevo.utils.DebugMode;
 import com.protoevo.utils.Utils;

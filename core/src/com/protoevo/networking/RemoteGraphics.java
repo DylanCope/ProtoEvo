@@ -1,12 +1,10 @@
 package com.protoevo.networking;
 
 import com.protoevo.core.Simulation;
-import com.protoevo.env.EnvFileIO;
+import com.protoevo.env.Serialization;
 import com.protoevo.env.Environment;
 
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 
 public class RemoteGraphics {
 
@@ -28,7 +26,7 @@ public class RemoteGraphics {
     }
 
     public void send() {
-        byte[] envBytes = EnvFileIO.toBytes(simulation.getEnv(), Environment.class);
+        byte[] envBytes = Serialization.toBytes(simulation.getEnv(), Environment.class);
         client.send(envBytes);
     }
 

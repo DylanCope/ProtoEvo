@@ -1,9 +1,6 @@
 package com.protoevo.ui;
 
-import com.badlogic.gdx.Game;
-import com.badlogic.gdx.Gdx;
-import com.badlogic.gdx.Graphics;
-import com.badlogic.gdx.Screen;
+import com.badlogic.gdx.*;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.glutils.ShaderProgram;
 import com.badlogic.gdx.scenes.scene2d.ui.Skin;
@@ -12,6 +9,10 @@ import com.protoevo.core.ApplicationManager;
 import com.protoevo.core.Simulation;
 import com.protoevo.settings.GraphicsSettings;
 import com.protoevo.ui.rendering.EnvironmentRenderer;
+import com.protoevo.ui.screens.LoadSaveScreen;
+import com.protoevo.ui.screens.LoadingScreen;
+import com.protoevo.ui.screens.SimulationScreen;
+import com.protoevo.ui.screens.TitleScreen;
 import com.protoevo.utils.CursorUtils;
 
 public class GraphicsAdapter extends Game {
@@ -20,6 +21,7 @@ public class GraphicsAdapter extends Game {
 	private SimulationScreen simulationScreen;
 	private LoadingScreen loadingScreen;
 	private TitleScreen titleScreen;
+	private ScreenAdapter currentScreen, previousScreen;
 	private SpriteBatch batch;
 	private Skin skin;
 	private static DefaultBackgroundRenderer defaultBackgroundRenderer;
@@ -57,12 +59,20 @@ public class GraphicsAdapter extends Game {
 		}
 	}
 
+	@Override
+	public void setScreen(Screen screen) {
+		super.setScreen(screen);
+		previousScreen = currentScreen;
+		currentScreen = (ScreenAdapter) screen;
+	}
+
 	public static void renderBackground(float delta) {
 		defaultBackgroundRenderer.render(delta);
 	}
 
 	public void notifySimulationReady() {
-		loadingScreen.notifySimulationReady();
+		if (loadingScreen != null)
+			loadingScreen.notifySimulationReady();
 	}
 
 	public SimulationScreen getSimulationScreen() {
@@ -104,7 +114,8 @@ public class GraphicsAdapter extends Game {
 
 	public void moveToSandbox() {}
 
-	public void moveToTitleScreen(Screen previousScreen) {
+	public void moveToTitleScreen(ScreenAdapter previousScreen) {
+		this.previousScreen = previousScreen;
 		applicationManager.disposeSimulationIfPresent();
 		titleScreen = new TitleScreen(this);
 		setScreen(titleScreen);
@@ -131,6 +142,22 @@ public class GraphicsAdapter extends Game {
 	public void setSimulationScreen() {
 		simulationScreen = new SimulationScreen(this, applicationManager.getSimulation());
 		setScreen(simulationScreen);
+	}
+
+	public boolean hasPreviousScreen() {
+		return previousScreen != null;
+	}
+
+	public void moveToPreviousScreen() {
+		if (hasPreviousScreen())
+			setScreen(previousScreen);
+	}
+
+	public void returnToPreviousScreenAndDispose() {
+		if (hasPreviousScreen()) {
+			currentScreen.dispose();
+			setScreen(previousScreen);
+		}
 	}
 
 	public SpriteBatch getSpriteBatch() {

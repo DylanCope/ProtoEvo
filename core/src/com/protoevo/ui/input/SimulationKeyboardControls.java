@@ -1,13 +1,12 @@
-package com.protoevo.input;
+package com.protoevo.ui.input;
 
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.InputAdapter;
 import com.protoevo.core.Simulation;
-import com.protoevo.ui.SimulationScreen;
+import com.protoevo.ui.screens.SimulationScreen;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.Callable;
 
 public class SimulationKeyboardControls extends InputAdapter {
 

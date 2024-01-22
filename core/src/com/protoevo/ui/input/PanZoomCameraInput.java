@@ -1,4 +1,4 @@
-package com.protoevo.input;
+package com.protoevo.ui.input;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;

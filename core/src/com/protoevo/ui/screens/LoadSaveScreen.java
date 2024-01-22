@@ -1,22 +1,19 @@
-package com.protoevo.ui;
+package com.protoevo.ui.screens;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.ScreenAdapter;
-import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.*;
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 import com.badlogic.gdx.utils.Align;
-import com.badlogic.gdx.utils.ScreenUtils;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.protoevo.core.Simulation;
-import com.protoevo.core.Statistics;
-import com.protoevo.ui.rendering.EnvironmentRenderer;
+import com.protoevo.ui.GraphicsAdapter;
+import com.protoevo.ui.TopBar;
 import com.protoevo.utils.CursorUtils;
 import com.protoevo.utils.DebugMode;
 import com.protoevo.utils.FileIO;
-import scala.Int;
 
 import java.io.IOException;
 import java.nio.file.Path;

@@ -1,8 +1,8 @@
-package com.protoevo.input;
+package com.protoevo.ui.input;
 
 import com.badlogic.gdx.Input;
 import com.protoevo.biology.cells.Cell;
-import com.protoevo.env.EnvFileIO;
+import com.protoevo.env.Serialization;
 
 public class SaveCellTextListener implements Input.TextInputListener {
 
@@ -14,7 +14,7 @@ public class SaveCellTextListener implements Input.TextInputListener {
 
     @Override
     public void input(String text) {
-        EnvFileIO.saveCell(cell, text);
+        Serialization.saveCell(cell, text);
     }
 
     @Override

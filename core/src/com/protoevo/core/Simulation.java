@@ -4,7 +4,7 @@ import com.github.javafaker.Faker;
 import com.protoevo.biology.cells.Protozoan;
 import com.protoevo.biology.nn.NetworkGenome;
 import com.protoevo.core.repl.REPL;
-import com.protoevo.env.EnvFileIO;
+import com.protoevo.env.Serialization;
 import com.protoevo.env.Environment;
 import com.protoevo.settings.SimulationSettings;
 import com.protoevo.utils.EnvironmentImageRenderer;
@@ -20,7 +20,6 @@ import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.text.SimpleDateFormat;
 import java.util.List;
 import java.util.*;
 import java.util.function.Supplier;
@@ -132,7 +131,7 @@ public class Simulation implements Runnable
 	public Environment loadEnv(String filename)
 	{
 		try {
-			Environment env = EnvFileIO.reloadEnvironment(filename);
+			Environment env = Serialization.reloadEnvironment(filename);
 			System.out.println("Loaded tank at: " + filename);
 			initialised = true;
 			return env;
@@ -371,7 +370,7 @@ public class Simulation implements Runnable
 
 		String timeStamp = Utils.getTimeStampString();
 		String fileName = getSaveFolder() + "/env/" + timeStamp;
-		EnvFileIO.saveEnvironment(environment, fileName);
+		Serialization.saveEnvironment(environment, fileName);
 		return fileName;
 	}
 
@@ -384,7 +383,7 @@ public class Simulation implements Runnable
 		System.out.println("Created screenshot in directory: " + getSaveFolder() + "/screenshots");
 
 		String fileName = getSaveFolder() + "/env/autosave";
-		EnvFileIO.saveEnvironment(environment, fileName);
+		Serialization.saveEnvironment(environment, fileName);
 	}
 
 	public void makeStatisticsSnapshot() {

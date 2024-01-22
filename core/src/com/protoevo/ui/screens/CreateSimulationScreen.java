@@ -1,4 +1,4 @@
-package com.protoevo.ui;
+package com.protoevo.ui.screens;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.ScreenAdapter;
@@ -7,11 +7,10 @@ import com.badlogic.gdx.scenes.scene2d.ui.*;
 import com.badlogic.gdx.utils.Align;
 import com.protoevo.core.Simulation;
 import com.protoevo.settings.SimulationSettings;
-import com.protoevo.settings.Settings;
+import com.protoevo.ui.GraphicsAdapter;
+import com.protoevo.ui.TopBar;
 import com.protoevo.utils.CursorUtils;
 import com.protoevo.utils.DebugMode;
-
-import java.util.Objects;
 
 public class CreateSimulationScreen extends ScreenAdapter {
     private final Stage stage;

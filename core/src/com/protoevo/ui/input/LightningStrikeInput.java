@@ -1,4 +1,4 @@
-package com.protoevo.input;
+package com.protoevo.ui.input;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
@@ -6,7 +6,7 @@ import com.badlogic.gdx.InputAdapter;
 import com.badlogic.gdx.math.Vector3;
 import com.protoevo.biology.CauseOfDeath;
 import com.protoevo.physics.Particle;
-import com.protoevo.ui.SimulationScreen;
+import com.protoevo.ui.screens.SimulationScreen;
 
 import java.util.stream.Collectors;
 

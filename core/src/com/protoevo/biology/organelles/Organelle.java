@@ -12,7 +12,7 @@ public class Organelle implements Evolvable.Element {
 
     private GeneExpressionFunction geneExpressionFunction;
     private int index;
-    private OrganelleFunction function = null;
+    private OrganelleFunction function;
     private final float[] inputs = new float[2];
     private Cell cell;
     private final Statistics stats = new Statistics();

@@ -1,18 +1,16 @@
-package com.protoevo.input;
+package com.protoevo.ui.input;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.InputAdapter;
 import com.badlogic.gdx.graphics.OrthographicCamera;
-import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector3;
-import com.protoevo.biology.cells.Cell;
 import com.protoevo.env.Environment;
-import com.protoevo.ui.SimulationScreen;
-import com.protoevo.utils.Geometry;
+import com.protoevo.env.Spawnable;
+import com.protoevo.ui.screens.SimulationScreen;
 import com.protoevo.utils.Utils;
 
-public class SpawnParticleInput extends InputAdapter {
+public class UserSpawnInput extends InputAdapter {
 
     private final OrthographicCamera camera;
     private final Environment environment;
@@ -22,19 +20,16 @@ public class SpawnParticleInput extends InputAdapter {
     private float timeSinceSpawn = 0;
     private final Vector3 lastMousePos = new Vector3(), mousePos = new Vector3();
 
-    public SpawnParticleInput(SimulationScreen simulationScreen) {
+    public UserSpawnInput(SimulationScreen simulationScreen) {
         this.simulationScreen = simulationScreen;
         this.camera = simulationScreen.getCamera();
         this.environment = simulationScreen.getEnvironment();
     }
 
-    public void addParticle(float x, float y) {
+    public void spawn(float x, float y) {
         synchronized (environment) {
-            Cell cell = simulationScreen.getInputManager().createNewCell();
-            cell.setEnvironmentAndBuildPhysics(environment);
-            cell.getParticle().setPos(new Vector2(x, y));
-            Vector2 impulse = Geometry.fromAngle((float) (Math.random() * Math.PI * 2)).scl(.01f);
-            cell.getParticle().applyImpulse(impulse);
+            Spawnable spawnable = simulationScreen.getInputManager().createSelectedSpawnable();
+            spawnable.spawn(environment, x, y);
         }
     }
 
@@ -53,7 +48,7 @@ public class SpawnParticleInput extends InputAdapter {
         if (Gdx.input.isButtonPressed(Input.Buttons.MIDDLE)) {
             lastMousePos.set(screenX, screenY, 0);
             Vector3 worldSpace = camera.unproject(new Vector3(screenX, screenY, 0));
-            addParticle(worldSpace.x, worldSpace.y);
+            spawn(worldSpace.x, worldSpace.y);
             return true;
         }
         return false;
@@ -72,7 +67,7 @@ public class SpawnParticleInput extends InputAdapter {
             float dynamicRate = Utils.clampedLinearRemap(speed, 0f, Gdx.graphics.getWidth() / 4f, rate, 0f);
             if (timeSinceSpawn > dynamicRate) {
                 Vector3 worldSpace = camera.unproject(new Vector3(screenX, screenY, 0));
-                addParticle(worldSpace.x, worldSpace.y);
+                spawn(worldSpace.x, worldSpace.y);
                 timeSinceSpawn = 0f;
             }
             return true;

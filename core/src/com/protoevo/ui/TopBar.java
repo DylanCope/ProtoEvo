@@ -119,6 +119,10 @@ public class TopBar {
         addRight(button);
     }
 
+    public float getTopBarPadding() {
+        return topBarPadding;
+    }
+
     public Vector2 nextLeftPosition() {
 
         float x;
