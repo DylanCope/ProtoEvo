@@ -114,6 +114,10 @@ public class SimulationInputManager {
         topBar.addLeft(lightningButton);
     }
 
+    public InputLayers getInputLayers() {
+        return inputLayers;
+    }
+
     private Optional<Protozoan> tryLoadProtozoa(Path save) {
         try {
             return Optional.of(Serialization.deserialize(save.toString(), Protozoan.class));

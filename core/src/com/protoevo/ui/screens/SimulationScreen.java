@@ -79,6 +79,7 @@ public class SimulationScreen extends ScreenAdapter {
     private final TextField saveTrackedParticleTextField, addTagTextField;
     private final Set<ImageButton> buttons = new java.util.HashSet<>();
     private final Map<Supplier<Boolean>, Runnable> conditionalTasks = new HashMap<>();
+    private Optional<MultiCellGRNRenderer> multiCellGRNRenderer = Optional.empty();
 
     private final SelectBox<String> statsSelectBox;
     private final float graphicsHeight;
@@ -169,6 +170,9 @@ public class SimulationScreen extends ScreenAdapter {
                             Cell cell = (Cell) particleData;
                             MultiCellStructure multiCellStructure = cell.getMulticellularStructure();
                             graphics.setScreen(new MultiCellViewerScreen(graphics, multiCellStructure));
+//                            multiCellGRNRenderer = Optional.of(new MultiCellGRNRenderer(
+//                                    camera, inputManager.getInputLayers(), multiCellStructure
+//                            ));
                         }
                     }
                     return true;
@@ -257,6 +261,8 @@ public class SimulationScreen extends ScreenAdapter {
         }
 
         renderEnvironment(delta);
+
+        multiCellGRNRenderer.ifPresent(renderer -> renderer.renderGRNs(delta));
 
         if (uiHidden)
             return;

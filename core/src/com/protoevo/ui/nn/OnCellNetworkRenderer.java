@@ -14,7 +14,6 @@ import com.protoevo.biology.nn.Neuron;
 import com.protoevo.biology.nn.meta.GRNTag;
 import com.protoevo.biology.nodes.AdhesionReceptor;
 import com.protoevo.biology.nodes.SurfaceNode;
-import com.protoevo.env.Environment;
 import com.protoevo.physics.Joining;
 import com.protoevo.ui.UIStyle;
 import com.protoevo.ui.input.InputLayers;
@@ -232,28 +231,6 @@ public class OnCellNetworkRenderer {
         }
     }
 
-//    private void findMouseOverNeuron(float neuronR) {
-////        SimulationInputManager inputManager = simulationScreen.getInputManager();
-////        Vector2 mouse = inputManager.getMousePos();
-//        Vector2 mouse = inputLayers.getMousePos();
-//        mouseOverNeuron = null;
-//        GeneExpressionFunction geneExpressionFunction = cell.getGeneExpressionFunction();
-//        NeuralNetwork nn = geneExpressionFunction.getRegulatoryNetwork();
-//        float mouseY = Gdx.graphics.getHeight() - mouse.y;
-//        for (Neuron neuron : nn.getNeurons()) {
-////            float x = neuron.getGraphicsX();
-////            float y = neuron.getGraphicsY();
-//            Vector3 neuronScreenPos = camera.project(new Vector3(neuron.getGraphicsX(), neuron.getGraphicsY(), 0));
-//            float x = neuronScreenPos.x;
-//            float y = neuronScreenPos.y;
-//            if (x - 2*neuronR <= mouse.x && mouse.x <= x + 2*neuronR
-//                    && y - 2*neuronR <= mouseY && mouseY <= y + 2*neuronR) {
-//                mouseOverNeuron = neuron;
-//                return;
-//            }
-//        }
-//    }
-
     public static GeneExpressionFunction.Node getNodeTaggedOnNeuron(Protozoan protozoan, Neuron neuron) {
         Object[] tags = neuron.getTags();
         if (tags != null && tags.length > 0 && tags[0] instanceof GRNTag) {
@@ -442,5 +419,9 @@ public class OnCellNetworkRenderer {
             float y = neuronScreenPos.y;
             mouseOverNeuronHandler.apply(uiBatch, mouseOverNeuron, x, y, r,0);
         }
+    }
+
+    public void dispose() {
+
     }
 }
