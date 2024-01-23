@@ -37,13 +37,17 @@ public class ComplexMolecule implements Serializable {
     public static ComplexMolecule fromSignature(float signature) {
         int possibleMolecules = Environment.settings.possibleMolecules.get();
         signature = (float) (Math.floor(signature * possibleMolecules) / possibleMolecules);
-        if (!cache.containsKey(signature)) {
+        if (!cache.containsKey(signature) || cache.get(signature) == null) {
             ComplexMolecule molecule = new ComplexMolecule(
                     signature, Environment.settings.moleculeProductionEnergyCost.get());
             cache.put(signature, molecule);
             return molecule;
         }
-        return cache.get(signature);
+        ComplexMolecule molecule = cache.get(signature);
+        if (molecule == null) {
+            throw new RuntimeException("Molecule cache is null");
+        }
+        return molecule;
     }
 
     @Override

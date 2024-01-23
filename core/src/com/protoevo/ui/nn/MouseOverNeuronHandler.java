@@ -123,6 +123,9 @@ public class MouseOverNeuronHandler {
                       float neuronScreenY,
                       float graphicsRadius,
                       float neuronSpacing) {
+        if (!neuron.isGraphicsEnabled())
+            return;
+
         String labelStr = getNeuronLabel(neuron);
         layout.setText(font, labelStr);
         float labelX = neuronScreenX - layout.width / 2;

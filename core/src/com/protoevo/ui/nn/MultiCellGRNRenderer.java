@@ -1,4 +1,4 @@
-package com.protoevo.ui.rendering;
+package com.protoevo.ui.nn;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Color;
@@ -17,15 +17,10 @@ import com.protoevo.biology.nodes.AdhesionReceptor;
 import com.protoevo.biology.nodes.SurfaceNode;
 import com.protoevo.ui.UIStyle;
 import com.protoevo.ui.input.InputLayers;
-import com.protoevo.ui.nn.MouseOverNeuronHandler;
-import com.protoevo.ui.nn.OnCellNetworkRenderer;
 import com.protoevo.utils.Colour;
 import space.earlygrey.shapedrawer.ShapeDrawer;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 
 public class MultiCellGRNRenderer {
 
@@ -36,7 +31,7 @@ public class MultiCellGRNRenderer {
 
     private final SpriteBatch batch, uiBatch;
     private final OrthographicCamera camera;
-    private final Map<Integer, OnCellNetworkRenderer> networkRendererMap;
+    private final List<OnCellNetworkRenderer> networkRenderers;
     private final Map<Neuron, Neuron> interCellNeuronConnections;
     private final ShapeDrawer shapeRenderer;
     private float interCellLineWidth;
@@ -58,20 +53,28 @@ public class MultiCellGRNRenderer {
         batch = new SpriteBatch();
         this.camera = camera;
 
-        networkRendererMap = new HashMap<>();
+        networkRenderers = new ArrayList<>();
         List<Cell> cells = multiCellStructure.getCells();
         uiBatch = new SpriteBatch();
 
-        for (int i = 0; i < cells.size(); i++) {
+        interCellLineWidth = Float.MAX_VALUE;
+        for (Cell cell : cells) {
             MouseOverNeuronHandler mouseOverNeuronHandler = new MouseOverNeuronHandler(font);
-            networkRendererMap.put(i, new OnCellNetworkRenderer(
-                    (Protozoan) cells.get(i), batch, inputLayers, camera, mouseOverNeuronHandler
-            ));
+            OnCellNetworkRenderer renderer = new OnCellNetworkRenderer(
+                    (Protozoan) cell, batch, inputLayers, camera, mouseOverNeuronHandler
+            );
+            interCellLineWidth = Math.min(interCellLineWidth, renderer.getSynapseLineWidth());
+            networkRenderers.add(renderer);
         }
 
         shapeRenderer = new ShapeDrawer(batch, new TextureRegion(UIStyle.getWhite1x1()));
         interCellNeuronConnections = new HashMap<>();
-        for (Cell cell : cells) {
+        buildInterCellConnections();
+    }
+
+    private void buildInterCellConnections() {
+        interCellNeuronConnections.clear();
+        for (Cell cell : multiCellStructure.getCells()) {
             Protozoan protozoan = (Protozoan) cell;
             NeuralNetwork grn = protozoan.getGeneExpressionFunction().getRegulatoryNetwork();
             for (Neuron outputNeuron : grn.getOutputNeurons()) {
@@ -81,11 +84,6 @@ public class MultiCellGRNRenderer {
                 // finds and adds to interCellNeuronConnections
                 findConnectedInputNeuronInOtherCell(protozoan, outputNeuron);
             }
-        }
-
-        interCellLineWidth = Float.MAX_VALUE;
-        for (OnCellNetworkRenderer networkRenderer : networkRendererMap.values()) {
-            interCellLineWidth = Math.min(interCellLineWidth, networkRenderer.getSynapseLineWidth());
         }
     }
 
@@ -144,22 +142,34 @@ public class MultiCellGRNRenderer {
         }
     }
 
+    private void handleDeadCellsOrDisconnects() {
+        if (multiCellStructure.getCells().stream().anyMatch(Cell::isDead)) {
+            networkRenderers.removeIf(renderer -> {
+                boolean cellDead = renderer.isDead();
+                if (cellDead) {
+                    renderer.dispose();
+                }
+                return cellDead;
+            });
+            buildInterCellConnections();
+        }
+        else if (!multiCellStructure.stillConnected()) {
+            buildInterCellConnections();
+        }
+    }
+
     public void renderGRNs(float delta) {
+        handleDeadCellsOrDisconnects();
+
         batch.setProjectionMatrix(camera.combined);
         batch.enableBlending();
         camera.update();
         batch.begin();
         renderInterCellConnections();
-        for (int i = 0; i < multiCellStructure.getCells().size(); i++) {
-            OnCellNetworkRenderer networkRenderer = networkRendererMap.get(i);
-            networkRenderer.render(delta);
-        }
+        networkRenderers.forEach(renderer -> renderer.render(delta));
         batch.end();
         uiBatch.begin();
-        for (int i = 0; i < multiCellStructure.getCells().size(); i++) {
-            OnCellNetworkRenderer networkRenderer = networkRendererMap.get(i);
-            networkRenderer.drawUI(uiBatch);
-        }
+        networkRenderers.forEach(renderer -> renderer.drawUI(uiBatch));
         uiBatch.end();
     }
 
@@ -167,7 +177,7 @@ public class MultiCellGRNRenderer {
         batch.dispose();
         uiBatch.dispose();
         font.dispose();
-        for (OnCellNetworkRenderer networkRenderer : networkRendererMap.values()) {
+        for (OnCellNetworkRenderer networkRenderer : networkRenderers) {
             networkRenderer.dispose();
         }
     }

@@ -26,6 +26,8 @@ import java.util.*;
 public class OnCellNetworkRenderer {
 
     private final Protozoan cell;
+    private final Vector2 lastCellPos = new Vector2();
+    private float lastCellAngle = 0;
     private final ShapeDrawer shapeRenderer;
     private float neuronMoveSpeedFactor = .05f;
 
@@ -48,6 +50,9 @@ public class OnCellNetworkRenderer {
                                  OrthographicCamera camera,
                                  MouseOverNeuronHandler mouseOverNeuronHandler) {
         this.cell = cell;
+        lastCellPos.set(cell.getPos());
+        lastCellAngle = cell.getParticle().getAngle();
+
         this.inputLayers = inputLayers;
         this.mouseOverNeuronHandler = mouseOverNeuronHandler;
         this.camera = camera;
@@ -90,9 +95,7 @@ public class OnCellNetworkRenderer {
             Optional<Joining> joining = cell.getEnv()
                     .flatMap(env -> env.getJointsManager().getJoining(receptor.getJoiningID()));
             nodePos = joining.flatMap(j -> j.getParticleAnchor(cell.getParticle()))
-                    .orElse(null);
-//            nodePos = ((AdhesionReceptor) node.getAttachment()).getBindingAnchor()
-//                    .orElse(null);
+                    .orElse(node.getWorldPosition());
         } else {
             nodePos = node.getWorldPosition();
         }
@@ -136,37 +139,13 @@ public class OnCellNetworkRenderer {
     }
 
     public void adjustNeuronPosition(Neuron neuron, float delta) {
-        // Implementation of Fruchterman-Reingold force-directed algorithm.
-        // Computes one iteration
 
-        // Based on the following python implemntation from networkx
-        //        # matrix of difference between points
-        //                delta = pos[:, np.newaxis, :] - pos[np.newaxis, :, :]
-        //        # distance between points
-        //                distance = np.linalg.norm(delta, axis=-1)
-        //        # enforce minimum distance of 0.01
-        //        np.clip(distance, 0.01, None, out=distance)
-        //        # displacement "force"
-        //        displacement = np.einsum(
-        //                "ijk,ij->ik", delta, (k * k / distance**2 - A * distance / k)
-        //        )
-        //        # update positions
-        //        length = np.linalg.norm(displacement, axis=-1)
-        //        length = np.where(length < 0.01, 0.1, length)
-        //        delta_pos = np.einsum("ij,i->ij", displacement, t / length)
-        //        if fixed is not None:
-        //            # don't change positions of fixed nodes
-        //        delta_pos[fixed] = 0.0
-        //        pos += delta_pos
-        //        # cool temperature
-        //        t -= dt
-        //        if (np.linalg.norm(delta_pos) / nnodes) < threshold:
-        //          break
-
-        float repulsiveFactor = 20f;
         // adjust based on closeness to neighbours
         float neuronR = getNeuronRadius();
         Vector2 neuronPos = neuron.getGraphicsPos();
+        float maxDeltaVec = 2f * neuronR;
+        float repulsiveFactor = 20f * neuronR * neuronR;
+
         for (Neuron inputNeuron : neuron.getInputs()) {
             GeneExpressionFunction.Node gene = getNodeTaggedOnNeuron(cell, inputNeuron);
             if (gene != null && gene.getLastTarget() instanceof SurfaceNode)
@@ -179,11 +158,13 @@ public class OnCellNetworkRenderer {
                     .setLength(delta * neuronMoveSpeedFactor);
             if (dist > 2.5f * neuronR) {
                 deltaVec.scl(dist);
+                deltaVec.setLength(Math.min(maxDeltaVec, deltaVec.len()));
                 neuronPos.add(deltaVec);
                 inputPos.sub(deltaVec);
             }
             else {
-                deltaVec.scl(repulsiveFactor * neuronR);
+                deltaVec.scl(repulsiveFactor / (0.5f * neuronR + dist));
+                deltaVec.setLength(Math.min(maxDeltaVec, deltaVec.len()));
                 neuronPos.sub(deltaVec);
                 inputPos.add(deltaVec);
             }
@@ -199,19 +180,12 @@ public class OnCellNetworkRenderer {
             if (dist <= getNeuronRadius() * 5) {
                 Vector2 deltaVec = otherPos.cpy()
                         .sub(neuronPos)
-                        .setLength(delta * repulsiveFactor * neuronMoveSpeedFactor * neuronR);
+                        .setLength(delta * repulsiveFactor * neuronMoveSpeedFactor / (0.5f * neuronR + dist));
+                deltaVec.setLength(Math.min(maxDeltaVec, deltaVec.len()));
                 neuronPos.sub(deltaVec);
                 otherPos.add(deltaVec);
             }
         }
-
-//        NeuralNetwork nn = cell.getGeneExpressionFunction().getRegulatoryNetwork();
-//        Vector2[] positions = new Vector2[nn.getSize()];
-//        int i = 0;
-//        for (Neuron n : nn.getNeurons()) {
-//            positions[i++] = n.getGraphicsPos();
-//        }
-//
     }
 
     private void findMouseOverNeuron(float neuronR) {
@@ -249,9 +223,20 @@ public class OnCellNetworkRenderer {
             currentPositions.add(neuron.getGraphicsPos().cpy());
         }
 
+        Vector2 cellPosDelta = cell.getPos().cpy().sub(lastCellPos);
+        lastCellPos.set(cell.getPos());
+        float cellAngleDelta = cell.getParticle().getAngle() - lastCellAngle;
+        lastCellAngle = cell.getParticle().getAngle();
+
         for (Neuron neuron : nn.getNeurons()) {
             GeneExpressionFunction.Node gene = getNodeTaggedOnNeuron(cell, neuron);
-            if (!(gene != null && gene.getLastTarget() instanceof SurfaceNode)) {
+            if (gene != null && gene.getLastTarget() instanceof SurfaceNode) {
+                SurfaceNode surfaceNode = (SurfaceNode) gene.getLastTarget();
+                computeNeuronSurfaceNodePosition(surfaceNode, gene, neuron);
+            } else {
+                neuron.getGraphicsPos()
+                        .add(cellPosDelta)
+                        .rotateAroundRad(cell.getPos(), cellAngleDelta);
                 adjustNeuronPosition(neuron, delta);
             }
         }
@@ -288,27 +273,22 @@ public class OnCellNetworkRenderer {
         return false;
     }
 
-    public void render(float delta) {
+    public void drawWeights() {
         NeuralNetwork nn = cell.getGeneExpressionFunction().getRegulatoryNetwork();
-//        float neuronR = getNeuronRadius();
-        updateNeuronPositions(delta);
-
-        shapeRenderer.update();
-        findMouseOverNeuron(getNeuronRadius());
-
         float r = getNeuronRadius();
         float lineWidth = getSynapseLineWidth();
 
         Colour colour = new Colour();
         for (Neuron neuron : nn.getNeurons()) {
-            if (isUnusedSurfaceNode(neuron))
+
+            if (!neuron.isGraphicsEnabled())
                 continue;
 
             if (!neuron.getType().equals(Neuron.Type.SENSOR) && neuron.isConnectedToOutput()) {
                 for (int i = 0; i < neuron.getInputs().length; i++) {
                     Neuron inputNeuron = neuron.getInputs()[i];
 
-                    if (isUnusedSurfaceNode(inputNeuron))
+                    if (!inputNeuron.isGraphicsEnabled())
                         continue;
 
                     float weight = inputNeuron.getLastState() * neuron.getWeights()[i];
@@ -341,9 +321,16 @@ public class OnCellNetworkRenderer {
                 }
             }
         }
+    }
 
+    public void drawNodes() {
+        NeuralNetwork nn = cell.getGeneExpressionFunction().getRegulatoryNetwork();
+        float r = getNeuronRadius();
+        float lineWidth = getSynapseLineWidth();
+
+        Colour colour = new Colour();
         for (Neuron neuron : nn.getNeurons()) {
-            if (!neuron.isConnectedToOutput() || isUnusedSurfaceNode(neuron))
+            if (!neuron.isConnectedToOutput() || !neuron.isGraphicsEnabled())
                 continue;
 
             float state = neuron.getLastState();
@@ -405,12 +392,32 @@ public class OnCellNetworkRenderer {
         }
     }
 
+
+    public void render(float delta) {
+        NeuralNetwork nn = cell.getGeneExpressionFunction().getRegulatoryNetwork();
+
+        if (nn == null)
+            return;
+
+        updateNeuronPositions(delta);
+
+        shapeRenderer.update();
+        findMouseOverNeuron(getNeuronRadius());
+
+        for (Neuron neuron : nn.getNeurons()) {
+            neuron.setGraphicsEnabled(!isUnusedSurfaceNode(neuron));
+        }
+        drawWeights();
+        drawNodes();
+    }
+
     public void drawUI(SpriteBatch uiBatch) {
 
         float r = getNeuronRadius();
         uiBatch.setColor(Color.WHITE.cpy().mul(0.9f));
 
-        if (mouseOverNeuronHandler != null && mouseOverNeuron != null) {
+        if (mouseOverNeuronHandler != null && mouseOverNeuron != null
+                && mouseOverNeuron.isGraphicsEnabled()) {
 
             Vector3 neuronScreenPos = camera.project(new Vector3(
                     mouseOverNeuron.getGraphicsX(),
@@ -419,6 +426,10 @@ public class OnCellNetworkRenderer {
             float y = neuronScreenPos.y;
             mouseOverNeuronHandler.apply(uiBatch, mouseOverNeuron, x, y, r,0);
         }
+    }
+
+    public boolean isDead() {
+        return cell.isDead();
     }
 
     public void dispose() {

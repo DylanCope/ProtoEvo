@@ -15,9 +15,8 @@ import com.protoevo.ui.TopBar;
 import com.protoevo.ui.UIStyle;
 import com.protoevo.ui.input.InputLayers;
 import com.protoevo.ui.input.PanZoomCameraInput;
-import com.protoevo.ui.rendering.MultiCellGRNRenderer;
+import com.protoevo.ui.nn.MultiCellGRNRenderer;
 import com.protoevo.ui.rendering.ProtozoaRenderer;
-import com.protoevo.utils.Colour;
 
 import java.util.HashMap;
 import java.util.List;

@@ -36,6 +36,7 @@ public class Neuron implements Comparable<Neuron>, Serializable {
     private ActivationFn activation;
     private int depth = -1;
     private Vector2 graphicsPos;
+    private boolean graphicsEnabled = true;
     private boolean connectedToOutput = true;
     private final String label;
     private Object[] tags;
@@ -202,6 +203,14 @@ public class Neuron implements Comparable<Neuron>, Serializable {
 
     public Vector2 getGraphicsPos() {
         return graphicsPos;
+    }
+
+    public boolean isGraphicsEnabled() {
+        return graphicsEnabled;
+    }
+
+    public void setGraphicsEnabled(boolean graphicsEnabled) {
+        this.graphicsEnabled = graphicsEnabled;
     }
 
     public String getLabel() {

@@ -6,6 +6,7 @@ import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.Vector2;
 import com.protoevo.biology.cells.Cell;
 import com.protoevo.biology.nodes.AdhesionReceptor;
+import com.protoevo.biology.nodes.NodeAttachment;
 import com.protoevo.biology.nodes.SurfaceNode;
 import com.protoevo.physics.Joining;
 
@@ -24,6 +25,11 @@ public class AdhesionRenderer extends NodeRenderer {
 
     @Override
     public void render(float delta, SpriteBatch batch) {
+        NodeAttachment attachment = node.getAttachment();
+        if (attachment instanceof AdhesionReceptor && ((AdhesionReceptor) attachment).isBound()) {
+            return;
+        }
+
         Sprite sprite = CellTexture.getSprite();
 
         Cell cell = node.getCell();

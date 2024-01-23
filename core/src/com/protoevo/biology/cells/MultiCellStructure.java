@@ -36,6 +36,20 @@ public class MultiCellStructure implements Serializable, Spawnable {
         }
     }
 
+    public boolean stillConnected() {
+        for (int localCellID = 0; localCellID < cells.size(); localCellID++) {
+            Cell cell = cells.get(localCellID);
+            List<Long> expectedAttachedCellIds = cellConnections.get(localCellID);
+            Collection<Long> actualAttachedCellIds = cell.getAttachedCellIDs();
+            for (Long expectedAttachedCellId : expectedAttachedCellIds) {
+                if (!actualAttachedCellIds.contains(expectedAttachedCellId)) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
     public Vector2 computeMultiCellCentre() {
         Vector2 centre = new Vector2(0, 0);
         for (Cell cell : cells) {

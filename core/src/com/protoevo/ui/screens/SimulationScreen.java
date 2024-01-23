@@ -38,6 +38,7 @@ import com.protoevo.ui.SimulationInputManager;
 import com.protoevo.ui.TopBar;
 import com.protoevo.ui.UIStyle;
 import com.protoevo.ui.nn.MouseOverNeuronHandler;
+import com.protoevo.ui.nn.MultiCellGRNRenderer;
 import com.protoevo.ui.nn.NetworkRenderer;
 import com.protoevo.ui.rendering.*;
 import com.protoevo.ui.shaders.BrightnessLayer;
@@ -167,16 +168,22 @@ public class SimulationScreen extends ScreenAdapter {
                     if (event.toString().equals("touchDown")) {
                         Object particleData = trackedParticle.getUserData();
                         if (particleData instanceof Cell) {
-                            Cell cell = (Cell) particleData;
-                            MultiCellStructure multiCellStructure = cell.getMulticellularStructure();
-                            graphics.setScreen(new MultiCellViewerScreen(graphics, multiCellStructure));
-//                            multiCellGRNRenderer = Optional.of(new MultiCellGRNRenderer(
-//                                    camera, inputManager.getInputLayers(), multiCellStructure
-//                            ));
+                            if (multiCellGRNRenderer.isPresent()) {
+                                multiCellGRNRenderer.get().dispose();
+                                multiCellGRNRenderer = Optional.empty();
+                            } else {
+                                Cell cell = (Cell) particleData;
+                                MultiCellStructure multiCellStructure = cell.getMulticellularStructure();
+//                            graphics.setScreen(new MultiCellViewerScreen(graphics, multiCellStructure));
+                                multiCellGRNRenderer = Optional.of(new MultiCellGRNRenderer(
+                                        camera, inputManager.getInputLayers(), multiCellStructure
+                                ));
+                            }
                         }
                     }
                     return true;
                 });
+
         stage.addActor(multiCellViewerTrackedParticleButton);
         multiCellViewerTrackedParticleButton.setVisible(false);
 
@@ -549,7 +556,8 @@ public class SimulationScreen extends ScreenAdapter {
 
     private void handleNetworkRenderer(float delta) {
         ParticleTracker particleTracker = inputManager.getParticleTracker();
-        if (particleTracker.isTracking()) {
+
+        if (!multiCellGRNRenderer.isPresent() && particleTracker.isTracking()) {
             Particle particle = particleTracker.getTrackedParticle();
             if (particle.getUserData() instanceof EvolvableCell) {
                 EvolvableCell evolvableCell = particle.getUserData(EvolvableCell.class);
@@ -598,6 +606,7 @@ public class SimulationScreen extends ScreenAdapter {
         topBar.dispose();
         environmentRenderer.dispose();
         networkRenderer.dispose();
+        multiCellGRNRenderer.ifPresent(MultiCellGRNRenderer::dispose);
         inputManager.dispose();
         for (ImageButton button : buttons)
             ((TextureRegionDrawable) button.getImage().getDrawable()).getRegion().getTexture().dispose();
