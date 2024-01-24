@@ -6,6 +6,7 @@ import com.protoevo.biology.CauseOfDeath;
 import com.protoevo.biology.cells.Cell;
 import com.protoevo.core.Statistics;
 import com.protoevo.env.Environment;
+import com.protoevo.physics.Particle;
 import com.protoevo.utils.Geometry;
 import com.protoevo.utils.Utils;
 
@@ -50,8 +51,8 @@ public class Spike extends NodeAttachment implements Serializable {
         spikePoint = getSpikePoint();
 
         for (Object toInteract : cell.getInteractionQueue()) {
-            if (toInteract instanceof Cell) {
-                Cell other = (Cell) toInteract;
+            if (toInteract instanceof Particle && (((Particle) toInteract).getUserData() instanceof Cell)) {
+                Cell other = (Cell) ((Particle) toInteract).getUserData();
                 Vector2 dir = spikePoint.cpy().sub(node.getWorldPosition());
                 Vector2 start = node.getWorldPosition().cpy().sub(other.getPos());
                 float[] ts = Geometry.circleIntersectLineTs(dir, start, other.getRadius());
