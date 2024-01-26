@@ -8,8 +8,10 @@ import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector2;
+import com.protoevo.biology.cells.DamageEvent;
 import com.protoevo.biology.cells.Protozoan;
 import com.protoevo.biology.nodes.*;
+import com.protoevo.env.Environment;
 import com.protoevo.env.Rock;
 import com.protoevo.physics.box2d.Box2DParticle;
 import com.protoevo.ui.GraphicsAdapter;
@@ -19,6 +21,7 @@ import com.protoevo.utils.Utils;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.Function;
 
 public class ProtozoaRenderer {
@@ -93,7 +96,8 @@ public class ProtozoaRenderer {
         }
     }
 
-    private static final Map<Class<? extends NodeAttachment>, Function<SurfaceNode, NodeRenderer>> nodeRendererMap =
+    private static final
+    Map<Class<? extends NodeAttachment>, Function<SurfaceNode, NodeRenderer>> nodeRendererMap =
         new HashMap<Class<? extends NodeAttachment>, Function<SurfaceNode, NodeRenderer>>(){
             {
                 put(Flagellum.class, FlagellumRenderer::new);
@@ -163,6 +167,35 @@ public class ProtozoaRenderer {
         return nodeRendererMap.get(maybeAttachment.getClass()).apply(node);
     }
 
+    public Color getProtozoanColor() {
+        Optional<DamageEvent> maybeLastDamage = protozoan.getLastDamageEvent();
+        if (maybeLastDamage.isPresent()) {
+            DamageEvent lastDamageEvent = maybeLastDamage.get();
+
+            float lastDamageAmount = lastDamageEvent.getDamageAmount();
+            float delta = Environment.settings.simulationUpdateDelta.get();
+            float dps = lastDamageAmount / delta;
+            float minDPSForRed = GraphicsAdapter.settings.minDPSAmountForRedness.get();
+            if (dps < minDPSForRed)
+                return protozoan.getColor();
+            float maxDPSForRed = GraphicsAdapter.settings.maxDPSAmountForRedness.get();
+            float damageAmountFactor =
+                    Utils.clampedLinearRemap(dps, 0, maxDPSForRed, 0, 1);
+
+            float damageTime = lastDamageEvent.getDamageTime();
+
+            float lingerTime = GraphicsAdapter.settings.damageVisualLingerTime.get();
+            float damageTimeFactor =
+                    Utils.clampedLinearRemap(damageTime, 0, lingerTime, 1, 0);
+
+            float maxRedAmount = GraphicsAdapter.settings.damageVisualRedAmount.get();
+
+            return new Color(protozoan.getColor())
+                    .lerp(Color.RED, damageAmountFactor * damageTimeFactor * maxRedAmount);
+        }
+        return protozoan.getColor();
+    }
+
     public void render(float delta, OrthographicCamera camera, SpriteBatch batch) {
         Vector2 pos = protozoan.getPos();
         float x = pos.x - protozoan.getRadius();
@@ -181,7 +214,7 @@ public class ProtozoaRenderer {
                     .render(delta, batch);
         }
 
-        Color c = protozoan.getColor();
+        Color c = getProtozoanColor();
         cellSprite.setColor(c.r, c.g, c.b, 1);
         cellSprite.setPosition(x, y);
         cellSprite.setSize(size, size);

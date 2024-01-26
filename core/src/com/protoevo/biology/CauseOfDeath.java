@@ -1,5 +1,7 @@
 package com.protoevo.biology;
 
+import com.protoevo.utils.Utils;
+
 public enum CauseOfDeath {
     SPIKE_DAMAGE("spike damage"),
     EATEN("being eaten"),
@@ -39,5 +41,9 @@ public enum CauseOfDeath {
 
     public String getReason() {
         return reason;
+    }
+
+    public String getReasonSentence() {
+        return Utils.capitalize(reason) + ".";
     }
 }

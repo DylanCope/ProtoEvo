@@ -70,6 +70,11 @@ public abstract class EvolvableCell extends Cell implements Evolvable {
         return super.getHealth();
     }
 
+    @GeneRegulator(name="Last Damage")
+    public float getLastDamage() {
+        return getLastDamageEvent().map(DamageEvent::getDamageAmount).orElse(0f);
+    }
+
     @GeneRegulator(name="Size", min=0, max=1)
     public float getRadiusAsProportionOfMax() {
         return Utils.clampedLinearRemap(

@@ -35,6 +35,7 @@ public abstract class Cell implements Serializable, Coloured, Spawnable {
 	private int generation = 1;
 	private float timeAlive = 0f;
 	private float health = 1f;
+	private DamageEvent lastDamageEvent = null;
 	private float growthRate = 0.0f;
 	private float energyAvailable = Environment.settings.cell.startingAvailableCellEnergy.get();
 	private double constructionMassAvailable = Environment.settings.cell.startingAvailableConstructionMass.get();
@@ -523,12 +524,27 @@ public abstract class Cell implements Serializable, Coloured, Spawnable {
 	}
 
 	public void damage(float d, CauseOfDeath cause) {
+		if (d > 0) {
+			if (lastDamageEvent != null) {
+				lastDamageEvent.setDamageAmount(d);
+				lastDamageEvent.setDamageTime(timeAlive);
+				lastDamageEvent.setCauseOfDamage(cause);
+			}
+			else {
+				lastDamageEvent = new DamageEvent(timeAlive, d, cause);
+			}
+		}
+
 		health -= d;
 		if (health > 1)
 			health = 1;
 
 		if (health < 0.05)
 			kill(cause);
+	}
+
+	public Optional<DamageEvent> getLastDamageEvent() {
+		return Optional.ofNullable(lastDamageEvent);
 	}
 
 	public String getPrettyName() {
@@ -611,6 +627,11 @@ public abstract class Cell implements Serializable, Coloured, Spawnable {
 		stats.putMass("Construction Mass", (float) constructionMassAvailable);
 		stats.putMass("Construction Mass Limit", getConstructionMassCap());
 
+		if (lastDamageEvent != null) {
+			stats.putPercentage("Last Damage", lastDamageEvent.getDamageAmount());
+			stats.putTime("Last Damage Time", lastDamageEvent.getDamageTime());
+			stats.put("Last Damage Cause", lastDamageEvent.getCauseOfDamage().getReasonSentence());
+		}
 		for (ComplexMolecule molecule : availableComplexMolecules.keySet())
 			if (availableComplexMolecules.get(molecule) >= 1e-12)
 				stats.putMass(

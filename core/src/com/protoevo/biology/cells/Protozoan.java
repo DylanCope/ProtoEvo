@@ -34,32 +34,32 @@ public class Protozoan extends EvolvableCell
 	private float thrustAngle = (float) (2 * Math.PI * Math.random());
 	private float thrustTurn = 0, thrustMag;
 
-	public static class Tag implements Serializable, Comparable<Tag> {
+	public static class LineageTag implements Serializable, Comparable<LineageTag> {
 		public static final long serialVersionUID = 1L;
 		public String tag;
 		public float timeStamp;
 		public int generation;
 
-		public Tag(String tag, float timeStamp, int generation) {
+		public LineageTag(String tag, float timeStamp, int generation) {
 			this.tag = tag;
 			this.timeStamp = timeStamp;
 			this.generation = generation;
 		}
 
 		@Override
-		public int compareTo(Tag o) {
+		public int compareTo(LineageTag o) {
 			return Integer.compare(generation, o.generation);
 		}
 
 		@Override
 		public boolean equals(Object obj) {
-			if (!(obj instanceof Tag))
+			if (!(obj instanceof LineageTag))
 				return false;
-			return tag.equals(((Tag) obj).tag);
+			return tag.equals(((LineageTag) obj).tag);
 		}
 	}
 
-	private final Set<Tag> tags = new HashSet<>();
+	private final Set<LineageTag> tags = new HashSet<>();
 
 	@Override
 	public void update(float delta)
@@ -207,6 +207,16 @@ public class Protozoan extends EvolvableCell
 		this.thrustTurn = Environment.settings.protozoa.maxCiliaTurn.get() * turn;
 	}
 
+	@GeneRegulator(name="Orientation", min=0, max=1)
+	public float getOrientation() {
+		return (float) (thrustAngle % (2 * Math.PI)) / (2 * (float) Math.PI);
+	}
+
+	@GeneRegulator(name="Speed", min=0, max=1)
+	public float getProtozoaSpeed() {
+		return getSpeed() / getRadius();
+	}
+
 	@ControlVariable(name="Mate Desire", min=0, max=1)
 	public void setMateDesire(float mate) {
 		this.mateDesire = mate > 0.5f;
@@ -258,7 +268,7 @@ public class Protozoan extends EvolvableCell
 	}
 
 	public void tag(String tag) {
-		tags.add(new Tag(tag, getEnv().map(Environment::getElapsedTime).orElse(0f), getGeneration()));
+		tags.add(new LineageTag(tag, getEnv().map(Environment::getElapsedTime).orElse(0f), getGeneration()));
 	}
 
 	@Override
@@ -409,7 +419,7 @@ public class Protozoan extends EvolvableCell
 		stats.putCount("Num Mutations", geneExpressionFunction.getMutationCount());
 
 		int i = 0;
-		for (Tag tag : tags) {
+		for (LineageTag tag : tags) {
 			stats.put("Tag " + i, tag.tag + " (Gen " + tag.generation + ")");
 			i++;
 		}
