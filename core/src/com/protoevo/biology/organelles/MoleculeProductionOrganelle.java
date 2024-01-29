@@ -4,7 +4,7 @@ import com.protoevo.biology.cells.Cell;
 import com.protoevo.biology.ComplexMolecule;
 import com.protoevo.core.Statistics;
 import com.protoevo.env.Environment;
-import com.protoevo.utils.Utils;
+import com.protoevo.maths.Functions;
 
 import java.io.Serializable;
 
@@ -29,7 +29,7 @@ public class MoleculeProductionOrganelle extends OrganelleFunction implements Se
     @Override
     public void update(float delta, float[] input) {
         if ((input[0] != productionSignature && productionChangeTimer <= 0) || productionMolecule == null) {
-            productionSignature = Utils.cyclicalLinearRemap(input[0], -1, 1, 0, 1);
+            productionSignature = Functions.cyclicalLinearRemap(input[0], -1, 1, 0, 1);
             productionMolecule = ComplexMolecule.fromSignature(productionSignature);
             productionChangeTimer = productionChangeCooldown;
         }
@@ -38,7 +38,7 @@ public class MoleculeProductionOrganelle extends OrganelleFunction implements Se
             productionChangeTimer -= delta;
 
         float rate = Environment.settings.maxMoleculeProductionRate.get() *
-                Utils.cyclicalLinearRemap(input[1], -1, 1,0, 1);;
+                Functions.cyclicalLinearRemap(input[1], -1, 1,0, 1);;
         lastRate = rate;
 
         float producedMass = rate * delta;

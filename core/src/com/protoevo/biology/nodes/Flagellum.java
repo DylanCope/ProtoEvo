@@ -5,7 +5,7 @@ import com.badlogic.gdx.math.Vector2;
 import com.protoevo.biology.cells.Cell;
 import com.protoevo.core.Statistics;
 import com.protoevo.env.Environment;
-import com.protoevo.utils.Utils;
+import com.protoevo.maths.Functions;
 
 
 import java.io.Serializable;
@@ -85,7 +85,7 @@ public class Flagellum extends NodeAttachment implements Serializable {
         if (io3D) {
             output[0] = speedX;
             output[1] = speedY;
-            output[2] = Utils.clampedLinearRemap(p, 0, 1, -1, 1);
+            output[2] = Functions.clampedLinearRemap(p, 0, 1, -1, 1);
         }
         else {
             output[0] = (float) Math.sqrt(speedX*speedX + speedY*speedY);

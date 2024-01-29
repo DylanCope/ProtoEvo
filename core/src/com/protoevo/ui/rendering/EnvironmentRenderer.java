@@ -16,6 +16,7 @@ import com.badlogic.gdx.utils.ScreenUtils;
 import com.protoevo.biology.cells.Cell;
 import com.protoevo.biology.cells.Protozoan;
 import com.protoevo.env.Environment;
+import com.protoevo.maths.Functions;
 import com.protoevo.physics.*;
 import com.protoevo.env.Rock;
 import com.protoevo.ui.input.ParticleTracker;
@@ -24,7 +25,6 @@ import com.protoevo.physics.box2d.Box2DPhysics;
 import com.protoevo.ui.SimulationInputManager;
 import com.protoevo.ui.UIStyle;
 import com.protoevo.utils.DebugMode;
-import com.protoevo.utils.Utils;
 import space.earlygrey.shapedrawer.ShapeDrawer;
 
 import java.util.Collection;
@@ -287,7 +287,7 @@ public class EnvironmentRenderer implements Renderer {
 
                     float d2 = tmpVec.set(p.getPos()).dst2(cell.getPos());
                     float dInside = p.getRadius() - cell.getRadius();
-                    float alpha = Utils.clampedLinearRemap(
+                    float alpha = Functions.clampedLinearRemap(
                             d2, dInside * dInside, dInside * dInside * 0.75f * 0.75f,
                             1.0f, 0.05f);
                     batch.setColor(cell.getColor().r, cell.getColor().g, cell.getColor().b, alpha);

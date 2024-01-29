@@ -13,10 +13,10 @@ import com.protoevo.biology.cells.Protozoan;
 import com.protoevo.biology.nodes.*;
 import com.protoevo.env.Environment;
 import com.protoevo.env.Rock;
+import com.protoevo.maths.Functions;
 import com.protoevo.physics.box2d.Box2DParticle;
 import com.protoevo.ui.GraphicsAdapter;
-import com.protoevo.utils.Geometry;
-import com.protoevo.utils.Utils;
+import com.protoevo.maths.Geometry;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -126,7 +126,7 @@ public class ProtozoaRenderer {
             float cellAngle = protozoan.getParticle().getAngle();
 
             float criticalZoom = GraphicsAdapter.settings.cameraZoomForCellDetails.get();
-            float a = Utils.clampedLinearRemap(
+            float a = Functions.clampedLinearRemap(
                     camera.zoom, criticalZoom, .5f * criticalZoom, 0, 1f);
             Color c = protozoan.getColor();
             elementSprite.setColor(c.r, c.g, c.b, a);
@@ -180,13 +180,13 @@ public class ProtozoaRenderer {
                 return protozoan.getColor();
             float maxDPSForRed = GraphicsAdapter.settings.maxDPSAmountForRedness.get();
             float damageAmountFactor =
-                    Utils.clampedLinearRemap(dps, 0, maxDPSForRed, 0, 1);
+                    Functions.clampedLinearRemap(dps, 0, maxDPSForRed, 0, 1);
 
             float damageTime = lastDamageEvent.getDamageTime();
 
             float lingerTime = GraphicsAdapter.settings.damageVisualLingerTime.get();
             float damageTimeFactor =
-                    Utils.clampedLinearRemap(damageTime, 0, lingerTime, 1, 0);
+                    Functions.clampedLinearRemap(damageTime, 0, lingerTime, 1, 0);
 
             float maxRedAmount = GraphicsAdapter.settings.damageVisualRedAmount.get();
 

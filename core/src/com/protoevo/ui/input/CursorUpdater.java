@@ -8,7 +8,7 @@ import com.protoevo.physics.Particle;
 import com.protoevo.ui.SimulationInputManager;
 import com.protoevo.ui.screens.SimulationScreen;
 import com.protoevo.utils.CursorUtils;
-import com.protoevo.utils.Geometry;
+import com.protoevo.maths.Geometry;
 
 import java.util.Optional;
 

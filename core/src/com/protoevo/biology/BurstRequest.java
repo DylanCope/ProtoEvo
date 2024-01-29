@@ -8,7 +8,7 @@ import com.protoevo.biology.cells.Protozoan;
 import com.protoevo.core.Simulation;
 import com.protoevo.env.Environment;
 import com.protoevo.physics.Particle;
-import com.protoevo.utils.Geometry;
+import com.protoevo.maths.Geometry;
 import com.protoevo.utils.SerializableFunction;
 
 import java.io.Serializable;

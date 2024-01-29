@@ -5,7 +5,7 @@ import com.protoevo.biology.Constructable;
 import com.protoevo.biology.ConstructionProject;
 import com.protoevo.core.Statistics;
 import com.protoevo.env.Environment;
-import com.protoevo.utils.Geometry;
+import com.protoevo.maths.Geometry;
 
 
 import java.io.Serializable;

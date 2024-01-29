@@ -13,10 +13,11 @@ import com.protoevo.biology.cells.Protozoan;
 import com.protoevo.biology.evolution.Evolvable;
 import com.protoevo.biology.nodes.NodeAttachment;
 import com.protoevo.core.Statistics;
+import com.protoevo.maths.Shape;
 import com.protoevo.physics.*;
 import com.protoevo.physics.box2d.Box2DPhysics;
 import com.protoevo.settings.SimulationSettings;
-import com.protoevo.utils.Geometry;
+import com.protoevo.maths.Geometry;
 import com.protoevo.utils.SerializableFunction;
 
 import java.io.Serializable;

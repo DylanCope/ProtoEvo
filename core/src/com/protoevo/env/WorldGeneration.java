@@ -2,7 +2,7 @@ package com.protoevo.env;
 
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector2;
-import com.protoevo.utils.Geometry;
+import com.protoevo.maths.Geometry;
 
 import java.util.ArrayList;
 import java.util.List;

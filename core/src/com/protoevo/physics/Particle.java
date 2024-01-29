@@ -3,8 +3,9 @@ package com.protoevo.physics;
 import com.badlogic.gdx.math.Vector2;
 import com.protoevo.biology.CauseOfDeath;
 import com.protoevo.core.Statistics;
+import com.protoevo.maths.Geometry;
+import com.protoevo.maths.Shape;
 import com.protoevo.utils.Colour;
-import com.protoevo.utils.Geometry;
 
 import java.io.Serializable;
 import java.util.Collection;
@@ -40,8 +41,11 @@ public abstract class Particle implements Serializable, Shape, Coloured {
     public abstract void setPos(Vector2 pos);
     public abstract void setAngle(float angle);
     public abstract void applyImpulse(Vector2 impulse);
+    public abstract Vector2 getImpulse();
     public abstract void applyForce(Vector2 force);
+    public abstract Vector2 getForce();
     public abstract void applyTorque(float torque);
+    public abstract float getTorque();
 
     public abstract Map<Long, Long> getJoiningIds();
     public abstract Optional<Joining> getJoining(long joiningId);

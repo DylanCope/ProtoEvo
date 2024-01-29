@@ -1,6 +1,6 @@
 package com.protoevo.test;
 
-import com.protoevo.utils.Utils;
+import com.protoevo.maths.Functions;
 import org.junit.Test;
 
 public class TestUtils {
@@ -16,7 +16,7 @@ public class TestUtils {
         float outStep = (outMax - outMin) / samples;
         float lastOut = outMin;
         for (float in = 2*inMin; in < 2*inMax; in += inStep) {
-            float out = Utils.cyclicalLinearRemap(in, inMin, inMax, outMin, outMax);
+            float out = Functions.cyclicalLinearRemap(in, inMin, inMax, outMin, outMax);
             assert out >= outMin && out <= outMax;
             assert Math.abs(out - lastOut) - outStep <= 1e9f;
             lastOut = out;

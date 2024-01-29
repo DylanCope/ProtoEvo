@@ -6,13 +6,13 @@ import com.protoevo.biology.evolution.Evolvable;
 import com.protoevo.biology.evolution.EvolvableFloat;
 import com.protoevo.core.Statistics;
 import com.protoevo.env.Environment;
+import com.protoevo.maths.Functions;
 import com.protoevo.physics.Joining;
 import com.protoevo.physics.JointsManager;
 import com.protoevo.physics.Collision;
 import com.protoevo.physics.Particle;
 import com.protoevo.utils.Colour;
-import com.protoevo.utils.Geometry;
-import com.protoevo.utils.Utils;
+import com.protoevo.maths.Geometry;
 
 public class PlantCell extends EvolvableCell {
     public static final long serialVersionUID = -3975433688803760076L;
@@ -71,7 +71,7 @@ public class PlantCell extends EvolvableCell {
 
     @EvolvableFloat(name="Split Radius", min=0, max=1)
     public void setMaxRadius(float splitRadius) {
-        this.maxRadius = Utils.clampedLinearRemap(
+        this.maxRadius = Functions.clampedLinearRemap(
                 splitRadius, 0, 1,
                 1.5f * Environment.settings.minParticleRadius.get(),
                 Environment.settings.maxParticleRadius.get() / 2f

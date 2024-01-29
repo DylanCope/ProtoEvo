@@ -6,9 +6,9 @@ import com.protoevo.biology.CauseOfDeath;
 import com.protoevo.biology.cells.Cell;
 import com.protoevo.core.Statistics;
 import com.protoevo.env.Environment;
+import com.protoevo.maths.Functions;
 import com.protoevo.physics.Particle;
-import com.protoevo.utils.Geometry;
-import com.protoevo.utils.Utils;
+import com.protoevo.maths.Geometry;
 
 
 import java.io.Serializable;
@@ -47,7 +47,7 @@ public class Spike extends NodeAttachment implements Serializable {
         if (cell == null)
             return;
 
-        extension = Utils.clampedLinearRemap(input[0], -1, 1, 0, 1);
+        extension = Functions.clampedLinearRemap(input[0], -1, 1, 0, 1);
         spikePoint = getSpikePoint();
 
         for (Object toInteract : cell.getInteractionQueue()) {

@@ -15,6 +15,7 @@ import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.gdx.utils.Align;
 import com.protoevo.core.Simulation;
 import com.protoevo.env.Environment;
+import com.protoevo.maths.Functions;
 import com.protoevo.networking.RemoteSimulation;
 import com.protoevo.settings.SimulationSettings;
 import com.protoevo.settings.Settings;
@@ -23,7 +24,6 @@ import com.protoevo.ui.FrameBufferManager;
 import com.protoevo.ui.GraphicsAdapter;
 import com.protoevo.utils.CursorUtils;
 import com.protoevo.utils.DebugMode;
-import com.protoevo.utils.Utils;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -180,14 +180,14 @@ public class PauseScreen extends ScreenAdapter {
         shader.bind();
         shader.setUniformf("u_resolution", Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
         shader.setUniformf("u_blurAmount",
-                Utils.clampedLinearRemap(timePaused, 0, fadeTime, 0, 10f));
+                Functions.clampedLinearRemap(timePaused, 0, fadeTime, 0, 10f));
         shader.setUniformf("u_darkenAmount",
-                Utils.clampedLinearRemap(timePaused, 0, fadeTime, 1f, 0.75f));
+                Functions.clampedLinearRemap(timePaused, 0, fadeTime, 1f, 0.75f));
         batch.setShader(shader);
 
         batch.begin();
         batch.setColor(1, 1, 1,
-                Utils.clampedLinearRemap(timePaused, 0, fadeTime, 1f, 0.75f));
+                Functions.clampedLinearRemap(timePaused, 0, fadeTime, 1f, 0.75f));
         batch.draw(sprite, 0, 0, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
         batch.end();
     }

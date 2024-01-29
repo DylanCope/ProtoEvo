@@ -43,7 +43,7 @@ public class SimulationInputManager {
 
         inputLayers = new InputLayers(simulationScreen.getStage(), new ToggleDebug());
         inputLayers.addLayer(new SimulationKeyboardControls(simulationScreen));
-        inputLayers.addLayer(new ApplyForcesInput(simulationScreen));
+        inputLayers.addLayer(new ShockwaveForcesInput(simulationScreen));
         PanZoomCameraInput panZoomCameraInput = new PanZoomCameraInput(camera);
         panZoomCameraInput.setOnPanOrZoomCallback(simulationScreen::disableMeandering);
 

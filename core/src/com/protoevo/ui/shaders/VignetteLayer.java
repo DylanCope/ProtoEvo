@@ -27,11 +27,11 @@ public class VignetteLayer extends ShaderLayer {
         float graphicsWidth = Gdx.graphics.getWidth();
         float graphicsHeight = Gdx.graphics.getHeight();
         shaderProgram.setUniformf("resolution", new Vector2(graphicsWidth, graphicsHeight));
-        shaderProgram.setUniformMatrix("u_projTrans", camera.combined);
-        shaderProgram.setUniformMatrix("u_projTransInv", camera.invProjectionView);
         shaderProgram.setUniformf("u_resolution", graphicsWidth, graphicsHeight);
         shaderProgram.setUniformi("u_tracking", particleTracker.isTracking() && !uiHidden ? 1 : 0);
         shaderProgram.setUniformf("u_void_dist", Environment.settings.worldgen.voidStartDistance.get());
+        shaderProgram.setUniformMatrix("u_projTrans", camera.combined);
+        shaderProgram.setUniformMatrix("u_projTransInv", camera.invProjectionView);
         shaderProgram.setUniformf("u_cam_pos", camera.position);
     }
 }

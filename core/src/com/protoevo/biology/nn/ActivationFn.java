@@ -2,8 +2,8 @@ package com.protoevo.biology.nn;
 
 import com.badlogic.gdx.math.MathUtils;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.protoevo.maths.Functions;
 import com.protoevo.utils.SerializableFunction;
-import com.protoevo.utils.Utils;
 
 import java.io.Serializable;
 import java.util.function.Function;
@@ -25,14 +25,14 @@ public class ActivationFn implements Serializable, Function<Float, Float> {
 
     public static ActivationFn getOutputMapper(float min, float max) {
         return new ActivationFn(
-                z -> Utils.cyclicalLinearRemap(z, -1, 1, min, max),
+                z -> Functions.cyclicalLinearRemap(z, -1, 1, min, max),
                 String.format("CyclicalLinearRemap[[%.3f, %.3f] -> [-1, 1]]", min, max)
         );
     }
 
     public static ActivationFn getInputMapper(float min, float max) {
         return new ActivationFn(
-                z -> Utils.cyclicalLinearRemap(z, min, max, -1, 1),
+                z -> Functions.cyclicalLinearRemap(z, min, max, -1, 1),
                 String.format("CyclicalLinearRemap[[-1, 1] -> [%.3f, %.3f]]", min, max)
         );
     }

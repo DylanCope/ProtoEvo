@@ -2,6 +2,7 @@ package com.protoevo.utils;
 
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.math.MathUtils;
+import com.protoevo.maths.Functions;
 
 import java.io.Serializable;
 
@@ -47,7 +48,7 @@ public class Colour implements Serializable {
             float currMin = positions[0];
             float currMax = positions[positions.length - 1];
             for (int i = 0; i < positions.length; i++) {
-                positions[i] = Utils.clampedLinearRemap(positions[i], currMin, currMax, min, max);
+                positions[i] = Functions.clampedLinearRemap(positions[i], currMin, currMax, min, max);
             }
         }
     }

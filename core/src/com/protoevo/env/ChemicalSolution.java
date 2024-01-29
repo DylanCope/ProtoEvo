@@ -5,6 +5,8 @@ import com.badlogic.gdx.math.Vector2;
 import com.protoevo.biology.Food;
 import com.protoevo.biology.cells.Cell;
 import com.protoevo.biology.cells.Protozoan;
+import com.protoevo.maths.Functions;
+import com.protoevo.maths.Geometry;
 import com.protoevo.utils.*;
 
 import java.io.Serializable;
@@ -107,7 +109,7 @@ public class ChemicalSolution implements Serializable {
     }
 
     public int toChemicalGridX(float x) {
-        return (int) Utils.clampedLinearRemap(x, xMin, xMax, 0, chemicalTextureWidth);
+        return (int) Functions.clampedLinearRemap(x, xMin, xMax, 0, chemicalTextureWidth);
     }
 
     public boolean outOfWorldBounds(float x, float y) {
@@ -123,7 +125,7 @@ public class ChemicalSolution implements Serializable {
     }
 
     public int toChemicalGridY(float y) {
-        return (int) Utils.clampedLinearRemap(y, yMin, yMax, 0, chemicalTextureHeight);
+        return (int) Functions.clampedLinearRemap(y, yMin, yMax, 0, chemicalTextureHeight);
     }
 
     public void set(int x, int y, Colour colour) {

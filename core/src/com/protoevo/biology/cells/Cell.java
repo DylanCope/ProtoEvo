@@ -9,20 +9,20 @@ import com.protoevo.biology.organelles.Organelle;
 import com.protoevo.core.Statistics;
 import com.protoevo.env.Environment;
 import com.protoevo.env.Spawnable;
+import com.protoevo.maths.Functions;
 import com.protoevo.physics.Collision;
 import com.protoevo.physics.Coloured;
 import com.protoevo.physics.Joining;
 import com.protoevo.physics.Particle;
 import com.protoevo.utils.Colour;
-import com.protoevo.utils.Geometry;
-import com.protoevo.utils.Utils;
+import com.protoevo.maths.Geometry;
 
 import java.io.Serializable;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
-import static com.protoevo.utils.Utils.lerp;
+import static com.protoevo.maths.Functions.lerp;
 
 public abstract class Cell implements Serializable, Coloured, Spawnable {
 	private static final long serialVersionUID = 1L;
@@ -101,13 +101,13 @@ public abstract class Cell implements Serializable, Coloured, Spawnable {
 
 	public void handleTemperature(float delta) {
 		float envTemp = getExternalTemperature();
-		temperature = Utils.lerp(
+		temperature = Functions.lerp(
 				temperature, envTemp, membraneThermalConductance * delta);
 		for (Long otherId : getAttachedCellIDs()) {
 			Optional<Cell> other = getCell(otherId);
 			other.ifPresent(cell -> {
 				float otherTemp = cell.getInternalTemperature();
-				temperature = Utils.lerp(
+				temperature = Functions.lerp(
 						temperature, otherTemp, membraneThermalConductance * delta);
 			});
 		}
@@ -130,14 +130,14 @@ public abstract class Cell implements Serializable, Coloured, Spawnable {
 		depleteEnergy(energyRequired);
 
 		if (temperature < idealTemperature - tolerance) {
-			temperatureSatisfaction = Utils.clampedLinearRemap(
+			temperatureSatisfaction = Functions.clampedLinearRemap(
 					temperature,
 					idealTemperature - tolerance,
 					idealTemperature - tolerance*1.5f,
 					1, 0
 			);
 		} else if (temperature > idealTemperature + tolerance) {
-			temperatureSatisfaction = Utils.clampedLinearRemap(
+			temperatureSatisfaction = Functions.clampedLinearRemap(
 					temperature,
 					idealTemperature + tolerance,
 					idealTemperature + tolerance*1.5f,

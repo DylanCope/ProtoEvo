@@ -1,4 +1,4 @@
-package com.protoevo.utils;
+package com.protoevo.maths;
 
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector2;

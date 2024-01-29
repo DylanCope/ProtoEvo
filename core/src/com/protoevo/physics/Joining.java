@@ -17,11 +17,15 @@ public class Joining implements Serializable {
     private final Vector2 anchorB = new Vector2();
     private final Physics physics;
 
+    public static long getId(long particleAId, long particleBId) {
+        return particleAId ^ particleBId;
+    }
+
     public Joining(Particle particleA, Particle particleB) {
         particleAId = particleA.getId();
         particleBId = particleB.getId();
         physics = particleA.getPhysics();
-        id = particleAId ^ particleBId;
+        id = getId(particleAId, particleBId);
         anchoredB = anchoredA = false;
     }
 

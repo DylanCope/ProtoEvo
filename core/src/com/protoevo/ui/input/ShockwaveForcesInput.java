@@ -11,14 +11,14 @@ import com.protoevo.physics.Particle;
 import com.protoevo.ui.screens.SimulationScreen;
 import com.protoevo.ui.shaders.ShockWaveLayer;
 
-public class ApplyForcesInput extends InputAdapter {
+public class ShockwaveForcesInput extends InputAdapter {
 
     private final SimulationScreen simulationScreen;
     private final OrthographicCamera camera;
 
     Vector2 tmp = new Vector2();
 
-    public ApplyForcesInput(SimulationScreen simulationScreen) {
+    public ShockwaveForcesInput(SimulationScreen simulationScreen) {
         this.camera = simulationScreen.getCamera();
         this.simulationScreen = simulationScreen;
     }

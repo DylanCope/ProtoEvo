@@ -31,6 +31,7 @@ import com.protoevo.biology.organelles.Organelle;
 import com.protoevo.core.*;
 import com.protoevo.env.Serialization;
 import com.protoevo.env.Environment;
+import com.protoevo.maths.Functions;
 import com.protoevo.ui.input.ParticleTracker;
 import com.protoevo.physics.Particle;
 import com.protoevo.ui.GraphicsAdapter;
@@ -233,7 +234,7 @@ public class SimulationScreen extends ScreenAdapter {
     }
 
     public void renderEnvironment(float delta) {
-        float envLight = Utils.clampedLinearRemap(
+        float envLight = Functions.clampedLinearRemap(
                 environment.getLightMap().getEnvLight(),
                 0f, 1f, 0.5f, 1f
         );
@@ -675,7 +676,7 @@ public class SimulationScreen extends ScreenAdapter {
 
     private float randomMeanderZoom(float currZoom, Vector2 pos) {
         float zoom = currZoom * MathUtils.random(0.5f, 2f);
-        float zoomMax = Utils.clampedLinearRemap(
+        float zoomMax = Functions.clampedLinearRemap(
                 pos.len(),
                 0, environment.getRadius(),
                 4, 1f

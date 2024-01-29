@@ -2,7 +2,7 @@ package com.protoevo.settings;
 
 import com.protoevo.core.Statistics;
 import com.protoevo.env.Environment;
-import com.protoevo.utils.Geometry;
+import com.protoevo.maths.Geometry;
 
 public class PlantSettings extends Settings {
     

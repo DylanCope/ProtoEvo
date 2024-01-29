@@ -2,6 +2,7 @@ package com.protoevo.physics;
 
 import com.protoevo.core.Statistics;
 import com.protoevo.env.Environment;
+import com.protoevo.maths.Geometry;
 
 import java.io.Serializable;
 import java.util.Collection;
@@ -62,5 +63,25 @@ public abstract class Physics implements Serializable {
 
     public void rebuildTransientFields(Environment environment) {
         getJointsManager().rebuild(this);
+    }
+
+    public Joining joinParticlesFromCentres(Particle p1, Particle p2) {
+        JointsManager jointsManager = getJointsManager();
+        Joining joining = new Joining(p1, p2);
+        jointsManager.createJoint(joining);
+        return joining;
+    }
+
+    public Joining joinParticles(Particle p1, Particle p2) {
+        JointsManager jointsManager = getJointsManager();
+        float angleA = Geometry.angle(p2.getPos().cpy().sub(p1.getPos())) - p1.getAngle();
+        float angleB = Geometry.angle(p1.getPos().cpy().sub(p2.getPos())) - p1.getAngle();
+        Joining joining = new Joining(p1, p2, angleA, angleB);
+        jointsManager.createJoint(joining);
+        return joining;
+    }
+
+    public boolean areJoined(Particle particle, Particle other) {
+        return getJointsManager().areJoined(particle, other);
     }
 }

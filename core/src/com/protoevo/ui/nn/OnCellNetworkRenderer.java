@@ -18,7 +18,7 @@ import com.protoevo.physics.Joining;
 import com.protoevo.ui.UIStyle;
 import com.protoevo.ui.input.InputLayers;
 import com.protoevo.utils.Colour;
-import com.protoevo.utils.Geometry;
+import com.protoevo.maths.Geometry;
 import space.earlygrey.shapedrawer.ShapeDrawer;
 
 import java.util.*;

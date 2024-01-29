@@ -9,9 +9,8 @@ import com.protoevo.env.Environment;
 import com.protoevo.physics.Joining;
 import com.protoevo.physics.JointsManager;
 import com.protoevo.physics.Particle;
-import com.protoevo.physics.box2d.Box2DParticle;
 import com.protoevo.physics.Collision;
-import com.protoevo.utils.Geometry;
+import com.protoevo.maths.Geometry;
 
 import java.util.Optional;
 

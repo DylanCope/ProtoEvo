@@ -86,4 +86,8 @@ public abstract class JointsManager implements Serializable {
             deregisterJoining(joinings.get(id));
         }
     }
+
+    public boolean areJoined(Particle p1, Particle p2) {
+        return getJoining(Joining.getId(p1.getId(), p2.getId())).isPresent();
+    }
 }

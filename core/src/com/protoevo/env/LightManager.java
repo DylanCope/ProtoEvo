@@ -2,11 +2,11 @@ package com.protoevo.env;
 
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector2;
-import com.protoevo.physics.Shape;
+import com.protoevo.maths.Functions;
+import com.protoevo.maths.Shape;
 import com.protoevo.physics.SpatialHash;
-import com.protoevo.utils.Geometry;
+import com.protoevo.maths.Geometry;
 import com.protoevo.utils.Perlin;
-import com.protoevo.utils.Utils;
 
 import java.io.Serializable;
 import java.util.*;
@@ -78,7 +78,7 @@ public class LightManager implements Serializable {
 
             collisionValue /= lightSamples;
             float t = 0.25f;
-            float light = Utils.clampedLinearRemap(collisionValue, t, 1 - t, 1, 0);
+            float light = Functions.clampedLinearRemap(collisionValue, t, 1 - t, 1, 0);
 
             lightManager.setCellLight(x, y, light);
         });
@@ -125,12 +125,12 @@ public class LightManager implements Serializable {
         float[][] noise = Perlin.generatePerlinNoise(width, height, 0);
         for (int i = 0; i < width; i++) {
             for (int j = 0; j < height; j++) {
-                float light = Utils.clampedLinearRemap(
+                float light = Functions.clampedLinearRemap(
                     1 + 2 * noise[i][j], 0f, 1f, 0.2f, 1f);
                 lightMap[i][j] *= light;
 
                 Vector2 pos = toEnvironmentCoords(i, j);
-                lightMap[i][j] = Utils.clampedLinearRemap(
+                lightMap[i][j] = Functions.clampedLinearRemap(
                         pos.len(),
                         radius * 0.9f, radius,
                         lightMap[i][j], 1f
@@ -158,7 +158,7 @@ public class LightManager implements Serializable {
             environmentLight = 1f;
         }
         else if (t <= 1 - transition - night) {
-            environmentLight = Utils.clampedLinearRemap(
+            environmentLight = Functions.clampedLinearRemap(
                     t, 1 - 2*transition - night, 1 - transition - night,
                     1f, nightLightLevel);
         }
@@ -166,7 +166,7 @@ public class LightManager implements Serializable {
             environmentLight = nightLightLevel;
         }
         else {
-            environmentLight = Utils.clampedLinearRemap(
+            environmentLight = Functions.clampedLinearRemap(
                     t, 1 - transition, 1, nightLightLevel, 1f);
         }
     }

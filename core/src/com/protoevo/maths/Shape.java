@@ -1,4 +1,4 @@
-package com.protoevo.physics;
+package com.protoevo.maths;
 
 
 import com.badlogic.gdx.graphics.Color;

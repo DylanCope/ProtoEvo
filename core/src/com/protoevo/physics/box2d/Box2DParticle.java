@@ -13,7 +13,7 @@ import com.protoevo.physics.Collision;
 import com.protoevo.physics.FixtureCategories;
 import com.protoevo.physics.Joining;
 import com.protoevo.physics.Particle;
-import com.protoevo.utils.Geometry;
+import com.protoevo.maths.Geometry;
 
 import java.io.Serializable;
 import java.util.*;
@@ -204,6 +204,18 @@ public class Box2DParticle extends Particle implements Serializable {
 
     public void applyImpulse(Vector2 impulse) {
         impulseToApply.add(impulse);
+    }
+
+    public Vector2 getForce() {
+        return forceToApply;
+    }
+
+    public Vector2 getImpulse() {
+        return impulseToApply;
+    }
+
+    public float getTorque() {
+        return torqueToApply;
     }
 
     public void setRangedInteractionRadius(float radius) {

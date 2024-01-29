@@ -3,7 +3,7 @@ package com.protoevo.biology.cells;
 import com.protoevo.biology.evolution.*;
 import com.protoevo.biology.nn.Neuron;
 import com.protoevo.env.Environment;
-import com.protoevo.utils.Utils;
+import com.protoevo.maths.Functions;
 
 public abstract class EvolvableCell extends Cell implements Evolvable {
 
@@ -12,7 +12,7 @@ public abstract class EvolvableCell extends Cell implements Evolvable {
 
     @EvolvableFloat(name="Growth Rate", min=0, max=1)
     public void setGrowth(float growthRate) {
-        growthRate = Utils.clampedLinearRemap(
+        growthRate = Functions.clampedLinearRemap(
                 growthRate,
                 0, 1,
                 minGrowthRate(), maxGrowthRate()
@@ -34,7 +34,7 @@ public abstract class EvolvableCell extends Cell implements Evolvable {
             min=0, max=1, regulated = false
     )
     public void setTemperatureTolerance(float t) {
-        float tolerance = Utils.clampedLinearRemap(
+        float tolerance = Functions.clampedLinearRemap(
                 t, 0, 1,
                 Environment.settings.cell.minTemperatureTolerance.get(),
                 Environment.settings.cell.maxTemperatureTolerance.get()
@@ -48,7 +48,7 @@ public abstract class EvolvableCell extends Cell implements Evolvable {
             min=0, max=1, regulated = false
     )
     public void setIdealTemperature(float t) {
-        float temp = Utils.clampedLinearRemap(
+        float temp = Functions.clampedLinearRemap(
                 t, 0, 1,
                 0, Environment.settings.env.maxLightEnvTemp.get()
         );
@@ -77,7 +77,7 @@ public abstract class EvolvableCell extends Cell implements Evolvable {
 
     @GeneRegulator(name="Size", min=0, max=1)
     public float getRadiusAsProportionOfMax() {
-        return Utils.clampedLinearRemap(
+        return Functions.clampedLinearRemap(
                 super.getRadius(),
                 Environment.settings.minParticleRadius.get(),
                 Environment.settings.maxParticleRadius.get(),

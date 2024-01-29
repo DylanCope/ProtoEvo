@@ -9,9 +9,9 @@ import com.protoevo.biology.organelles.Organelle;
 import com.protoevo.core.Statistics;
 import com.protoevo.env.ChemicalSolution;
 import com.protoevo.env.Environment;
+import com.protoevo.maths.Functions;
 import com.protoevo.physics.Collision;
 import com.protoevo.utils.Colour;
-import com.protoevo.utils.Utils;
 
 
 import java.io.Serializable;
@@ -151,7 +151,7 @@ public class Protozoan extends EvolvableCell
 
 	@EvolvableFloat(name="Split Radius", min=0, max=1)
 	public void setSplitRadius(float splitRadius) {
-		this.splitRadius = Utils.clampedLinearRemap(
+		this.splitRadius = Functions.clampedLinearRemap(
 				splitRadius, 0, 1,
 				Environment.settings.protozoa.maxBirthRadius.get(),
 				Environment.settings.maxParticleRadius.get()

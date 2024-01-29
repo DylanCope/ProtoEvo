@@ -8,7 +8,7 @@ import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector3;
 import com.protoevo.physics.Particle;
 import com.protoevo.ui.screens.SimulationScreen;
-import com.protoevo.utils.Geometry;
+import com.protoevo.maths.Geometry;
 
 import java.util.Optional;
 

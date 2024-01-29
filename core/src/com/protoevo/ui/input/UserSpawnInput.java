@@ -7,8 +7,8 @@ import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.math.Vector3;
 import com.protoevo.env.Environment;
 import com.protoevo.env.Spawnable;
+import com.protoevo.maths.Functions;
 import com.protoevo.ui.screens.SimulationScreen;
-import com.protoevo.utils.Utils;
 
 public class UserSpawnInput extends InputAdapter {
 
@@ -64,7 +64,7 @@ public class UserSpawnInput extends InputAdapter {
         if (Gdx.input.isButtonPressed(Input.Buttons.MIDDLE)) {
             timeSinceSpawn += Gdx.graphics.getDeltaTime();
             float speed = mousePos.dst(lastMousePos);
-            float dynamicRate = Utils.clampedLinearRemap(speed, 0f, Gdx.graphics.getWidth() / 4f, rate, 0f);
+            float dynamicRate = Functions.clampedLinearRemap(speed, 0f, Gdx.graphics.getWidth() / 4f, rate, 0f);
             if (timeSinceSpawn > dynamicRate) {
                 Vector3 worldSpace = camera.unproject(new Vector3(screenX, screenY, 0));
                 spawn(worldSpace.x, worldSpace.y);

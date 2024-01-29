@@ -4,11 +4,11 @@ import com.badlogic.gdx.math.Vector2;
 import com.protoevo.biology.cells.Cell;
 import com.protoevo.core.Statistics;
 import com.protoevo.env.Environment;
+import com.protoevo.maths.Functions;
 import com.protoevo.physics.Coloured;
-import com.protoevo.physics.Shape;
+import com.protoevo.maths.Shape;
 import com.protoevo.physics.box2d.Box2DParticle;
 import com.protoevo.utils.Colour;
-import com.protoevo.utils.Utils;
 
 
 import java.io.Serializable;
@@ -184,7 +184,7 @@ public class Photoreceptor extends NodeAttachment implements Serializable {
 
     public float computeColourFalloffWeight() {
         float ir2 = getInteractionRange() * getInteractionRange();
-        return Utils.clampedLinearRemap(minSqLen,0.5f * ir2, ir2,1, 0);
+        return Functions.clampedLinearRemap(minSqLen,0.5f * ir2, ir2,1, 0);
     }
 
     public Vector2[] getRay() {
@@ -199,7 +199,7 @@ public class Photoreceptor extends NodeAttachment implements Serializable {
     public float getInteractionRange() {
         if (node.getCell() == null)
             return 0;
-        return Utils.clampedLinearRemap(
+        return Functions.clampedLinearRemap(
                 node.getCell().getRadius(),
                 Environment.settings.protozoa.minBirthRadius.get(), Environment.settings.maxParticleRadius.get(),
                 node.getCell().getRadius() * 5f, Environment.settings.protozoa.maxLightRange.get());
