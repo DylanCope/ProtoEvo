@@ -41,7 +41,8 @@ public abstract class JointsManager implements Serializable {
 
     public abstract void flushJoints();
 
-    public static float idealJointLength(Particle p1, Particle p2) {
+    public static float idealJoinedParticleDistance(Particle p1, Particle p2) {
+        // Ideal distance between the surfaces two joined particles
         return (p1.getRadius() + p2.getRadius()) * .2f;
     }
 

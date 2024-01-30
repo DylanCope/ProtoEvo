@@ -2,6 +2,7 @@ package com.protoevo.physics.box2d;
 
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.*;
+import com.badlogic.gdx.physics.box2d.joints.DistanceJointDef;
 import com.badlogic.gdx.physics.box2d.joints.RopeJoint;
 import com.badlogic.gdx.physics.box2d.joints.RopeJointDef;
 import com.badlogic.gdx.utils.Array;
@@ -158,6 +159,60 @@ public class Box2DJointsManager extends JointsManager {
         }
     }
 
+    private RopeJointDef makeRopeJointDef(Joining joining,
+                                          Box2DParticle particleA,
+                                          Box2DParticle particleB,
+                                          Vector2 anchorA,
+                                          Vector2 anchorB) {
+
+        RopeJointDef jointDef = new RopeJointDef();
+        jointDef.maxLength = joining.getIdealLength();
+
+        if (joining.anchoredA) {
+            Vector2 anchorALocal = jointDef.bodyA.getLocalPoint(anchorA).cpy();
+            jointDef.localAnchorA.set(anchorALocal.setLength(particleA.getRadius()));
+        }
+        else
+            jointDef.localAnchorA.set(0, 0);
+
+        if (joining.anchoredB) {
+            Vector2 anchorBLocal = jointDef.bodyB.getLocalPoint(anchorB).cpy();
+            jointDef.localAnchorB.set(anchorBLocal.setLength(particleB.getRadius()));
+        }
+        else
+            jointDef.localAnchorB.set(0, 0);
+
+        return jointDef;
+    }
+
+    private DistanceJointDef makeDistanceJointDef(Joining joining,
+                                                  Box2DParticle particleA,
+                                                  Box2DParticle particleB,
+                                                  Vector2 anchorA,
+                                                  Vector2 anchorB) {
+        DistanceJointDef jointDef = new DistanceJointDef();
+        jointDef.length = joining.getIdealLength();
+        Joining.DistanceMetaData metaData = (Joining.DistanceMetaData) joining.getMetaData();
+        jointDef.dampingRatio = metaData.dampingRatio;
+        jointDef.frequencyHz = metaData.frequencyHz;
+
+        if (joining.anchoredA) {
+            Vector2 anchorALocal = jointDef.bodyA.getLocalPoint(anchorA).cpy();
+            jointDef.localAnchorA.set(anchorALocal.setLength(particleA.getRadius()));
+        }
+        else
+            jointDef.localAnchorA.set(0, 0);
+
+        if (joining.anchoredB) {
+            Vector2 anchorBLocal = jointDef.bodyB.getLocalPoint(anchorB).cpy();
+            jointDef.localAnchorB.set(anchorBLocal.setLength(particleB.getRadius()));
+        }
+        else
+            jointDef.localAnchorB.set(0, 0);
+
+        return jointDef;
+    }
+
     private JointDef makeJointDef(Joining joining) {
         Optional<Particle> maybeParticleA = joining.getParticleA();
         Optional<Particle> maybeParticleB = joining.getParticleB();
@@ -174,26 +229,24 @@ public class Box2DJointsManager extends JointsManager {
         Vector2 anchorA = maybeAnchorA.orElse(particleA.getPos());
         Vector2 anchorB = maybeAnchorB.orElse(particleB.getPos());
 
-        RopeJointDef defJoint = new RopeJointDef();
-        defJoint.maxLength = joining.getIdealLength();
-        defJoint.bodyA = particleA.getBody();
-        defJoint.bodyB = particleB.getBody();
+        Joining.MetaData metaData = joining.getMetaData();
+        Joining.Type type = metaData.getType();
 
-        if (joining.anchoredA) {
-            anchorA = defJoint.bodyA.getLocalPoint(anchorA);
-            defJoint.localAnchorA.set(anchorA.setLength(particleA.getRadius()));
+        JointDef jointDef;
+        if (type == Joining.Type.ROPE) {
+            jointDef = makeRopeJointDef(joining, particleA, particleB, anchorA, anchorB);
         }
-        else
-            defJoint.localAnchorA.set(0, 0);
-
-        if (joining.anchoredB) {
-            anchorB = defJoint.bodyB.getLocalPoint(anchorB);
-            defJoint.localAnchorB.set(anchorB.setLength(particleB.getRadius()));
+        else if (type == Joining.Type.DISTANCE) {
+            jointDef = makeDistanceJointDef(joining, particleA, particleB, anchorA, anchorB);
         }
-        else
-            defJoint.localAnchorB.set(0, 0);
+        else {
+            throw new RuntimeException("Unknown joint type: " + type);
+        }
 
-        defJoint.collideConnected = true;
-        return defJoint;
+        jointDef.bodyA = particleA.getBody();
+        jointDef.bodyB = particleB.getBody();
+
+        jointDef.collideConnected = true;
+        return jointDef;
     }
 }

@@ -3,6 +3,7 @@ package com.protoevo.test.sdfdemo;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector2;
 import com.protoevo.physics.Collision;
+import com.protoevo.physics.Joining;
 import com.protoevo.physics.Particle;
 import com.protoevo.physics.Physics;
 import com.protoevo.maths.Geometry;
@@ -28,21 +29,6 @@ public class DeformableCell {
         particle.setPos(new Vector2(0, 0));
         particles.add(particle);
 
-//        Particle particle2 = physics.createNewParticle();
-//        particle2.setRadius(particleR);
-//        particle2.setPos(new Vector2(2*particleR, 0));
-//        particles.add(particle2);
-//
-//        Particle particle3 = physics.createNewParticle();
-//        particle3.setRadius(particleR*0.5);
-//        particle3.setPos(new Vector2(0, 1.5f*particleR));
-//        particles.add(particle3);
-//
-//        Particle particle4 = physics.createNewParticle();
-//        particle4.setRadius(particleR * 0.25);
-//        particle4.setPos(new Vector2(2*particleR, 2*particleR));
-//        particles.add(particle4);
-
         float angle = (float) Math.random() * 2 * (float) Math.PI;
         for (int i = 0; i < 8; i++) {
             Particle nextParticle = physics.createNewParticle();
@@ -50,40 +36,60 @@ public class DeformableCell {
             Vector2 dir = Geometry.fromAngle(angle).setLength(particle.getRadius() + nextParticle.getRadius());
             nextParticle.setPos(particle.getPos().cpy().add(dir));
             angle += 2f * (MathUtils.random() * Math.PI) / 3f;
-            physics.joinParticles(particle, nextParticle);
+            joinParticles(particle, nextParticle);
             particle = nextParticle;
             particles.add(particle);
         }
     }
 
+    private void joinParticles(Particle p1, Particle p2) {
+        Joining joining = physics.joinParticlesFromCentres(p1, p2);
+        joining.setMetaData(new Joining.DistanceMetaData(.1f, 4f));
+    }
+
     public void handleInternalForces() {
         particles.removeIf(Particle::isDead);
-        Vector2 cellPos = getPos();
 
         for (Particle particle : particles) {
             Collection<Collision> collisions = particle.getContacts();
-            if (!collisions.isEmpty())
+            if (!collisions.isEmpty()) {
                 for (Collision collision : collisions) {
                     if (collision.getOther(particle) instanceof Particle
-                        && !physics.areJoined(particle, (Particle) collision.getOther(particle))) {
+                            && !physics.areJoined(particle, (Particle) collision.getOther(particle))) {
                         Particle other = (Particle) collision.getOther(particle);
-                        physics.joinParticlesFromCentres(particle, other);
+                        joinParticles(particle, other);
                     }
                 }
+            }
+            else {
+                Particle closestParticle = null;
+                float closestDist2 = Float.MAX_VALUE;
+                for (Particle other : particles) {
+                    if (other == particle)
+                        continue;
+                    float dist2 = particle.getPos().dst2(other.getPos());
+                    if (dist2 < closestDist2) {
+                        closestDist2 = dist2;
+                        closestParticle = other;
+                    }
+                }
+                if (closestParticle != null && !physics.areJoined(particle, closestParticle)) {
+                    joinParticles(particle, closestParticle);
+                }
+            }
         }
 
-        float internalForceStrength = 1e-3f;
-        for (Particle particle : particles) {
-            particle.applyImpulse(cellPos.cpy().sub(particle.getPos()).scl(internalForceStrength));
-        }
-
+        Vector2 cellPos = getPos();
+        float internalAttractiveForceStrength = 5e-4f;
         Vector2 excessImpulse = new Vector2(0, 0);
         for (Particle particle : particles) {
-            excessImpulse.add(particle.getImpulse());
+            Vector2 impulse = cellPos.cpy().sub(particle.getPos()).scl(internalAttractiveForceStrength);
+            excessImpulse.add(impulse);
+            particle.applyImpulse(impulse);
         }
-
+        excessImpulse.scl(-1f / particles.size());
         for (Particle particle : particles) {
-            particle.applyImpulse(excessImpulse.cpy().scl(-1f / particles.size()));
+            particle.applyImpulse(excessImpulse);
         }
     }
 

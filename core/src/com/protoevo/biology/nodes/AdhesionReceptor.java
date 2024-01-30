@@ -232,7 +232,7 @@ public class AdhesionReceptor extends NodeAttachment {
     }
 
     private boolean isCloseEnough(SurfaceNode otherNode) {
-        float d = 1.25f * JointsManager.idealJointLength(otherNode.getCell().getParticle(), node.getCell().getParticle());
+        float d = 1.25f * JointsManager.idealJoinedParticleDistance(otherNode.getCell().getParticle(), node.getCell().getParticle());
         return node.getWorldPosition().dst2(otherNode.getWorldPosition()) <= d*d;
     }
 

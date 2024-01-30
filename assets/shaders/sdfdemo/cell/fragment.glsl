@@ -62,11 +62,11 @@ void main() {
         for (int i = 1; i < u_nCircles; i++) {
             vec2 centre = vec2(u_centresX[i], u_centresY[i]);
             float sdf = circleSDF(uvWorldSpace, centre, u_radii[i]);
-            shape = smoothMin(shape, sdf, u_smoothingK);
+            shape = smoothMin(shape, sdf, 1.5f * u_radii[i]);
         }
     }
 
-    if (abs(shape) < 0.01) {
+    if (shape < 0.01 && shape > 0.0) {
         float outlineVal = 0.7f;
         gl_FragColor = vec4(outlineVal, outlineVal, outlineVal, 1.0);
     }

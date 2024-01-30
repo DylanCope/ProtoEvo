@@ -88,10 +88,10 @@ public class SDFCellDemoScreen extends ScreenAdapter {
         camera.update();
         shapeDrawer.update();
 
-        cell.handleInternalForces();
 
         handleTouchForce();
 
+        cell.handleInternalForces();
         for (Particle particle : cell.getParticles()) {
             particle.physicsUpdate();
         }

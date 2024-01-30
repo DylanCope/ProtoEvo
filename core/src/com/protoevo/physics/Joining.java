@@ -10,12 +10,54 @@ public class Joining implements Serializable {
     public static long serialVersionUID = 1L;
     public final long id;
 
+    public enum Type {
+        DISTANCE, ROPE
+    }
+
+    public static abstract class MetaData implements Serializable {
+        public static long serialVersionUID = 1L;
+
+        public final Type type;
+
+        public MetaData(Type type) {
+            this.type = type;
+        }
+
+        public Type getType() {
+            return type;
+        }
+    }
+
+    public static class RopeMetaData extends MetaData {
+        public static long serialVersionUID = 1L;
+        public RopeMetaData() {
+            super(Type.ROPE);
+        }
+    }
+
+    public static class DistanceMetaData extends MetaData {
+        public static long serialVersionUID = 1L;
+        public float dampingRatio = 0f;
+        public float frequencyHz = 0f;
+
+        public DistanceMetaData() {
+            super(Type.DISTANCE);
+        }
+
+        public DistanceMetaData(float dampingRatio, float frequencyHz) {
+            super(Type.DISTANCE);
+            this.dampingRatio = dampingRatio;
+            this.frequencyHz = frequencyHz;
+        }
+    }
+
     public long particleAId, particleBId;
     public float anchorAngleA, anchorAngleB;
     public boolean anchoredA, anchoredB;
     private final Vector2 anchorA = new Vector2();
     private final Vector2 anchorB = new Vector2();
     private final Physics physics;
+    private MetaData metaData;
 
     public static long getId(long particleAId, long particleBId) {
         return particleAId ^ particleBId;
@@ -36,6 +78,16 @@ public class Joining implements Serializable {
         this.anchorAngleA = anchorAngleA;
         this.anchorAngleB = anchorAngleB;
         anchoredB = anchoredA = true;
+    }
+
+    public void setMetaData(MetaData metaData) {
+        this.metaData = metaData;
+    }
+
+    public MetaData getMetaData() {
+        if (metaData == null)
+            metaData = new RopeMetaData();
+        return metaData;
     }
 
     public Optional<Particle> getParticleA() {
@@ -142,7 +194,7 @@ public class Joining implements Serializable {
         Box2DParticle particleA = (Box2DParticle) maybeA.get();
         Box2DParticle particleB = (Box2DParticle) maybeB.get();
 
-        float len = JointsManager.idealJointLength(particleA, particleB);
+        float len = JointsManager.idealJoinedParticleDistance(particleA, particleB);
         if (!anchoredA)
             len += particleA.getRadius();
         if (!anchoredB)
