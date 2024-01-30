@@ -57,6 +57,7 @@ public abstract class JointsManager implements Serializable {
 
     public void createJoint(Joining joining) {
         if (!joiningExists(joining)) {
+            registerJoining(joining);
             jointsToAdd.add(joining);
         }
     }
@@ -67,16 +68,44 @@ public abstract class JointsManager implements Serializable {
         requestJointRemoval(joining.id);
     }
 
+    public void deregisterJoining(Particle particle, Joining joining) {
+        Optional<Particle> other = joining.getOther(particle);
+        other.ifPresent(otherParticle -> particle.getJoiningIds().remove(otherParticle.getId()));
+    }
+
     protected void deregisterJoining(Joining joining) {
         if (joining == null)
             return;
         Optional<Particle> particleA = joining.getParticleA();
         Optional<Particle> particleB = joining.getParticleB();
 
+        particleA.ifPresent(p -> deregisterJoining(p, joining));
+        particleB.ifPresent(p -> deregisterJoining(p, joining));
+
         if (particleA.map(p -> p.getUserData() instanceof Cell).orElse(false))
             ((Cell) particleA.get().getUserData()).deregisterJoining(joining);
         if (particleB.map(p -> p.getUserData() instanceof Cell).orElse(false))
             ((Cell) particleB.get().getUserData()).deregisterJoining(joining);
+    }
+
+    public void registerJoining(Particle particle, Joining joining) {
+        Optional<Particle> other = joining.getOther(particle);
+        other.ifPresent(otherParticle -> particle.getJoiningIds().put(otherParticle.getId(), joining.id));
+    }
+
+    protected void registerJoining(Joining joining) {
+        if (joining == null)
+            return;
+        Optional<Particle> particleA = joining.getParticleA();
+        Optional<Particle> particleB = joining.getParticleB();
+
+        particleA.ifPresent(p -> registerJoining(p, joining));
+        particleB.ifPresent(p -> registerJoining(p, joining));
+
+        if (particleA.map(p -> p.getUserData() instanceof Cell).orElse(false))
+            ((Cell) particleA.get().getUserData()).registerJoining(joining);
+        if (particleB.map(p -> p.getUserData() instanceof Cell).orElse(false))
+            ((Cell) particleB.get().getUserData()).registerJoining(joining);
     }
 
     public void requestJointRemoval(long id) {

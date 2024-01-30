@@ -47,7 +47,11 @@ public abstract class Particle implements Serializable, Shape, Coloured {
     public abstract void applyTorque(float torque);
     public abstract float getTorque();
 
+    /**
+     * @return A map from particle ids to joining ids
+     */
     public abstract Map<Long, Long> getJoiningIds();
+
     public abstract Optional<Joining> getJoining(long joiningId);
     public abstract void requestJointRemoval(Joining joining);
     public abstract Collection<Collision> getContacts();

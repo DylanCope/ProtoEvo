@@ -142,8 +142,9 @@ public class Box2DJointsManager extends JointsManager {
 
     public void destroyJoining(Joining joining) {
         Joint joint = getJoint(joining);
-        if (joint != null)
+        if (joint != null) {
             getWorld().destroyJoint(joint);
+        }
     }
 
     private void handleGrowingParticle(Joining joining) {

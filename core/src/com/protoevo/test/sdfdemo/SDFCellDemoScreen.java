@@ -11,23 +11,27 @@ import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.physics.box2d.Box2DDebugRenderer;
+import com.badlogic.gdx.utils.ScreenUtils;
 import com.protoevo.physics.Particle;
 import com.protoevo.physics.box2d.Box2DPhysics;
 import com.protoevo.ui.UIStyle;
 import com.protoevo.ui.input.InputLayers;
 import com.protoevo.ui.input.PanZoomCameraInput;
 import com.protoevo.ui.input.ToggleDebug;
-import com.protoevo.ui.rendering.Renderer;
 import com.protoevo.ui.shaders.ShaderLayers;
 import com.protoevo.utils.DebugMode;
 import space.earlygrey.shapedrawer.ShapeDrawer;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class SDFCellDemoScreen extends ScreenAdapter {
 
-    private final Renderer renderer;
+    private final ShaderLayers cellRenderer;
+    private final SDFCellSegmentsDemoShader cellShader;
     private final SpriteBatch uiBatch, debugBatch;
     private final BitmapFont debugFont;
-    private final DeformableCell cell;
+    private final List<DeformableCell> cells;
     private final OrthographicCamera camera;
     private final InputLayers inputLayers;
     private final ShapeDrawer shapeDrawer;
@@ -36,7 +40,15 @@ public class SDFCellDemoScreen extends ScreenAdapter {
 
     public SDFCellDemoScreen() {
         physics = new Box2DPhysics();
-        cell = new DeformableCell(physics);
+        cells = new ArrayList<>();
+        float worldR = 5f;
+        for (int i = 0; i < 100; i++) {
+            cells.add(new DeformableCell(physics, new Vector2(
+                    worldR * (float) (Math.random() * 2 - 1),
+                    worldR * (float) (Math.random() * 2 - 1)
+            )));
+        }
+
         float graphicsWidth = Gdx.graphics.getWidth();
         float graphicsHeight = Gdx.graphics.getHeight();
         camera = new OrthographicCamera();
@@ -47,9 +59,10 @@ public class SDFCellDemoScreen extends ScreenAdapter {
         camera.position.set(0, 0, 0);
         camera.zoom = 1f;
 
-        renderer = new ShaderLayers(
+        cellShader = new SDFCellSegmentsDemoShader(camera);
+        cellRenderer = new ShaderLayers(
                 new SDFDemoRenderer(),
-                new SDFCellDemoShader(camera, cell)
+                cellShader
         );
         uiBatch = new SpriteBatch();
         debugFont = UIStyle.createFiraCode(20);
@@ -71,13 +84,15 @@ public class SDFCellDemoScreen extends ScreenAdapter {
             float explosionX = worldSpaceVec3.x;
             float explosionY = worldSpaceVec3.y;
             float power = 0.02f;
-            for (Particle particle : cell.getParticles()) {
-                Vector2 bodyPos = particle.getPos();
-                Vector2 tmp = new Vector2(bodyPos.x - explosionX, bodyPos.y - explosionY);
-                float dist2 = tmp.len2();
-                float explosionFallout = 3f;
-                tmp.setLength((float) (power * Math.exp(-explosionFallout * dist2)));
-                particle.applyImpulse(tmp);
+            for (DeformableCell cell : cells) {
+                for (Particle particle : cell.getParticles()) {
+                    Vector2 bodyPos = particle.getPos();
+                    Vector2 tmp = new Vector2(bodyPos.x - explosionX, bodyPos.y - explosionY);
+                    float dist2 = tmp.len2();
+                    float explosionFallout = 3f;
+                    tmp.setLength((float) (power * Math.exp(-explosionFallout * dist2)));
+                    particle.applyImpulse(tmp);
+                }
             }
         }
 
@@ -87,18 +102,23 @@ public class SDFCellDemoScreen extends ScreenAdapter {
     public void render(float delta) {
         camera.update();
         shapeDrawer.update();
-
+        for (DeformableCell cell : cells) {
+            cell.update(delta);
+        }
 
         handleTouchForce();
-
-        cell.handleInternalForces();
-        for (Particle particle : cell.getParticles()) {
-            particle.physicsUpdate();
+        for (DeformableCell cell : cells) {
+            cell.physicsUpdate();
         }
 
         physics.step(delta);
         physics.getJointsManager().flushJoints();
-        renderer.render(delta);
+
+        ScreenUtils.clear(Color.BLACK);
+        for (DeformableCell cell : cells) {
+            cellShader.setCell(cell);
+            cellRenderer.render(delta);
+        }
 
         if (DebugMode.isDebugMode()) {
             renderDebug();
@@ -113,10 +133,12 @@ public class SDFCellDemoScreen extends ScreenAdapter {
         debugBatch.setProjectionMatrix(camera.combined);
         debugBatch.begin();
         shapeDrawer.setColor(Color.GOLD);
-        for (Particle particle : cell.getParticles()) {
-            Vector2 pos = particle.getPos();
-            float r = particle.getRadius();
-            shapeDrawer.circle(pos.x, pos.y, r, 0.015f * r);
+        for (DeformableCell cell : cells) {
+            for (Particle particle : cell.getParticles()) {
+                Vector2 pos = particle.getPos();
+                float r = particle.getRadius();
+                shapeDrawer.circle(pos.x, pos.y, r, 0.015f * r);
+            }
         }
         debugBatch.end();
 
@@ -134,7 +156,7 @@ public class SDFCellDemoScreen extends ScreenAdapter {
 
     @Override
     public void dispose() {
-        renderer.dispose();
+        cellRenderer.dispose();
         box2DDebugRenderer.dispose();
         uiBatch.dispose();
         debugBatch.dispose();

@@ -8,29 +8,29 @@ import com.protoevo.physics.Particle;
 import com.protoevo.physics.Physics;
 import com.protoevo.maths.Geometry;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
+import java.util.*;
 
 public class DeformableCell {
 
     private final List<Particle> particles;
+    private final Set<Long> particleIDs;
     private final Vector2 pos = new Vector2();
     private final Physics physics;
 
-    public DeformableCell(Physics physics) {
+    public DeformableCell(Physics physics, Vector2 pos) {
         particles = new ArrayList<>();
         this.physics = physics;
 
+        particleIDs = new HashSet<>();
         Particle particle = physics.createNewParticle();
         float particleR = 0.07f;
 
         particle.setRadius(particleR);
-        particle.setPos(new Vector2(0, 0));
+        particle.setPos(pos);
         particles.add(particle);
 
         float angle = (float) Math.random() * 2 * (float) Math.PI;
-        for (int i = 0; i < 8; i++) {
+        for (int i = 0; i < 3; i++) {
             Particle nextParticle = physics.createNewParticle();
             nextParticle.setRadius(MathUtils.random(particleR * 0.25f, particleR));
             Vector2 dir = Geometry.fromAngle(angle).setLength(particle.getRadius() + nextParticle.getRadius());
@@ -48,13 +48,17 @@ public class DeformableCell {
     }
 
     public void handleInternalForces() {
-        particles.removeIf(Particle::isDead);
 
         for (Particle particle : particles) {
+            if (particle.isDead())
+                continue;
+
             Collection<Collision> collisions = particle.getContacts();
             if (!collisions.isEmpty()) {
                 for (Collision collision : collisions) {
                     if (collision.getOther(particle) instanceof Particle
+                            && !((Particle) collision.getOther(particle)).isDead()
+                            && particleIDs.contains(((Particle) collision.getOther(particle)).getId())
                             && !physics.areJoined(particle, (Particle) collision.getOther(particle))) {
                         Particle other = (Particle) collision.getOther(particle);
                         joinParticles(particle, other);
@@ -93,6 +97,13 @@ public class DeformableCell {
         }
     }
 
+    public void physicsUpdate() {
+        handleInternalForces();
+        for (Particle particle : getParticles()) {
+            particle.physicsUpdate();
+        }
+    }
+
     public Vector2 getPos() {
         pos.set(0, 0);
         for (Particle particle : particles) {
@@ -103,7 +114,10 @@ public class DeformableCell {
     }
 
     public void update(float delta) {
+        particles.removeIf(Particle::isDead);
+        particleIDs.clear();
         for (Particle particle : particles) {
+            particleIDs.add(particle.getId());
             particle.update(delta);
         }
     }
