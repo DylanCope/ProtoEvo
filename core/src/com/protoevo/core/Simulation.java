@@ -9,6 +9,7 @@ import com.protoevo.env.Environment;
 import com.protoevo.settings.SimulationSettings;
 import com.protoevo.utils.EnvironmentImageRenderer;
 import com.protoevo.utils.FileIO;
+import com.protoevo.utils.InfluxWriter;
 import com.protoevo.utils.TimedEventsManager;
 import com.protoevo.utils.Utils;
 
@@ -43,6 +44,7 @@ public class Simulation implements Runnable
 	private String name;
 	private List<String> statsNames;
 	private final REPL repl = new REPL(this);
+	private InfluxWriter influxWriter = new InfluxWriter();
 
 	public Simulation() {
 		this(Environment.settings.simulationSeed.get());
@@ -388,20 +390,22 @@ public class Simulation implements Runnable
 
 	public void makeStatisticsSnapshot() {
 		Statistics stats = new Statistics(environment.getStats());
+
 		stats.putAll(environment.getDebugStats());
 		stats.putAll(environment.getPhysicsDebugStats());
 		stats.putAll(environment.getProtozoaSummaryStats(true, false, true));
 
 		String timeStamp = Utils.getTimeStampString();
+		influxWriter.write(name, stats);
 
-		FileIO.writeJson(stats, getSaveFolder() + "/stats/summaries/" + timeStamp);
+		//FileIO.writeJson(stats, getSaveFolder() + "/stats/summaries/" + timeStamp);
 
 		if (Environment.settings.misc.writeGenomes.get()) {
 			List<NetworkGenome> protozoaGenomes = environment.getCells().stream()
 					.filter(cell -> cell instanceof Protozoan)
 					.map(cell -> ((Protozoan) cell).getGeneExpressionFunction().getGRNGenome())
 					.collect(Collectors.toList());
-			FileIO.writeJson(protozoaGenomes, getSaveFolder() + "/stats/protozoa-genomes/" + timeStamp);
+			//FileIO.writeJson(protozoaGenomes, getSaveFolder() + "/stats/protozoa-genomes/" + timeStamp);
 		}
 
 //		PythonRunner.runPython("pyprotoevo.create_plots", "--quiet --simulation " + name);
