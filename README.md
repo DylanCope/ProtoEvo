@@ -156,6 +156,18 @@ For a step-by-step tutorial for installing Java on Windows 11, see [this video](
 
 If you have specific questions, join the [project discord](https://discord.com/invite/GY5UJxbBnq) and post your 
 problem in the `#help` channel.
+When submitting a request for help, please provide as much information as possible.
+The following information is likely to be useful:
+
+* Your operating system and hardware information.
+* The version of the program that you are trying to run (a link to the download you used would be best).
+* The Java version that you are using. Enter `java -version` into the commandline to get this information.
+* A zip file of your save, if you have one.
+* The crash report txt file in your save folder.
+* The commandline output from the program when the crash occured. If the program is crashing on
+  startup then you may only see a commandline window appear briefly. In this case, you should open the commandline beforehand
+  so that you can see the results after the crash. To do this, right-click in the file explorer an select 'Open in Terminal'.
+  Then enter `.\ProtoEvo.exe` into the terminal.
 
 ## Creating a Simulation
 
@@ -170,7 +182,7 @@ parameters of the simulation. The following screenshot shows the simulation sett
 
 ![png](/screenshots/settings-screen.png "Simulation Settings")
 
-_Note: The "Use CUDA" option does not currently work_
+_Note: The "Use CUDA" requires cuda to be installed_
 
 The default settings can only be modified by editing the `Settings` classes in the `com.protoevo.settings` module.
 
