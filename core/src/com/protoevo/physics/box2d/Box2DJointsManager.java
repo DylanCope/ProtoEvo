@@ -168,6 +168,8 @@ public class Box2DJointsManager extends JointsManager {
 
         RopeJointDef jointDef = new RopeJointDef();
         jointDef.maxLength = joining.getIdealLength();
+        jointDef.bodyA = particleA.getBody();
+        jointDef.bodyB = particleB.getBody();
 
         if (joining.anchoredA) {
             Vector2 anchorALocal = jointDef.bodyA.getLocalPoint(anchorA).cpy();
@@ -193,6 +195,8 @@ public class Box2DJointsManager extends JointsManager {
                                                   Vector2 anchorB) {
         DistanceJointDef jointDef = new DistanceJointDef();
         jointDef.length = joining.getIdealLength();
+        jointDef.bodyA = particleA.getBody();
+        jointDef.bodyB = particleB.getBody();
         Joining.DistanceMetaData metaData = (Joining.DistanceMetaData) joining.getMetaData();
         jointDef.dampingRatio = metaData.dampingRatio;
         jointDef.frequencyHz = metaData.frequencyHz;

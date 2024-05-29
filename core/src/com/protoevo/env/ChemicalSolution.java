@@ -76,10 +76,8 @@ public class ChemicalSolution implements Serializable {
             initialised = true;
         }
 
-        if (!JCudaKernelRunner.cudaAvailable())
-            Environment.settings.misc.useCUDA.set(false);
-
-        if (Environment.settings.misc.useCUDA.get()) {
+        if (Environment.settings.misc.useCUDA.get()
+                && JCudaKernelRunner.cudaAvailable()) {
             // has to be called on the same thread running the simulation
             if (DebugMode.isDebugMode())
                 System.out.println("Initialising chemical diffusion CUDA kernel...");

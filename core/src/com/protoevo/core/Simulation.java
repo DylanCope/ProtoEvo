@@ -273,6 +273,7 @@ public class Simulation implements Runnable
 			try {
 				environment.update(delta);
 			} catch (Exception e) {
+				writeCrashReport(e);
 				e.printStackTrace();
 				System.out.println("Error occurred during simulation. Saving and exiting.");
 				save();
@@ -281,30 +282,15 @@ public class Simulation implements Runnable
 			}
 
 			timedEventsManager.update(delta);
-			// timeSinceSave += delta;
-			// timeSinceSnapshot += delta;
-			// timeSinceAutoSave += delta;
 
-			// if (timeSinceSave >= Environment.settings.misc.timeBetweenHistoricalSaves.get() || saveRequested) {
-			// 	timeSinceSave = 0;
-			// 	if (saveRequested) {
-			// 		saveRequested = false;
-			// 		System.out.println("\nSaving environment.");
-			// 	}
-			// 	save();
-			// }
-
-			// if (timeSinceSnapshot >= Environment.settings.misc.statisticsSnapshotTime.get()) {
-			// 	timeSinceSnapshot = 0;
-			// 	onOtherThread(this::makeStatisticsSnapshot);
-			// }
 		} catch (Exception e) {
-			handleCrash(e);
+			writeCrashReport(e);
+			System.exit(0);
 		}
 	}
 
-	public void handleCrash(Exception e) {
-		String crashFolder = getSaveFolder() + "/crash";
+	public void writeCrashReport(Exception e) {
+		String crashFolder = getSaveFolder() + "/crash_" + Utils.getTimeStampString();
 		try {
 			Files.createDirectories(Paths.get(crashFolder));
 			FileWriter fileWriter = new FileWriter(crashFolder + "/report.txt");
@@ -312,7 +298,13 @@ public class Simulation implements Runnable
 			printWriter.println("Timestamp: " + new Date());
 			printWriter.println("Operating system: " + System.getProperty("os.name"));
 			printWriter.println("Operating system version: " + System.getProperty("os.version"));
-			printWriter.println("Free memory: " + Runtime.getRuntime().freeMemory());
+			printWriter.println("Java version: " + System.getProperty("java.version"));
+			Runtime runtime = Runtime.getRuntime();
+			printWriter.println("Free memory: " + runtime.freeMemory());
+			printWriter.println("Max memory: " + runtime.maxMemory());
+			printWriter.println("Total memory: " + runtime.totalMemory());
+			printWriter.println("Processors: " + runtime.availableProcessors());
+			printWriter.println();
 			printWriter.println("Stack Trace:");
 			e.printStackTrace(printWriter);
 			printWriter.close();
@@ -320,7 +312,6 @@ public class Simulation implements Runnable
 		} catch (IOException ioException) {
 			System.err.println("Failed to create crash report: " + ioException + "\nWhen handling exception: " + e);
 		}
-		System.exit(0);
 	}
 
 	public void saveOnOtherThread() {

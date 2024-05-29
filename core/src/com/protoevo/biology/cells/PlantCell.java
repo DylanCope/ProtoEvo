@@ -158,9 +158,13 @@ public class PlantCell extends EvolvableCell {
             child = Evolvable.asexualClone(this);
             child.setRadius(r);
             getEnv().ifPresent(child::setEnvironmentAndBuildPhysics);
-        } else
-            child = new PlantCell(
-                    r, getEnv().orElseThrow(() -> new RuntimeException("Cannot create cell without environment")));
+        } else {
+            Environment env = getEnv()
+                    .orElseThrow(() -> new RuntimeException(
+                            "Cannot create cell without environment"
+                    ));
+            child = new PlantCell(r, env);
+        }
         return child;
     }
 
