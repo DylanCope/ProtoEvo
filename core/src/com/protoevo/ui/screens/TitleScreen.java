@@ -1,11 +1,13 @@
 package com.protoevo.ui.screens;
 
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.ScreenAdapter;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.gdx.scenes.scene2d.ui.VerticalGroup;
+import com.protoevo.core.ApplicationManager;
 import com.protoevo.core.Simulation;
 import com.protoevo.networking.RemoteSimulation;
 import com.protoevo.ui.GraphicsAdapter;
@@ -68,7 +70,19 @@ public class TitleScreen extends ScreenAdapter {
             throw new RuntimeException(e);
         }
 
+        addButton("Edit Settings", this::switchToEditSettingsScreen);
         addButton("Exit", graphics::exitApplication);
+    }
+
+    public void switchToEditSettingsScreen() {
+        graphics.setScreen(new EditSettingsScreen(
+                this, graphics, ApplicationManager.settings, null,
+                () -> {
+                    ApplicationManager manager = graphics.getManager();
+                    manager.closeGraphics();
+                    ApplicationManager.settings.save();
+                }
+        ));
     }
 
     private void addButton(String text, Runnable onClick) {

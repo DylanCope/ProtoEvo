@@ -4,7 +4,7 @@ import com.github.javafaker.Faker;
 import com.protoevo.biology.cells.Protozoan;
 import com.protoevo.biology.nn.NetworkGenome;
 import com.protoevo.core.repl.REPL;
-import com.protoevo.env.Serialization;
+import com.protoevo.env.serialization.Serialization;
 import com.protoevo.env.Environment;
 import com.protoevo.settings.SimulationSettings;
 import com.protoevo.utils.EnvironmentImageRenderer;
@@ -230,6 +230,8 @@ public class Simulation implements Runnable
 			this::createAutoSave
 		);
 	}
+
+	public void cancelPreparation() {}
 
 	public void run() {
 		while (simulate) {

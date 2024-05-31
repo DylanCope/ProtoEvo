@@ -5,9 +5,10 @@ import com.badlogic.gdx.ScreenAdapter;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.*;
 import com.badlogic.gdx.utils.Align;
+import com.protoevo.settings.Parameter;
 import com.protoevo.settings.Settings;
 import com.protoevo.ui.GraphicsAdapter;
-import com.protoevo.ui.TopBar;
+import com.protoevo.ui.elements.TopBar;
 import com.protoevo.utils.DebugMode;
 
 import java.util.*;
@@ -28,6 +29,16 @@ public class EditSettingsScreen extends ScreenAdapter {
             Settings settings,
             List<Settings> otherSettings
     ) {
+        this(previousScreen, graphics, settings, otherSettings, () -> {});
+    }
+
+    public EditSettingsScreen(
+            ScreenAdapter previousScreen,
+            GraphicsAdapter graphics,
+            Settings settings,
+            List<Settings> otherSettings,
+            Runnable onApply
+    ) {
         this.graphics = graphics;
         this.settingsName = settings.getName();
         this.previousScreen = previousScreen;
@@ -42,13 +53,13 @@ public class EditSettingsScreen extends ScreenAdapter {
         skin = graphics.getSkin();
         final Table scrollTable = new Table();
 
-        final Map<Settings.Parameter<?>, TextField> parameterFields = new HashMap<>();
+        final Map<Parameter<?>, Widget> parameterFields = new HashMap<>();
 
-        for (Settings.Parameter<?> parameter : settings.getParameters()) {
+        for (Parameter<?> parameter : settings.getParameters()) {
             if (parameter.getName() == null || parameter.getName().equals(""))
                 continue;
 
-            TextField field = createParameterInput(parameter, scrollTable);
+            Widget field = createParameterInput(parameter, scrollTable);
             parameterFields.put(parameter, field);
         }
 
@@ -95,19 +106,21 @@ public class EditSettingsScreen extends ScreenAdapter {
         final TextButton applyButton = new TextButton("Apply", skin);
         applyButton.addListener(e -> {
             if (e.toString().equals("touchDown")) {
-                for (Map.Entry<Settings.Parameter<?>, TextField> entry : parameterFields.entrySet()) {
-                    Settings.Parameter<?> parameter = entry.getKey();
-                    TextField field = entry.getValue();
-                    if (field.getText().equals(parameter.get().toString())) {
+                for (Map.Entry<Parameter<?>, Widget> entry : parameterFields.entrySet()) {
+                    Parameter<?> parameter = entry.getKey();
+                    Widget widget = entry.getValue();
+                    String enteredValue = getEnteredValue(widget);
+                    if (enteredValue.equals(parameter.get().toString())) {
                         continue;
                     }
                     try {
-                        parameter.set(field.getText());
+                        parameter.set(enteredValue);
                     } catch (RuntimeException ex) {
                         System.err.println(
-                            "Failed to set parameter " + parameter.getName() + " to " + field.getText());
+                            "Failed to set parameter " + parameter.getName() + " to " + enteredValue);
                     }
                 }
+                onApply.run();
             }
             return true;
         });
@@ -116,6 +129,15 @@ public class EditSettingsScreen extends ScreenAdapter {
         table.add(applyButton).padTop(applyButton.getHeight()).width(applyButton.getWidth() * 1.2f);
 
         this.stage.addActor(table);
+    }
+
+    public String getEnteredValue(Widget widget) {
+        if (widget instanceof TextField) {
+            return ((TextField) widget).getText();
+        } else if (widget instanceof SelectBox) {
+            return ((SelectBox<?>) widget).getSelected().toString();
+        }
+        throw new RuntimeException("Unknown widget type: " + widget.getClass());
     }
 
     private void returnToPreviousScreen() {
@@ -128,26 +150,43 @@ public class EditSettingsScreen extends ScreenAdapter {
         }
     }
 
-    private TextField createParameterInput(Settings.Parameter<?> parameter, Table table) {
+    private Widget createParameterInput(Parameter<?> parameter, Table table) {
         float scrollWidth = Gdx.graphics.getWidth() / 2f;
         final Label label = new Label(parameter.getName() + ": ", skin);
-        final TextField textField = new TextField(parameter.get().toString(), skin);
-        textField.setWidth(scrollWidth / 3f);
+
+        Widget inputWidget;
+
+        if (parameter.hasOptions()) {
+            SelectBox<String> selectBox = new SelectBox<>(skin);
+            Object[] options = parameter.getOptions();
+            String[] optionsStrings = new String[options.length];
+            for (int i = 0; i < options.length; i++) {
+                optionsStrings[i] = options[i].toString();
+            }
+            selectBox.setItems(optionsStrings);
+            selectBox.setSelected(parameter.get().toString());
+            inputWidget = selectBox;
+        }
+        else {
+            inputWidget = new TextField(parameter.get().toString(), skin);
+        }
+
+        inputWidget.setWidth(scrollWidth / 3f);
         final Table inputTable = new Table();
 
         inputTable.add(label)
                 .width(scrollWidth * 2 / 3f)
                 .align(Align.right);
-        inputTable.add(textField)
+        inputTable.add(inputWidget)
                 .width(scrollWidth / 3f)
                 .align(Align.left)
                 .row();
 
         table.add(inputTable)
                 .padBottom(label.getHeight() / 2f).row();
-        return textField;
-    }
 
+        return inputWidget;
+    }
 
     @Override
     public void show() {

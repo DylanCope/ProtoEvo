@@ -227,6 +227,7 @@ project(":core") {
 
 //        api 'de.ruedigermoeller:fst:3.0.3'
         api 'de.ruedigermoeller:fst:2.56'
+        api "com.esotericsoftware:kryo:5.6.0"
 
         api "org.joml:joml:1.10.5"
     }

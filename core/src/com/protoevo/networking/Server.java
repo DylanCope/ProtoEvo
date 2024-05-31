@@ -57,22 +57,24 @@ public class Server {
             // a connection is established.
 
             client.setTcpNoDelay(true);
-//            in = new FSTObjectInput(client.getInputStream(), EnvFileIO.getFSTConfig());
             in = new ObjectInputStream(client.getInputStream());    // get the input stream of client.
             status = Status.CONNECTED;
             opened = true;
         } catch (Exception e) {
-            e.printStackTrace();
+            if (client != null)
+                e.printStackTrace();
         }
     }
 
     public <T> Optional<T> get(Class<T> clazz) {
         if (!opened) open();
 
+        if (client == null || in == null)
+            return Optional.empty();
+
         try {
             status = Status.WAITING.setMessage("Connection Established. Waiting to receive from client");
             System.out.println(status);
-//            T obj = (T) in.readObject(clazz);
             Object obj = in.readObject();
             if (clazz.isInstance(obj))
                 return Optional.of(clazz.cast(obj));
@@ -86,9 +88,18 @@ public class Server {
 
     public void close() {
         try {
-            in.close();
-            client.close();
-            server.close();
+            if (in != null)
+                in.close();
+            in = null;
+
+            if (client != null)
+                client.close();
+            client = null;
+
+            if (server != null)
+                server.close();
+            server = null;
+
             opened = false;
             status = Status.CLOSED;
 

@@ -5,7 +5,7 @@
   <jar>C:\Users\dylan\Projects\ProtoEvo\desktop\build\jpackage\desktop\app\desktop-1.0.jar</jar>
   <outfile>C:\Users\dylan\Projects\ProtoEvo\desktop\out\exe\ProtoEvo.exe</outfile>
   <errTitle>Java 8 Installation Needed!</errTitle>
-  <cmdLine>-Xmx16G --add-modules jdk.incubator.foreign --illegal-access=permit</cmdLine>
+  <cmdLine>-Xmx8G --add-modules jdk.incubator.foreign --illegal-access=permit</cmdLine>
   <chdir>.</chdir>
   <priority>high</priority>
   <downloadUrl>https://www.java.com/download/ie_manual.jsp</downloadUrl>

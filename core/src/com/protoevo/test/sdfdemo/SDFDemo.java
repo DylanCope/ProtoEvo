@@ -3,6 +3,7 @@ package com.protoevo.test.sdfdemo;
 import com.badlogic.gdx.Game;
 import com.badlogic.gdx.backends.lwjgl3.Lwjgl3Application;
 import com.badlogic.gdx.backends.lwjgl3.Lwjgl3ApplicationConfiguration;
+import com.protoevo.core.ApplicationManager;
 import com.protoevo.ui.GraphicsAdapter;
 import com.protoevo.utils.DebugMode;
 
@@ -21,7 +22,7 @@ public class SDFDemo extends Game {
         config.setWindowedMode(1024, 1024);
         config.setBackBufferConfig(
                 8, 8, 8, 8, 16, 0,
-                GraphicsAdapter.settings.msaaSamples.get()); // 8, 8, 8, 8, 16, 0 are default values
+                ApplicationManager.settings.msaaSamples.get()); // 8, 8, 8, 8, 16, 0 are default values
 
         config.useVsync(true);
         new Lwjgl3Application(new SDFDemo(), config);

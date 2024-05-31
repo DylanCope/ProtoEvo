@@ -1,4 +1,4 @@
-package com.protoevo.env;
+package com.protoevo.env.serialization;
 
 import com.badlogic.gdx.math.Vector2;
 import com.protoevo.biology.CauseOfDeath;
@@ -15,6 +15,9 @@ import com.protoevo.biology.nodes.*;
 import com.protoevo.biology.organelles.MoleculeProductionOrganelle;
 import com.protoevo.biology.organelles.Organelle;
 import com.protoevo.core.Statistics;
+import com.protoevo.env.ChemicalSolution;
+import com.protoevo.env.Environment;
+import com.protoevo.env.Rock;
 import com.protoevo.physics.Joining;
 import com.protoevo.physics.JointsManager;
 import com.protoevo.physics.SpatialHash;
@@ -24,12 +27,13 @@ import org.nustaq.serialization.FSTConfiguration;
 import org.nustaq.serialization.FSTObjectInput;
 import org.nustaq.serialization.FSTObjectOutput;
 
-import java.io.*;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.List;
 
-public class Serialization {
+public class FSTSerialization {
 
     public static FSTConfiguration getFSTConfig() {
         FSTConfiguration fstConfig = FSTConfiguration.createDefaultConfiguration();
@@ -118,8 +122,7 @@ public class Serialization {
     public static <T> T deserialize(String filename, Class<T> clazz) {
         try (FileInputStream fileIn = new FileInputStream(filename);
              FSTObjectInput in = new FSTObjectInput(fileIn, getFSTConfig())) {
-            T object = (T) in.readObject(clazz);
-            return object;
+            return (T) in.readObject(clazz);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

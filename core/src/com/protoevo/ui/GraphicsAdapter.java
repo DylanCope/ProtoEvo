@@ -1,13 +1,14 @@
 package com.protoevo.ui;
 
 import com.badlogic.gdx.*;
+import com.badlogic.gdx.backends.lwjgl3.Lwjgl3ApplicationConfiguration;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.glutils.ShaderProgram;
 import com.badlogic.gdx.scenes.scene2d.ui.Skin;
 import com.badlogic.gdx.utils.ScreenUtils;
 import com.protoevo.core.ApplicationManager;
 import com.protoevo.core.Simulation;
-import com.protoevo.settings.GraphicsSettings;
+import com.protoevo.settings.RenderingSettings;
 import com.protoevo.ui.rendering.EnvironmentRenderer;
 import com.protoevo.ui.screens.LoadSaveScreen;
 import com.protoevo.ui.screens.LoadingScreen;
@@ -16,7 +17,7 @@ import com.protoevo.ui.screens.TitleScreen;
 import com.protoevo.utils.CursorUtils;
 
 public class GraphicsAdapter extends Game {
-	public static GraphicsSettings settings = GraphicsSettings.createDefault();
+	public static RenderingSettings settings = RenderingSettings.createDefault();
 	private final ApplicationManager applicationManager;
 	private SimulationScreen simulationScreen;
 	private LoadingScreen loadingScreen;
@@ -32,19 +33,28 @@ public class GraphicsAdapter extends Game {
 
 	@Override
 	public void create() {
-		Graphics.DisplayMode displayMode = Gdx.graphics.getDisplayMode();
-		Gdx.graphics.setUndecorated(true);
-		Gdx.graphics.setWindowedMode(displayMode.width, displayMode.height);
+		boolean windowed = ApplicationManager.settings.displayMode.get().equals("Windowed");
+		boolean borderlessWindowed = ApplicationManager.settings.displayMode.get().equals("Borderless Window");
+
+		if (windowed) {
+			Gdx.graphics.setWindowedMode(ApplicationManager.settings.windowWidth.get(),
+										 ApplicationManager.settings.windowHeight.get());
+		} else if (borderlessWindowed) {
+			Graphics.DisplayMode displayMode = Gdx.graphics.getDisplayMode();
+			Gdx.graphics.setUndecorated(true);
+			Gdx.graphics.setWindowedMode(displayMode.width, displayMode.height);
+		} else {
+			Gdx.graphics.setFullscreenMode(Lwjgl3ApplicationConfiguration.getDisplayMode());
+		}
 
 		CursorUtils.setDefaultCursor();
 		batch = new SpriteBatch();
 		ShaderProgram.pedantic = false;
 
 		defaultBackgroundRenderer = DefaultBackgroundRenderer.getInstance();
+		skin = UIStyle.getUISkin();
 
 		loadingScreen = new LoadingScreen(this, applicationManager);
-
-		skin = UIStyle.getUISkin();
 
 		if (applicationManager.hasSimulation()) {
 			Simulation simulation = applicationManager.getSimulation();
@@ -61,8 +71,8 @@ public class GraphicsAdapter extends Game {
 
 	@Override
 	public void setScreen(Screen screen) {
-		super.setScreen(screen);
 		previousScreen = currentScreen;
+		super.setScreen(screen);
 		currentScreen = (ScreenAdapter) screen;
 	}
 
@@ -85,6 +95,10 @@ public class GraphicsAdapter extends Game {
 
 	public void switchToHeadlessMode() {
 		applicationManager.switchToHeadlessMode();
+	}
+
+	public ApplicationManager getManager() {
+		return applicationManager;
 	}
 
 	@Override

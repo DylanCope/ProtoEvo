@@ -1,7 +1,7 @@
 package com.protoevo.networking;
 
 import com.protoevo.core.Simulation;
-import com.protoevo.env.Serialization;
+import com.protoevo.env.serialization.Serialization;
 import com.protoevo.env.Environment;
 import com.protoevo.settings.SimulationSettings;
 
@@ -58,6 +58,11 @@ public class RemoteSimulation extends Simulation {
         }
         loadingStatus = "Ready to simulate";
         return downloadedEnv;
+    }
+
+    @Override
+    public void cancelPreparation() {
+        environmentServer.close();
     }
 
     public void clearLoadedEnvironment() {

@@ -1,6 +1,7 @@
 package com.protoevo.core.repl;
 
 import com.protoevo.core.Simulation;
+import com.protoevo.settings.Parameter;
 import com.protoevo.settings.Settings;
 import com.protoevo.settings.SimulationSettings;
 
@@ -38,7 +39,7 @@ public class SimParams extends Command {
             System.out.println("Available settings subcategories: world|protozoa|plant|misc|cell|env|evo");
             System.out.println("Run param list <subcategory> to get a list of parameters in that subcategory.");
             System.out.println("Available parameters in base category:");
-            for (Settings.Parameter<?> param : settings.getParameters())
+            for (Parameter<?> param : settings.getParameters())
                 System.out.println("\t- " + param.getFieldName() + ": "
                         + param.getName() + "; " + param.getDescription());
         }
@@ -49,7 +50,7 @@ public class SimParams extends Command {
             Settings settings = simulation.getEnv().getSettings().getSettings(subcategory);
 
             System.out.println("Available parameters in " + subcategory + " category:");
-            for (Settings.Parameter<?> param : settings.getParameters())
+            for (Parameter<?> param : settings.getParameters())
                 System.out.println("\t- " + param.getFieldName() + ": "
                         + param.getName() + "; " + param.getDescription());
         }
@@ -75,7 +76,7 @@ public class SimParams extends Command {
             Simulation simulation = repl.getSimulation();
             Settings settings = simulation.getEnv().getSettings().getSettings(subcategory);
 
-            for (Settings.Parameter<?> param : settings.getParameters()) {
+            for (Parameter<?> param : settings.getParameters()) {
                 if (param.getFieldName().equals(paramName)) {
                     try {
                         param.set(paramVal);
@@ -113,7 +114,7 @@ public class SimParams extends Command {
             Simulation simulation = repl.getSimulation();
             Settings settings = simulation.getEnv().getSettings().getSettings(subcategory);
 
-            for (Settings.Parameter<?> param : settings.getParameters()) {
+            for (Parameter<?> param : settings.getParameters()) {
                 if (param.getFieldName().equals(paramName)) {
                     System.out.println(paramName + " is " + param.get());
                     return true;
@@ -143,7 +144,7 @@ public class SimParams extends Command {
         System.out.println("Use param <subcategory> -help to get more information about a parameter.");
         System.out.println("Available base parameters:");
         Simulation simulation = repl.getSimulation();
-        for (Settings.Parameter<?> param : simulation.getEnv().getSettings().getParameters())
+        for (Parameter<?> param : simulation.getEnv().getSettings().getParameters())
             System.out.println("\t- " + param.getFieldName() + ": "
                     + param.getName() + "; " + param.getDescription());
     }

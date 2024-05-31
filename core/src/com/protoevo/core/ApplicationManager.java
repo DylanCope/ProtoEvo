@@ -2,6 +2,7 @@ package com.protoevo.core;
 
 import com.badlogic.gdx.Files;
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.Graphics;
 import com.badlogic.gdx.backends.lwjgl3.Lwjgl3Application;
 import com.badlogic.gdx.backends.lwjgl3.Lwjgl3ApplicationConfiguration;
 import com.protoevo.networking.RemoteGraphics;
@@ -15,7 +16,8 @@ import static org.lwjgl.glfw.GLFW.glfwGetCurrentContext;
 
 public class ApplicationManager {
 
-    public final static boolean windowed = false, borderlessWindowed = true;
+    public static ApplicationSettings settings = ApplicationSettings.load();
+
     public static long window = 0;
     private volatile boolean headless = false, applicationRunning = true, saveOnExit = true;
     private boolean onlyHeadless = false;
@@ -23,6 +25,7 @@ public class ApplicationManager {
     private GraphicsAdapter graphics;
     private RemoteGraphics remoteGraphics;
     private volatile boolean sendRemoteGraphicsRequested = false;
+    private Thread preparationThread;
 
     public static void main(String[] args) {
         System.out.println("Current JVM version: " + System.getProperty("java.version"));
@@ -113,12 +116,23 @@ public class ApplicationManager {
 
         if (!simulation.isReady()) {
             if (!headless) {
-                new Thread(simulation::prepare).start();
+                preparationThread = new Thread(simulation::prepare);
+                preparationThread.start();
             } else {
                 simulation.prepare();
             }
         } else {
             notifySimulationReady();
+        }
+    }
+
+    public void cancelPreparationThread() {
+        if (simulation != null)
+            simulation.cancelPreparation();
+
+        if (preparationThread != null) {
+            preparationThread.interrupt();
+            preparationThread = null;
         }
     }
 
@@ -239,31 +253,31 @@ public class ApplicationManager {
         saveOnExit = false;
 
         Lwjgl3ApplicationConfiguration config = new Lwjgl3ApplicationConfiguration();
-        config.setForegroundFPS(60);
+        config.setForegroundFPS(settings.fpsCap.get());
         boolean isDebug = launchedWithDebug();
 
         if (isDebug)
             DebugMode.setMode(DebugMode.SIMPLE_INFO);
 
-        if (isDebug | windowed | borderlessWindowed) {
-            config.setWindowedMode(1920, 1080);
-//        } else if (borderlessWindowed) {
-//            Graphics.DisplayMode displayMode = Gdx.graphics.getDisplayMode();
-//            Gdx.graphics.setUndecorated(true);
-//            Gdx.graphics.setWindowedMode(displayMode.width, displayMode.height);
+        boolean windowed = settings.displayMode.get().equals("Windowed")
+                || settings.displayMode.get().equals("Borderless Window");
+
+        if (isDebug | windowed) {
+            config.setWindowedMode(settings.windowWidth.get(), settings.windowHeight.get());
         } else {
             config.setFullscreenMode(Lwjgl3ApplicationConfiguration.getDisplayMode());
         }
 
         config.setBackBufferConfig(
                 8, 8, 8, 8, 16, 0,
-                GraphicsAdapter.settings.msaaSamples.get()); // 8, 8, 8, 8, 16, 0 are default values
+                settings.msaaSamples.get()); // 8, 8, 8, 8, 16, 0 are default values
 
         config.setWindowIcon(Files.FileType.Internal, "app-icon.png");
 
         config.useVsync(true);
         config.setTitle("ProtoEvo");
         graphics = new GraphicsAdapter(this);
+
         // Creates graphics and runs updates from rendering loop
         new Lwjgl3Application(graphics, config);
     }

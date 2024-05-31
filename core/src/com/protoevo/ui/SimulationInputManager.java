@@ -11,10 +11,13 @@ import com.protoevo.biology.cells.PlantCell;
 import com.protoevo.biology.cells.Protozoan;
 import com.protoevo.biology.evolution.Evolvable;
 import com.protoevo.core.Simulation;
-import com.protoevo.env.Serialization;
+import com.protoevo.env.serialization.Serialization;
 import com.protoevo.env.Spawnable;
+import com.protoevo.ui.elements.TopBar;
 import com.protoevo.ui.input.*;
+import com.protoevo.ui.screens.PauseScreen;
 import com.protoevo.ui.screens.SimulationScreen;
+import com.protoevo.ui.screens.StatsGraphsScreen;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -63,6 +66,10 @@ public class SimulationInputManager {
 
         topBar.createRightBarImageButton("icons/gear.png", simulationScreen::moveToPauseScreen);
         topBar.createRightBarImageButton("icons/save.png", simulation::saveOnOtherThread);
+
+//        topBar.createRightBarImageButton("icons/plot.png", () -> {
+//            graphics.setScreen(new StatsGraphsScreen(graphics, simulation));
+//        });
 
         possibleSpawnables.put("Plant Cell", () -> Evolvable.createNew(PlantCell.class));
         possibleSpawnables.put("Random Protozoan", () -> Evolvable.createNew(Protozoan.class));

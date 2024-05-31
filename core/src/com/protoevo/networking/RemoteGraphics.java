@@ -1,7 +1,7 @@
 package com.protoevo.networking;
 
 import com.protoevo.core.Simulation;
-import com.protoevo.env.Serialization;
+import com.protoevo.env.serialization.Serialization;
 import com.protoevo.env.Environment;
 
 import java.io.IOException;

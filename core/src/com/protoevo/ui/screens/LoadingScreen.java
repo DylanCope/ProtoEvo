@@ -4,10 +4,12 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.ScreenAdapter;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.protoevo.core.ApplicationManager;
 import com.protoevo.core.Simulation;
 import com.protoevo.ui.DefaultBackgroundRenderer;
 import com.protoevo.ui.GraphicsAdapter;
+import com.protoevo.ui.elements.TopBar;
 import com.protoevo.utils.CursorUtils;
 
 public class LoadingScreen extends ScreenAdapter {
@@ -20,12 +22,25 @@ public class LoadingScreen extends ScreenAdapter {
     private volatile boolean simulationReady = false;
     private int updatesCompleted;
     private int updatesBeforeRendering = 50;
+    private final Stage stage;
 
     public LoadingScreen(GraphicsAdapter graphicsAdapter,
                          ApplicationManager applicationManager) {
         this.graphicsAdapter = graphicsAdapter;
         this.applicationManager = applicationManager;
         batch = graphicsAdapter.getSpriteBatch();
+        this.stage = new Stage();
+        TopBar topBar = new TopBar(
+                this.stage,
+                graphicsAdapter.getSkin().getFont("default").getLineHeight()
+        );
+        topBar.createRightBarImageButton("icons/back.png", this::cancelLoading);
+    }
+
+    public void cancelLoading() {
+        simulationReady = false;
+        graphicsAdapter.moveToPreviousScreen();
+        graphicsAdapter.getManager().cancelPreparationThread();
     }
 
     public void setUpdatesBeforeRendering(int updatesBeforeRendering) {
@@ -34,6 +49,7 @@ public class LoadingScreen extends ScreenAdapter {
 
     @Override
     public void show() {
+        Gdx.input.setInputProcessor(stage);
         CursorUtils.setDefaultCursor();
         simulationReady = applicationManager.hasSimulation() && applicationManager.getSimulation().isReady();
         updatesCompleted = 0;
@@ -84,6 +100,9 @@ public class LoadingScreen extends ScreenAdapter {
             loadingString(loadingStatus);
         else
             loadingString("Loading Simulation");
+
+        stage.act(delta);
+        stage.draw();
     }
 
     public void notifySimulationReady() {
