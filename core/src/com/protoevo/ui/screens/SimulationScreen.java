@@ -36,7 +36,7 @@ import com.protoevo.ui.input.ParticleTracker;
 import com.protoevo.physics.Particle;
 import com.protoevo.ui.GraphicsAdapter;
 import com.protoevo.ui.SimulationInputManager;
-import com.protoevo.ui.elements.TopBar;
+import com.protoevo.ui.TopBar;
 import com.protoevo.ui.UIStyle;
 import com.protoevo.ui.nn.MouseOverNeuronHandler;
 import com.protoevo.ui.nn.MultiCellGRNRenderer;
@@ -95,12 +95,16 @@ public class SimulationScreen extends ScreenAdapter {
     private float meanderingT = 0f, meanderTThreshold = 0f;
     private final BrightnessLayer brightnessLayer;
 
+    private final StatsGraphsScreen statsGraphsScreen;
+
 
     public SimulationScreen(GraphicsAdapter graphics, Simulation simulation) {
         this.graphics = graphics;
         this.simulation = simulation;
         environment = simulation.getEnv();
         getStats = environment::getStats;
+
+        statsGraphsScreen = new StatsGraphsScreen(graphics, simulation);
 
         CursorUtils.setDefaultCursor();
 

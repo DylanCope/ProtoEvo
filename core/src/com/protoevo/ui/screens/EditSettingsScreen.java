@@ -8,7 +8,7 @@ import com.badlogic.gdx.utils.Align;
 import com.protoevo.settings.Parameter;
 import com.protoevo.settings.Settings;
 import com.protoevo.ui.GraphicsAdapter;
-import com.protoevo.ui.elements.TopBar;
+import com.protoevo.ui.TopBar;
 import com.protoevo.utils.DebugMode;
 
 import java.util.*;

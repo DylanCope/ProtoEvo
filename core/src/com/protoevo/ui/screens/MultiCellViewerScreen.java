@@ -11,7 +11,7 @@ import com.protoevo.biology.cells.Cell;
 import com.protoevo.biology.cells.MultiCellStructure;
 import com.protoevo.biology.cells.Protozoan;
 import com.protoevo.ui.GraphicsAdapter;
-import com.protoevo.ui.elements.TopBar;
+import com.protoevo.ui.TopBar;
 import com.protoevo.ui.UIStyle;
 import com.protoevo.ui.input.InputLayers;
 import com.protoevo.ui.input.PanZoomCameraInput;

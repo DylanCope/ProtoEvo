@@ -10,7 +10,7 @@ import com.badlogic.gdx.utils.Align;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.protoevo.core.Simulation;
 import com.protoevo.ui.GraphicsAdapter;
-import com.protoevo.ui.elements.TopBar;
+import com.protoevo.ui.TopBar;
 import com.protoevo.utils.CursorUtils;
 import com.protoevo.utils.DebugMode;
 import com.protoevo.utils.FileIO;

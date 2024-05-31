@@ -9,7 +9,7 @@ import com.protoevo.core.ApplicationManager;
 import com.protoevo.core.Simulation;
 import com.protoevo.ui.DefaultBackgroundRenderer;
 import com.protoevo.ui.GraphicsAdapter;
-import com.protoevo.ui.elements.TopBar;
+import com.protoevo.ui.TopBar;
 import com.protoevo.utils.CursorUtils;
 
 public class LoadingScreen extends ScreenAdapter {

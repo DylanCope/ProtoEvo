@@ -1,4 +1,4 @@
-package com.protoevo.ui.elements;
+package com.protoevo.ui;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.GL20;
