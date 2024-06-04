@@ -9,12 +9,13 @@ import java.nio.file.Paths;
 
 public class Serialization {
 
-    enum Backend {
+    public enum Backend {
         FST,
-        KRYO
+        KRYO,
+        NATIVE_JAVA
     }
 
-    public static final Backend SERIALIZATION_BACKEND = Backend.FST;
+    public static Backend SERIALIZATION_BACKEND = Backend.FST;
 
     public static byte[] toBytes(Object object, Class<?> clazz) {
         switch (SERIALIZATION_BACKEND) {
@@ -22,6 +23,8 @@ public class Serialization {
                 return FSTSerialization.toBytes(object, clazz);
             case KRYO:
                 return KryoSerialization.toBytes(object, clazz);
+            case NATIVE_JAVA:
+                return NativeJavaSerialization.toBytes(object);
             default:
                 throw new RuntimeException("Unknown serialization backend");
         }
@@ -33,6 +36,8 @@ public class Serialization {
                 return FSTSerialization.fromBytes(bytes, clazz);
             case KRYO:
                 return KryoSerialization.fromBytes(bytes, clazz);
+            case NATIVE_JAVA:
+                return NativeJavaSerialization.fromBytes(bytes);
             default:
                 throw new RuntimeException("Unknown serialization backend");
         }
@@ -49,6 +54,10 @@ public class Serialization {
                 break;
             case KRYO:
                 KryoSerialization.serialize(object, filename);
+                break;
+            case NATIVE_JAVA:
+                NativeJavaSerialization.serialize(object, filename);
+                break;
             default:
                 throw new RuntimeException("Unknown serialization backend");
         }
@@ -60,6 +69,8 @@ public class Serialization {
                 return FSTSerialization.deserialize(filename, clazz);
             case KRYO:
                 return KryoSerialization.deserialize(filename, clazz);
+            case NATIVE_JAVA:
+                return NativeJavaSerialization.deserialize(filename);
             default:
                 throw new RuntimeException("Unknown serialization backend");
         }
