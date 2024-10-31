@@ -33,7 +33,7 @@ public class LinePlot extends PlotElement {
 
     @Override
     public void draw(PlotGrid plot, ShapeDrawer drawer) {
-        if (data.isEmpty()) return;
+        if (data == null || data.isEmpty()) return;
 
         screenCoords.clear();
         for (Vector2 point : data) {

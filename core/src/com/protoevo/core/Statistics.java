@@ -469,7 +469,6 @@ public class Statistics implements Serializable, Iterable<Statistics.Stat> {
         unitMultipliers.put(unit, multiplier);
     }
 
-
     public Object getValue(String name) {
         return stats.containsKey(name) ? stats.get(name).getValue() : null;
     }
@@ -606,6 +605,14 @@ public class Statistics implements Serializable, Iterable<Statistics.Stat> {
 
     public Map<String, Stat> getStatsMap() {
         return stats;
+    }
+
+    public Stat getStat(String name) {
+        return stats.get(name);
+    }
+
+    public boolean isNumeric(String name) {
+        return stats.containsKey(name) && stats.get(name).isNumeric();
     }
 
     public void clear() {

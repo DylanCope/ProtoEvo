@@ -2,9 +2,12 @@ package com.protoevo.ui.plotting;
 
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.g2d.Batch;
+import com.badlogic.gdx.graphics.g2d.BitmapFont;
+import com.badlogic.gdx.graphics.g2d.GlyphLayout;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.scenes.scene2d.Stage;
+import com.badlogic.gdx.scenes.scene2d.ui.TextField;
 import com.badlogic.gdx.scenes.scene2d.ui.Widget;
 import com.protoevo.ui.UIStyle;
 import space.earlygrey.shapedrawer.ShapeDrawer;
@@ -23,6 +26,8 @@ public class PlotGrid extends Widget {
     private final Vector2 originPositionOffset = new Vector2(0, 0);
     private float pixelLengthOfXUnit = 1f, pixelLengthOfYUnit = 1f;
     private final ArrayList<PlotElement> plotElements;
+    private final GlyphLayout layout = new GlyphLayout();
+    private BitmapFont axisFont;
 
     public PlotGrid(Stage stage) {
         drawer = new ShapeDrawer(stage.getBatch(), new TextureRegion(UIStyle.getWhite1x1()));
@@ -38,6 +43,7 @@ public class PlotGrid extends Widget {
     public void setSize(float w, float h) {
         pixelWidth = w;
         pixelHeight = h;
+        axisFont = UIStyle.createFiraCode((int) (pixelHeight / 25f));
     }
 
     public float getPixelWidth() {
@@ -55,11 +61,20 @@ public class PlotGrid extends Widget {
          this.xMax = xMax;
          this.yMax = yMax;
 
-        if (xMin >= xMax - 1e-12) {
+        if (xMin > xMax) {
             throw new RuntimeException("xMin must be less than xMax");
         }
-        if (yMin >= yMax - 1e-12) {
+        if (yMin > yMax) {
             throw new RuntimeException("yMin must be less than yMax");
+        }
+
+        if (this.xMin == this.xMax) {
+            this.xMin -= 1;
+            this.xMax += 1;
+        }
+        if (this.yMin == this.yMax) {
+            this.yMin -= 1;
+            this.yMax += 1;
         }
 
         pixelLengthOfXUnit = pixelWidth / (xMax - xMin);
@@ -81,10 +96,10 @@ public class PlotGrid extends Widget {
         if (yMin > 0) {
             yOriginOffset = -pixelHeight / 2f;
         }
-        else if (xMax < 0) {
+        else if (yMax < 0) {
             yOriginOffset = pixelHeight / 2f;
         }
-        else if (Math.abs(xMax) > Math.abs(yMin)) {
+        else if (Math.abs(yMax) > Math.abs(yMin)) {
             yOriginOffset = -(pixelLengthOfYUnit * Math.abs(yMax) - pixelHeight / 2);
         } else {
             yOriginOffset = pixelLengthOfYUnit * Math.abs(yMin) - pixelHeight / 2;
@@ -95,6 +110,16 @@ public class PlotGrid extends Widget {
 
     public void setPlotBoundsX(float xMin, float xMax) {
         pixelLengthOfYUnit = pixelLengthOfXUnit = (xMax - xMin) / getWidth();
+    }
+
+    public void setMajorTicks(float xMajorTick, float yMajorTick) {
+        this.xMajorTick = xMajorTick;
+        this.yMajorTick = yMajorTick;
+    }
+
+    public void setMinorTicks(float xMinorTick, float yMinorTick) {
+        this.xMinorTick = xMinorTick;
+        this.yMinorTick = yMinorTick;
     }
 
     @Override
@@ -113,60 +138,91 @@ public class PlotGrid extends Widget {
         drawer.rectangle(getX(), getY(), getWidth(), getHeight(), 6);
     }
 
+    private void drawAxisXTickLabel(Batch batch, float x) {
+        batch.setColor(Color.WHITE);
+        String text = String.format("%.2f", x);
+        layout.setText(axisFont, text);
+        float screenX = getScreenX(x) - layout.width / 2;
+        float screenY = getScreenY(yMin) - layout.height * 1.25f;
+        if (screenX < getX() - layout.width || screenX >= getX() + pixelWidth)
+            return;
+        axisFont.draw(batch, text, screenX, screenY);
+    }
+
+    private void drawAxisYTickLabel(Batch batch, float y) {
+        batch.setColor(Color.WHITE);
+        String text = String.format("%.2f", y);
+        layout.setText(axisFont, text);
+        float screenX = getScreenX(xMin) - layout.width * 2f;
+        float screenY = getScreenY(y) + layout.height / 2f;
+        if (screenY < getY() - layout.height || screenY >= getY() + pixelHeight)
+            return;
+        axisFont.draw(batch, text, screenX, screenY);
+    }
+
+
     public void drawAxis(Batch batch) {
 
         // draw grid
         for (float x = 0; x <= xMax; x += xMajorTick) {
             drawMajorXGridLine(x);
+            drawAxisXTickLabel(batch, x);
         }
         for (float x = 0; x >= xMin; x -= xMajorTick) {
             drawMajorXGridLine(x);
+            drawAxisXTickLabel(batch, x);
         }
         for (float y = 0; y <= yMax; y += yMajorTick) {
             drawMajorYGridLine(y);
+            drawAxisYTickLabel(batch, y);
         }
         for (float y = 0; y >= yMin; y -= yMajorTick) {
             drawMajorYGridLine(y);
+            drawAxisYTickLabel(batch, y);
         }
 
-        // draw ticks on axis
-        for (float x = 0; x <= xMax; x += xMajorTick) {
-            drawMajorXTick(x);
-        }
-        for (float x = 0; x >= xMin; x -= xMajorTick) {
-            drawMajorXTick(x);
-        }
-        for (float y = 0; y <= yMax; y += yMajorTick) {
-            drawMajorYTick(y);
-        }
-        for (float y = 0; y >= yMin; y -= yMajorTick) {
-            drawMajorYTick(y);
-        }
-
-        // draw main axis
-        drawer.setColor(Color.WHITE);
-        drawer.line(
-                getX() + pixelWidth / 2f + originPositionOffset.x,
-                getY(),
-                getX() + pixelWidth / 2f + originPositionOffset.x,
-                getY() + getHeight(),
-                3
-        );
-        drawer.line(
-                getX(),
-                getY() + pixelHeight / 2f + originPositionOffset.y,
-                getX() + getWidth(),
-                getY() + pixelHeight / 2f + originPositionOffset.y,
-                3
-        );
+//        // draw ticks on axis
+//        for (float x = 0; x <= xMax; x += xMajorTick) {
+//            drawMajorXTick(x);
+//        }
+//        for (float x = 0; x >= xMin; x -= xMajorTick) {
+//            drawMajorXTick(x);
+//        }
+//        for (float y = 0; y <= yMax; y += yMajorTick) {
+//            drawMajorYTick(y);
+//        }
+//        for (float y = 0; y >= yMin; y -= yMajorTick) {
+//            drawMajorYTick(y);
+//        }
+//
+//        // draw main axis
+//        drawer.setColor(Color.WHITE);
+//        drawer.line(
+//                getX() + pixelWidth / 2f + originPositionOffset.x,
+//                getY(),
+//                getX() + pixelWidth / 2f + originPositionOffset.x,
+//                getY() + getHeight(),
+//                3
+//        );
+//        drawer.line(
+//                getX(),
+//                getY() + pixelHeight / 2f + originPositionOffset.y,
+//                getX() + getWidth(),
+//                getY() + pixelHeight / 2f + originPositionOffset.y,
+//                3
+//        );
     }
 
     public float getScreenX(float plotSpaceX) {
-        return getX() + pixelWidth / 2f + originPositionOffset.x + plotSpaceX * pixelLengthOfXUnit;
+        float relXInBounds = (plotSpaceX - xMin) / (xMax - xMin);
+        float pixelRelX = relXInBounds * pixelWidth;
+        return getX() + pixelWidth / 2f + originPositionOffset.x + pixelRelX;
     }
 
     public float getScreenY(float plotSpaceY) {
-        return getY() + pixelHeight / 2f + originPositionOffset.y + plotSpaceY * pixelLengthOfYUnit;
+        float relYInBounds = (plotSpaceY - yMin) / (yMax - yMin);
+        float pixelRelY = relYInBounds * pixelHeight;
+        return getY() + pixelHeight / 2f + originPositionOffset.y + pixelRelY;
     }
 
     public Vector2 toScreenSpace(Vector2 plotCoord) {
@@ -177,18 +233,18 @@ public class PlotGrid extends Widget {
         Vector2 screenCoord = toScreenSpace(plotCoord);
         return (
             (getX() <= screenCoord.x) &&
-            (screenCoord.x <= getX() + getWidth()) &&
+            (screenCoord.x <= getX() + pixelWidth) &&
             (getY() <= screenCoord.y) &&
-            (screenCoord.y <= getY() + getHeight())
+            (screenCoord.y <= getY() + pixelHeight)
         );
     }
 
     public void drawMajorXGridLine(float x) {
         float lineX = getScreenX(x);
-        if (lineX < getX() || lineX >= getX() + getWidth())
+        if (lineX < getX() || lineX >= getX() + pixelWidth)
             return;
         drawer.setColor(Color.WHITE.cpy().mul(1f, 1f, 1f, 0.25f));
-        drawer.line(lineX, getY(), lineX, getY() + getHeight(), 3);
+        drawer.line(lineX, getY(), lineX, getY() + pixelHeight, 3);
     }
 
     public void drawMajorYGridLine(float y) {
@@ -226,6 +282,4 @@ public class PlotGrid extends Widget {
                 3
         );
     }
-
-
 }

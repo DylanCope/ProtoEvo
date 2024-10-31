@@ -43,6 +43,7 @@ public class Simulation implements Runnable
 	private String name;
 	private List<String> statsNames;
 	private final REPL repl = new REPL(this);
+	private SimulationHistory history;
 
 	public Simulation() {
 		this(Environment.settings.simulationSeed.get());
@@ -205,6 +206,8 @@ public class Simulation implements Runnable
 		paused = false;
 		environment = environmentLoader.get();
 		environment.setSimulationName(name);
+		history = new SimulationHistory(getSaveFolder());
+
 		if (!initialised) {
 			environment.initialise();
 			makeStatisticsSnapshot();
@@ -298,6 +301,7 @@ public class Simulation implements Runnable
 			FileWriter fileWriter = new FileWriter(crashFolder + "/report.txt");
 			PrintWriter printWriter = new PrintWriter(fileWriter);
 			printWriter.println("Timestamp: " + new Date());
+			printWriter.println("Application version: " + ApplicationManager.APPLICATION_VERSION);
 			printWriter.println("Operating system: " + System.getProperty("os.name"));
 			printWriter.println("Operating system version: " + System.getProperty("os.version"));
 			printWriter.println("Java version: " + System.getProperty("java.version"));
@@ -380,24 +384,29 @@ public class Simulation implements Runnable
 	}
 
 	public void makeStatisticsSnapshot() {
-		Statistics stats = new Statistics(environment.getStats());
-		stats.putAll(environment.getDebugStats());
-		stats.putAll(environment.getPhysicsDebugStats());
-		stats.putAll(environment.getProtozoaSummaryStats(true, false, true));
-
-		String timeStamp = Utils.getTimeStampString();
-
-		FileIO.writeJson(stats, getSaveFolder() + "/stats/summaries/" + timeStamp);
-
-		if (Environment.settings.misc.writeGenomes.get()) {
-			List<NetworkGenome> protozoaGenomes = environment.getCells().stream()
-					.filter(cell -> cell instanceof Protozoan)
-					.map(cell -> ((Protozoan) cell).getGeneExpressionFunction().getGRNGenome())
-					.collect(Collectors.toList());
-			FileIO.writeJson(protozoaGenomes, getSaveFolder() + "/stats/protozoa-genomes/" + timeStamp);
-		}
+		history.makeStatisticsSnapshot(environment);
+//		Statistics stats = new Statistics(environment.getStats());
+//		stats.putAll(environment.getDebugStats());
+//		stats.putAll(environment.getPhysicsDebugStats());
+//		stats.putAll(environment.getProtozoaSummaryStats(true, false, true));
+//
+//		String timeStamp = Utils.getTimeStampString();
+//
+//		FileIO.writeJson(stats, getSaveFolder() + "/stats/summaries/" + timeStamp);
+//
+//		if (Environment.settings.misc.writeGenomes.get()) {
+//			List<NetworkGenome> protozoaGenomes = environment.getCells().stream()
+//					.filter(cell -> cell instanceof Protozoan)
+//					.map(cell -> ((Protozoan) cell).getGeneExpressionFunction().getGRNGenome())
+//					.collect(Collectors.toList());
+//			FileIO.writeJson(protozoaGenomes, getSaveFolder() + "/stats/protozoa-genomes/" + timeStamp);
+//		}
 
 //		PythonRunner.runPython("pyprotoevo.create_plots", "--quiet --simulation " + name);
+	}
+
+	public SimulationHistory getHistory() {
+		return history;
 	}
 
 	public void toggleDebug() {

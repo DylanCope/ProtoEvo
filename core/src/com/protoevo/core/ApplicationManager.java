@@ -2,7 +2,6 @@ package com.protoevo.core;
 
 import com.badlogic.gdx.Files;
 import com.badlogic.gdx.Gdx;
-import com.badlogic.gdx.Graphics;
 import com.badlogic.gdx.backends.lwjgl3.Lwjgl3Application;
 import com.badlogic.gdx.backends.lwjgl3.Lwjgl3ApplicationConfiguration;
 import com.protoevo.networking.RemoteGraphics;
@@ -17,6 +16,8 @@ import static org.lwjgl.glfw.GLFW.glfwGetCurrentContext;
 public class ApplicationManager {
 
     public static ApplicationSettings settings = ApplicationSettings.load();
+
+    public static final String APPLICATION_VERSION = "v0.3.4-dev";
 
     public static long window = 0;
     private volatile boolean headless = false, applicationRunning = true, saveOnExit = true;
