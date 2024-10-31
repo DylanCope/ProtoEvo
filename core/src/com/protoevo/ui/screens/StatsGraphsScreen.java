@@ -3,12 +3,19 @@ package com.protoevo.ui.screens;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.ScreenAdapter;
 import com.badlogic.gdx.graphics.Color;
+import com.badlogic.gdx.graphics.Pixmap;
+import com.badlogic.gdx.graphics.g2d.Sprite;
+import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.graphics.glutils.FrameBuffer;
+import com.badlogic.gdx.graphics.glutils.ShaderProgram;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.utils.Align;
 import com.protoevo.core.Simulation;
+import com.protoevo.maths.Functions;
+import com.protoevo.ui.FrameBufferManager;
 import com.protoevo.ui.GraphicsAdapter;
 import com.protoevo.ui.plotting.LinePlot;
 import com.protoevo.ui.plotting.PlotElement;
@@ -32,22 +39,41 @@ public class StatsGraphsScreen extends ScreenAdapter {
     private String selectedXAxis, selectedYAxis;
     private final LinePlot linePlot;
 
-    public StatsGraphsScreen(GraphicsAdapter graphics, Simulation simulation) {
+    private final SimulationScreen simulationScreen;
+    private final FrameBuffer fbo;
+    private final SpriteBatch batch;
+    private final ShaderProgram shader;
+    private float timePaused = 0;
+    private final float fadeTime = 0.15f;
+
+    public StatsGraphsScreen(GraphicsAdapter graphics, Simulation simulation, SimulationScreen simulationScreen) {
         this.graphics = graphics;
         this.simulation = simulation;
+        this.simulationScreen = simulationScreen;
         this.stage = new Stage();
         stage.setDebugAll(DebugMode.isDebugMode());
+
+        fbo = new FrameBuffer(Pixmap.Format.RGBA8888,
+                Gdx.graphics.getWidth(), Gdx.graphics.getHeight(), false);
+
+        batch = new SpriteBatch();
+        shader = new ShaderProgram(
+                Gdx.files.internal("shaders/pause/vertex.glsl"),
+                Gdx.files.internal("shaders/pause/fragment.glsl"));
+        if (!shader.isCompiled()) {
+            throw new RuntimeException("Shader compilation failed: " + shader.getLog());
+        }
 
         final Table table = new Table();
         table.setFillParent(true);
         stage.addActor(table);
 
         final com.badlogic.gdx.scenes.scene2d.ui.Label nameText = new Label(
-                "Statistics", graphics.getSkin(), "mainTitle");
+                "Statistics", graphics.getSkin(), "mediumTitle");
         nameText.setAlignment(Align.center);
         nameText.setWrap(true);
         table.add(nameText)
-                .width(Gdx.graphics.getWidth() / 2f).height(Gdx.graphics.getHeight() / 7f).row();
+                .width(Gdx.graphics.getWidth() / 2f).height(Gdx.graphics.getHeight() / 8f).row();
 
         final Table selectionTable = new Table();
         final com.badlogic.gdx.scenes.scene2d.ui.Label xSelectLabel = new Label(
@@ -90,6 +116,31 @@ public class StatsGraphsScreen extends ScreenAdapter {
         topBar.createRightBarImageButton("icons/back.png", graphics::moveToPreviousScreen);
     }
 
+    private void drawBackground(float delta) {
+        timePaused += delta;
+        FrameBufferManager fboManager = FrameBufferManager.getInstance();
+        fboManager.begin(fbo);
+        simulationScreen.renderEnvironment(delta);
+        fboManager.end();
+
+        Sprite sprite = new Sprite(fbo.getColorBufferTexture());
+        sprite.flip(false, true);
+
+        shader.bind();
+        shader.setUniformf("u_resolution", Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
+        shader.setUniformf("u_blurAmount",
+                Functions.clampedLinearRemap(timePaused, 0, fadeTime, 0, 10f));
+        shader.setUniformf("u_darkenAmount",
+                Functions.clampedLinearRemap(timePaused, 0, fadeTime, 1f, 0.75f));
+        batch.setShader(shader);
+
+        batch.begin();
+        batch.setColor(1, 1, 1,
+                Functions.clampedLinearRemap(timePaused, 0, fadeTime, 1f, 0.75f));
+        batch.draw(sprite, 0, 0, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
+        batch.end();
+    }
+
     @Override
     public void show() {
         CursorUtils.setDefaultCursor();
@@ -106,11 +157,16 @@ public class StatsGraphsScreen extends ScreenAdapter {
                 })
                 .sorted()
                 .collect(Collectors.toList());
-        xSelectBox.setItems(commonStatsKeys.toArray(new String[0]));
+        xSelectBox.setItems("Time Elapsed", "Generation Mean");
+//        xSelectBox.setItems(commonStatsKeys.toArray(new String[0]));
         ySelectBox.setItems(commonStatsKeys.toArray(new String[0]));
         xSelectBox.setSelected("Time Elapsed");
         ySelectBox.setSelected("Protozoa");
+        xSelectBox.setWidth(Gdx.graphics.getWidth() / 20f);
+        ySelectBox.setWidth(Gdx.graphics.getWidth() / 20f);
         refreshPlot();
+
+        timePaused = 0;
     }
 
     @Override
@@ -133,17 +189,6 @@ public class StatsGraphsScreen extends ScreenAdapter {
         if (data.isEmpty()) {
             return;
         }
-
-
-//        float xMin = 0, xMax = .5f, yMin = -1.5f, yMax = 1.5f;
-//        int resolution = 1000;
-//        ArrayList<Vector2> data = new ArrayList<>();
-//        for (int i = 0; i < resolution; i++) {
-//            float x = xMin + (xMax - xMin) * i / resolution;
-//            float y = (float) Math.cos(x);
-//            data.add(new Vector2(x, y));
-//        }
-//        xMin = Float.MAX_VALUE; xMax = -Float.MAX_VALUE; yMin = Float.MAX_VALUE; yMax = -Float.MAX_VALUE;
 
         linePlot.setData(data)
                 .setLineWidth(4)
@@ -168,6 +213,7 @@ public class StatsGraphsScreen extends ScreenAdapter {
 
     @Override
     public void render(float delta) {
+        drawBackground(delta);
         stage.act(delta);
 
         if (!xSelectBox.getSelected().equals(selectedXAxis)

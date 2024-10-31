@@ -66,7 +66,7 @@ public class SimulationInputManager {
         topBar.createRightBarImageButton("icons/save.png", simulation::saveOnOtherThread);
 
         topBar.createRightBarImageButton("icons/plot.png", () -> {
-            graphics.setScreen(new StatsGraphsScreen(graphics, simulation));
+            graphics.setScreen(new StatsGraphsScreen(graphics, simulation, simulationScreen));
         });
 
         possibleSpawnables.put("Plant Cell", () -> Evolvable.createNew(PlantCell.class));

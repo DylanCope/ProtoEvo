@@ -104,7 +104,7 @@ public class SimulationScreen extends ScreenAdapter {
         environment = simulation.getEnv();
         getStats = environment::getStats;
 
-        statsGraphsScreen = new StatsGraphsScreen(graphics, simulation);
+        statsGraphsScreen = new StatsGraphsScreen(graphics, simulation, this);
 
         CursorUtils.setDefaultCursor();
 
