@@ -146,13 +146,13 @@ _Note:_ Currently a packaged user-friendly version of the simulation is only ava
 
 1. Download the [latest release](https://github.com/DylanCope/ProtoEvo/releases) from the GitHub repository.
 2. Unzip the downloaded file and place the folder somewhere you will remember.
-3. Ensure that you have [Java 8](https://www.java.com/en/download/help/windows_manual_download.html) (or later) installed.
+3. Ensure that you have [Java 8](https://www.java.com/en/download/help/windows_manual_download.html) installed. Java 8 is the only version that is sure to work - other versions are mostly untested. Many later versions are known to not work.
 4. Run the `ProtoEvo.exe` file. You should see the program launch.
 
 ## Installation FaQ
 
-**Java Issues:** The most common issue with running the simulation is not having an available correct Java runtime installed.
-For a step-by-step tutorial for installing Java on Windows 11, see [this video](https://www.youtube.com/watch?v=8knD-PZ_PuA&ab_channel=TechOnTech).
+**Java Issues:** The most common issue with running the simulation is not having an available correct Java 8 runtime installed.
+For a step-by-step tutorial for installing Java 8 on Windows 11, see [this video](https://www.youtube.com/watch?v=8knD-PZ_PuA&ab_channel=TechOnTech).
 
 If you have specific questions, join the [project discord](https://discord.com/invite/GY5UJxbBnq) and post your 
 problem in the `#help` channel.
