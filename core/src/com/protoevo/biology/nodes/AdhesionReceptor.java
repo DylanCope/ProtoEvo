@@ -23,6 +23,10 @@ public class AdhesionReceptor extends NodeAttachment {
     private float constructionMassTransfer, molecularMassTransfer, energyTransfer;
     private Vector2 bindingAnchor = null;
 
+    public AdhesionReceptor() {
+        super(null);
+    }
+    
     public AdhesionReceptor(SurfaceNode node) {
         super(node);
     }

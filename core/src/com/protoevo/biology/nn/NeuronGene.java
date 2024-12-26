@@ -10,9 +10,9 @@ import java.io.Serializable;
 
 public class NeuronGene implements Comparable<NeuronGene>, Serializable
 {
-    private final long signature;
-    private final int id;
-    private final Neuron.Type type;
+    private long signature;
+    private int id;
+    private Neuron.Type type;
     private ActivationFn activation;
 
     private String label;
@@ -26,6 +26,8 @@ public class NeuronGene implements Comparable<NeuronGene>, Serializable
     private int nMutationRateMutations = 0;
     @JsonIgnore
     private int genomeIdx = -1;
+
+    public NeuronGene() {}
 
     public NeuronGene(int id, Neuron.Type type, ActivationFn activation)
     {

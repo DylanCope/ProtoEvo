@@ -17,6 +17,10 @@ public class PlantOnlyPhagocyticReceptor extends PhagocyticReceptor {
 
     private static final long serialVersionUID = 1L;
 
+    public PlantOnlyPhagocyticReceptor() {
+        super(null);
+    }
+
     public PlantOnlyPhagocyticReceptor(SurfaceNode node) {
         super(node);
     }

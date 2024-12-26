@@ -11,9 +11,9 @@ import java.util.Objects;
 
 public class SynapseGene implements Comparable<SynapseGene>, Serializable
 {
-    private final long signature;
+    private long signature;
     private static int globalInnovation = 0;
-    private final int innovation;
+    private int innovation;
     private NeuronGene in, out;
     private float weight;
     private boolean disabled;
@@ -21,6 +21,8 @@ public class SynapseGene implements Comparable<SynapseGene>, Serializable
     private float mutationRateMin = Environment.settings.evo.minMutationChance.get();
     private float mutationRateMax = Environment.settings.evo.maxMutationChance.get();
     private int nMutations, nMutationRateMutations;
+
+    public SynapseGene() {}
 
     public SynapseGene(NeuronGene in, NeuronGene out, float weight, int innovation) {
         this.in = in;

@@ -16,7 +16,11 @@ public class MoleculeProductionOrganelle extends OrganelleFunction implements Se
     private float productionChangeTimer = 0f;
     private ComplexMolecule productionMolecule;
     private float lastRate;
-    private final Statistics stats = new Statistics();
+    private Statistics stats = new Statistics();
+
+    public MoleculeProductionOrganelle() {
+        super(null);
+    }
 
     public MoleculeProductionOrganelle(Organelle organelle) {
         super(organelle);

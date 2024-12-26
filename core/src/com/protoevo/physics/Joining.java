@@ -8,7 +8,7 @@ import java.util.Optional;
 
 public class Joining implements Serializable {
     public static long serialVersionUID = 1L;
-    public final long id;
+    public long id;
 
     public enum Type {
         DISTANCE, ROPE
@@ -56,12 +56,14 @@ public class Joining implements Serializable {
     public boolean anchoredA, anchoredB;
     private final Vector2 anchorA = new Vector2();
     private final Vector2 anchorB = new Vector2();
-    private final Physics physics;
+    private Physics physics;
     private MetaData metaData;
 
     public static long getId(long particleAId, long particleBId) {
         return particleAId ^ particleBId;
     }
+
+    public Joining() {}
 
     public Joining(Particle particleA, Particle particleB) {
         particleAId = particleA.getId();

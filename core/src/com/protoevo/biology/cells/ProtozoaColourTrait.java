@@ -11,13 +11,15 @@ import java.util.Map;
 public class ProtozoaColourTrait implements Trait<Colour>, Serializable {
     public static final long serialVersionUID = -1821863048303900554L;
 
-    private final Colour value;
+    private Colour value;
     private float mutationRate;
-    private final String geneName;
+    private String geneName;
 
     private final int minVal = 80;
     private final int maxVal = 150;
     private int mutationCount = 0;
+
+    public ProtozoaColourTrait() {}
 
     public ProtozoaColourTrait(String geneName) {
         this.geneName = geneName;

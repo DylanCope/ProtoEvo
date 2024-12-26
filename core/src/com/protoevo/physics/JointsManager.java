@@ -13,9 +13,11 @@ public abstract class JointsManager implements Serializable {
     public static long serialVersionUID = 1L;
 
     protected Physics physics;
-    protected final Collection<Joining> jointsToAdd = new ConcurrentLinkedQueue<>();
-    protected final Collection<Long> jointRemovalRequests = new ConcurrentLinkedQueue<>();
-    protected final Map<Long, Joining> joinings = new ConcurrentHashMap<>();
+    protected Collection<Joining> jointsToAdd = new ConcurrentLinkedQueue<>();
+    protected Collection<Long> jointRemovalRequests = new ConcurrentLinkedQueue<>();
+    protected Map<Long, Joining> joinings = new ConcurrentHashMap<>();
+
+    public JointsManager() {}
 
     public JointsManager(Physics physics) {
         this.physics = physics;

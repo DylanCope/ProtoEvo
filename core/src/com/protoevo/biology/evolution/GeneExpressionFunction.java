@@ -35,9 +35,11 @@ public class GeneExpressionFunction implements Evolvable.Component, Serializable
         public static final long serialVersionUID = 1L;
         public String name;
         private transient Function<Evolvable, Float> regulatorGetter;
-        private final String methodGetterName;
+        private String methodGetterName;
         private String targetID;
         private Object lastTarget;
+
+        public RegulationNode() {}
 
         public RegulationNode(RegulationNode other) {
             this.name = other.name;
@@ -130,6 +132,10 @@ public class GeneExpressionFunction implements Evolvable.Component, Serializable
         private Object lastTraitValue;
         private String targetID;
         private Object lastTarget;
+
+        public ExpressionNode() {
+            this(null, null, null, new String[]{});
+        }
 
         public ExpressionNode(String name, Trait<?> trait, Method traitSetter, String[] dependencies) {
             this.name = name;
@@ -280,6 +286,12 @@ public class GeneExpressionFunction implements Evolvable.Component, Serializable
     private Regulators regulators;
     private Collection<String> regulatedTraits = new ArrayList<>();
     private final Map<String, Evolvable> targetMap = new HashMap<>();
+
+
+    public GeneExpressionFunction() {
+        this.expressionNodes = new ExpressionNodes();
+        this.regulators = new Regulators();
+    }
 
     public GeneExpressionFunction(ExpressionNodes expressionNodes, Regulators regulators) {
         this.expressionNodes = expressionNodes;

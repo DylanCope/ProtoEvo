@@ -23,7 +23,7 @@ public class SurfaceNode implements Evolvable.Element, Serializable {
     public static final String activationPrefix = "Activation/";
     public static final String inputActivationPrefix = "Input" + activationPrefix;
     public static final String outputActivationPrefix = "Output" + activationPrefix;
-    public static final int ioDim = 1;
+    public static int ioDim = 1;
 
     private Cell cell;
     private float angle, constructionSignature, deltaTime;
@@ -39,7 +39,7 @@ public class SurfaceNode implements Evolvable.Element, Serializable {
 
     private final Map<MoleculeFunctionalContext.MoleculeFunction, Float> nodeFunctionSignatures =
             new HashMap<>(NodeAttachment.possibleAttachments.length, 1);
-    private final MoleculeFunctionalContext moleculeFunctionalContext = () -> nodeFunctionSignatures;
+    private final MoleculeFunctionalContext moleculeFunctionalContext = new ConstantMoleculeFunctionalContext(nodeFunctionSignatures);
     private static final float criticalCandidateConstructionProgress = 0.1f;
 
     public SurfaceNode() {
@@ -64,9 +64,8 @@ public class SurfaceNode implements Evolvable.Element, Serializable {
             candidate.getRequiredComplexMolecules().put(
                     ComplexMolecule.fromSignature(signature),
                     candidate.getRequiredMass() / 10f);
-            nodeFunctionSignatures.put(
-                    (molecule, potency) -> constructCandidate(candidate, molecule, potency),
-                    signature);
+            MoleculeFunctionalContext.MoleculeFunction moleFn = new CandidateConstructor(this, candidate);
+            nodeFunctionSignatures.put(moleFn, signature);
         }
     }
 
@@ -146,7 +145,6 @@ public class SurfaceNode implements Evolvable.Element, Serializable {
         cell.depleteEnergy(progressionFactor * energyUsed);
         cell.depleteConstructionMass(progressionFactor * massUsed);
     }
-
 
     /**
      * @param signature The signature of the attachment to be added.
@@ -327,7 +325,10 @@ public class SurfaceNode implements Evolvable.Element, Serializable {
         }
         for (NodeAttachment candidate : candidateAttachments)
             if (candidate.getConstructionProgress() > 0 && candidate != attachment)
-                stats.putPercentage(candidate.getName() + " Construction Progress", candidate.getConstructionProgress());
+                stats.putPercentage(
+                        candidate.getName() + " Construction Progress",
+                        candidate.getConstructionProgress()
+                );
         return stats;
     }
 
@@ -345,5 +346,39 @@ public class SurfaceNode implements Evolvable.Element, Serializable {
 
     public int getIODimension() {
         return ioDim;
+    }
+
+    public static class ConstantMoleculeFunctionalContext implements MoleculeFunctionalContext {
+
+        private static final long serialVersionUID = 1L;
+        private Map<MoleculeFunction, Float> nodeFunctionSignatures;
+
+        public ConstantMoleculeFunctionalContext() {}
+
+        public ConstantMoleculeFunctionalContext(Map<MoleculeFunction, Float> nodeFunctionSignatures) {
+            this.nodeFunctionSignatures = nodeFunctionSignatures;
+        }
+
+        @Override
+        public Map<MoleculeFunction, Float> getMoleculeFunctionSignatures() {
+            return nodeFunctionSignatures;
+        }
+    }
+
+    public static class CandidateConstructor implements MoleculeFunctionalContext.MoleculeFunction {
+        private NodeAttachment candidate;
+        private SurfaceNode node;
+
+        public CandidateConstructor() {}
+
+        public CandidateConstructor(SurfaceNode node, NodeAttachment candidate) {
+            this.candidate = candidate;
+            this.node = node;
+        }
+
+        @Override
+        public void accept(ComplexMolecule molecule, Float potency) {
+            node.constructCandidate(candidate, molecule, potency);
+        }
     }
 }

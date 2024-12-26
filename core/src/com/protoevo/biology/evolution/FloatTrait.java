@@ -12,10 +12,12 @@ public class FloatTrait implements Trait<Float>, Serializable {
     public static final long serialVersionUID = 1L;
 
     private boolean regulated;
-    private final float value, minValue, maxValue;
-    private final String traitName;
+    private float value, minValue, maxValue;
+    private String traitName;
     private float mutationRate;
     private int mutationCount = 0;
+
+    public FloatTrait() {}
 
     public FloatTrait(FloatTrait other, float value) {
         this.traitName = other.traitName;

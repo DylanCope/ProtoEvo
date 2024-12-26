@@ -11,15 +11,17 @@ public class NeuralNetwork implements Serializable
 {
     private static final long serialVersionUID = 1L;
 
-    private final Neuron[] outputNeurons;
-    private final Neuron[] inputNeurons;
-    private final float[] outputs;
-    private final List<Neuron> neurons;
-    private final HashMap<String, Neuron> outputLabels = new HashMap<>(), inputLabels = new HashMap<>();
-    private final int depth;
-    private final int nInputs;
+    private Neuron[] outputNeurons;
+    private Neuron[] inputNeurons;
+    private float[] outputs;
+    private List<Neuron> neurons;
+    private HashMap<String, Neuron> outputLabels = new HashMap<>(), inputLabels = new HashMap<>();
+    private int depth;
+    private int nInputs;
     private boolean computedGraphics = false;
     private float nodeSpacing;
+
+    public NeuralNetwork() {}
 
     public NeuralNetwork(Neuron[] neurons) {
         this.neurons = new ArrayList<>();

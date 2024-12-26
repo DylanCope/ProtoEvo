@@ -10,6 +10,8 @@ public class Collision implements Serializable {
     public Object objA, objB;
     public Vector2 point;
 
+    public Collision() {}
+
     public Collision(Object objA, Object objB, Vector2 point) {
         this.objA = objA;
         this.objB = objB;

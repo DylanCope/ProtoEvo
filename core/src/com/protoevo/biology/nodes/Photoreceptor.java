@@ -38,6 +38,10 @@ public class Photoreceptor extends NodeAttachment implements Serializable {
     public int nRays = 8;
     public float fov = maxFoV / 2f;
 
+    public Photoreceptor() {
+        super(null);
+    }
+
     public Photoreceptor(SurfaceNode node) {
         super(node);
     }

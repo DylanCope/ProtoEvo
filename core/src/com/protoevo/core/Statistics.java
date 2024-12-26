@@ -234,13 +234,15 @@ public class Statistics implements Serializable, Iterable<Statistics.Stat> {
         
         private static final long serialVersionUID = 1L;
 
-        private final String name;
-        private final StatType type;
+        private String name;
+        private StatType type;
         private Object value;
         private double error;
         private ComplexUnit unit;
         @JsonIgnore
         private Map<BaseUnit, Double> unitMultipliers;
+
+        public Stat() {}
 
         public Stat(String name, StatType type) {
             this.name = name;

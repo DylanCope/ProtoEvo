@@ -12,10 +12,13 @@ import com.protoevo.env.Environment;
 import com.protoevo.maths.Functions;
 import com.protoevo.physics.Collision;
 import com.protoevo.utils.Colour;
+import com.protoevo.utils.SerializableFunction;
 
 
 import java.io.Serializable;
 import java.util.*;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 public class Protozoan extends EvolvableCell
 {
@@ -33,6 +36,8 @@ public class Protozoan extends EvolvableCell
 	private final Vector2 thrust = new Vector2(), dir = new Vector2();
 	private float thrustAngle = (float) (2 * Math.PI * Math.random());
 	private float thrustTurn = 0, thrustMag;
+	private final SpawnChildFn createChild = new SpawnChildFn(this);
+	private final SpawnMeatCell createMeatOnDeath = new SpawnMeatCell(this);
 
 	public static class LineageTag implements Serializable, Comparable<LineageTag> {
 		public static final long serialVersionUID = 1L;
@@ -81,8 +86,9 @@ public class Protozoan extends EvolvableCell
 		}
 		engulfedCells.removeIf(this::removeEngulfedCondition);
 
-		if (shouldSplit() && hasNotBurst()) {
-			getEnv().ifPresent(e -> e.requestBurst(this, Protozoan.class, this::createSplitChild));
+		if (shouldSplit() && hasNotBurst() && getEnv().isPresent()) {
+			Environment e = getEnv().get();
+			e.requestBurst(Protozoan.this, Protozoan.class, createChild);
 		}
 
 		generateThrust(delta);
@@ -292,18 +298,24 @@ public class Protozoan extends EvolvableCell
 	}
 
 	public void kill(CauseOfDeath causeOfDeath, boolean burstMeat) {
-		if (burstMeat && hasNotBurst())
-			getEnv().ifPresent(e -> e.requestBurst(
-					this,
-					MeatCell.class,
-					this::createMeat,
-					true));
+		if (burstMeat && hasNotBurst()) {
+			if (getEnv().isPresent()) {
+				Environment e = getEnv().get();
+				e.requestBurst(
+						Protozoan.this,
+						MeatCell.class,
+						createMeatOnDeath,
+						true);
+			}
+		}
 		super.kill(causeOfDeath);
 	}
 
 	private MeatCell createMeat(float r) {
-		return new MeatCell(
-				r, getEnv().orElseThrow(() -> new RuntimeException("Cannot create meat cell without environment")));
+		if (getEnv().isEmpty())
+			throw new RuntimeException("Cannot create meat cell without environment");
+
+		return new MeatCell(r, getEnv().get());
 	}
 
 	@Override
@@ -489,5 +501,37 @@ public class Protozoan extends EvolvableCell
 	@Override
 	public float maxGrowthRate() {
 		return Environment.settings.protozoa.maxProtozoanGrowthRate.get();
+	}
+
+	public static class SpawnChildFn implements SerializableFunction<Float, Protozoan> {
+
+		private Protozoan protozoa;
+
+		public SpawnChildFn() {}
+
+		public SpawnChildFn(Protozoan protozoa) {
+			this.protozoa = protozoa;
+		}
+
+		@Override
+		public Protozoan apply(Float r) {
+			return protozoa.createSplitChild(r);
+		}
+	}
+
+	public static class SpawnMeatCell implements SerializableFunction<Float, MeatCell> {
+
+		private Protozoan protozoa;
+
+		public SpawnMeatCell() {}
+
+		public SpawnMeatCell(Protozoan protozoa) {
+			this.protozoa = protozoa;
+		}
+
+		@Override
+		public MeatCell apply(Float r) {
+			return protozoa.createMeat(r);
+		}
 	}
 }

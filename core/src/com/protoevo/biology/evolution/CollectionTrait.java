@@ -9,14 +9,16 @@ import java.util.Map;
 
 public class CollectionTrait implements Trait<List<Evolvable>> {
 
-    private final String name;
+    private String name;
     private List<Evolvable> collection;
-    private final Class<Evolvable.Element> collectionType;
+    private Class<Evolvable.Element> collectionType;
     private GeneExpressionFunction geneExpressionFunction;
-    private final int minSize, maxSize;
-    private final static int nMutationTypes = 3;
+    private int minSize, maxSize;
+    private static int nMutationTypes = 3;
     private float mutationRate;
     private int mutationCount;
+
+    public CollectionTrait() {}
 
     public CollectionTrait(CollectionTrait other, List<Evolvable> collection) {
         this.geneExpressionFunction = other.geneExpressionFunction;

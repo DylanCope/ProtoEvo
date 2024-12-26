@@ -10,6 +10,8 @@ public class MeatCell extends Cell {
 
     public static final long serialVersionUID = -5549426815144079228L;
 
+    public MeatCell() {}
+
     public MeatCell(float radius, Environment environment) {
         super();
         setRadius(radius);

@@ -11,6 +11,7 @@ public class DamageEvent implements Serializable {
     private float damageAmount;
     private CauseOfDeath causeOfDamage;
 
+    public DamageEvent() {}
 
     public DamageEvent(float damageTime, float damageAmount, CauseOfDeath causeOfDamage) {
         this.damageTime = damageTime;

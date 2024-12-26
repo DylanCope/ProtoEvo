@@ -27,8 +27,8 @@ public class Neuron implements Comparable<Neuron>, Serializable {
 
     private static final long serialVersionUID = 1L;
 
-    private final Neuron[] inputs;
-    private final float[] weights;
+    private Neuron[] inputs;
+    private float[] weights;
     private Type type;
     private int id;
     private float state = 0, lastState = 0, nextState = 0;
@@ -38,9 +38,11 @@ public class Neuron implements Comparable<Neuron>, Serializable {
     private Vector2 graphicsPos;
     private boolean graphicsEnabled = true;
     private boolean connectedToOutput = true;
-    private final String label;
+    private String label;
     private Object[] tags;
     private boolean active;
+
+    public Neuron() {}
 
     public Neuron(int id, Neuron[] inputs, float[] weights, Type type, ActivationFn activation, String label)
     {

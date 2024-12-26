@@ -29,6 +29,10 @@ public class NetworkGenome implements Serializable
 		setProperties(other);
 	}
 
+	public NetworkGenome() {
+		this(0, 0);
+	}
+
 	public void setProperties(NetworkGenome other)
 	{
 		sensorNeuronGenes = copy(other.sensorNeuronGenes);
@@ -40,10 +44,6 @@ public class NetworkGenome implements Serializable
 		numStructuralMutations = other.numStructuralMutations;
 		nSensors = other.nSensors;
 		nOutputs = other.nOutputs;
-	}
-
-	public NetworkGenome() {
-		this(0, 0);
 	}
 
 	private NeuronGene[] copy(NeuronGene[] neuronGenes) {

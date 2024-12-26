@@ -17,6 +17,8 @@ import java.util.Optional;
 public class Box2DJointsManager extends JointsManager {
     public static long serialVersionUID = 1L;
 
+    public Box2DJointsManager() {}
+
     public Box2DJointsManager(Box2DPhysics physics) {
         super(physics);
     }

@@ -18,6 +18,10 @@ public class PhagocyticReceptor extends NodeAttachment implements Serializable {
     protected Cell lastEngulfed;
     private boolean engulfPlant, engulfMeat;
 
+    public PhagocyticReceptor() {
+        super(null);
+    }
+
     public PhagocyticReceptor(SurfaceNode node) {
         super(node);
     }

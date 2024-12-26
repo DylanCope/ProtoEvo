@@ -13,10 +13,12 @@ public class ComplexMolecule implements Serializable {
 
     public static final long serialVersionUID = 1L;
 
-    private final float signature, productionCost;
+    private float signature, productionCost;
 
     private final static Map<Float, ComplexMolecule> cache = new HashMap<>(
             Environment.settings.possibleMolecules.get(), 1);
+
+    public ComplexMolecule() {}
 
     private ComplexMolecule(float signature, float productionCost) {
         this.signature = signature;

@@ -16,6 +16,8 @@ public class Parameter<T> implements Serializable {
     private boolean changeable = false;
     private Statistics.ComplexUnit unit = null;
 
+    public Parameter() {}
+
     public Parameter(String name, String description, T defaultValue) {
         this.value = defaultValue;
         this.name = name;

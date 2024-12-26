@@ -93,13 +93,15 @@ public class LightManager implements Serializable {
         return dist;
     }
 
-    private final float[][] lightMap;
-    private final int width, height;
-    private final float cellSizeX, cellSizeY;
-    private final float xMin, yMin, xMax, yMax;
-    private final float radius;
+    private float[][] lightMap;
+    private int width, height;
+    private float cellSizeX, cellSizeY;
+    private float xMin, yMin, xMax, yMax;
+    private float radius;
     private float environmentLight = 1f;
     private TimeManager timeManager;
+
+    public LightManager() {}
 
     public LightManager(int width, int height, float radius) {
         this.width = width;

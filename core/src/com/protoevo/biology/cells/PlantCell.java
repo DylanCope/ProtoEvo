@@ -13,6 +13,10 @@ import com.protoevo.physics.Collision;
 import com.protoevo.physics.Particle;
 import com.protoevo.utils.Colour;
 import com.protoevo.maths.Geometry;
+import com.protoevo.utils.SerializableFunction;
+
+import java.util.Optional;
+import java.util.function.Consumer;
 
 public class PlantCell extends EvolvableCell {
     public static final long serialVersionUID = -3975433688803760076L;
@@ -21,6 +25,7 @@ public class PlantCell extends EvolvableCell {
     private float photosynthesisRate = 0;
     private static final Statistics.ComplexUnit photosynthesisUnit =
             new Statistics.ComplexUnit(Statistics.BaseUnit.ENERGY).divide(Statistics.BaseUnit.TIME);
+    private final PlantSplitFn splitFn = new PlantSplitFn(this);
 
     public PlantCell(float radius, Environment environment) {
         super();
@@ -135,10 +140,9 @@ public class PlantCell extends EvolvableCell {
 
         handleAttachments();
 
-        if (shouldSplit()) {
-            getEnv().ifPresent(env -> env.requestBurst(
-                this, PlantCell.class, this::createChild
-            ));
+        if (shouldSplit() && getEnv().isPresent()) {
+            Environment env = getEnv().get();
+            env.requestBurst(PlantCell.this, PlantCell.class, splitFn);
         }
     }
 
@@ -157,24 +161,29 @@ public class PlantCell extends EvolvableCell {
         if (Environment.settings.plant.evolutionEnabled.get()) {
             child = Evolvable.asexualClone(this);
             child.setRadius(r);
-            getEnv().ifPresent(child::setEnvironmentAndBuildPhysics);
+            if (getEnv().isPresent())
+                child.setEnvironmentAndBuildPhysics(getEnv().get());
         } else {
-            Environment env = getEnv()
-                    .orElseThrow(() -> new RuntimeException(
-                            "Cannot create cell without environment"
-                    ));
-            child = new PlantCell(r, env);
+            Optional<Environment> env = getEnv();
+            if (env.isEmpty())
+                throw new RuntimeException(
+                        "Cannot create cell without environment"
+                );
+            child = new PlantCell(r, env.get());
         }
         return child;
     }
 
     public void attach(Cell otherCell) {
         Joining joining = new Joining(this.getParticle(), otherCell.getParticle());
-        getEnv().ifPresent(env -> {
-            JointsManager jointsManager = env.getJointsManager();
-            jointsManager.createJoint(joining);
-            registerJoining(joining);
-            otherCell.registerJoining(joining);
+        getEnv().ifPresent(new Consumer<Environment>() {
+            @Override
+            public void accept(Environment env) {
+                JointsManager jointsManager = env.getJointsManager();
+                jointsManager.createJoint(joining);
+                PlantCell.this.registerJoining(joining);
+                otherCell.registerJoining(joining);
+            }
         });
     }
 
@@ -211,5 +220,21 @@ public class PlantCell extends EvolvableCell {
 
     public int burstMultiplier() {
         return 3;
+    }
+
+    public static class PlantSplitFn implements SerializableFunction<Float, PlantCell> {
+
+        private PlantCell plantCell;
+
+        public PlantSplitFn() {}
+
+        public PlantSplitFn(PlantCell plantCell) {
+            this.plantCell = plantCell;
+        }
+
+        @Override
+        public PlantCell apply(Float r) {
+            return plantCell.createChild(r);
+        }
     }
 }

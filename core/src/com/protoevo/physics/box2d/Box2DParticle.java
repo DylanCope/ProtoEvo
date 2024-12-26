@@ -52,6 +52,10 @@ public class Box2DParticle extends Particle implements Serializable {
         createBody();
     }
 
+    public Box2DParticle() {
+        super(null);
+    }
+
     public Object getUserData() {
         return userData;
     }

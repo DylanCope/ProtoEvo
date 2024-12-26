@@ -23,6 +23,10 @@ public class Spike extends NodeAttachment implements Serializable {
     private float extension = 1;
     private float myLastAttack = 0, theirLastDefense = 0;
 
+    public Spike() {
+        super(null);
+    }
+
     public Spike(SurfaceNode node) {
         super(node);
     }

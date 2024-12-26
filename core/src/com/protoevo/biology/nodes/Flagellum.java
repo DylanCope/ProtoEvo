@@ -20,6 +20,10 @@ public class Flagellum extends NodeAttachment implements Serializable {
     private final Statistics stats = new Statistics();
     private boolean io3D = false;
 
+    public Flagellum() {
+        super(null);
+    }
+
     public Flagellum(SurfaceNode node) {
         super(node);
     }

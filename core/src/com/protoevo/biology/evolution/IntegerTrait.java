@@ -15,14 +15,15 @@ public class IntegerTrait implements Trait<Integer> {
 
     public static final long serialVersionUID = 1L;
 
-
-    private final boolean canDisable;
+    private boolean canDisable;
     private boolean disabled;
-    private final int value, minValue, maxValue, maxIncrement, disableValue;
-    private final String geneName;
-    private final EvolvableInteger.MutationMethod mutationMethod;
+    private int value, minValue, maxValue, maxIncrement, disableValue;
+    private String geneName;
+    private EvolvableInteger.MutationMethod mutationMethod;
     private float mutationRate;
     private int mutationCount = 0;
+
+    public IntegerTrait(String geneName) {}
 
     public IntegerTrait(IntegerTrait other, int value) {
         this.geneName = other.geneName;

@@ -15,11 +15,13 @@ public class SpatialHash<T> implements Serializable, Iterable<Collection<T>> {
     
     private static final long serialVersionUID = 1L;
 
-    private final int resolution;
-    private final float chunkSize, worldRadius;
-    private final int maxObjectsPerChunk;
-    private final ConcurrentHashMap<Integer, Collection<T>> chunkContents;
+    private int resolution;
+    private float chunkSize, worldRadius;
+    private int maxObjectsPerChunk;
+    private ConcurrentHashMap<Integer, Collection<T>> chunkContents;
     private int size = 0;
+
+    public SpatialHash() {}
 
     public SpatialHash(int resolution, int maxObjectsPerChunk, float worldRadius) {
         this.resolution = resolution;

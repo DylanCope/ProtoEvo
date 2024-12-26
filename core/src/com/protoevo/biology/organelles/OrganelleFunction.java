@@ -8,7 +8,7 @@ public abstract class OrganelleFunction  implements Serializable {
 
     public static long serialVersionUID = 1L;
 
-    protected final Organelle organelle;
+    protected Organelle organelle;
 
     public OrganelleFunction(Organelle organelle) {
         this.organelle = organelle;

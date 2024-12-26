@@ -24,12 +24,17 @@ import java.io.Serializable;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 
 public class Environment implements Serializable
 {
 	private static final long serialVersionUID = 2804817237950199223L;
+	private static final GetCellFunction getParticleFn = new GetCellFunction();
+	public static final CellIsProtozoaPredicate isCellProtozoa = new CellIsProtozoaPredicate();
 	public static SimulationSettings settings = SimulationSettings.createDefault();
 
 	private final SimulationSettings mySettings;
@@ -67,6 +72,7 @@ public class Environment implements Serializable
 	@JsonIgnore
 	private final ConcurrentHashMap<Cell, BurstRequest<? extends Cell>> burstRequests = new ConcurrentHashMap<>();
 	private final Collection<Cell> handledBurstRequests = new ConcurrentLinkedQueue<>();
+	private final CellDeadPredicate isDeadPredicate = new CellDeadPredicate();
 
 	public Environment()
 	{
@@ -116,7 +122,8 @@ public class Environment implements Serializable
 		settings = mySettings;
 		NodeAttachment.setupPossibleAttachments();
 		physics.rebuildTransientFields(this);
-		getCells().forEach(cell -> cell.setEnvironment(this));
+		for (Cell cell : getCells())
+			cell.setEnvironment(this);
 		updateChunkAllocations();
 	}
 
@@ -124,7 +131,8 @@ public class Environment implements Serializable
 	{
 		hasStarted = true;
 		settings = mySettings;
-		getCells().forEach(cell -> cell.getParticle().physicsUpdate());
+		for (Cell cell : getCells())
+			cell.getParticle().physicsUpdate();
 
 		timeManager.update(delta);
 		light.update(delta);
@@ -148,7 +156,7 @@ public class Environment implements Serializable
 	}
 
 	private void handleCellUpdates(float delta) {
-		getCells().parallelStream().forEach(cell -> cell.update(delta));
+		getCells().parallelStream().forEach(new CellUpdateConsumer(delta));
 	}
 
 	private void handleBirthsAndDeaths() {
@@ -172,7 +180,7 @@ public class Environment implements Serializable
 				depositOnDeath(cell);
 			}
 		}
-		getCells().removeIf(Cell::isDead);
+		getCells().removeIf(isDeadPredicate);
 	}
 
 	public void createRocks() {
@@ -215,12 +223,14 @@ public class Environment implements Serializable
 		spawnPositionFns = new HashMap<>(3, 1);
 		if (populationStartCentres != null) {
 			final float clusterR = Environment.settings.worldgen.populationClusterRadius.get();
-			spawnPositionFns.put(PlantCell.class, r -> randomPosition(r, populationStartCentres, clusterR));
-			spawnPositionFns.put(Protozoan.class, r -> randomPosition(r, populationStartCentres, 0.8f * clusterR));
+			spawnPositionFns.put(PlantCell.class,
+					new SpawnPlantInClustersFn(this, populationStartCentres, clusterR));
+			spawnPositionFns.put(Protozoan.class,
+					new SpawnProtozoaInClustersFn(this, populationStartCentres, clusterR));
 		}
 		else {
-			spawnPositionFns.put(PlantCell.class, this::randomPosition);
-			spawnPositionFns.put(Protozoan.class, this::randomPosition);
+			spawnPositionFns.put(PlantCell.class, new SpawnInRandomPositionFn(this));
+			spawnPositionFns.put(Protozoan.class, new SpawnInRandomPositionFn(this));
 		}
 	}
 
@@ -294,7 +304,7 @@ public class Environment implements Serializable
 				PlantCell plant = ((Particle) collision.get()).getUserData(PlantCell.class);
 				plant.kill(CauseOfDeath.ENV_CAPACITY_EXCEEDED);
 				return pos;
-			} else if (!collision.isPresent())
+			} else if (collision.isEmpty())
 				return pos;
 		}
 
@@ -302,12 +312,30 @@ public class Environment implements Serializable
 	}
 
 	public Vector2 getRandomPosition(Cell cell) {
-		return spawnPositionFns.getOrDefault(cell.getClass(), this::randomPosition)
-				.apply(cell.getRadius());
+//		return spawnPositionFns.getOrDefault(cell.getClass(), new SerializableFunction<Float, Vector2>() {
+//                    @Override
+//                    public Vector2 apply(Float entityRadius) {
+//                        return Environment.this.randomPosition(entityRadius);
+//                    }
+//                })
+//				.apply(cell.getRadius());
+		SerializableFunction<Float, Vector2> fn = spawnPositionFns.get(cell.getClass());
+		if (fn == null)
+			return randomPosition(cell.getRadius());
+		return fn.apply(cell.getRadius());
 	}
 
 	public Vector2 getRandomPosition(Class<? extends Cell> cellClass) {
-		return spawnPositionFns.getOrDefault(cellClass, this::randomPosition).apply(0f);
+//		return spawnPositionFns.getOrDefault(cellClass, new SerializableFunction<Float, Vector2>() {
+//            @Override
+//            public Vector2 apply(Float entityRadius) {
+//                return Environment.this.randomPosition(entityRadius);
+//            }
+//        }).apply(0f);
+		SerializableFunction<Float, Vector2> fn = spawnPositionFns.get(cellClass);
+		if (fn == null)
+			return randomPosition(0f);
+		return fn.apply(0f);
 	}
 
 	public Vector2 randomPosition(float entityRadius) {
@@ -344,7 +372,8 @@ public class Environment implements Serializable
 
 	public void updateChunkAllocations() {
 		chunks.clear();
-		getCells().forEach(chunks::allocate);
+		for (Cell cell : getCells())
+			chunks.allocate(cell);
 	}
 
 	private void dispose(Cell e) {
@@ -476,22 +505,15 @@ public class Environment implements Serializable
 	public Statistics getProtozoaSummaryStats(
 			boolean computeLogStats, boolean removeMoleculeStats, boolean allStats) {
 		Iterator<Statistics> protozoaStats = getCells().stream()
-				.filter(cell -> cell instanceof Protozoan)
-				.map(p -> {
-					if (allStats)
-						return ((Protozoan) p).getAllStats();
-					return p.getStats();
-				})
+				.filter(isCellProtozoa)
+				.map(new CellStatisticsFn(allStats))
 				.iterator();
 
 		Statistics stats = Statistics.computeSummaryStatistics(protozoaStats, computeLogStats);
 		final int protozoaCount = numberOfProtozoa();
 		stats.putCount("Protozoa Count", protozoaCount);
 		stats.getStatsMap().entrySet().removeIf(
-			entry -> entry.getKey().endsWith("Count")
-					&& ((int) entry.getValue().getValue() == 0 || (int) entry.getValue().getValue() == protozoaCount)
-				|| (removeMoleculeStats && entry.getKey().contains("Molecule"))
-				|| (!allStats && (entry.getKey().contains("Min") || entry.getKey().contains("Max")))
+				new RemoveStatFromSummaryPredicate(protozoaCount, removeMoleculeStats, allStats)
 		);
 		return stats;
 	}
@@ -509,13 +531,15 @@ public class Environment implements Serializable
 	}
 
 	public Optional<? extends Shape> getCollidingShape(Vector2 pos, float r) {
-		Optional<Rock> collidingRock = rocks.stream().filter(rock -> rock.intersectsWith(pos, r)).findAny();
+		Optional<Rock> collidingRock = rocks.stream()
+				.filter(new RockCollisionWithParticlePredicate(pos, r))
+				.findAny();
 		if (collidingRock.isPresent())
 			return collidingRock;
 
 		return Streams.concat(getCells().stream(), cellsToAdd.stream())
-				.filter(cell -> Geometry.doCirclesCollide(pos, r, cell.getPos(), cell.getRadius()))
-				.map(Cell::getParticle)
+				.filter(new DoCirclesCollidePredicate(pos, r))
+				.map(getParticleFn)
 				.findAny();
 	}
 
@@ -540,7 +564,7 @@ public class Environment implements Serializable
 	}
 
 	public Stream<Particle> getParticles() {
-		return getCells().stream().map(Cell::getParticle);
+		return getCells().stream().map(getParticleFn);
 	}
 
 	public JointsManager getJointsManager() {
@@ -619,5 +643,171 @@ public class Environment implements Serializable
 
 	public String getSimulationName() {
 		return simulationName;
+	}
+
+	public static class CellUpdateConsumer implements Serializable, Consumer<Cell> {
+		private float delta;
+
+		public CellUpdateConsumer() {}
+
+		public CellUpdateConsumer(float delta) {
+			this.delta = delta;
+		}
+
+		@Override
+		public void accept(Cell cell) {
+			cell.update(delta);
+		}
+	}
+
+	public static class GetCellFunction implements SerializableFunction<Cell, Particle> {
+		@Override
+		public Particle apply(Cell cell) {
+			return cell.getParticle();
+		}
+	}
+
+	public static class DoCirclesCollidePredicate implements Serializable, Predicate<Cell> {
+		private Vector2 pos;
+		private float r;
+
+		public DoCirclesCollidePredicate() {}
+
+		public DoCirclesCollidePredicate(Vector2 pos, float r) {
+			this.pos = pos;
+			this.r = r;
+		}
+
+		@Override
+		public boolean test(Cell cell) {
+			return Geometry.doCirclesCollide(pos, r, cell.getPos(), cell.getRadius());
+		}
+	}
+
+	public static class RemoveStatFromSummaryPredicate implements Serializable, Predicate<Map.Entry<String, Statistics.Stat>> {
+		private int protozoaCount;
+		private boolean removeMoleculeStats;
+		private boolean allStats;
+
+		public RemoveStatFromSummaryPredicate() {}
+
+		public RemoveStatFromSummaryPredicate(int protozoaCount, boolean removeMoleculeStats, boolean allStats) {
+			this.protozoaCount = protozoaCount;
+			this.removeMoleculeStats = removeMoleculeStats;
+			this.allStats = allStats;
+		}
+
+		@Override
+		public boolean test(Map.Entry<String, Statistics.Stat> entry) {
+			return entry.getKey().endsWith("Count")
+					&& ((int) entry.getValue().getValue() == 0 || (int) entry.getValue().getValue() == protozoaCount)
+					|| (removeMoleculeStats && entry.getKey().contains("Molecule"))
+					|| (!allStats && (entry.getKey().contains("Min") || entry.getKey().contains("Max")));
+		}
+	}
+
+	public static class RockCollisionWithParticlePredicate implements Serializable, Predicate<Rock> {
+		private Vector2 pos;
+		private float r;
+
+		public RockCollisionWithParticlePredicate() {}
+
+		public RockCollisionWithParticlePredicate(Vector2 pos, float r) {
+			this.pos = pos;
+			this.r = r;
+		}
+
+		@Override
+		public boolean test(Rock rock) {
+			return rock.intersectsWith(pos, r);
+		}
+	}
+
+	public static class CellIsProtozoaPredicate implements Serializable, Predicate<Cell> {
+
+		public CellIsProtozoaPredicate() {}
+
+		@Override
+		public boolean test(Cell cell) {
+			return cell instanceof Protozoan;
+		}
+	}
+
+	public static class CellDeadPredicate implements Predicate<Cell> {
+		@Override
+		public boolean test(Cell cell) {
+			return cell.isDead();
+		}
+	}
+
+	public static class SpawnPlantInClustersFn implements SerializableFunction<Float, Vector2> {
+		private float clusterR;
+		private Environment environment;
+		private Vector2[] centres;
+
+		public SpawnPlantInClustersFn() {}
+
+		public SpawnPlantInClustersFn(Environment environment, Vector2[] centres, float clusterR) {
+			this.environment = environment;
+			this.centres = centres;
+			this.clusterR = clusterR;
+		}
+
+		@Override
+		public Vector2 apply(Float r) {
+			return environment.randomPosition(r, centres, clusterR);
+		}
+	}
+
+	public static class SpawnProtozoaInClustersFn implements SerializableFunction<Float, Vector2> {
+		private float clusterR;
+		private Environment environment;
+		private Vector2[] centres;
+
+		public SpawnProtozoaInClustersFn() {}
+
+		public SpawnProtozoaInClustersFn(Environment environment, Vector2[] centres, float clusterR) {
+			this.environment = environment;
+			this.centres = centres;
+			this.clusterR = clusterR;
+		}
+
+		@Override
+		public Vector2 apply(Float r) {
+			return environment.randomPosition(r, centres, 0.8f * clusterR);
+		}
+	}
+
+	public static class SpawnInRandomPositionFn implements SerializableFunction<Float, Vector2> {
+
+		private Environment env;
+
+		public SpawnInRandomPositionFn() {}
+
+		public SpawnInRandomPositionFn(Environment env) {
+			this.env = env;
+		}
+
+		@Override
+		public Vector2 apply(Float entityRadius) {
+			return env.randomPosition(entityRadius);
+		}
+	}
+
+	public static class CellStatisticsFn implements SerializableFunction<Cell, Statistics> {
+		private boolean allStats;
+
+		public CellStatisticsFn() {}
+
+		public CellStatisticsFn(boolean allStats) {
+			this.allStats = allStats;
+		}
+
+		@Override
+		public Statistics apply(Cell p) {
+			if (allStats)
+				return ((Protozoan) p).getAllStats();
+			return p.getStats();
+		}
 	}
 }

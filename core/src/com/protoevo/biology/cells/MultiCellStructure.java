@@ -16,7 +16,9 @@ public class MultiCellStructure implements Serializable, Spawnable {
 
     private final Map<Integer, List<Long>> cellConnections = new HashMap<>();
     private final Map<Integer, Vector2> relativeCellPositions = new HashMap<>();
-    private final List<Cell> cells;
+    private List<Cell> cells;
+
+    public MultiCellStructure() {}
 
     public MultiCellStructure(Set<Long> cellIds, Environment environment) {
         cells = cellIds.stream()

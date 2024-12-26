@@ -29,8 +29,10 @@ public class Food implements Serializable {
     }
 
     private float mass, energy;
-    private final Type type;
-    private final Map<ComplexMolecule, Float> complexMoleculeMasses;
+    private Type type;
+    private Map<ComplexMolecule, Float> complexMoleculeMasses;
+
+    public Food() {}
 
     public Food(float mass, Type foodType, HashMap<ComplexMolecule, Float> complexMoleculeMass) {
         this.mass = mass;

@@ -8,6 +8,10 @@ public class MeatOnlyPhagocyticReceptor extends PhagocyticReceptor {
 
     private static final long serialVersionUID = 1L;
 
+    public MeatOnlyPhagocyticReceptor() {
+        super(null);
+    }
+
     public MeatOnlyPhagocyticReceptor(SurfaceNode node) {
         super(node);
     }

@@ -9,6 +9,21 @@ import java.util.function.Supplier;
 
 public class GRNFactory {
 
+    public static class ExpressionNodeGRNTag implements GRNTag {
+        private GeneExpressionFunction.ExpressionNode node;
+
+        public ExpressionNodeGRNTag() {}
+
+        public ExpressionNodeGRNTag(GeneExpressionFunction.ExpressionNode node) {
+            this.node = node;
+        }
+
+        @Override
+        public Object apply(GeneExpressionFunction fn) {
+            return fn.getExpressionNode(node.getName());
+        }
+    }
+
     private static void addFloatGeneIO(
             NetworkGenome networkGenome, GeneExpressionFunction.ExpressionNode node, FloatTrait gene) {
         String trait = node.getName();
@@ -19,7 +34,8 @@ public class GRNFactory {
             NeuronGene output = networkGenome.addOutput(
                     getOutputName(trait),
                     ActivationFn.getOutputMapper(min, max),
-                    (GRNTag) fn -> fn.getExpressionNode(node.getName())
+//                    (GRNTag) fn -> fn.getExpressionNode(node.getName())
+                    new ExpressionNodeGRNTag(node)
             );
             createBiasExpressionConnection(networkGenome, output);
         }
@@ -79,7 +95,8 @@ public class GRNFactory {
         NeuronGene output = networkGenome.addOutput(
                 getOutputName(trait),
                 ActivationFn.getOutputMapper(getMax.get(), getMin.get()),
-                (GRNTag) fn -> fn.getExpressionNode(node.getName())
+//                (GRNTag) fn -> fn.getExpressionNode(node.getName())
+                new ExpressionNodeGRNTag(node)
         );
         createBiasExpressionConnection(networkGenome, output);
     }
@@ -115,7 +132,8 @@ public class GRNFactory {
         NeuronGene output = networkGenome.addOutput(
                 getOutputName(trait),
                 ActivationFn.getBooleanInputMapper(),
-                (GRNTag) fn -> fn.getExpressionNode(node.getName())
+//                (GRNTag) fn -> fn.getExpressionNode(node.getName())
+                new ExpressionNodeGRNTag(node)
         );
         createBiasExpressionConnection(networkGenome, output);
     }
@@ -127,15 +145,15 @@ public class GRNFactory {
     {
         Trait<?> trait = node.getTrait();
         String name = node.getName();
-        if (trait instanceof ControlTrait
+        if (trait instanceof ControlTrait controlTrait
                 && !networkGenome.hasOutput(getOutputName(name))) {
-            ControlTrait controlTrait = (ControlTrait) trait;
             float min = controlTrait.getMinValue();
             float max = controlTrait.getMaxValue();
             NeuronGene outputGene = networkGenome.addOutput(
                     getOutputName(name),
                     ActivationFn.getOutputMapper(min, max),
-                    (GRNTag) fn -> fn.getExpressionNode(node.getName())
+//                    (GRNTag) fn -> fn.getExpressionNode(node.getName())
+                    new ExpressionNodeGRNTag(node)
             );
             for (String regulator : regulators.keySet()) {
                 if (MathUtils.randomBoolean(Environment.settings.evo.initialGenomeConnectivity.get()))
@@ -159,6 +177,21 @@ public class GRNFactory {
             addBooleanGeneIO(networkGenome, node, (BooleanTrait) trait);
     }
 
+    public static class GRNTagRegulatorNode implements GRNTag {
+        private String node;
+
+        public GRNTagRegulatorNode() {}
+
+        public GRNTagRegulatorNode(String node) {
+            this.node = node;
+        }
+
+        @Override
+        public Object apply(GeneExpressionFunction fn) {
+            return fn.getGeneRegulators().get(node);
+        }
+    }
+
     public static NetworkGenome createIO(NetworkGenome networkGenome,
                                          GeneExpressionFunction geneExpressionFunction)
     {
@@ -173,8 +206,8 @@ public class GRNFactory {
         GeneExpressionFunction.Regulators regulators = geneExpressionFunction.getGeneRegulators();
         for (String regulator : regulators.keySet()) {
             if (!networkGenome.hasSensor(regulator)) {
-                NeuronGene regulatorSensor = networkGenome.addSensor(regulator,
-                        (GRNTag) fn -> fn.getGeneRegulators().get(regulator));
+                GRNTagRegulatorNode regulatorNode = new GRNTagRegulatorNode(regulator);
+                NeuronGene regulatorSensor = networkGenome.addSensor(regulator, regulatorNode);
                 regulatorSensor.setMutationRange(
                         Environment.settings.evo.minRegulationMutationChance.get(),
                         Environment.settings.evo.maxRegulationMutationChance.get());

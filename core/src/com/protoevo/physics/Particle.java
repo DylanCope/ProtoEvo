@@ -15,8 +15,10 @@ import java.util.Optional;
 public abstract class Particle implements Serializable, Shape, Coloured {
     private static final long serialVersionUID = 1L;
 
-    protected final Physics physics;
+    protected Physics physics;
     protected boolean rangedInteractionsEnabled = false;
+
+    public Particle() {}
 
     public Particle(Physics physics) {
         this.physics = physics;

@@ -18,9 +18,11 @@ public class BurstRequest<T extends Cell> implements Serializable {
     public static final long serialVersionUID = 1L;
 
     private SerializableFunction<Float, T> createChild;
-    private final Cell parent;
+    private Cell parent;
     private Class<T> cellType;
     private boolean overrideMinRadius, ready = false;
+
+    public BurstRequest() {}
 
     public BurstRequest(Cell cell) {
         this.parent = cell;

@@ -63,4 +63,28 @@ public class Functions {
         }
         return clampedLinearRemap(v, vStart, vEnd, outStart, outEnd);
     }
+
+    public static float sigmoid(float z) {
+        return 1 / (1 + (float) Math.exp(-z));
+    }
+
+    public static float linear(float z) {
+        return z;
+    }
+
+    public static float tanh(float z) {
+        return (float) Math.tanh(z);
+    }
+
+    public static float step(float z) {
+        return z > 0 ? 1f : 0f;
+    }
+
+    public static float relu(float z) {
+        return z > 0 ? z : 0f;
+    }
+
+    public static float gaussian(float z) {
+        return (float) Math.exp(-z * z);
+    }
 }

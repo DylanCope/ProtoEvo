@@ -7,10 +7,12 @@ import java.util.Map;
 public class BooleanTrait implements Trait<Boolean> {
 
 
-    private final boolean value;
-    private final String geneName;
+    private boolean value;
+    private String geneName;
     private float mutationRate;
     private int mutationCount = 0;
+
+    public BooleanTrait() {}
 
     public BooleanTrait(String geneName) {
         this.geneName = geneName;
