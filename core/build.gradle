@@ -1,5 +1,6 @@
 //sourceCompatibility = 1.8
 sourceCompatibility = 23
+targetCompatibility = 23
 dependencies {
     implementation 'junit:junit:4.13.1'
 }

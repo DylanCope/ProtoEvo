@@ -16,6 +16,7 @@ import com.protoevo.env.Spawnable;
 import com.protoevo.ui.input.*;
 import com.protoevo.ui.screens.SimulationScreen;
 import com.protoevo.ui.screens.StatsGraphsScreen;
+import com.protoevo.utils.FileIO;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -143,7 +144,7 @@ public class SimulationInputManager {
     }
 
     private void tryLoadSavedProtozoans() {
-        try (Stream<Path> saved = Files.list(Paths.get("saved-cells"))) {
+        try (Stream<Path> saved = Files.list(FileIO.getSavedCellsDir())) {
             saved.forEach(save -> {
                 String filename = save.getFileName().toString();
                 if (filename.endsWith(".cell")) {

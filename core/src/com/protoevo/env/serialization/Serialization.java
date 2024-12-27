@@ -3,6 +3,7 @@ package com.protoevo.env.serialization;
 import com.protoevo.biology.cells.Cell;
 import com.protoevo.env.Environment;
 import com.protoevo.env.serialization.custom.CustomSerialization;
+import com.protoevo.utils.FileIO;
 
 import java.io.*;
 import java.nio.file.Files;
@@ -87,12 +88,12 @@ public class Serialization {
     public static void saveCell(Cell cell, String cellName)
     {
         try {
-            Files.createDirectories(Paths.get("saved-cells"));
+            Files.createDirectories(FileIO.getSavedCellsDir());
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
 
-        serialize(cell, cell.getClass(), "saved-cells/" + cellName + ".cell");
+        serialize(cell, cell.getClass(), FileIO.getSavedCellsDir() + "/" + cellName + ".cell");
     }
 
 }

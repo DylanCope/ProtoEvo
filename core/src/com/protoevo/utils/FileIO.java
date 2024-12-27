@@ -10,11 +10,26 @@ import com.fasterxml.jackson.databind.json.JsonMapper;
 
 import java.io.*;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 
 public class FileIO 
 {
+
+	public static Path getSavesDir() {
+		if (System.getProperty("os.name").toLowerCase().contains("win")) {
+			return Paths.get(System.getenv("APPDATA") + "/ProtoEvo/saves");
+		}
+		return Paths.get("saves");
+	}
+
+	public static Path getSavedCellsDir() {
+		if (System.getProperty("os.name").toLowerCase().contains("win")) {
+			return Paths.get(System.getenv("APPDATA") + "/ProtoEvo/saved-cells");
+		}
+		return Paths.get("saved-cells");
+	}
 
 	public static ObjectMapper getJsonMapper() {
 		ObjectMapper mapper = JsonMapper.builder()

@@ -23,6 +23,7 @@ import com.protoevo.physics.JointsManager;
 import com.protoevo.physics.SpatialHash;
 import com.protoevo.physics.box2d.Box2DCollisionHandler;
 import com.protoevo.utils.Colour;
+import com.protoevo.utils.FileIO;
 import org.nustaq.serialization.FSTConfiguration;
 import org.nustaq.serialization.FSTObjectInput;
 import org.nustaq.serialization.FSTObjectOutput;
@@ -149,12 +150,12 @@ public class FSTSerialization {
     public static void saveCell(Cell cell, String cellName)
     {
         try {
-            Files.createDirectories(Paths.get("saved-cells"));
+            Files.createDirectories(FileIO.getSavedCellsDir());
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
 
-        serialize(cell, cell.getClass(), "saved-cells/" + cellName + ".cell");
+        serialize(cell, cell.getClass(), FileIO.getSavedCellsDir() + "/" + cellName + ".cell");
     }
 
 }

@@ -89,7 +89,7 @@ public class Simulation implements Runnable
 		simulate = true;
 		this.name = name;
 
-		environmentLoader = () -> loadEnv("saves/" + name + "/env/" + save);
+		environmentLoader = () -> loadEnv(FileIO.getSavesDir() + "/" + name + "/env/" + save);
 		loadSettings();
 	}
 
@@ -98,12 +98,12 @@ public class Simulation implements Runnable
 	public static void newSaveDir(String simulationName) {
 		try {
 			System.out.println("Created new simulation named: " + simulationName);
-			Files.createDirectories(Paths.get("saves/"));
-			Files.createDirectories(Paths.get("saves/" + simulationName));
-			Files.createDirectories(Paths.get("saves/" + simulationName + "/env"));
-			Files.createDirectories(Paths.get("saves/" + simulationName + "/stats"));
-			Files.createDirectories(Paths.get("saves/" + simulationName + "/stats/summaries"));
-			Files.createDirectories(Paths.get("saves/" + simulationName + "/stats/protozoa-genomes"));
+			Files.createDirectories(FileIO.getSavesDir());
+			Files.createDirectories(Paths.get(FileIO.getSavesDir() + "/" + simulationName));
+			Files.createDirectories(Paths.get(FileIO.getSavesDir() + "/" + simulationName + "/env"));
+			Files.createDirectories(Paths.get(FileIO.getSavesDir() + "/" + simulationName + "/stats"));
+			Files.createDirectories(Paths.get(FileIO.getSavesDir() + "/" + simulationName + "/stats/summaries"));
+			Files.createDirectories(Paths.get(FileIO.getSavesDir() + "/" + simulationName + "/stats/protozoa-genomes"));
 		} catch (IOException e) {
 			throw new RuntimeException(e);
 		}
@@ -148,7 +148,7 @@ public class Simulation implements Runnable
 	}
 
 	public static Stream<Path> getStatsPaths(String name) {
-		Path dir = Paths.get("saves/" + name + "/stats/summaries");
+		Path dir = Paths.get(FileIO.getSavesDir() + "/" + name + "/stats/summaries");
 		if (Files.exists(dir)) {
 			try (Stream<Path> paths = Files.list(dir)){
 				return paths.collect(Collectors.toList()).stream()
@@ -169,7 +169,7 @@ public class Simulation implements Runnable
 	}
 
 	public static Stream<Path> getSavePaths(String name) {
-		Path dir = Paths.get("saves/" + name + "/env");
+		Path dir = Paths.get(FileIO.getSavesDir() + "/" + name + "/env");
 		if (Files.exists(dir)) {
 			try (Stream<Path> paths = Files.list(dir)){
 				return paths.collect(Collectors.toList()).stream().filter(Files::isDirectory);
@@ -442,7 +442,7 @@ public class Simulation implements Runnable
 	}
 
 	public String getSaveFolder() {
-		return "saves/" + name;
+		return FileIO.getSavesDir() + "/" + name;
 	}
 
 	public void openSaveFolderOnDesktop() {

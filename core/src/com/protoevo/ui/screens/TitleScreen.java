@@ -13,6 +13,7 @@ import com.protoevo.networking.RemoteSimulation;
 import com.protoevo.ui.GraphicsAdapter;
 import com.protoevo.utils.CursorUtils;
 import com.protoevo.utils.DebugMode;
+import com.protoevo.utils.FileIO;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -52,7 +53,7 @@ public class TitleScreen extends ScreenAdapter {
         addButton("New Simulation", () -> graphics.setScreen(new CreateSimulationScreen(graphics)));
         addButton("Fork Remote Simulation", () -> graphics.loadPreexistingSimulation(new RemoteSimulation()));
 
-        Path savesPath = Paths.get("saves");
+        Path savesPath = FileIO.getSavesDir();
         try {
             Files.createDirectories(savesPath);
         } catch (IOException e) {
