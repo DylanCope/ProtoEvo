@@ -142,7 +142,11 @@ cells, and they present the potential to skip producing any stored complex molec
 
 ## User Installation
 
-_Note:_ Currently a packaged user-friendly version of the simulation is only available for **Windows**.
+_Note:_ Currently a packaged user-friendly version of the simulation is only available for **Windows**. If you wish to run the program on Linux or OSX you will need to follow the developer setup instructions.
+
+To install the program on Windows, [download the installer](https://drive.google.com/file/d/1sbmkbPFfIb0PXWFLgbcZ0XJqLDAwhFes/view?usp=sharing) and run the installation process. After this, the program can be found by search for it I the windows menu (press the windows key and type "ProtoEvo").
+
+### Installing Older Versions
 
 1. Download the [latest release](https://github.com/DylanCope/ProtoEvo/releases) from the GitHub repository.
 2. Unzip the downloaded file and place the folder somewhere you will remember.
