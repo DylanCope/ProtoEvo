@@ -11,7 +11,7 @@ void main(){
     float skipX = 0.3 * u_blurAmount;
     float skipY = 0.3 * u_blurAmount * u_resolution.y / u_resolution.x;
     vec4 filter_color = vec4(0.);
-    int filter_radius = 8;
+    float filter_radius = 8.0;
     float sd = filter_radius * (skipX + skipY) / 2.0;
     float k = 1.0 / (2.0 * sd * sd);
     float sum = 0.0;

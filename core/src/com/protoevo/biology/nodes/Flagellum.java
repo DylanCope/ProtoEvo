@@ -76,6 +76,11 @@ public class Flagellum extends NodeAttachment implements Serializable {
 
         if (lastCellPos.isZero() || cell.getRadius() == 0) {
             lastCellPos.set(currentCellPos);
+            // Clear output[0] too. Previously the non-3D branch never wrote
+            // it on the first tick, so the GRN read whatever stale value
+            // was in the buffer (could be another node's last write or the
+            // value from the previous attachment that lived at this index).
+            output[0] = 0;
             if (io3D) {
                 output[1] = 0;
                 output[2] = 0;

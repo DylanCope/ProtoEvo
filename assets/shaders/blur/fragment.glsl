@@ -42,9 +42,9 @@ void main(){
 //            filter_color += 0.25 * weight[i] * texture2D(u_sample2D, v_texCoord0 - vec2(offset[j], 0.0) / u_resolution) * v_color;
 //        }
 //    }
-    float skip = 1;
+    float skip = 1.0;
     vec4 filter_color = vec4(0.);
-    int filter_radius = 3; // int(u_blurRadius);
+    float filter_radius = 3.0; // int(u_blurRadius);
     float sd = filter_radius * skip;
     float k = 1.0 / (2.0 * sd * sd);
     float sum = 0.0;

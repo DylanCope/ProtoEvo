@@ -393,7 +393,6 @@ public class GeneExpressionFunction implements Evolvable.Component, Serializable
             return;
         setGRNInputs();
         geneRegulatoryNetwork.tick();
-        setGRNInputs();
     }
 
     public void update() {

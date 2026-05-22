@@ -83,6 +83,12 @@ public abstract class Particle implements Serializable, Shape, Coloured {
 
     public abstract void setRangedInteractionRadius(float radius);
 
+    /** Override the default angular damping for this particle. Plants in
+     *  particular want much lower damping so collision torque actually
+     *  rotates them — otherwise their spike angle is locked to their
+     *  spawn orientation forever, making spike defence purely random. */
+    public abstract void setAngularDamping(float damping);
+
     public void setCanInteractAtRange() {
         rangedInteractionsEnabled = true;
     }

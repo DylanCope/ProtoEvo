@@ -29,6 +29,14 @@ public abstract class Cell implements Serializable, Coloured, Spawnable {
 
 	private Particle particle;
 	private Environment environment;
+	// Phylogeny: each cell carries a lineage tag inherited from its parent
+	// (or assigned new at initial spawn for "founder" lineages). Combined
+	// with parentId, we can build a full ancestry tree without snapshotting
+	// every cell — most lineages die out within a few generations, only a
+	// few "successful" founders accumulate descendants. Default 0 means
+	// "uninitialised"; assigned on first creation through Environment.
+	private long lineageId = 0L;
+	private long parentId = 0L;
 	private final Colour healthyColour = new Colour(Color.WHITE);
 	private final Colour fullyDegradedColour = new Colour(Color.WHITE);
 	private final Colour currentColour = new Colour();
@@ -60,6 +68,16 @@ public abstract class Cell implements Serializable, Coloured, Spawnable {
 	private Cell engulfer = null;
 	private boolean fullyEngulfed = false;
 	private float joiningCheckCounter = 0f;
+	// Signature-match efficiency at engulf time, in (0, 1]. Receptor sets
+	// this on its prey when it engulfs; eat() multiplies extraction by it
+	// so a poorly-matched receptor digests prey slower than a perfect one.
+	// Default 1.0 means "no signature gate" (e.g. meat with no genome).
+	private float engulfEfficiency = 1f;
+
+	public float getEngulfEfficiency() { return engulfEfficiency; }
+	public void setEngulfEfficiency(float e) {
+		this.engulfEfficiency = Math.max(0.01f, Math.min(1f, e));
+	}
 
 	public void update(float delta) {
 		if (particle.isDead()) {
@@ -203,11 +221,49 @@ public abstract class Cell implements Serializable, Coloured, Spawnable {
 	public void decayResources(float delta) {
 		foodToDigest.values().forEach(food -> food.decay(delta));
 
-		depleteEnergy(delta * Environment.settings.cell.energyDecayRate.get());
+		// Energy decay = baseRate × (radius/minR) × energyAvailable.
+		// Three properties:
+		//   1. Proportional to stored energy → no "park at the ceiling and live forever"
+		//      exploit. A full cell burns through stored energy at the rate's natural
+		//      half-life (~55s at default settings); decay slows automatically as the
+		//      cell drains, so you don't starve cells faster than they can recover.
+		//   2. Proportional to cell size → basal metabolism. Bigger cells (which can
+		//      reproduce) pay more to maintain. Creates a real fitness trade-off
+		//      between reproductive size and survival-while-fasting.
+		//   3. Previous flat-rate formula meant the default 0.025 J/sec was a literal
+		//      0.025 J per second regardless of stored energy or size, so a 1200-J cell
+		//      took 48,000 sim-seconds to drain. Sitting still was essentially free,
+		//      which is exactly the exploit evolution discovered ("low Cilia Thrust,
+		//      live forever").
+		float baseRate = Environment.settings.cell.energyDecayRate.get();
+		float radiusFactor = (float) (radius / Environment.settings.minParticleRadius.get());
+		depleteEnergy(delta * baseRate * radiusFactor * energyAvailable);
 
 		for (ComplexMolecule molecule : availableComplexMolecules.keySet()) {
 			depleteComplexMolecule(molecule, delta * Environment.settings.cell.complexMoleculeDecayRate.get());
 		}
+
+		applyStarvationDamage(delta);
+	}
+
+	/**
+	 * Damage health when energy is below the starvation threshold. Without
+	 * this, the energyDecayRate lever (the homeostat's main starvation knob)
+	 * has no death pathway — cells just stop growing at 0 energy and live
+	 * forever, so the population could only drop via spike damage or void
+	 * deaths. Adding this gives the homeostat real authority and makes
+	 * "food is scarce" a survivable challenge rather than a free pass.
+	 */
+	private void applyStarvationDamage(float delta) {
+		float cap = getAvailableEnergyCap();
+		if (cap <= 0f)
+			return;
+		float threshold = Environment.settings.cell.starvationThresholdFraction.get() * cap;
+		if (energyAvailable >= threshold)
+			return;
+		float deficit = 1f - (energyAvailable / threshold);   // 0..1
+		float rate = Environment.settings.cell.starvationDeathRate.get();
+		damage(delta * deficit * rate, CauseOfDeath.STARVATION);
 	}
 
 	public void voidDamage(float delta) {
@@ -342,15 +398,23 @@ public abstract class Cell implements Serializable, Coloured, Spawnable {
 		engulfed.removeMass(removeMultiplier * extractedMass, CauseOfDeath.EATEN);
 
 		Food food;
-		if (foodToDigest.containsKey(foodType))
+		if (foodToDigest.containsKey(foodType)) {
 			food = foodToDigest.get(foodType);
-		else {
+			food.addSimpleMass(extractedMass);
+		} else {
+			// Constructor already sets mass=extractedMass; previously this branch
+			// then ALSO called addSimpleMass(extractedMass) below, doubling the
+			// mass of every fresh food chunk.
 			food = new Food(extractedMass, foodType);
 			foodToDigest.put(foodType, food);
 		}
 
-		food.addSimpleMass(extractedMass);
-		food.addEnergy(engulfed.getEnergyAvailable() * extraction);
+		// Energy must be transferred, not duplicated: deplete the victim's
+		// stockpile by the same amount we hand to the food chunk. Without this,
+		// `cell A energy -> meat -> cell B energy` was a free copy.
+		float energyTransferred = engulfed.getEnergyAvailable() * extraction;
+		engulfed.depleteEnergy(energyTransferred);
+		food.addEnergy(energyTransferred);
 
 		for (ComplexMolecule molecule : engulfed.getComplexMolecules()) {
 			if (engulfed.getComplexMoleculeAvailable(molecule) > 0) {
@@ -358,15 +422,31 @@ public abstract class Cell implements Serializable, Coloured, Spawnable {
 				engulfed.depleteComplexMolecule(molecule, extractedAmount);
 				if (extractedAmount <= 1e-12)
 					continue;
-				food.addComplexMoleculeMass(molecule, extractedMass);
+				// Was: food.addComplexMoleculeMass(molecule, extractedMass)
+				// — credited the food chunk with the prey's ENTIRE body mass
+				// once per molecule. That created arbitrarily many "molecules"
+				// each weighted by total prey mass, breaking mass conservation
+				// and inflating digest yields by N×bodyMass per molecule type.
+				food.addComplexMoleculeMass(molecule, extractedAmount);
 			}
 		}
 	}
 
 	public void addFood(Food.Type foodType, float amount) {
-		Food food = foodToDigest.getOrDefault(foodType, new Food(amount, foodType));
-		food.addSimpleMass(amount);
-		foodToDigest.put(foodType, food);
+		// Same double-mass bug as the old Cell.eat had: fresh Food gets
+		// mass=amount via the constructor, then addSimpleMass(amount) ran
+		// unconditionally — every chemical-drip absorption was actually 2×
+		// the intended yield. Combined with chemical drip being an unsourced
+		// mass spring (plants don't lose mass when their chemicals are
+		// extracted), this let large protozoa populations sustain on tiny
+		// plant counts.
+		Food food = foodToDigest.get(foodType);
+		if (food == null) {
+			food = new Food(amount, foodType);
+			foodToDigest.put(foodType, food);
+		} else {
+			food.addSimpleMass(amount);
+		}
 	}
 
 	public void digest(float delta) {
@@ -586,10 +666,22 @@ public abstract class Cell implements Serializable, Coloured, Spawnable {
 	}
 
 	public float getKineticEnergyRequiredForThrust(Vector2 thrustVector) {
-		float speed = getSpeed();
 		float mass = getMass();
-		// This is surely not correct
-		return .5f * mass * (speed * speed - thrustVector.len2() / (mass * mass));
+		if (mass <= 0f) return 0f;
+		// Minimum kinetic energy required to deliver this impulse: I²/(2m).
+		// Equivalent to the KE a stationary cell would gain from the impulse;
+		// real cost is at least this much (more if v·I > 0).
+		//
+		// The OLD formula was 0.5·m·(v² − I²/m²) and was tagged with the
+		// comment "This is surely not correct". For slow cells (v small,
+		// |I/m| moderate) the second term dominated and the function
+		// returned a NEGATIVE value. generateMovement then did
+		// depleteEnergy(work) which became energy *gain* — every flagellar
+		// stroke FILLED the energy pool. That's the long-standing "cells
+		// generate infinite energy by sitting still and flailing" exploit.
+		// Switching to I²/(2m) makes movement always cost energy, which is
+		// what every other game-balance assumption in the sim was built on.
+		return 0.5f * thrustVector.len2() / mass;
 	}
 
 	public void generateMovement(Vector2 thrustVector) {
@@ -670,6 +762,9 @@ public abstract class Cell implements Serializable, Coloured, Spawnable {
 
 		stats.putBoolean("Being Engulfed", engulfer != null);
 
+		if (lineageId != 0L)
+			stats.putCount("Lineage ID", (int) lineageId);
+
 		stats.putPercentage("Light Level", 100f * getLightAtCell());
 		stats.putTemperature("Temperature (Internal)", temperature);
 		stats.putTemperature("Temperature (External)", getExternalTemperature());
@@ -724,6 +819,12 @@ public abstract class Cell implements Serializable, Coloured, Spawnable {
 	}
 
 	public void kill(CauseOfDeath causeOfDeath) {
+		// Bump the per-cause death counter so we can see in the homeostat
+		// log what's actually killing cells (hyperthermia? starvation?
+		// being eaten?). Only ticks once per cell, even if kill() is
+		// called multiple times — particle.isDead() guards re-entry.
+		if (environment != null && !particle.isDead())
+			environment.recordDeath(this, causeOfDeath);
 		for (Long joiningId : particle.getJoiningIds().values()) {
 			requestJointRemoval(joiningId);
 		}
@@ -769,6 +870,11 @@ public abstract class Cell implements Serializable, Coloured, Spawnable {
 	public void setGeneration(int generation) {
 		this.generation = generation;
 	}
+
+	public long getLineageId() { return lineageId; }
+	public void setLineageId(long id) { this.lineageId = id; }
+	public long getParentId() { return parentId; }
+	public void setParentId(long id) { this.parentId = id; }
 
 	public int burstMultiplier() {
 		return 1;
@@ -849,7 +955,22 @@ public abstract class Cell implements Serializable, Coloured, Spawnable {
 		if (particle == null)
 			return 1f;
 
-		return 2 * particle.getMassDensity() * Geometry.getCircleArea(getRadius() * 0.25f);
+		// Old formula was 2 × density × area(r × 0.25) — only ~12.5% of the
+		// cell's own physical mass (~1 mg at min radius, ~9 mg at max). That
+		// was too tight: a single digested plant delivers more than the cap
+		// in a fraction of a sim-second, so most digested mass got clamped
+		// away. Worse, MoleculeProductionOrganelle + SurfaceNode attachment
+		// construction drain mass every tick, so anything that DID land in
+		// the pool got siphoned before growth could spend it. End result:
+		// users saw Construction Mass = 0 in stats and cells that never grew
+		// despite eating constantly.
+		//
+		// New formula: cap = 2 × cell's own physical mass. Big enough that a
+		// digestion burst can actually buffer in the pool, growth can spend
+		// against the buffer over multiple ticks, and side-consumers
+		// (organelles, surface-node attachments) don't strip-mine the pool
+		// to 0 before grow() runs the next tick.
+		return 2f * (float) particle.getMassIfRadius(getRadius());
 	}
 
 	public void setAvailableConstructionMass(float mass) {
@@ -908,10 +1029,27 @@ public abstract class Cell implements Serializable, Coloured, Spawnable {
 	 * @param mass mass to remove
 	 */
 	public void removeMass(float mass, CauseOfDeath causeOfDeath) {
-		float percentRemoved = mass / getMass();
+		float totalMass = getMass();
+		if (totalMass <= 0f) {
+			// Defensive: avoid NaN propagation into health. A fully-depleted
+			// shell of a cell would otherwise compute NaN for percentRemoved,
+			// poison the health field, and become un-killable (NaN compares
+			// false against everything). Just kill it directly.
+			kill(causeOfDeath);
+			return;
+		}
+		float percentRemoved = mass / totalMass;
 		damage(percentRemoved, causeOfDeath);
 
-		double newR = (1 - percentRemoved) * getRadius();
+		// Area-conserving shrink. Old formula: newR = (1 - p) × r — that
+		// treats r as if it were proportional to mass, but for a disc
+		// mass ∝ r², so removing fraction p of mass should give
+		// new_area = (1-p)·area → newR = r·√(1-p), not r·(1-p).
+		// Old code shrunk the prey ~2× too fast in radius, which made plants
+		// die from a few bites before the predator could finish digesting —
+		// each tick of eat() also removeMass'd the plant, the plant hit
+		// minRadius and died, and the predator lost the rest of the meal.
+		double newR = getRadius() * Math.sqrt(Math.max(0f, 1f - percentRemoved));
 		if (newR < Environment.settings.minParticleRadius.get() * 0.5f)
 			kill(causeOfDeath);
 

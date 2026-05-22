@@ -70,6 +70,17 @@ public class SimulationInputManager {
             graphics.setScreen(new StatsGraphsScreen(graphics, simulation, simulationScreen));
         });
 
+        // Genetic-clusters snapshot. Wired from the main top bar (not from the
+        // stats screen) to keep the click path short.
+        topBar.createRightBarImageButton("icons/multicell-icon.png", () -> {
+            graphics.setScreen(new com.protoevo.ui.screens.GeneticClustersScreen(
+                    graphics, simulation, simulationScreen));
+        });
+
+        // Turbo mode: black-screen line-chart fast-forward (F8 hotkey).
+        topBar.createRightBarImageButton("icons/fast_forward.png",
+                simulationScreen::toggleTurboMode);
+
         possibleSpawnables.put("Plant Cell", () -> Evolvable.createNew(PlantCell.class));
         possibleSpawnables.put("Random Protozoan", () -> Evolvable.createNew(Protozoan.class));
         tryLoadSavedProtozoans();
@@ -92,11 +103,25 @@ public class SimulationInputManager {
         topBar.createLeftBarImageButton("icons/fast_forward.png", simulation::toggleTimeDilation);
         topBar.createLeftBarImageButton("icons/home_icon.png", simulationScreen::resetCamera);
         topBar.createLeftBarImageButton("icons/folder.png", simulation::openSaveFolderOnDesktop);
-        topBar.createLeftBarImageButton("icons/terminal.png", graphics::switchToHeadlessMode);
+        // Removed: the "terminal" button called switchToHeadlessMode, which
+        // tore down the OpenGL context. The chemical solution's diffusion
+        // pass uses a GL compute shader though, so the next sim tick after
+        // the button click would crash with no GL context. The REPL is
+        // already running on its own thread reading the launching
+        // terminal's stdin — the button never gave any new functionality,
+        // it just destroyed the window.
 
         topBar.createLeftBarToggleImageButton(
                 "icons/meander_disabled.png", "icons/meander_enabled.png",
                 simulationScreen::toggleMeandering
+        );
+
+        // Low-detail mode toggle: hides chemicals + shadows for big FPS win.
+        // Using help_icon.png as a stand-in — the asset set has no "graphics
+        // detail" icon. Hotkey F10 does the same thing.
+        topBar.createLeftBarImageButton(
+                "icons/help_icon.png",
+                simulationScreen::toggleLowDetailMode
         );
 
         // Input layers

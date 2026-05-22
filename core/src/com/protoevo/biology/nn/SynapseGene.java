@@ -97,7 +97,19 @@ public class SynapseGene implements Comparable<SynapseGene>, Serializable
 
         nMutations++;
 
-        newGene.weight = randomInitialWeight();
+        // Standard NEAT-style weight mutation: ~90% perturb the existing weight
+        // by a small Gaussian, ~10% fully randomize. The original code always
+        // re-rolled, which makes fine-tuning impossible — every mutation was a
+        // discontinuous jump, so the population could never lock in good weights.
+        if (Math.random() < 0.9) {
+            float perturbation = (float) (Simulation.RANDOM.nextGaussian() * 0.15);
+            newGene.weight = newGene.weight + perturbation;
+            // Keep magnitude bounded so a runaway random walk can't blow up.
+            if (newGene.weight > 4f) newGene.weight = 4f;
+            else if (newGene.weight < -4f) newGene.weight = -4f;
+        } else {
+            newGene.weight = randomInitialWeight();
+        }
 
         if (Simulation.RANDOM.nextBoolean()) {
             newGene.mutationRate = MathUtils.random(mutationRateMin, mutationRateMax);

@@ -4,6 +4,7 @@ import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector2;
 import com.protoevo.biology.Food;
 import com.protoevo.biology.cells.Cell;
+import com.protoevo.biology.cells.PlantCell;
 import com.protoevo.biology.cells.Protozoan;
 import com.protoevo.maths.Functions;
 import com.protoevo.maths.Geometry;
@@ -76,15 +77,37 @@ public class ChemicalSolution implements Serializable {
             initialised = true;
         }
 
+        // Try CUDA first if requested AND available. If the user toggled
+        // useCUDA but JCuda's runtime/native libs aren't actually loadable,
+        // cudaAvailable() returns false; we still want a working diffusion
+        // path, so fall through to OpenGL (and finally CPU).
+        boolean cudaTriedAndAvailable = false;
         if (Environment.settings.misc.useCUDA.get()
                 && JCudaKernelRunner.cudaAvailable()) {
-            // has to be called on the same thread running the simulation
-            if (DebugMode.isDebugMode())
-                System.out.println("Initialising chemical diffusion CUDA kernel...");
-            cudaDiffusionKernel = new JCudaKernelRunner("diffusion");
+            try {
+                if (DebugMode.isDebugMode())
+                    System.out.println("Initialising chemical diffusion CUDA kernel...");
+                cudaDiffusionKernel = new JCudaKernelRunner("diffusion");
+                cudaTriedAndAvailable = true;
+            } catch (Throwable t) {
+                System.out.println("CUDA kernel init failed (" + t.getMessage()
+                        + ") — falling back to OpenGL/CPU diffusion.");
+                cudaDiffusionKernel = null;
+            }
         }
-        else if (Environment.settings.misc.useOpenGLComputeShader.get()){
-            openGLDiffusionShader = new GLComputeShaderRunner("diffusion");
+        // OpenGL is the fallback whenever CUDA didn't materialize, OR
+        // when the user explicitly requested OpenGL. CPU is the final
+        // fallback (no init needed for cpuDiffuse).
+        if (!cudaTriedAndAvailable
+                && (Environment.settings.misc.useOpenGLComputeShader.get()
+                    || Environment.settings.misc.useCUDA.get())) {
+            try {
+                openGLDiffusionShader = new GLComputeShaderRunner("diffusion");
+            } catch (Throwable t) {
+                System.out.println("OpenGL compute shader init failed ("
+                        + t.getMessage() + ") — falling back to CPU diffusion.");
+                openGLDiffusionShader = null;
+            }
         }
     }
 
@@ -126,10 +149,22 @@ public class ChemicalSolution implements Serializable {
         return (int) Functions.clampedLinearRemap(y, yMin, yMax, 0, chemicalTextureHeight);
     }
 
+    // Dirty flag so the renderer knows when to refresh its pixmap. Volatile
+    // because sim thread writes, render thread reads. We DON'T fire a
+    // per-pixel callback on every set() — at 1024×1024 with a diffuse step
+    // touching every pixel, that was ~1M JNI calls into Pixmap.drawPixel
+    // per chemical-update, ~30ms of pure render-thread tax. Renderer now
+    // batches the whole array into the pixmap once per render frame.
+    private volatile transient boolean chemicalsDirty = false;
+
+    public boolean isDirty() { return chemicalsDirty; }
+    public void clearDirty() { chemicalsDirty = false; }
+
     public void set(int x, int y, Colour colour) {
         if (outOfTextureBounds(x, y))
             return;
         colours[x][y].set(colour);
+        chemicalsDirty = true;
         if (updateChemicalCallback != null)
             updateChemicalCallback.onChemicalUpdated(x, y, colour);
     }
@@ -138,6 +173,7 @@ public class ChemicalSolution implements Serializable {
         if (outOfTextureBounds(x, y))
             return;
         colours[x][y].set(r, g, b, a);
+        chemicalsDirty = true;
         if (updateChemicalCallback != null)
             updateChemicalCallback.onChemicalUpdated(x, y, colours[x][y]);
     }
@@ -146,6 +182,7 @@ public class ChemicalSolution implements Serializable {
         if (outOfTextureBounds(x, y))
             return;
         colours[x][y].set(rgba8888);
+        chemicalsDirty = true;
         if (updateChemicalCallback != null)
             updateChemicalCallback.onChemicalUpdated(x, y, colours[x][y]);
     }
@@ -159,8 +196,19 @@ public class ChemicalSolution implements Serializable {
 
         if (e.isEdible() && !e.isDead()) {
             Colour cellColour = e.getColour();
+            // Plant cells radiate a CHEMICAL HALO at ~1.8× their physical
+            // radius — bigger than physical footprint to feed cells in
+            // gaps between plants, but small enough that we don't paint
+            // 9× more pixels per plant per tick (the 3× version was
+            // ~9× the depositCircle work and made the sim feel sluggish
+            // at high plant counts). 1.8× covers ~3.2× the area, enough
+            // for diffusion to bridge gaps without crushing per-frame
+            // throughput.
+            float depositR = (e instanceof PlantCell)
+                    ? e.getRadius() * 1.8f
+                    : e.getRadius();
             depositCircle(
-                    e.getPos(), e.getRadius(),
+                    e.getPos(), depositR,
                     cellColour.r, cellColour.g, cellColour.b, 1f);
         }
         else if (e instanceof Protozoan) {
@@ -178,6 +226,9 @@ public class ChemicalSolution implements Serializable {
 
         float cellWorldWidth = getFieldWidth() / chemicalTextureWidth;
         float cellWorldHeight = getFieldHeight() / chemicalTextureHeight;
+        float plantConv = Environment.settings.cell.chemicalExtractionPlantConversion.get();
+        float meatConv = Environment.settings.cell.chemicalExtractionMeatConversion.get();
+        float extractionFactor = Environment.settings.cell.chemicalExtractionFactor.get();
 
         for (int i = -size; i <= size; i++) {
             for (int j = -size; j <= size; j++) {
@@ -197,21 +248,28 @@ public class ChemicalSolution implements Serializable {
                                 worldX, worldY, protozoan.getRadius()
                         );
                         float overlapP = overlapArea / (cellWorldWidth * cellWorldHeight);
-                        float extraction =
-                                Environment.settings.cell.chemicalExtractionFactor.get() * delta * overlapP;
-                        if (extraction > 0) {
-
-                            if (colour.g > 0.5f && colour.g > 1.5f * colour.r && colour.g > 1.5f * colour.b)
+                        float requested = extractionFactor * delta * overlapP;
+                        if (requested > 0) {
+                            // Cap extraction by what's actually present per
+                            // channel. Without this, batching N substeps' worth
+                            // into a single call (fast-forward) silently
+                            // over-credited food: the OLD colour values were
+                            // multiplied into the food yield even after the
+                            // pixel was about to deplete to zero. With the cap,
+                            // the same batched call extracts exactly what's
+                            // there — correct and delta-safe.
+                            if (colour.g > 0.5f && colour.g > 1.5f * colour.r && colour.g > 1.5f * colour.b) {
+                                float effG = Math.min(requested, colour.g);
                                 protozoan.addFood(Food.Type.Plant,
-                                        extraction * colour.g * colour.g
-                                                * Environment.settings.cell.chemicalExtractionPlantConversion.get());
-
-                            if (colour.r > 0.5f && colour.r > 1.5f * colour.g && colour.r > 1.5f * colour.b)
+                                        effG * colour.g * plantConv);
+                            }
+                            if (colour.r > 0.5f && colour.r > 1.5f * colour.g && colour.r > 1.5f * colour.b) {
+                                float effR = Math.min(requested, colour.r);
                                 protozoan.addFood(Food.Type.Meat,
-                                        extraction * colour.r * colour.r
-                                                * Environment.settings.cell.chemicalExtractionMeatConversion.get());
+                                        effR * colour.r * meatConv);
+                            }
 
-                            colour.sub(extraction);
+                            colour.sub(requested);
                             set(fieldX, fieldY, colour);
                         }
                     }
@@ -255,24 +313,43 @@ public class ChemicalSolution implements Serializable {
     }
 
     private void cudaDiffuse() {
-
         loadIntoByteBuffer();
 
         try {
             if (cudaDiffusionKernel == null)
                 initialise();
 
+            if (cudaDiffusionKernel == null) {
+                // initialise() couldn't bring CUDA back up — fall through
+                // to a non-CUDA path on this tick rather than NPE.
+                if (openGLDiffusionShader != null) {
+                    openGLDiffuse();
+                } else {
+                    cpuDiffuse();
+                }
+                return;
+            }
+
             cudaDiffusionKernel.processImage(
                     byteBuffer, chemicalTextureWidth, chemicalTextureHeight);
         }
         catch (Exception e) {
-            if (e.getMessage().contains("CUDA_ERROR_INVALID_CONTEXT") ||
-                    e.getMessage().contains("CUDA_ERROR_INVALID_HANDLE")) {
+            String msg = e.getMessage() == null ? "" : e.getMessage();
+            if (msg.contains("CUDA_ERROR_INVALID_CONTEXT") ||
+                    msg.contains("CUDA_ERROR_INVALID_HANDLE")) {
                 if (DebugMode.isDebugMode())
                     System.out.println("CUDA context lost, reinitialising...");
                 initialise();
             } else {
-                throw e;
+                System.out.println("CUDA diffuse failed: " + msg
+                        + " — falling back to OpenGL/CPU diffusion permanently.");
+                cudaDiffusionKernel = null;
+                // Initialize OpenGL on first failure so the next call can use it.
+                if (openGLDiffusionShader == null) {
+                    try {
+                        openGLDiffusionShader = new GLComputeShaderRunner("diffusion");
+                    } catch (Throwable t) { /* will fall to CPU */ }
+                }
             }
         }
 
@@ -350,10 +427,17 @@ public class ChemicalSolution implements Serializable {
                 tmp[1] += decay * pixel.g * pixel.a;
                 tmp[2] += decay * pixel.b * pixel.a;
             }
-            tmp[0] = tmp[0] / ((float) (FILTER_SIZE*FILTER_SIZE)) * decay / final_alpha;
-            tmp[1] = tmp[1] / ((float) (FILTER_SIZE*FILTER_SIZE)) * decay / final_alpha;
-            tmp[2] = tmp[2] / ((float) (FILTER_SIZE*FILTER_SIZE)) * decay / final_alpha;
         }
+        // Normalize ONCE after both loops finish. Previous code did this
+        // INSIDE the outer i-loop, so it fired FILTER_SIZE times (=3),
+        // dividing the running accumulator by 9 and by final_alpha on each
+        // pass while the inner loop kept adding new contributions. Net
+        // effect: CPU-fallback diffusion output was ~1000× too small and
+        // non-uniformly wrong. Only matters when CUDA + OpenGL both fail.
+        float norm = (decay / final_alpha) / ((float) (FILTER_SIZE * FILTER_SIZE));
+        tmp[0] *= norm;
+        tmp[1] *= norm;
+        tmp[2] *= norm;
         newColour.r = tmp[0];
         newColour.g = tmp[1];
         newColour.b = tmp[2];
@@ -371,9 +455,18 @@ public class ChemicalSolution implements Serializable {
     }
 
     public void diffuse() {
-        if (Environment.settings.misc.useCUDA.get())
+        // Dispatch on what's actually INITIALIZED, not just on what's
+        // requested in settings. If you toggle useCUDA but the kernel
+        // failed to construct (drivers, missing native libs, etc.), the
+        // kernel is null and we must fall back rather than NPE.
+        if (Environment.settings.misc.useCUDA.get() && cudaDiffusionKernel != null)
             cudaDiffuse();
-        else if (Environment.settings.misc.useOpenGLComputeShader.get())
+        else if (Environment.settings.misc.useOpenGLComputeShader.get()
+                && openGLDiffusionShader != null)
+            openGLDiffuse();
+        else if (cudaDiffusionKernel != null)
+            cudaDiffuse();             // implicit fallback if user setting changed mid-run
+        else if (openGLDiffusionShader != null)
             openGLDiffuse();
         else
             cpuDiffuse();

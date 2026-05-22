@@ -2,8 +2,8 @@ plugins { id 'org.beryx.runtime' version '1.8.4' }
 apply plugin: "java"
 
 //sourceCompatibility = 1.8
-sourceCompatibility = 23
-targetCompatibility = 23
+sourceCompatibility = 21
+targetCompatibility = 21
 sourceSets.main.java.srcDirs = [ "src/" ]
 sourceSets.main.resources.srcDirs = ["../assets"]
 
@@ -20,7 +20,7 @@ task runGame(dependsOn: classes, type: JavaExec) {
     workingDir = project.assetsDir
     ignoreExitValue = true
 
-    jvmArgs += "-Xmx16G --add-modules jdk.incubator.foreign --illegal-access=permit "
+    jvmArgs += ["-Xmx8G"]
 
     if (OperatingSystem.current() == OperatingSystem.MAC_OS) {
         // Required to run on macOS

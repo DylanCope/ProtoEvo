@@ -111,11 +111,13 @@ public abstract class JointsManager implements Serializable {
     }
 
     public void requestJointRemoval(long id) {
+        // Eager-deregister was duplicating with the flush-time deregister
+        // in Box2DJointsManager.handleStaleJoints, so each cell-side
+        // joining callback fired twice — wasted CPU and side-effect
+        // double-counting. Just queue the removal; the flush pass will
+        // handle deregistration once.
         if (!jointRemovalRequests.contains(id)) {
             jointRemovalRequests.add(id);
-        }
-        if (joinings.containsKey(id)) {
-            deregisterJoining(joinings.get(id));
         }
     }
 

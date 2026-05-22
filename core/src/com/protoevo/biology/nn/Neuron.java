@@ -192,7 +192,7 @@ public class Neuron implements Comparable<Neuron>, Serializable {
     }
 
     public boolean hasGraphicsPosition() {
-        return graphicsPos == null;
+        return graphicsPos != null;
     }
 
     public float getGraphicsX() {

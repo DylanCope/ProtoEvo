@@ -98,6 +98,10 @@ public class BurstRequest<T extends Cell> implements Serializable {
             childParticle.applyImpulse(dir.scl(.005f));
 
             child.setGeneration(parent.getGeneration() + 1);
+            // Inherit phylogeny tags so the lineage view can group
+            // descendants under their founder ancestor.
+            child.setLineageId(parent.getLineageId());
+            child.setParentId(parent.getId());
             allocateChildResources(child, p);
 
             angle += 2 * Math.PI / nChildren;

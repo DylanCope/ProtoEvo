@@ -226,6 +226,12 @@ public class Box2DParticle extends Particle implements Serializable {
         interactionRadius = radius;
     }
 
+    @Override
+    public void setAngularDamping(float damping) {
+        if (body != null)
+            body.setAngularDamping(damping);
+    }
+
     public void addInteractingObject(Object object) {
         interactionObjects.add(object);
     }
@@ -243,8 +249,27 @@ public class Box2DParticle extends Particle implements Serializable {
     public void onCollision(Collision collision, Box2DParticle other) {
 
         if (other.isPointInside(getPos())) {
-            kill(CauseOfDeath.SUFFOCATION);
-            return;
+            // Suffocation = "stuck inside another body". Originally fired on
+            // every same-type contact too, which meant a plant burst spawning
+            // 5 children clustered around the parent killed several of the
+            // siblings on spawn (their centers landed inside each other's
+            // circles before physics could push them apart). At cap-level
+            // plant populations this was thousands of false deaths/sec.
+            //
+            // Suffocate only when the OTHER cell is a different type AND
+            // substantially larger — i.e. the kind of "swallowed by a much
+            // bigger cell" case that the death actually models. Same-type
+            // overlap (plant–plant, protozoa–protozoa) gets resolved by
+            // Box2D contact forces instead.
+            Object myUser = getUserData();
+            Object otherUser = other.getUserData();
+            boolean sameType =
+                    myUser != null && otherUser != null
+                            && myUser.getClass() == otherUser.getClass();
+            if (!sameType && other.getRadius() > getRadius() * 1.5f) {
+                kill(CauseOfDeath.SUFFOCATION);
+                return;
+            }
         }
 
         if (getOther(collision) != null)
@@ -270,8 +295,34 @@ public class Box2DParticle extends Particle implements Serializable {
         return collision.objB;
     }
 
+    // Cached shape state — Box2D reshapes (and recomputes mass/inertia)
+    // every time you call setRadius even when the value didn't change. At
+    // 2500 cells × every substep that's a meaningful waste; we skip the
+    // call when the radius is the same as last frame. Transient because
+    // these are pure runtime caches — saved games should not preserve them
+    // or older save formats break on schema mismatch.
+    private transient float lastDynamicRadius = -1f;
+    private transient float lastSensorRadius = -1f;
+    private transient float lastDampingFactor = -1f;
+
     public void physicsUpdate() {
         if (body != null) {
+            boolean hasQueuedForce = forceToApply.len2() > 0
+                    || impulseToApply.len2() > 0
+                    || torqueToApply != 0;
+            // Sleeping body with no pending forces: pos/vel/angle haven't
+            // changed since the last wake, and there's nothing to commit.
+            // Skipping the whole body-update path for sleeping cells (mostly
+            // plants) is a major fast-forward win — Box2D method calls
+            // dominate physicsUpdate cost otherwise.
+            if (!body.isAwake() && !hasQueuedForce) {
+                torqueToApply = 0;
+                impulseToApply.set(0, 0);
+                if (!contacts.isEmpty())
+                    contacts.removeIf(this::removeCollision);
+                return;
+            }
+
             if (forceToApply.len2() > 0)
                 body.applyForceToCenter(forceToApply, true);
             if (impulseToApply.len2() > 0)
@@ -282,22 +333,35 @@ public class Box2DParticle extends Particle implements Serializable {
             vel.set(body.getLinearVelocity());
             pos.set(body.getPosition());
             angle = body.getAngle();
-            body.setLinearDamping(getDampeningFactor() * Environment.settings.env.fluidDragDampening.get());
+
+            float damping = getDampeningFactor() * Environment.settings.env.fluidDragDampening.get();
+            if (damping != lastDampingFactor) {
+                body.setLinearDamping(damping);
+                lastDampingFactor = damping;
+            }
 
             if (getSpeed() < getRadius() / 50f) {
                 body.setLinearVelocity(0, 0);
                 body.setAwake(false);
             }
 
-            dynamicsFixture.getShape().setRadius((float) radius);
-            if (rangedInteractionsEnabled && interactionRadius > getRadius())
+            float r = (float) radius;
+            if (r != lastDynamicRadius) {
+                dynamicsFixture.getShape().setRadius(r);
+                lastDynamicRadius = r;
+            }
+            if (rangedInteractionsEnabled && interactionRadius > r
+                    && interactionRadius != lastSensorRadius) {
                 sensorFixture.getShape().setRadius(interactionRadius);
+                lastSensorRadius = interactionRadius;
+            }
         }
 
         torqueToApply = 0;
         impulseToApply.set(0, 0);
 
-        contacts.removeIf(this::removeCollision);
+        if (!contacts.isEmpty())
+            contacts.removeIf(this::removeCollision);
     }
 
     private boolean removeCollision(Collision collision) {

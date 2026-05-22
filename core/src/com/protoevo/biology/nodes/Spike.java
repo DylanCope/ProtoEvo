@@ -18,7 +18,23 @@ public class Spike extends NodeAttachment implements Serializable {
     private static final long serialVersionUID = 1L;
 
     private Vector2 spikePoint = new Vector2();
-    private final float attackFactor = 10f;
+    // Reused scratch vectors so Spike.update doesn't allocate two Vector2
+    // per (spike × contact) every frame. With dense melee the GC churn
+    // showed up as noticeable jitter in earlier profiling. Transient +
+    // lazy-init: making them transient avoids breaking older saves whose
+    // Spike objects didn't have these fields, and the lazy check keeps it
+    // safe after deserialisation.
+    private transient Vector2 tmpDir;
+    private transient Vector2 tmpStart;
+    // 10 → 2. dps = attackFactor × (attack - defense). With attackFactor=10
+    // a typical attack-defense gap of 3-5 gave dps=30-50, meaning a cell
+    // in contact lost 0.03-0.05 health/tick → death in ~20-30 ticks. At
+    // 256× time dilation that's microseconds of real time — the user saw
+    // it as "instant kill". 2 brings dps to 6-10, so combat takes ~10
+    // sim-seconds to kill rather than 0.02 — slow enough that prey can
+    // try to flee, defenders have time to take effect, and the
+    // SPIKE_DAMAGE death cause stops dominating early-game logs.
+    private final float attackFactor = 2f;
     private float lastDPS = 0;
     private float extension = 1;
     private float myLastAttack = 0, theirLastDefense = 0;
@@ -51,15 +67,44 @@ public class Spike extends NodeAttachment implements Serializable {
         if (cell == null)
             return;
 
-        extension = Functions.clampedLinearRemap(input[0], -1, 1, 0, 1);
+        // Spikes must be ACTIVELY extended to deal damage. Default-state
+        // signal (input≈0 from random/un-evolved GRN weights) must give
+        // extension≈0. Earlier `clamp(input[0], 0, 1)` still allowed an
+        // input of 0.3 → 30% extension → meaningful damage; plants with
+        // default GRN signal kept passively killing grazers at a slower
+        // rate. Require input > 0.5 before any meaningful extension: this
+        // is the "aggression threshold" the cell's NN must actively
+        // cross — random weights almost never sustain it, but evolved
+        // combat lineages can.
+        extension = Functions.clampedLinearRemap(input[0], 0.5f, 1f, 0f, 1f);
         spikePoint = getSpikePoint();
 
         for (Object toInteract : cell.getInteractionQueue()) {
             if (toInteract instanceof Particle && (((Particle) toInteract).getUserData() instanceof Cell)) {
                 Cell other = (Cell) ((Particle) toInteract).getUserData();
-                Vector2 dir = spikePoint.cpy().sub(node.getWorldPosition());
-                Vector2 start = node.getWorldPosition().cpy().sub(other.getPos());
-                float[] ts = Geometry.circleIntersectLineTs(dir, start, other.getRadius());
+                // Plants don't spike other plants. Plants are stationary
+                // neighbours that often touch — without this guard, any
+                // plant that evolved spikes would damage every adjacent
+                // plant, including would-be mutualists for adhesion. The
+                // user explicitly didn't want plant-on-plant friendly fire.
+                // Protozoa-on-protozoa spikes ARE still allowed (predation
+                // / combat), and plant→protozoa defensive damage works as
+                // before.
+                if (cell instanceof com.protoevo.biology.cells.PlantCell
+                        && other instanceof com.protoevo.biology.cells.PlantCell)
+                    continue;
+                // Don't spike adhered partners — without this, any cluster
+                // that evolved adhesion + spikes would tear itself apart, so
+                // multicellular defensive structures couldn't emerge. Cells
+                // don't recognize bound friends; this rule lets them.
+                if (cell.isAttachedTo(other))
+                    continue;
+                if (tmpDir == null) tmpDir = new Vector2();
+                if (tmpStart == null) tmpStart = new Vector2();
+                Vector2 nodePos = node.getWorldPosition();
+                tmpDir.set(spikePoint).sub(nodePos);
+                tmpStart.set(nodePos).sub(other.getPos());
+                float[] ts = Geometry.circleIntersectLineTs(tmpDir, tmpStart, other.getRadius());
                 if (Geometry.lineIntersectCondition(ts)) {
                     output[0] = 1f;
 
@@ -82,6 +127,16 @@ public class Spike extends NodeAttachment implements Serializable {
                         float dps = attackFactor * (myLastAttack - theirLastDefense);
                         other.damage(dps * delta, CauseOfDeath.SPIKE_DAMAGE);
                         lastDPS = dps;
+                        // Spikes were free attacks. Charge a small basal
+                        // energy cost so combat isn't free, but don't make
+                        // it ruinous — earlier `dps * delta * 5f` came out
+                        // to ~250 J/sec for a typical attack, draining the
+                        // attacker in under 6 sim-seconds. New rate is
+                        // ~5 J/sec sustained — feels like real metabolism
+                        // overhead without being self-defeating.
+                        float energyCost = dps * delta * 0.1f;
+                        cell.depleteEnergy(energyCost);
+                        cell.addActivity(0.1f * delta);
                     }
                     else {
                         lastDPS = 0;

@@ -10,9 +10,30 @@ import com.protoevo.utils.ImageUtils;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Function;
 
 public class NodeRenderer {
     private static Sprite nodeEmptySprite = null;
+
+    // Factory map shared by every cell type — picks the right NodeRenderer
+    // subclass for the attachment a node is currently expressing. Lives here
+    // (rather than ProtozoaRenderer) because plants now grow nodes too.
+    private static final Map<Class<? extends NodeAttachment>,
+            Function<SurfaceNode, NodeRenderer>> rendererFactory =
+        new HashMap<Class<? extends NodeAttachment>,
+                Function<SurfaceNode, NodeRenderer>>() {{
+            put(Flagellum.class, FlagellumRenderer::new);
+            put(Photoreceptor.class, PhotoreceptorRenderer::new);
+            put(Spike.class, SpikeRenderer::new);
+            put(AdhesionReceptor.class, AdhesionRenderer::new);
+        }};
+
+    public static NodeRenderer createFor(SurfaceNode node) {
+        NodeAttachment attachment = node.getAttachment();
+        if (attachment == null || !rendererFactory.containsKey(attachment.getClass()))
+            return new NodeRenderer(node);
+        return rendererFactory.get(attachment.getClass()).apply(node);
+    }
 
     protected static Sprite getNodeEmptySprite() {
         if (nodeEmptySprite == null)

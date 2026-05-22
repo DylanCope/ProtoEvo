@@ -230,6 +230,48 @@ public class GRNFactory {
             networkGenome.mutate();
         }
 
+        // Seed basic foraging reflexes. Two signals:
+        //   - "Plant Density Local" → "Cilia Thrust": swim whenever you smell
+        //     food. This keeps cells moving inside dense plant clusters where
+        //     the gradient is ~0.
+        //   - "Plant Gradient" → "Cilia Turn": when food is behind you the
+        //     gradient is negative; with negative weight that becomes positive
+        //     turn output, so the cell rotates until plants are ahead.
+        // Wrapped in try/catch in case a non-protozoan genome (surface-node
+        // sub-genomes etc.) ever flows through here with a different shape.
+        try {
+            seedReflexSynapse(networkGenome, "Plant Density Local", "Cilia Thrust:Output", 2.0f);
+            seedReflexSynapse(networkGenome, "Plant Gradient",       "Cilia Turn:Output",  -1.0f);
+        } catch (Throwable t) {
+            System.err.println("[seed] failed: " + t);
+        }
+
         return networkGenome;
+    }
+
+    private static void seedReflexSynapse(NetworkGenome g, String inLabel,
+                                          String outLabel, float weight) {
+        com.protoevo.biology.nn.NeuronGene in  = g.getNeuronGene(inLabel);
+        com.protoevo.biology.nn.NeuronGene out = g.getNeuronGene(outLabel);
+        // For non-protozoan genomes (plants, surface-node sub-genomes, etc.)
+        // these labels don't exist. Bail silently.
+        if (in == null || out == null) return;
+
+        // Strict-edit version: only nudge an existing synapse if there is one.
+        // We deliberately don't add a new synapse — appending was suspected of
+        // interacting badly with downstream phenotype building during world
+        // gen, so this strictly mutates state already present.
+        for (com.protoevo.biology.nn.SynapseGene s : g.getSynapseGenes()) {
+            if (s.getIn() != null && s.getOut() != null
+                    && s.getIn().getId() == in.getId()
+                    && s.getOut().getId() == out.getId()) {
+                s.setWeight(weight);
+                s.setDisabled(false);
+                return;
+            }
+        }
+        // No existing synapse → silently do nothing. The 50% initial
+        // connectivity will mean some protozoa get the seed and some don't,
+        // which is fine — the gene pool will spread it.
     }
 }

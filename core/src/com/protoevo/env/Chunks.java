@@ -39,6 +39,12 @@ public class Chunks implements Serializable {
         cellHashes.get(cell.getClass()).add(cell, cell.getPos());
     }
 
+    public void remove(Cell cell) {
+        SpatialHash<Cell> hash = cellHashes.get(cell.getClass());
+        if (hash != null)
+            hash.remove(cell, cell.getPos());
+    }
+
     public int getLocalCount(Class<? extends Cell> cellClass) {
         return cellHashes.get(cellClass).size();
     }
@@ -48,13 +54,13 @@ public class Chunks implements Serializable {
     }
 
     public int getGlobalCount(Class<? extends Cell> cellClass) {
-        if (!globalCellCounts.containsKey(cellClass)) {
-            int count = getSpatialHash(cellClass).getChunkIndices().stream()
-                    .mapToInt(i -> getSpatialHash(cellClass).getCount(i))
-                    .sum();
-            globalCellCounts.put(cellClass, count);
-        }
-        return globalCellCounts.get(cellClass);
+        // SpatialHash maintains its own running size on add/remove/clear, so
+        // we don't need to iterate all chunks summing per-chunk counts. The
+        // old version was also stale until the next chunks.clear() — it
+        // cached the sum and only invalidated on full rebuild, which lied
+        // through births/deaths.
+        SpatialHash<Cell> hash = cellHashes.get(cellClass);
+        return hash == null ? 0 : hash.size();
     }
 
     public int getGlobalCapacity(Cell cell) {

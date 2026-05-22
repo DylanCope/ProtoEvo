@@ -62,8 +62,13 @@ public class Box2DCollisionHandler implements ContactListener, Serializable {
         if (bodyA.getUserData() instanceof Box2DParticle)
             ((Box2DParticle) bodyA.getUserData()).endContact(bodyB.getUserData());
 
+        // Was passing bodyB.getUserData() here — i.e. each particle telling
+        // itself "I ended contact with myself". That removed nothing, leaving
+        // stale contacts in particle B's set until the distance-based GC in
+        // removeCollision eventually caught them. At scale this leaked into
+        // measurable overhead on every cell.update.
         if (bodyB.getUserData() instanceof Box2DParticle)
-            ((Box2DParticle) bodyB.getUserData()).endContact(bodyB.getUserData());
+            ((Box2DParticle) bodyB.getUserData()).endContact(bodyA.getUserData());
 
 
         if (fixtureA.isSensor() && bodyA.getUserData() instanceof Box2DParticle) {

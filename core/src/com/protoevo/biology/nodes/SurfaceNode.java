@@ -159,6 +159,11 @@ public class SurfaceNode implements Evolvable.Element, Serializable {
         this.angle = angle;
     }
 
+    // Receptor keys live on the cell (Protozoan.plantReceptorKey /
+    // protozoaSurfaceKey), not on individual surface nodes. Every receptor
+    // on the cell shares the same diet specialization — a cell has one
+    // "diet" rather than per-receptor specialization.
+
     public Vector2 getRelativePos() {
         float t = cell.getParticle().getAngle() + angle;
         relativePosition.set((float) Math.cos(t), (float) Math.sin(t)).scl(cell.getRadius());

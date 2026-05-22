@@ -113,13 +113,23 @@ public class PlotGrid extends Widget {
     }
 
     public void setMajorTicks(float xMajorTick, float yMajorTick) {
-        this.xMajorTick = xMajorTick;
-        this.yMajorTick = yMajorTick;
+        // Guard against zero/NaN: callers compute these from data range / 5,
+        // and on fresh sims with only one snapshot the range is 0. Without
+        // this clamp the draw loops below become `for (x = 0; ...; x += 0)`
+        // and the render thread spins forever inside GlyphLayout, hanging
+        // the whole window.
+        this.xMajorTick = sanitizeTick(xMajorTick);
+        this.yMajorTick = sanitizeTick(yMajorTick);
     }
 
     public void setMinorTicks(float xMinorTick, float yMinorTick) {
-        this.xMinorTick = xMinorTick;
-        this.yMinorTick = yMinorTick;
+        this.xMinorTick = sanitizeTick(xMinorTick);
+        this.yMinorTick = sanitizeTick(yMinorTick);
+    }
+
+    private static float sanitizeTick(float t) {
+        if (!Float.isFinite(t) || t <= 0f) return 1f;
+        return t;
     }
 
     @Override
@@ -163,22 +173,35 @@ public class PlotGrid extends Widget {
 
     public void drawAxis(Batch batch) {
 
+        // Hard cap on iterations as a second line of defense; if a tick step
+        // is somehow tiny relative to the bounds we'd otherwise burn the
+        // render thread allocating GlyphLayouts forever.
+        final int MAX_TICKS = 200;
+
         // draw grid
-        for (float x = 0; x <= xMax; x += xMajorTick) {
-            drawMajorXGridLine(x);
-            drawAxisXTickLabel(batch, x);
+        if (xMajorTick > 0f) {
+            int n = 0;
+            for (float x = 0; x <= xMax && n < MAX_TICKS; x += xMajorTick, n++) {
+                drawMajorXGridLine(x);
+                drawAxisXTickLabel(batch, x);
+            }
+            n = 0;
+            for (float x = 0; x >= xMin && n < MAX_TICKS; x -= xMajorTick, n++) {
+                drawMajorXGridLine(x);
+                drawAxisXTickLabel(batch, x);
+            }
         }
-        for (float x = 0; x >= xMin; x -= xMajorTick) {
-            drawMajorXGridLine(x);
-            drawAxisXTickLabel(batch, x);
-        }
-        for (float y = 0; y <= yMax; y += yMajorTick) {
-            drawMajorYGridLine(y);
-            drawAxisYTickLabel(batch, y);
-        }
-        for (float y = 0; y >= yMin; y -= yMajorTick) {
-            drawMajorYGridLine(y);
-            drawAxisYTickLabel(batch, y);
+        if (yMajorTick > 0f) {
+            int n = 0;
+            for (float y = 0; y <= yMax && n < MAX_TICKS; y += yMajorTick, n++) {
+                drawMajorYGridLine(y);
+                drawAxisYTickLabel(batch, y);
+            }
+            n = 0;
+            for (float y = 0; y >= yMin && n < MAX_TICKS; y -= yMajorTick, n++) {
+                drawMajorYGridLine(y);
+                drawAxisYTickLabel(batch, y);
+            }
         }
 
 //        // draw ticks on axis

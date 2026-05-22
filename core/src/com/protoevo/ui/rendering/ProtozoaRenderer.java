@@ -22,7 +22,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
-import java.util.function.Function;
 
 public class ProtozoaRenderer {
 
@@ -96,17 +95,6 @@ public class ProtozoaRenderer {
         }
     }
 
-    private static final
-    Map<Class<? extends NodeAttachment>, Function<SurfaceNode, NodeRenderer>> nodeRendererMap =
-        new HashMap<Class<? extends NodeAttachment>, Function<SurfaceNode, NodeRenderer>>(){
-            {
-                put(Flagellum.class, FlagellumRenderer::new);
-                put(Photoreceptor.class, PhotoreceptorRenderer::new);
-                put(Spike.class, SpikeRenderer::new);
-                put(AdhesionReceptor.class, AdhesionRenderer::new);
-            }
-        };
-
     private static class InteriorElement {
         private final Sprite elementSprite;
         private float angle;
@@ -146,6 +134,11 @@ public class ProtozoaRenderer {
     private final Protozoan protozoan;
     private final Map<SurfaceNode, NodeRenderer> nodeRenderers;
     private final ArrayList<InteriorElement> interiorElements = new ArrayList<>(0);
+    // Reused per-cell scratch Color so getProtozoanColor doesn't allocate a
+    // new Color object each render frame. With 250 protozoa × 60fps this
+    // was ~15k allocations/sec just for damage flashes — visible as GC
+    // micro-stutter on long runs.
+    private final Color reusableColor = new Color();
 
     public ProtozoaRenderer(Protozoan protozoan) {
         this.protozoan = protozoan;
@@ -160,11 +153,7 @@ public class ProtozoaRenderer {
     }
 
     public NodeRenderer createNodeRenderer(SurfaceNode node) {
-        NodeAttachment maybeAttachment = node.getAttachment();
-        if (maybeAttachment == null || !nodeRendererMap.containsKey(maybeAttachment.getClass())) {
-            return new NodeRenderer(node);
-        }
-        return nodeRendererMap.get(maybeAttachment.getClass()).apply(node);
+        return NodeRenderer.createFor(node);
     }
 
     public Color getProtozoanColor() {
@@ -190,7 +179,7 @@ public class ProtozoaRenderer {
 
             float maxRedAmount = GraphicsAdapter.settings.damageVisualRedAmount.get();
 
-            return new Color(protozoan.getColor())
+            return reusableColor.set(protozoan.getColor())
                     .lerp(Color.RED, damageAmountFactor * damageTimeFactor * maxRedAmount);
         }
         return protozoan.getColor();

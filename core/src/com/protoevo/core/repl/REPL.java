@@ -29,6 +29,8 @@ public class REPL implements Runnable
                 new SimParams(this),
                 new ManageRemoteGraphics(this),
                 new Screenshot(this),
+                new Homeostat(this),
+                new DumpGenome(this),
         };
 
         for (Command command : commandsList) {
@@ -56,6 +58,16 @@ public class REPL implements Runnable
                 System.out.print("> ");
                 line = bufferRead.readLine();
 
+                // When stdin is closed (headless launcher, piped command that
+                // finished, etc.), readLine() returns null. The old code
+                // immediately NPE'd on line.equals(...), caught the exception,
+                // printed "Failed with message: null", and looped — a hot
+                // CPU-burning loop that pinned one core forever and could
+                // starve other threads. Detect null and shut the REPL cleanly.
+                if (line == null) {
+                    running = false;
+                    break;
+                }
                 if (line.equals("\n") || stripWhitespace(line).equals("")) {
                     System.out.println();
                     continue;

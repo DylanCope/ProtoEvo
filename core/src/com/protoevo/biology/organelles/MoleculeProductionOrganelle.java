@@ -52,7 +52,19 @@ public class MoleculeProductionOrganelle extends OrganelleFunction implements Se
 
         float constructionMassAvailable = cell.getConstructionMassAvailable();
         float energyAvailable = cell.getEnergyAvailable();
-        if (producedMass > 0 && constructionMassAvailable >= producedMass && energyAvailable >= requiredEnergy) {
+        // Reserve gate: only produce molecules when the cell has surplus
+        // construction mass beyond a 50%-of-cap reserve. Without this gate,
+        // organelles strip-mine the mass pool at ~5 mg/sec while chemical
+        // drip (the nibble path that's supposed to bootstrap new cells)
+        // delivers only ~0.3 mg/sec. Result: cells survive energy-wise but
+        // never accumulate enough mass to grow → never split → no
+        // evolution toward better foraging. The reserve guarantees grow()
+        // and repair() get first claim on incoming mass, and organelles
+        // only fire when the cell is genuinely well-fed.
+        float reserve = 0.5f * cell.getConstructionMassCap();
+        if (producedMass > 0
+                && constructionMassAvailable >= reserve + producedMass
+                && energyAvailable >= requiredEnergy) {
             cell.addAvailableComplexMolecule(productionMolecule, producedMass);
             cell.depleteConstructionMass(producedMass);
             cell.depleteEnergy(requiredEnergy);

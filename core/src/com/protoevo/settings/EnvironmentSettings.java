@@ -13,6 +13,25 @@ public class EnvironmentSettings extends Settings {
             "Fluid Drag Dampening",
             "Controls the viscosity of the fluid.",
             10f);
+    // Currents — a slowly-drifting flow field that pushes cells around the
+    // world. Without this, populations cluster permanently at the spot
+    // where they happened to first thrive; with it, plants drift into new
+    // regions and protozoa get carried away from saturated patches, so
+    // multiple competing population centres can coexist. Strength is the
+    // Box2D force scale per cell per substep — values around 1e-5 give a
+    // visible but not overwhelming drift.
+    public final Parameter<Float> currentStrength = new Parameter<>(
+            "Current Strength",
+            "Force scale of the divergence-free water current pushing cells around.",
+            1.5e-5f);
+    public final Parameter<Float> currentSpatialScale = new Parameter<>(
+            "Current Spatial Scale",
+            "Characteristic eddy size in world units.",
+            4f);
+    public final Parameter<Float> currentTimeRate = new Parameter<>(
+            "Current Time Rate",
+            "How fast the current pattern drifts (rad/sim-sec).",
+            0.05f);
     public final Parameter<Float> voidDamagePerSecond = new Parameter<>(
             "Void Damage Per Second",
             "Factor controlling how much damage being outside the environment does.",

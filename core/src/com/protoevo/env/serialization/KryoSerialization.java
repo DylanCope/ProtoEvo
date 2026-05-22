@@ -3,8 +3,10 @@ package com.protoevo.env.serialization;
 import com.badlogic.gdx.math.Vector2;
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.Serializer;
+import com.esotericsoftware.kryo.SerializerFactory;
 import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
+import com.esotericsoftware.kryo.serializers.CompatibleFieldSerializer;
 import com.protoevo.biology.*;
 import com.protoevo.biology.cells.*;
 import com.protoevo.biology.evolution.*;
@@ -38,8 +40,33 @@ public class KryoSerialization {
 
     public static boolean WARN_UNREGISTERED_CLASSES = false;
 
+    // Kryo isn't thread-safe, but the simulation only ever serializes from
+    // one thread at a time (auto-saves go through Simulation.saveOnOtherThread
+    // which guards with `busyOnOtherThread`). Caching this instance turns the
+    // ~150-class registration call into a one-time setup cost per JVM rather
+    // than repeating it on every save/load. On large worlds this was several
+    // hundred ms of pure registration overhead per save.
+    private static Kryo cachedKryo;
+
     public static Kryo getKryo() {
+        if (cachedKryo != null)
+            return cachedKryo;
         Kryo kryo = new Kryo();
+        // Use CompatibleFieldSerializer for everything by default. Default
+        // FieldSerializer in Kryo 5 matches fields by *position*, so adding
+        // ANY non-transient field to a serialised class permanently breaks
+        // every existing save. CompatibleFieldSerializer matches by *name*
+        // and skips fields that no longer exist / fills missing ones with
+        // the class's default-constructed value. The tradeoff is ~10–20
+        // bytes of overhead per field per object; that's worth it given
+        // how often we're iterating on the data model right now.
+        //
+        // Old saves written with the default FieldSerializer cannot be
+        // read by CompatibleFieldSerializer (different on-disk format).
+        // That's an unavoidable one-time break — but from this point on,
+        // any new field addition won't corrupt existing saves.
+        kryo.setDefaultSerializer(CompatibleFieldSerializer.class);
+
         kryo.register(Environment.class);
         kryo.register(Cell.class);
         kryo.register(MultiCellStructure.class);
@@ -197,6 +224,7 @@ public class KryoSerialization {
         kryo.setRegistrationRequired(false);
         kryo.setWarnUnregisteredClasses(WARN_UNREGISTERED_CLASSES);
 
+        cachedKryo = kryo;
         return kryo;
     }
 

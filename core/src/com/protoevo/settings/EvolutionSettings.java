@@ -54,6 +54,20 @@ public class EvolutionSettings extends Settings {
             "The chance that a neuron will be deleted when mutating a cell.",
             0.1);
 
+    // Per-generation mutation budgets. Were hardcoded static fields in
+    // NetworkGenome — moving them here lets you actually tune evolution
+    // pressure without recompiling. Lower values give stable lineages and
+    // slow drift; higher values let the population explore the landscape
+    // faster but at the cost of losing locked-in good circuits to noise.
+    public final Parameter<Integer> nodeMutationsPerGeneration = new Parameter<>(
+            "Node Mutations Per Generation",
+            "Number of neuron-gene mutation attempts each new offspring receives.",
+            10);
+    public final Parameter<Integer> synapseMutationsPerGeneration = new Parameter<>(
+            "Synapse Mutations Per Generation",
+            "Number of synapse-gene mutation attempts each new offspring receives.",
+            10);
+
     public EvolutionSettings() {
         super("Evolution");
     }

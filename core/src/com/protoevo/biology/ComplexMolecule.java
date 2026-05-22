@@ -15,7 +15,7 @@ public class ComplexMolecule implements Serializable {
 
     private float signature, productionCost;
 
-    private final static Map<Float, ComplexMolecule> cache = new HashMap<>(
+    private final static Map<Float, ComplexMolecule> cache = new java.util.concurrent.ConcurrentHashMap<>(
             Environment.settings.possibleMolecules.get(), 1);
 
     public ComplexMolecule() {}

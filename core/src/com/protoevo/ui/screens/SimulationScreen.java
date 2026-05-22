@@ -59,7 +59,7 @@ public class SimulationScreen extends ScreenAdapter {
     private Environment environment;
     private final SimulationInputManager inputManager;
     private final ShaderLayers environmentRenderer;
-    private final VignetteLayer vignetteLayer;
+    private VignetteLayer vignetteLayer;
     private final SpriteBatch uiBatch;
     private final Stage stage;
     private final GlyphLayout layout = new GlyphLayout();
@@ -142,11 +142,11 @@ public class SimulationScreen extends ScreenAdapter {
 
         inputManager = new SimulationInputManager(this);
         brightnessLayer = new BrightnessLayer(camera);
-        vignetteLayer = new VignetteLayer(camera, inputManager.getParticleTracker());
+//        vignetteLayer = new VignetteLayer(camera, inputManager.getParticleTracker());
         environmentRenderer = new ShaderLayers(
                 new EnvironmentRenderer(camera, simulation.getEnv(), inputManager),
                 new ShockWaveLayer(camera),
-                vignetteLayer,
+               // vignetteLayer,
                 brightnessLayer
         );
 
@@ -237,6 +237,454 @@ public class SimulationScreen extends ScreenAdapter {
         setEnvStatOptions();
     }
 
+    public EnvironmentRenderer getBaseEnvironmentRenderer() {
+        return (EnvironmentRenderer) environmentRenderer.getBaseRenderer();
+    }
+
+    // ===== Lineage tree overlay =====
+    // Phylogenetic tree restricted to *currently-living* protozoa and their
+    // branch-point ancestors. Time on X (oldest branch point left, now
+    // right); each visible lineage is a coloured horizontal segment. Linear
+    // chains (parent → only-child → only-child …) are collapsed: the tree
+    // only shows actual divergence events plus living leaves, so the
+    // visible row count is bounded by living population × branchiness
+    // rather than total cells ever born.
+    private boolean lineageOverlay = false;
+    private com.badlogic.gdx.graphics.glutils.ShapeRenderer lineageShape;
+    private static final int LINEAGE_MAX_VISIBLE_LEAVES = 80;
+    // Per-render scratch state.
+    private final HashSet<Long> lineageOnLivingPath = new HashSet<>();
+    private final HashMap<Long, ArrayList<com.protoevo.env.LineageRecord>> lineageLivingChildren =
+            new HashMap<>();
+    private final ArrayList<com.protoevo.env.LineageRecord> lineageVisibleRoots = new ArrayList<>();
+
+    public void toggleLineageOverlay() {
+        lineageOverlay = !lineageOverlay;
+        if (lineageOverlay && lineageShape == null)
+            lineageShape = new com.badlogic.gdx.graphics.glutils.ShapeRenderer();
+        System.out.println("Lineage tree: " + (lineageOverlay ? "ON" : "OFF"));
+    }
+    public boolean isLineageOverlay() { return lineageOverlay; }
+
+    private static void lineageColor(long id, com.badlogic.gdx.graphics.Color out) {
+        // Hashed → saturated colour. Stable per lineage so the eye can
+        // follow a branch across the tree.
+        float r = ((id * 2654435761L) >>> 0  & 0xff) / 255f;
+        float g = ((id * 40503L)        >>> 8  & 0xff) / 255f;
+        float b = ((id * 2246822519L)   >>> 16 & 0xff) / 255f;
+        float maxC = Math.max(r, Math.max(g, b));
+        if (maxC > 1e-3f) { r /= maxC; g /= maxC; b /= maxC; }
+        out.set(r, g, b, 0.95f);
+    }
+
+    private void rebuildLineageChildren(java.util.Map<Long, com.protoevo.env.LineageRecord> recs) {
+        lineageOnLivingPath.clear();
+        lineageLivingChildren.clear();
+        lineageVisibleRoots.clear();
+        // Walk from each currently-alive record up through its ancestors,
+        // marking every record on a path to a living leaf. We render only
+        // these. Dead branches (subtrees with no living leaves) are
+        // automatically excluded.
+        for (com.protoevo.env.LineageRecord r : recs.values()) {
+            if (!r.isAlive()) continue;
+            long id = r.id;
+            while (id != 0L) {
+                if (!lineageOnLivingPath.add(id)) break; // already marked
+                com.protoevo.env.LineageRecord step = recs.get(id);
+                if (step == null) break;
+                id = step.parentId;
+            }
+        }
+        // Build the parent → living-children map and find roots.
+        for (Long id : lineageOnLivingPath) {
+            com.protoevo.env.LineageRecord r = recs.get(id);
+            if (r == null) continue;
+            if (r.parentId == 0L || !lineageOnLivingPath.contains(r.parentId)) {
+                lineageVisibleRoots.add(r);
+            } else {
+                lineageLivingChildren.computeIfAbsent(r.parentId, k -> new ArrayList<>()).add(r);
+            }
+        }
+        for (ArrayList<com.protoevo.env.LineageRecord> kids : lineageLivingChildren.values())
+            kids.sort((a, b) -> Integer.compare(b.aliveDescendants, a.aliveDescendants));
+        lineageVisibleRoots.sort((a, b) -> Integer.compare(b.aliveDescendants, a.aliveDescendants));
+    }
+
+    /** Walk down single-child chains starting at r, returning the first
+     *  descendant that either branches (≥2 living children) or is a
+     *  living leaf. Used to collapse linear chains so the tree shows only
+     *  divergence events. */
+    private com.protoevo.env.LineageRecord collapseChain(com.protoevo.env.LineageRecord r) {
+        while (true) {
+            ArrayList<com.protoevo.env.LineageRecord> kids = lineageLivingChildren.get(r.id);
+            if (kids == null || kids.size() != 1) return r;
+            // Exactly one living child — chain continues. If r is dead and
+            // its single child is also internal, skip through.
+            r = kids.get(0);
+        }
+    }
+
+    private final com.badlogic.gdx.graphics.Color lineageColScratch = new com.badlogic.gdx.graphics.Color();
+
+    /**
+     * Draw `r` as a horizontal segment starting at chainStartTime (the
+     * birth time of the linear-chain's *first* ancestor that was the
+     * collapse-anchor), and at its branch point recurse into kids.
+     */
+    private void drawLineageSubtree(com.protoevo.env.LineageRecord r,
+                                    float chainStartTime,
+                                    float xLeft, float xRight,
+                                    float yTop, float yBottom,
+                                    float tStart, float tEnd) {
+        float tSpan = Math.max(1e-3f, tEnd - tStart);
+        float xStart = xLeft + ((chainStartTime - tStart) / tSpan) * (xRight - xLeft);
+        // For a living leaf, draw out to "now" (xRight). For a dead branch
+        // point, draw to its own deathTime — that's when its descendants
+        // diverged from a single common stem.
+        float xEnd = (r.isAlive() ? xRight
+                : xLeft + ((Math.max(r.deathTime, r.birthTime) - tStart) / tSpan)
+                        * (xRight - xLeft));
+        if (xStart < xLeft) xStart = xLeft;
+        if (xEnd > xRight) xEnd = xRight;
+        if (xEnd < xStart) xEnd = xStart;
+        float yMid = 0.5f * (yTop + yBottom);
+
+        lineageColor(r.id, lineageColScratch);
+        lineageShape.setColor(lineageColScratch);
+        // Thickness scales with descendant count (log) so dominant
+        // branches visually stand out.
+        float thickness = (float) Math.max(1.5, 1.5 + Math.log(1 + r.aliveDescendants));
+        lineageShape.rectLine(xStart, yMid, xEnd, yMid, thickness);
+
+        ArrayList<com.protoevo.env.LineageRecord> kids = lineageLivingChildren.get(r.id);
+        if (kids == null || kids.isEmpty()) return;
+
+        int totalKidDescendants = 0;
+        for (com.protoevo.env.LineageRecord k : kids) totalKidDescendants += k.aliveDescendants;
+        if (totalKidDescendants <= 0) return;
+
+        float yRange = yTop - yBottom;
+        float yCursor = yTop;
+        for (com.protoevo.env.LineageRecord k : kids) {
+            // Collapse chains: walk down single-child paths from k to its
+            // first divergence point or living leaf. The horizontal segment
+            // we draw for the chain runs from k.birthTime out to the
+            // resolved record's lifespan.
+            com.protoevo.env.LineageRecord collapsed = collapseChain(k);
+            float frac = collapsed.aliveDescendants / (float) totalKidDescendants;
+            float kSize = frac * yRange;
+            float kYTop = yCursor;
+            float kYBottom = yCursor - kSize;
+            float kYMid = 0.5f * (kYTop + kYBottom);
+            float kBirthX = xLeft + ((k.birthTime - tStart) / tSpan) * (xRight - xLeft);
+            if (kBirthX < xStart) kBirthX = xStart;
+            if (kBirthX > xRight) kBirthX = xRight;
+            // Vertical branch line at the divergence point.
+            lineageColor(collapsed.id, lineageColScratch);
+            lineageShape.setColor(lineageColScratch);
+            lineageShape.rectLine(kBirthX, yMid, kBirthX, kYMid, 1.5f);
+            drawLineageSubtree(collapsed, k.birthTime,
+                    xLeft, xRight, kYTop, kYBottom, tStart, tEnd);
+            yCursor = kYBottom;
+        }
+    }
+
+    private int countLivingLeaves(com.protoevo.env.LineageRecord r) {
+        ArrayList<com.protoevo.env.LineageRecord> kids = lineageLivingChildren.get(r.id);
+        if (kids == null || kids.isEmpty())
+            return r.isAlive() ? 1 : 0;
+        int n = 0;
+        for (com.protoevo.env.LineageRecord k : kids)
+            n += countLivingLeaves(collapseChain(k));
+        return n;
+    }
+
+    private void renderLineageOverlay() {
+        if (environment == null) return;
+        java.util.Map<Long, com.protoevo.env.LineageRecord> recs =
+                environment.getLineageRecords();
+        if (recs.isEmpty()) return;
+
+        rebuildLineageChildren(recs);
+        if (lineageVisibleRoots.isEmpty()) return;
+
+        // Count living leaves per root (post-chain-collapse) and pick the
+        // strongest roots that together fit in our visible-leaf budget.
+        // This keeps each row tall enough to actually see — at 80 leaves
+        // and ~500px tree height we still get ~6px per row.
+        int aliveCount = 0;
+        int rootsShown = 0;
+        ArrayList<com.protoevo.env.LineageRecord> roots = lineageVisibleRoots;
+        for (int i = 0; i < roots.size(); i++) {
+            com.protoevo.env.LineageRecord root = collapseChain(roots.get(i));
+            int leaves = countLivingLeaves(root);
+            if (leaves <= 0) continue;
+            if (aliveCount + leaves > LINEAGE_MAX_VISIBLE_LEAVES && rootsShown > 0)
+                break;
+            aliveCount += leaves;
+            rootsShown++;
+        }
+        if (rootsShown == 0) return;
+
+        // Time window — from oldest visible root's birth to now.
+        float now = environment.getElapsedTime();
+        float tStart = now;
+        int totalLeaves = 0;
+        for (int i = 0; i < rootsShown; i++) {
+            com.protoevo.env.LineageRecord root = collapseChain(roots.get(i));
+            if (root.birthTime < tStart) tStart = root.birthTime;
+            totalLeaves += countLivingLeaves(root);
+        }
+        if (totalLeaves <= 0) return;
+        float tEnd = now + Math.max(1f, (now - tStart) * 0.02f);
+
+        float w = Gdx.graphics.getWidth();
+        float h = Gdx.graphics.getHeight();
+        float panelW = w * 0.55f;
+        float panelH = h * 0.7f;
+        float panelX = w - panelW - 24f;
+        float panelY = h * 0.05f;
+
+        Gdx.gl.glEnable(com.badlogic.gdx.graphics.GL20.GL_BLEND);
+        lineageShape.setProjectionMatrix(uiBatch.getProjectionMatrix());
+        lineageShape.begin(com.badlogic.gdx.graphics.glutils.ShapeRenderer.ShapeType.Filled);
+        lineageShape.setColor(0f, 0f, 0f, 0.7f);
+        lineageShape.rect(panelX, panelY, panelW, panelH);
+
+        float padX = 14f, padY = 36f;
+        float treeLeft = panelX + padX;
+        float treeRight = panelX + panelW - padX;
+        float treeTop = panelY + panelH - padY;
+        float treeBottom = panelY + padY;
+        float yRange = treeTop - treeBottom;
+        float yCursor = treeTop;
+        for (int i = 0; i < rootsShown; i++) {
+            com.protoevo.env.LineageRecord root = collapseChain(roots.get(i));
+            int leaves = countLivingLeaves(root);
+            float frac = leaves / (float) totalLeaves;
+            float rSize = frac * yRange;
+            float rYTop = yCursor;
+            float rYBottom = yCursor - rSize;
+            drawLineageSubtree(root, root.birthTime,
+                    treeLeft, treeRight, rYTop, rYBottom, tStart, tEnd);
+            yCursor = rYBottom;
+        }
+        lineageShape.end();
+        Gdx.gl.glDisable(com.badlogic.gdx.graphics.GL20.GL_BLEND);
+
+        uiBatch.begin();
+        font.setColor(1f, 1f, 1f, 1f);
+        font.draw(uiBatch,
+                String.format("Phylogeny (currently alive)  %d/%d roots, %d leaves",
+                        rootsShown, lineageVisibleRoots.size(), totalLeaves),
+                panelX + 10f, panelY + panelH - 10f);
+        font.setColor(0.6f, 0.6f, 0.6f, 1f);
+        font.draw(uiBatch, String.format("t=%.0fs", tStart),
+                panelX + 10f, panelY + 22f);
+        font.draw(uiBatch, String.format("now: t=%.0fs", now),
+                panelX + panelW - 140f, panelY + 22f);
+        uiBatch.end();
+    }
+    // ===== end Lineage tree overlay =====
+
+    // ===== Turbo mode =====
+    // Black-screen fast-forward: skip all environment rendering, run sim updates
+    // in a tight loop within each render frame, and draw a small line chart of
+    // population over time. Useful for letting the sim evolve overnight.
+    private boolean turboMode = false;
+    private static final int TURBO_SAMPLES_CAP = 600;
+    private final float[] turboSampleTime = new float[TURBO_SAMPLES_CAP];
+    private final int[] turboSampleProto = new int[TURBO_SAMPLES_CAP];
+    private final int[] turboSamplePlants = new int[TURBO_SAMPLES_CAP];
+    private int turboSampleHead = 0, turboSampleSize = 0;
+    private float turboLastSampleSimTime = -1f;
+    private long turboLastLogMs = 0;
+    private int turboLastLoggedProto = -1;
+    private com.badlogic.gdx.graphics.glutils.ShapeRenderer turboShape;
+
+    public void toggleTurboMode() {
+        turboMode = !turboMode;
+        if (turboMode && turboShape == null) {
+            turboShape = new com.badlogic.gdx.graphics.glutils.ShapeRenderer();
+        }
+        System.out.println("Turbo mode: " + (turboMode
+                ? "ON (rendering disabled, max sim throughput)"
+                : "OFF"));
+        if (turboMode) {
+            turboLastLogMs = 0; // force a log on first frame
+        }
+    }
+
+    public boolean isTurboMode() { return turboMode; }
+
+    private void turboMaybeSample() {
+        if (environment == null) return;
+        float simTime = environment.getElapsedTime();
+        if (turboLastSampleSimTime < 0f || simTime - turboLastSampleSimTime >= 1f) {
+            int proto = environment.numberOfProtozoa();
+            int plants = environment.getCount(com.protoevo.biology.cells.PlantCell.class);
+            int slot = turboSampleHead;
+            turboSampleTime[slot] = simTime;
+            turboSampleProto[slot] = proto;
+            turboSamplePlants[slot] = plants;
+            turboSampleHead = (turboSampleHead + 1) % TURBO_SAMPLES_CAP;
+            if (turboSampleSize < TURBO_SAMPLES_CAP) turboSampleSize++;
+            turboLastSampleSimTime = simTime;
+        }
+    }
+
+    private void turboMaybeLog() {
+        if (environment == null) return;
+        long now = System.currentTimeMillis();
+        int proto = environment.numberOfProtozoa();
+        boolean dueByTime = now - turboLastLogMs > 3L * 60L * 1000L;
+        boolean dueByChange = turboLastLoggedProto > 0
+                && Math.abs(proto - turboLastLoggedProto) >= 0.25 * turboLastLoggedProto;
+        if (turboLastLogMs == 0 || dueByTime || dueByChange) {
+            int plants = environment.getCount(com.protoevo.biology.cells.PlantCell.class);
+            // Diagnostic: average protozoan energy / construction-mass /
+            // food-mass so we can see at a glance whether eating delivers
+            // anything. If avgFoodMass > 0 but avgConstrMass stays at 0,
+            // digest isn't converting. If avgFoodMass is also 0, the eat
+            // path isn't filling the food pool. If construction-mass cap
+            // is full but cells aren't growing/splitting, the bottleneck
+            // is elsewhere.
+            double sumE = 0, sumCM = 0, sumFood = 0, sumR = 0, sumAge = 0;
+            int n = 0, engulfing = 0;
+            for (com.protoevo.biology.cells.Cell c : environment.getCells()) {
+                if (!(c instanceof com.protoevo.biology.cells.Protozoan)) continue;
+                com.protoevo.biology.cells.Protozoan p = (com.protoevo.biology.cells.Protozoan) c;
+                if (p.isDead()) continue;
+                sumE += p.getEnergyAvailable();
+                sumCM += p.getConstructionMassAvailable();
+                for (com.protoevo.biology.Food f : p.getFoodToDigest().values())
+                    sumFood += f.getSimpleMass();
+                sumR += p.getRadius();
+                sumAge += p.getTimeAlive();
+                if (!p.getEngulfedCells().isEmpty()) engulfing++;
+                n++;
+            }
+            if (n > 0) {
+                System.out.printf("[TURBO] sim=%.1fs  protozoa=%d  plants=%d  "
+                        + "avgE=%.1f  avgCM=%.5g  avgFood=%.5g  avgR=%.4f  avgAge=%.1fs  engulfing=%d%n",
+                        environment.getElapsedTime(), proto, plants,
+                        sumE / n, sumCM / n, sumFood / n, sumR / n, sumAge / n, engulfing);
+            } else {
+                System.out.printf("[TURBO] sim=%.1fs  protozoa=%d  plants=%d  (no live protozoa)%n",
+                        environment.getElapsedTime(), proto, plants);
+            }
+            turboLastLogMs = now;
+            turboLastLoggedProto = proto;
+        }
+    }
+
+    private void turboRender() {
+        ScreenUtils.clear(0f, 0f, 0f, 1f);
+
+        // Run sim as hard as we can within ~12ms so the render thread still
+        // returns in time for libGDX to process input events (so F8 / ESC
+        // still work). simulation.update() already substeps internally up to
+        // its safety cap, so each call here advances `timeDilation` substeps.
+        long deadline = System.currentTimeMillis() + 12;
+        int iters = 0;
+        while (System.currentTimeMillis() < deadline) {
+            simulation.update();
+            iters++;
+            if (iters >= 1000) break; // safety: don't pin the thread on a fast sim
+        }
+
+        turboMaybeSample();
+        turboMaybeLog();
+
+        // Layout: top 1/8 reserved for status text; rest for line chart.
+        float w = Gdx.graphics.getWidth();
+        float h = Gdx.graphics.getHeight();
+        float marginX = w * 0.06f;
+        float chartTop = h * 0.85f;
+        float chartBottom = h * 0.10f;
+        float chartLeft = marginX;
+        float chartRight = w - marginX;
+
+        // Compute chart bounds.
+        int n = turboSampleSize;
+        if (n >= 2) {
+            float tMin = Float.POSITIVE_INFINITY, tMax = Float.NEGATIVE_INFINITY;
+            int yMax = 1;
+            int start = (turboSampleHead - n + TURBO_SAMPLES_CAP) % TURBO_SAMPLES_CAP;
+            for (int i = 0; i < n; i++) {
+                int idx = (start + i) % TURBO_SAMPLES_CAP;
+                float t = turboSampleTime[idx];
+                if (t < tMin) tMin = t;
+                if (t > tMax) tMax = t;
+                if (turboSampleProto[idx] > yMax) yMax = turboSampleProto[idx];
+                if (turboSamplePlants[idx] > yMax) yMax = turboSamplePlants[idx];
+            }
+            float dt = Math.max(1e-3f, tMax - tMin);
+
+            turboShape.begin(com.badlogic.gdx.graphics.glutils.ShapeRenderer.ShapeType.Line);
+
+            // Frame
+            turboShape.setColor(0.4f, 0.4f, 0.4f, 1f);
+            turboShape.rect(chartLeft, chartBottom,
+                    chartRight - chartLeft, chartTop - chartBottom);
+
+            // Plot helper inline: protozoa green, plants gray.
+            for (int series = 0; series < 2; series++) {
+                if (series == 0) turboShape.setColor(0.4f, 1f, 0.4f, 1f);
+                else turboShape.setColor(0.55f, 0.55f, 0.55f, 1f);
+                float prevX = 0, prevY = 0;
+                for (int i = 0; i < n; i++) {
+                    int idx = (start + i) % TURBO_SAMPLES_CAP;
+                    int v = (series == 0)
+                            ? turboSampleProto[idx]
+                            : turboSamplePlants[idx];
+                    float fx = (turboSampleTime[idx] - tMin) / dt;
+                    float fy = (float) v / yMax;
+                    float x = chartLeft + fx * (chartRight - chartLeft);
+                    float y = chartBottom + fy * (chartTop - chartBottom);
+                    if (i > 0) turboShape.line(prevX, prevY, x, y);
+                    prevX = x; prevY = y;
+                }
+            }
+            turboShape.end();
+        }
+
+        // Status text + legend via the existing UI batch + font.
+        int proto = environment != null ? environment.numberOfProtozoa() : 0;
+        int plants = environment != null
+                ? environment.getCount(com.protoevo.biology.cells.PlantCell.class) : 0;
+        float simT = environment != null ? environment.getElapsedTime() : 0f;
+        uiBatch.begin();
+        font.setColor(1f, 1f, 1f, 1f);
+        String top = String.format(
+                "TURBO MODE  |  protozoa: %d  |  plants: %d  |  sim time: %.1fs  |  iters/frame: %d",
+                proto, plants, simT, iters);
+        font.draw(uiBatch, top, marginX, h - h * 0.04f);
+
+        font.setColor(0.4f, 1f, 0.4f, 1f);
+        font.draw(uiBatch, "protozoa", marginX, chartTop + 18f);
+        font.setColor(0.55f, 0.55f, 0.55f, 1f);
+        font.draw(uiBatch, "plants", marginX + 110f, chartTop + 18f);
+
+        font.setColor(0.6f, 0.6f, 0.6f, 1f);
+        font.draw(uiBatch, "F8 to exit turbo", marginX, chartBottom - 12f);
+        uiBatch.end();
+    }
+    // ===== end Turbo mode =====
+
+    /**
+     * Low-detail mode: skip the chemical-field overlay and the baked shadow
+     * texture. Both are screen-filling fragment passes and dominate GPU time
+     * on weak hardware. Toggles both flags together.
+     */
+    public void toggleLowDetailMode() {
+        EnvironmentRenderer r = getBaseEnvironmentRenderer();
+        boolean nowLow = r.isRenderChemicals() || r.isRenderShadows();
+        r.setRenderChemicals(!nowLow);
+        r.setRenderShadows(!nowLow);
+        System.out.println("Low-detail mode: " + (nowLow ? "ON (chemicals+shadows hidden)" : "OFF"));
+    }
+
     public void renderEnvironment(float delta) {
         float envLight = Functions.clampedLinearRemap(
                 environment.getLightMap().getEnvLight(),
@@ -248,6 +696,11 @@ public class SimulationScreen extends ScreenAdapter {
 
     @Override
     public void render(float delta) {
+
+        if (turboMode) {
+            turboRender();
+            return;
+        }
 
         conditionalTasks.forEach((condition, task) -> {
             if (condition.get())
@@ -281,6 +734,9 @@ public class SimulationScreen extends ScreenAdapter {
 
         topBar.draw(delta);
 
+        if (lineageOverlay)
+            renderLineageOverlay();
+
         uiBatch.begin();
 
         if (simulation.isBusyOnOtherThread())
@@ -298,6 +754,8 @@ public class SimulationScreen extends ScreenAdapter {
 
         if (DebugMode.isDebugMode())
             drawDebugInfo();
+
+        drawSignatureHud();
 
         uiBatch.end();
 
@@ -324,6 +782,206 @@ public class SimulationScreen extends ScreenAdapter {
 
         float x = 3 * font.getLineHeight();
         font.draw(uiBatch, textWithDots.toString(), x, x);
+    }
+
+    // BLAST-style signature HUD with directional, semantic pairing. Plants
+    // have 1 surface signature; protozoa have 3 (plant-receptor key,
+    // receiving receptor = identity, phagocytic receptor = what they hunt).
+    // For two-cell comparison we don't pair by length — we pair by what's
+    // ecologically meaningful:
+    //   * A.phagocytic ↔ B.receiving  ("Can A eat B?")
+    //   * A.receiving ↔ B.phagocytic  ("Can B eat A?")
+    //   * A.plantKey  ↔ B.plantKey    ("Diet overlap")
+    // Mixed types (protozoa↔plant) compare the protozoa's plant-receptor
+    // key to the plant's surface signature.
+    private void drawSignatureHud() {
+        com.protoevo.physics.Particle tracked =
+                inputManager.getParticleTracker().getTrackedParticle();
+        if (tracked == null) return;
+        com.protoevo.physics.Particle compared =
+                inputManager.getParticleTracker().getComparedParticle();
+
+        float h = font.getLineHeight();
+        float x = h;
+        float y = h * 1.2f;  // anchor at bottom, grow upward
+
+        if (compared == null) {
+            // Single-cell view: list every sequence with its label.
+            java.util.List<String[]> rows = signatureRowsFor(tracked);
+            if (rows.isEmpty()) return;
+            for (int i = rows.size() - 1; i >= 0; i--) {
+                String[] row = rows.get(i);
+                font.draw(uiBatch, row[0] + ":  " + row[1], x, y);
+                y += h;
+            }
+            font.draw(uiBatch,
+                    "[ shift+click another cell to BLAST-compare ]", x, y);
+            return;
+        }
+
+        // Two-cell view: build the semantic pair list, iterate bottom-up.
+        java.util.List<Pair> pairs = buildBlastPairs(tracked, compared);
+        if (pairs.isEmpty()) return;
+        for (int i = pairs.size() - 1; i >= 0; i--) {
+            Pair p = pairs.get(i);
+            if (p.b == null) {
+                // No counterpart in B — show A alone.
+                font.draw(uiBatch, p.aLabel + ":  " + p.a, x, y);
+                y += h;
+            } else {
+                // Align marker to where the residues start: 2 ("B ") +
+                // p.bLabel + 3 (":  ").
+                String prefix = spaces(2 + p.bLabel.length() + 3);
+                font.draw(uiBatch, "B " + p.bLabel + ":  " + p.b, x, y);
+                y += h;
+                font.draw(uiBatch,
+                        prefix + matchMarkerLine(p.a, p.b)
+                                + "   " + String.format("id %.0f%%  run %d",
+                                        100f * identityFraction(p.a, p.b),
+                                        longestContiguousMatchLen(p.a, p.b)),
+                        x, y);
+                y += h;
+                font.draw(uiBatch, "A " + p.aLabel + ":  " + p.a, x, y);
+                y += h;
+                // Tag line above the block: what does this pair *mean*?
+                font.draw(uiBatch, "  " + p.description, x, y);
+                y += h * 1.05f;
+            }
+        }
+        font.draw(uiBatch, "[ A = tracked, B = shift-clicked ]", x, y);
+    }
+
+    private static final class Pair {
+        final String aLabel, a, bLabel, b, description;
+        Pair(String aLabel, String a, String bLabel, String b, String description) {
+            this.aLabel = aLabel; this.a = a;
+            this.bLabel = bLabel; this.b = b;
+            this.description = description;
+        }
+    }
+
+    /** Build the semantic pair list for a two-cell HUD comparison.
+     *  Returns the pairs in the order they'll be rendered (top→bottom). */
+    private java.util.List<Pair> buildBlastPairs(
+            com.protoevo.physics.Particle ap, com.protoevo.physics.Particle bp) {
+        Object a = ap.getUserData();
+        Object b = bp.getUserData();
+        java.util.List<Pair> out = new java.util.ArrayList<>();
+
+        boolean ap1 = a instanceof com.protoevo.biology.cells.Protozoan;
+        boolean bp1 = b instanceof com.protoevo.biology.cells.Protozoan;
+        boolean apl = a instanceof com.protoevo.biology.cells.PlantCell;
+        boolean bpl = b instanceof com.protoevo.biology.cells.PlantCell;
+
+        if (ap1 && bp1) {
+            com.protoevo.biology.cells.Protozoan A = (com.protoevo.biology.cells.Protozoan) a;
+            com.protoevo.biology.cells.Protozoan B = (com.protoevo.biology.cells.Protozoan) b;
+            String aPhag = str(A.getProtozoaPhagocyticReceptor());
+            String aRecv = str(A.getProtozoaReceivingReceptor());
+            String aPlnt = str(A.getPlantReceptorKey());
+            String bPhag = str(B.getProtozoaPhagocyticReceptor());
+            String bRecv = str(B.getProtozoaReceivingReceptor());
+            String bPlnt = str(B.getPlantReceptorKey());
+            if (aPhag != null && bRecv != null)
+                out.add(new Pair("Phagocytic   (75)", aPhag,
+                                 "Receiving    (75)", bRecv, "Can A eat B?"));
+            if (aRecv != null && bPhag != null)
+                out.add(new Pair("Receiving    (75)", aRecv,
+                                 "Phagocytic   (75)", bPhag, "Can B eat A?"));
+            if (aPlnt != null && bPlnt != null)
+                out.add(new Pair("Plant Key    (50)", aPlnt,
+                                 "Plant Key    (50)", bPlnt, "Diet overlap"));
+        } else if (ap1 && bpl) {
+            com.protoevo.biology.cells.Protozoan A = (com.protoevo.biology.cells.Protozoan) a;
+            com.protoevo.biology.cells.PlantCell B = (com.protoevo.biology.cells.PlantCell) b;
+            String aPlnt = str(A.getPlantReceptorKey());
+            String bSurf = str(B.getSurfaceSignature());
+            if (aPlnt != null && bSurf != null)
+                out.add(new Pair("Plant Key    (50)", aPlnt,
+                                 "Plant Surface(50)", bSurf, "Can A eat this plant?"));
+        } else if (apl && bp1) {
+            com.protoevo.biology.cells.PlantCell A = (com.protoevo.biology.cells.PlantCell) a;
+            com.protoevo.biology.cells.Protozoan B = (com.protoevo.biology.cells.Protozoan) b;
+            String aSurf = str(A.getSurfaceSignature());
+            String bPlnt = str(B.getPlantReceptorKey());
+            if (aSurf != null && bPlnt != null)
+                out.add(new Pair("Plant Surface(50)", aSurf,
+                                 "Plant Key    (50)", bPlnt, "Can B eat this plant?"));
+        } else if (apl && bpl) {
+            com.protoevo.biology.cells.PlantCell A = (com.protoevo.biology.cells.PlantCell) a;
+            com.protoevo.biology.cells.PlantCell B = (com.protoevo.biology.cells.PlantCell) b;
+            String aSurf = str(A.getSurfaceSignature());
+            String bSurf = str(B.getSurfaceSignature());
+            if (aSurf != null && bSurf != null)
+                out.add(new Pair("Plant Surface(50)", aSurf,
+                                 "Plant Surface(50)", bSurf, "Surface similarity"));
+        }
+        return out;
+    }
+
+    private static String str(com.protoevo.biology.evolution.AminoAcidSequence s) {
+        return s == null ? null : s.toString();
+    }
+
+    /** Returns ordered (label, sequence) rows for whatever signatures the
+     *  cell carries. Used in single-cell view. */
+    private java.util.List<String[]> signatureRowsFor(com.protoevo.physics.Particle p) {
+        java.util.List<String[]> rows = new java.util.ArrayList<>();
+        Object data = p.getUserData();
+        if (data instanceof com.protoevo.biology.cells.PlantCell) {
+            com.protoevo.biology.evolution.AminoAcidSequence s =
+                    ((com.protoevo.biology.cells.PlantCell) data).getSurfaceSignature();
+            if (s != null) rows.add(new String[]{"Plant Surface (50)", s.toString()});
+        } else if (data instanceof com.protoevo.biology.cells.Protozoan) {
+            com.protoevo.biology.cells.Protozoan c =
+                    (com.protoevo.biology.cells.Protozoan) data;
+            com.protoevo.biology.evolution.AminoAcidSequence pk = c.getPlantReceptorKey();
+            com.protoevo.biology.evolution.AminoAcidSequence rr = c.getProtozoaReceivingReceptor();
+            com.protoevo.biology.evolution.AminoAcidSequence pr = c.getProtozoaPhagocyticReceptor();
+            if (pk != null) rows.add(new String[]{"Plant Receptor Key (50)", pk.toString()});
+            if (rr != null) rows.add(new String[]{"Receiving Receptor (75)", rr.toString()});
+            if (pr != null) rows.add(new String[]{"Phagocytic Receptor(75)", pr.toString()});
+        }
+        return rows;
+    }
+
+    private static String matchMarkerLine(String a, String b) {
+        int n = Math.min(a.length(), b.length());
+        StringBuilder sb = new StringBuilder(n);
+        for (int i = 0; i < n; i++)
+            sb.append(a.charAt(i) == b.charAt(i) ? '|' : '.');
+        return sb.toString();
+    }
+
+    private static String spaces(int n) {
+        char[] c = new char[n];
+        java.util.Arrays.fill(c, ' ');
+        return new String(c);
+    }
+
+    private static float identityFraction(String a, String b) {
+        int n = Math.min(a.length(), b.length());
+        if (n == 0) return 0f;
+        int match = 0;
+        for (int i = 0; i < n; i++) if (a.charAt(i) == b.charAt(i)) match++;
+        return (float) match / n;
+    }
+
+    /** Length of the longest run of consecutive identical residues. This
+     *  is what the engulf gate actually keys on, so it's more useful for
+     *  the user than overall identity %. */
+    private static int longestContiguousMatchLen(String a, String b) {
+        int n = Math.min(a.length(), b.length());
+        int best = 0, cur = 0;
+        for (int i = 0; i < n; i++) {
+            if (a.charAt(i) == b.charAt(i)) {
+                cur++;
+                if (cur > best) best = cur;
+            } else {
+                cur = 0;
+            }
+        }
+        return best;
     }
 
     public ImageButton createImageButton(String texturePath, float width, float height, EventListener listener) {
@@ -631,7 +1289,7 @@ public class SimulationScreen extends ScreenAdapter {
 
     public void toggleUI() {
         uiHidden = !uiHidden;
-        vignetteLayer.setUiHidden(uiHidden);
+//        vignetteLayer.setUiHidden(uiHidden);
     }
 
     public boolean hasSimulationNotLoaded() {

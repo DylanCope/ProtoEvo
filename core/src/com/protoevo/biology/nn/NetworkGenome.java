@@ -22,8 +22,15 @@ public class NetworkGenome implements Serializable
 	@JsonIgnore
 	private Random random = Simulation.RANDOM;
 	private int numStructuralMutations = 0, nSensors, nOutputs;
-	private static int maxSynapseMutationsPerGeneration = 10;
-	private static int maxNodeMutationsPerGeneration = 10;
+	// Per-lineage mutation rate multiplier. The global node/synapse budgets
+	// in EvolutionSettings act as a baseline; each genome scales them by
+	// this factor. Itself mutates each generation via a bounded log-Gaussian
+	// step, so lineages can evolve their own pace of exploration. Some
+	// settle low (stable adaptations, slow drift) and others go high
+	// (fast-exploring but risk losing locked-in good circuits).
+	private float mutationRateMultiplier = 1f;
+	private static final float MIN_MUTATION_RATE_MULT = 0.25f;
+	private static final float MAX_MUTATION_RATE_MULT = 4f;
 
 	public NetworkGenome(NetworkGenome other) {
 		setProperties(other);
@@ -44,6 +51,7 @@ public class NetworkGenome implements Serializable
 		numStructuralMutations = other.numStructuralMutations;
 		nSensors = other.nSensors;
 		nOutputs = other.nOutputs;
+		mutationRateMultiplier = other.mutationRateMultiplier;
 	}
 
 	private NeuronGene[] copy(NeuronGene[] neuronGenes) {
@@ -224,14 +232,18 @@ public class NetworkGenome implements Serializable
 	}
 
 	public NeuronGene getNeuronGene(String name) {
+		// Some neurons (e.g. ones created by the no-label NetworkGenome
+		// constructor at line 71-75 used by plants/non-protozoa cells) have
+		// null labels. Use name.equals(label) so a null on the genome side
+		// returns false instead of NPE'ing.
 		for (NeuronGene n : sensorNeuronGenes)
-			if (n.getLabel().equals(name))
+			if (name.equals(n.getLabel()))
 				return n;
 		for (NeuronGene n : outputNeuronGenes)
-			if (n.getLabel().equals(name))
+			if (name.equals(n.getLabel()))
 				return n;
 		for (NeuronGene n : hiddenNeuronGenes)
-			if (n.getLabel().equals(name))
+			if (name.equals(n.getLabel()))
 				return n;
 		return null;
 	}
@@ -337,7 +349,12 @@ public class NetworkGenome implements Serializable
 	
 	public void mutate()
 	{
-		for (int i = 0; i < maxNodeMutationsPerGeneration; i++) {
+		int baseNode = Environment.settings.evo.nodeMutationsPerGeneration.get();
+		int baseSyn  = Environment.settings.evo.synapseMutationsPerGeneration.get();
+		int nodeBudget = Math.max(1, Math.round(baseNode * mutationRateMultiplier));
+		int synapseBudget = Math.max(1, Math.round(baseSyn  * mutationRateMultiplier));
+
+		for (int i = 0; i < nodeBudget; i++) {
 			int idx = MathUtils.random(
 					0, sensorNeuronGenes.length + outputNeuronGenes.length + hiddenNeuronGenes.length - 1);
 			if (idx < sensorNeuronGenes.length)
@@ -349,11 +366,23 @@ public class NetworkGenome implements Serializable
 		}
 
 		if (synapseGenes.length > 0)
-			for (int i = 0; i < maxSynapseMutationsPerGeneration; i++) {
+			for (int i = 0; i < synapseBudget; i++) {
 				int idx = MathUtils.random(0, synapseGenes.length - 1);
 				mutateSynapseGene(idx);
 			}
+
+		// Drift the mutation rate itself. Log-Gaussian step (multiplicative)
+		// so increments and decrements are symmetric in log-space; bounded
+		// to prevent runaway in either direction.
+		float step = (float) Math.exp(0.15 * Simulation.RANDOM.nextGaussian());
+		mutationRateMultiplier *= step;
+		if (mutationRateMultiplier < MIN_MUTATION_RATE_MULT)
+			mutationRateMultiplier = MIN_MUTATION_RATE_MULT;
+		if (mutationRateMultiplier > MAX_MUTATION_RATE_MULT)
+			mutationRateMultiplier = MAX_MUTATION_RATE_MULT;
 	}
+
+	public float getMutationRateMultiplier() { return mutationRateMultiplier; }
 	
 	public NetworkGenome crossover(NetworkGenome other)
 	{
@@ -494,11 +523,59 @@ public class NetworkGenome implements Serializable
 		return new NeuralNetwork(neurons);
 	}
 
+	/**
+	 * Standard NEAT compatibility distance:
+	 *   d = c1*E/N + c2*D/N + c3*Wbar
+	 * where E = excess genes (innovations past the other genome's max),
+	 *       D = disjoint genes (non-matching innovations within range),
+	 *       Wbar = mean absolute weight difference of matching genes,
+	 *       N   = max(|genes|, 1) for normalization.
+	 * Used by the genetic-clusters view to group similar protozoa.
+	 */
 	public float distance(NetworkGenome other)
 	{
-//		int excess = 0;
-//		int disjoint = 0;
-		return 0;
+		if (other == null) return Float.POSITIVE_INFINITY;
+		final float c1 = 1.0f, c2 = 1.0f, c3 = 0.4f;
+
+		SynapseGene[] a = this.synapseGenes;
+		SynapseGene[] b = other.synapseGenes;
+		if (a == null) a = new SynapseGene[0];
+		if (b == null) b = new SynapseGene[0];
+
+		int maxInnovA = -1, maxInnovB = -1;
+		java.util.HashMap<Integer, SynapseGene> mapA = new java.util.HashMap<>();
+		java.util.HashMap<Integer, SynapseGene> mapB = new java.util.HashMap<>();
+		for (SynapseGene g : a) {
+			mapA.put(g.getInnovation(), g);
+			if (g.getInnovation() > maxInnovA) maxInnovA = g.getInnovation();
+		}
+		for (SynapseGene g : b) {
+			mapB.put(g.getInnovation(), g);
+			if (g.getInnovation() > maxInnovB) maxInnovB = g.getInnovation();
+		}
+
+		int excess = 0, disjoint = 0, matching = 0;
+		float weightDiffSum = 0f;
+		int innovCutoff = Math.min(maxInnovA, maxInnovB);
+
+		java.util.HashSet<Integer> allInnov = new java.util.HashSet<>(mapA.keySet());
+		allInnov.addAll(mapB.keySet());
+		for (int innov : allInnov) {
+			boolean inA = mapA.containsKey(innov);
+			boolean inB = mapB.containsKey(innov);
+			if (inA && inB) {
+				matching++;
+				weightDiffSum += Math.abs(mapA.get(innov).getWeight() - mapB.get(innov).getWeight());
+			} else if (innov > innovCutoff) {
+				excess++;
+			} else {
+				disjoint++;
+			}
+		}
+
+		int n = Math.max(Math.max(a.length, b.length), 1);
+		float wbar = matching > 0 ? weightDiffSum / matching : 0f;
+		return c1 * excess / n + c2 * disjoint / n + c3 * wbar;
 	}
 
 	public String toString()
@@ -547,14 +624,14 @@ public class NetworkGenome implements Serializable
 
 	public boolean hasSensor(String label) {
 		for (NeuronGene gene : sensorNeuronGenes)
-			if (gene.getLabel().equals(label))
+			if (label.equals(gene.getLabel()))
 				return true;
 		return false;
 	}
 
 	public boolean hasOutput(String label) {
 		for (NeuronGene gene : outputNeuronGenes)
-			if (gene.getLabel().equals(label))
+			if (label.equals(gene.getLabel()))
 				return true;
 		return false;
 	}

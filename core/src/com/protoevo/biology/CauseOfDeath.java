@@ -21,7 +21,8 @@ public enum CauseOfDeath {
     OVERCROWDING("overcrowding", false),
     MEAT_DECAY("decay", true),
     HYPOTHERMIA("hypothermia", false),
-    HYPERTHERMIA("hyperthermia", false);
+    HYPERTHERMIA("hyperthermia", false),
+    STARVATION("starvation", false);
 
     private final String reason;
     private final boolean debug;

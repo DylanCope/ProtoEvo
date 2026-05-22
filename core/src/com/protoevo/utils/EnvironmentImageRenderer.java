@@ -45,25 +45,45 @@ public class EnvironmentImageRenderer {
         graphics.fillRect(0, 0, width, height);
 
         ChemicalSolution chemicalSolution = environment.getChemicalSolution();
+        if (chemicalSolution == null)
+            return;
+
         int chemWidth = chemicalSolution.getNXCells();
         int chemHeight = chemicalSolution.getNYCells();
-        BufferedImage image = new BufferedImage(chemWidth, chemHeight, BufferedImage.TYPE_INT_ARGB);
-        Graphics2D g = image.createGraphics();
 
+        // Pack the chemical field directly into a raster int[] and write it
+        // with a single setRGB call. The previous version called
+        // g.setColor + g.fillRect(1,1) for every chemical cell — at the
+        // default 1024×1024 resolution that's ~1M Java2D ops, dominating
+        // save time (often several seconds per save). setRGB on a raw
+        // int[] is memcpy-fast.
+        BufferedImage image = new BufferedImage(chemWidth, chemHeight, BufferedImage.TYPE_INT_ARGB);
+        int[] pixels = new int[chemWidth * chemHeight];
         for (int i = 0; i < chemWidth; i++) {
             for (int j = 0; j < chemHeight; j++) {
                 Colour colour = chemicalSolution.getColour(i, j);
-                g.setColor(new Color(colour.r, colour.g, colour.b, 0.5f * colour.a));
-                g.fillRect(i, chemHeight - j, 1, 1);
+                int r = clamp255(Math.round(colour.r * 255f));
+                int gC = clamp255(Math.round(colour.g * 255f));
+                int b = clamp255(Math.round(colour.b * 255f));
+                int a = clamp255(Math.round(0.5f * colour.a * 255f));
+                int row = chemHeight - 1 - j; // preserve original Y-flip
+                pixels[row * chemWidth + i] = (a << 24) | (r << 16) | (gC << 8) | b;
             }
         }
+        image.setRGB(0, 0, chemWidth, chemHeight, pixels, 0, chemWidth);
 
         int chemImgX = Math.round(toImageSpaceX(chemicalSolution.getMinX()));
         int chemImgY = Math.round(toImageSpaceY(chemicalSolution.getMinY()));
         int chemImgWidth = Math.round(toImageDistance(chemicalSolution.getMaxX() - chemicalSolution.getMinX()));
         int chemImgHeight = Math.round(toImageDistance(chemicalSolution.getMaxY() - chemicalSolution.getMinY()));
-        
+
         graphics.drawImage(image, chemImgX, chemImgY, chemImgWidth, chemImgHeight, null);
+    }
+
+    private static int clamp255(int v) {
+        if (v < 0) return 0;
+        if (v > 255) return 255;
+        return v;
     }
 
     public float toImageSpaceX(float worldX) {

@@ -6,10 +6,9 @@ import com.badlogic.gdx.math.Vector2;
 import java.io.Serializable;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Comparator;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentSkipListSet;
 
 public class SpatialHash<T> implements Serializable, Iterable<Collection<T>> {
     
@@ -65,33 +64,52 @@ public class SpatialHash<T> implements Serializable, Iterable<Collection<T>> {
     }
 
     public int getChunkX(float x) {
-        return (int) (x / chunkSize);
+        // floor, not truncate. (int) casts toward zero, so x in (-chunkSize,
+        // chunkSize) all mapped to chunk 0 — that chunk had 4× area and
+        // 4× population pressure compared to its neighbours, distorting
+        // capacity checks across the origin.
+        return (int) Math.floor(x / chunkSize);
     }
 
     public int getChunkY(float y) {
-        return (int) (y / chunkSize);
+        return (int) Math.floor(y / chunkSize);
     }
 
     private int getChunkIndex(int i, int j) {
-        return i * resolution + j;
+        // Was: `i * resolution + j` — collides for any negative j because j
+        // can be -resolution..resolution while the formula expects j in
+        // [0, resolution). Example: (-5, 5) and (-4, -5) both hashed to -45.
+        // Cells from those distinct chunks shared one HashSet, breaking
+        // capacity / neighbour queries across the negative quadrant.
+        //
+        // Shift both axes by `resolution` and use stride (2*resolution + 1).
+        // Combined with the floor fix above, the world centered on origin
+        // has well-defined per-cell buckets out to ±resolution chunks.
+        int span = 2 * resolution + 1;
+        return (i + resolution) * span + (j + resolution);
     }
 
     public boolean add(T t, int i, int j) {
         int idx = getChunkIndex(i, j);
 
-        Collection<T> chunk;
-        if (!chunkContents.containsKey(idx)) {
-            chunk = new ConcurrentSkipListSet<>(Comparator.comparingInt(Object::hashCode));
-            chunkContents.put(idx, chunk);
-        } else {
-            chunk = chunkContents.get(idx);
-        }
+        // ConcurrentSkipListSet was overkill — chunk writes only happen on
+        // the main thread (Chunks.add via flushEntitiesToAdd /
+        // updateChunkAllocations), and reads during cell.update parallelStream
+        // are non-mutating. Plain HashSet has O(1) size() instead of skip
+        // list's O(n) traversal — getGlobalCount and capacity checks fire
+        // dozens of times per frame so this matters.
+        // Atomic put-if-absent. Old check-then-act would orphan one of two
+        // HashSets if two threads ever called add() with the same idx
+        // simultaneously (no concurrent writes today, but safer to make
+        // the lazy-init thread-safe so a future caller can't accidentally
+        // corrupt a chunk into an unreachable orphan).
+        Collection<T> chunk = chunkContents.computeIfAbsent(idx, k -> new HashSet<>(8));
 
         if (chunk.size() >= maxObjectsPerChunk)
             return false;
 
-        chunk.add(t);
-        size++;
+        if (chunk.add(t))
+            size++;
 
         return true;
     }
@@ -102,6 +120,24 @@ public class SpatialHash<T> implements Serializable, Iterable<Collection<T>> {
         int y = getChunkY(pos.y);
 
         return add(t, x, y);
+    }
+
+    public boolean remove(T t, Vector2 pos) {
+        int idx = getChunkIndex(getChunkX(pos.x), getChunkY(pos.y));
+        Collection<T> chunk = chunkContents.get(idx);
+        if (chunk != null && chunk.remove(t)) {
+            size--;
+            return true;
+        }
+        // Fallback: cell may have been counted in a different chunk than its
+        // current pos (it moved since last add). Linear scan — uncommon path.
+        for (Collection<T> any : chunkContents.values()) {
+            if (any.remove(t)) {
+                size--;
+                return true;
+            }
+        }
+        return false;
     }
 
     public boolean add(T t, Vector2[] bounds) {

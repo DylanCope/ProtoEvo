@@ -12,7 +12,26 @@ import java.util.stream.Collectors;
 
 public class SimulationHistory {
 
-    private final Map<String, Statistics> statistics = new HashMap<>();
+    // In-memory snapshot retention. Snapshots fire every
+    // `misc.statisticsSnapshotTime` sim-seconds (default 20s), and the previous
+    // implementation kept *every* snapshot for the whole run — at default
+    // settings that's 180/hour, ~4300/day, plus the protozoa summary stats
+    // stored per snapshot (which include log-distributions per trait). After
+    // an overnight session this map alone would balloon to hundreds of MB and
+    // dominate save time, GC pauses, and plot extraction.
+    //
+    // Disk writes are unaffected — every snapshot still goes to
+    // stats/summaries/<timestamp>.json. This cap only governs what stays in
+    // RAM for live plotting / extractData() calls.
+    private static final int MAX_IN_MEMORY_SNAPSHOTS = 500;
+
+    private final LinkedHashMap<String, Statistics> statistics =
+            new LinkedHashMap<String, Statistics>(MAX_IN_MEMORY_SNAPSHOTS * 2, 0.75f, false) {
+                @Override
+                protected boolean removeEldestEntry(Map.Entry<String, Statistics> eldest) {
+                    return size() > MAX_IN_MEMORY_SNAPSHOTS;
+                }
+            };
     private final String statsFolder;
 
     private final Set<String> commonStatsKeys;

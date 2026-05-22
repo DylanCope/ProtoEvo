@@ -79,9 +79,19 @@ public class Serialization {
     }
 
     public static Environment reloadEnvironment(String filename) {
+        long t0 = System.currentTimeMillis();
+        System.out.println("[load] deserializing " + filename + "/environment.dat ...");
         Environment env = deserialize(filename + "/environment.dat", Environment.class);
+        long tDeser = System.currentTimeMillis();
+        System.out.printf("[load]   deserialize: %dms (cells=%d)%n",
+                tDeser - t0, env.getCells().size());
         env.createTransientObjects();
+        long tTrans = System.currentTimeMillis();
+        System.out.printf("[load]   createTransientObjects: %dms%n", tTrans - tDeser);
         env.rebuildWorld();
+        long tWorld = System.currentTimeMillis();
+        System.out.printf("[load]   rebuildWorld: %dms%n", tWorld - tTrans);
+        System.out.printf("[load] total: %dms%n", tWorld - t0);
         return env;
     }
 
